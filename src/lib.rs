@@ -6,6 +6,7 @@
 //   => need to define how and how to interact with client code!
 // => Think if container types can be implemented this way.
 mod widgets;
+mod window;
 
 use keyboard_types::{Key, KeyboardEvent};
 
