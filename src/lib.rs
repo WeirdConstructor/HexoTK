@@ -7,6 +7,8 @@
 // => Think if container types can be implemented this way.
 mod widgets;
 
+use keyboard_types::{Key, KeyboardEvent};
+
 use std::fmt::Debug;
 
 trait WidgetData: std::any::Any {}
@@ -64,8 +66,16 @@ trait WidgetUI<EV: Copy + Clone + Debug>: Painter {
     fn emit_event(&self, event: EV);
 }
 
+enum UIEvent {
+    ValueDragStart,
+    ValueDrag { steps: f64 },
+    ValueDragEnd,
+    Click { button: MouseButton, x: f64, y: f64 },
+    Hover { x: f64, y: f64 },
+}
+
 trait WidgetType<EV: Copy + Clone + Debug>: Debug {
-    fn draw(&self, ui: &dyn UI<EV>, data: &dyn WidgetData, pos: Rect);
-    fn size(&self, ui: &dyn UI<EV>, data: &dyn WidgetData);
-    fn event(&self, ui: &dyn UI<EV>, ev: UIEvent);
+    fn draw(&self, ui: &dyn WidgetUI<EV>, data: &dyn WidgetData, pos: Rect);
+    fn size(&self, ui: &dyn WidgetUI<EV>, data: &dyn WidgetData);
+    fn event(&self, ui: &dyn WidgetUI<EV>, ev: UIEvent);
 }

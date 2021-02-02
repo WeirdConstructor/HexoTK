@@ -373,7 +373,7 @@ unsafe impl raw_window_handle::HasRawWindowHandle for StupidWindowHandleHolder {
     }
 }
 
-pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<*mut ::std::ffi::c_void>, controller: std::sync::Arc<dyn UIController>) {
+pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<*mut ::std::ffi::c_void>, factory: Box<dyn FN() -> Box<dyn WindowUI>>) {
     println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {
@@ -418,7 +418,7 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
                 femtovg::PixelFormat::Rgb8,
                 femtovg::ImageFlags::FLIP_Y).expect("making image buffer");
 
-        let mut ui = WValuePlugUI::new(controller);
+        let mut ui = factory();
 
         ui.set_window_size(window_width as f64, window_height as f64);
 
