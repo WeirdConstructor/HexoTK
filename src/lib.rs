@@ -11,7 +11,16 @@ use keyboard_types::{Key, KeyboardEvent};
 
 use std::fmt::Debug;
 
-trait WidgetData: std::any::Any {}
+pub struct WidgetData {
+    id:   usize,
+    data: Box<dyn std::any::Any>,
+}
+
+impl WidgetData {
+    fn with<T>(&mut self, f: &dyn FnOnce(&mut T)) {
+        // TODO
+    }
+}
 
 struct Rect {
     x: f64,
@@ -25,6 +34,13 @@ pub enum MouseButton {
     Left,
     Right,
     Middle,
+}
+
+#[derive(Debug, Clone)]
+pub enum ActiveZone {
+    ValueDrag  { widget_id: usize },
+    ValueInput { widget_id: usize },
+    Click      { widget_id: usize },
 }
 
 #[derive(Debug, Clone)]
@@ -59,7 +75,7 @@ trait WindowUI<EV: Copy + Clone + Debug> {
 }
 
 trait WidgetUI<EV: Copy + Clone + Debug>: Painter {
-    fn define_active_zone(&self, data: &dyn WidgetData, type_id: usize, x: f64, y: f64, w: f64, h: f64);
+    fn define_active_zone_rect(&self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
     fn add_widget_type(&self, w_type_id: usize, wtype: Box<dyn WidgetType<EV>>);
     fn grab_focus(&self);
     fn release_focus(&self);
@@ -75,7 +91,7 @@ enum UIEvent {
 }
 
 trait WidgetType<EV: Copy + Clone + Debug>: Debug {
-    fn draw(&self, ui: &dyn WidgetUI<EV>, data: &dyn WidgetData, pos: Rect);
-    fn size(&self, ui: &dyn WidgetUI<EV>, data: &dyn WidgetData);
-    fn event(&self, ui: &dyn WidgetUI<EV>, ev: UIEvent);
+    fn draw(&self, ui: &dyn WidgetUI<EV>, data: &mut WidgetData, pos: Rect);
+    fn size(&self, ui: &dyn WidgetUI<EV>, data: &mut WidgetData);
+    fn event(&self, ui: &dyn WidgetUI<EV>, data: &mut WidgetData, ev: UIEvent);
 }
