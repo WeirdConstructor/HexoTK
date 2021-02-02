@@ -8,6 +8,10 @@ use femtovg::{
     ImageId,
     Color,
 };
+
+use crate::constants::*;
+use crate::femtovg_painter::FemtovgPainter;
+
 use raw_gl_context::{GlContext, GlConfig, Profile};
 
 use raw_window_handle::{
@@ -17,11 +21,11 @@ use raw_window_handle::{
 
 #[macro_use]
 use baseview::{
-    Size, Event, WindowEvent, WindowInfo, MouseEvent, ScrollDelta, MouseButton, Window,
+    Size, Event, WindowEvent, MouseEvent, ScrollDelta, MouseButton, Window,
     WindowHandler, WindowOpenOptions, WindowScalePolicy,
 };
 
-use crate::{WindowEvent, Painter, WindowUI};
+use crate::{InputEvent, MButton, WindowUI};
 
 struct FrameTimeMeasurement {
     buf: [u128; 60],
@@ -82,168 +86,43 @@ pub struct GUIWindowHandler {
     counter:    usize,
 }
 
-struct FemtovgPainter<'a> {
-    canvas:     &'a mut Canvas<OpenGl>,
-    font:       FontId,
-    font_mono:  FontId,
-    scale:      f32,
-}
-
-fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
-    femtovg::Paint::color(
-        Color::rgbf(
-            color.0 as f32,
-            color.1 as f32,
-            color.2 as f32))
-}
-
-impl<'a> FemtovgPainter<'a> {
-    fn label_with_font(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, font: FontId) {
-        let mut paint = color_paint(color);
-        paint.set_font(&[font]);
-        paint.set_font_size(size as f32);
-        paint.set_text_baseline(femtovg::Baseline::Middle);
-        let x = x.round();
-        match align {
-            -1 => {
-                paint.set_text_align(femtovg::Align::Left);
-                self.canvas.fill_text(x as f32, (y + h / 2.0).round() as f32, text, paint);
-            },
-            0  => {
-                paint.set_text_align(femtovg::Align::Center);
-                self.canvas.fill_text((x + (w / 2.0)) as f32, (y + h / 2.0).round() as f32, text, paint);
-            },
-            _  => {
-                paint.set_text_align(femtovg::Align::Right);
-                self.canvas.fill_text((x + w) as f32, (y + h / 2.0).round() as f32, text, paint);
-            },
-        }
-    }
-}
-
-impl<'a> Painter for FemtovgPainter<'a> {
-    fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool) {
-        let mut p = femtovg::Path::new();
-        let mut paint = color_paint(color);
-
-        let mut first = true;
-        for s in segments {
-            if first {
-                p.move_to(s.0 as f32, s.1 as f32);
-                first = false;
-            } else {
-                p.line_to(s.0 as f32, s.1 as f32);
-            }
-        }
-
-        if closed { p.close(); }
-
-        self.canvas.fill_path(&mut p, paint);
-    }
-
-    fn path_stroke(&mut self, width: f64, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool) {
-        let mut p = femtovg::Path::new();
-        let mut paint = color_paint(color);
-        paint.set_line_width(width as f32);
-
-        let mut first = true;
-        for s in segments {
-            if first {
-                p.move_to(s.0 as f32, s.1 as f32);
-                first = false;
-            } else {
-                p.line_to(s.0 as f32, s.1 as f32);
-            }
-        }
-
-        if closed { p.close(); }
-
-        self.canvas.stroke_path(&mut p, paint);
-    }
-
-    fn arc_stroke(&mut self, width: f64, color: (f64, f64, f64), radius: f64, from_rad: f64, to_rad: f64, x: f64, y: f64) {
-        let mut p = femtovg::Path::new();
-        let mut paint = color_paint(color);
-        paint.set_line_width(width as f32);
-        p.arc(x as f32, y as f32, radius as f32, from_rad as f32, to_rad as f32, femtovg::Solidity::Hole);
-        self.canvas.stroke_path(&mut p, paint);
-    }
-
-    fn rect_fill(&mut self, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64) {
-        let mut p = femtovg::Path::new();
-        p.rect(x as f32, y as f32, w as f32, h as f32);
-        self.canvas.fill_path(&mut p, color_paint(color));
-    }
-
-    fn rect_stroke(&mut self, width: f64, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64) {
-        let mut p = femtovg::Path::new();
-        p.rect(x as f32, y as f32, w as f32, h as f32);
-        let mut paint = color_paint(color);
-        paint.set_line_width(width as f32);
-        self.canvas.stroke_path(&mut p, paint);
-    }
-
-    fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, color, x, y, w, h, text, self.font);
-    }
-
-    fn label_mono(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, color, x, y, w, h, text, self.font_mono);
-    }
-
-    fn font_height(&mut self, size: f32, mono: bool) -> f32 {
-        let mut paint = color_paint(UI_PRIM_CLR);
-        if mono {
-            paint.set_font(&[self.font_mono]);
-        } else {
-            paint.set_font(&[self.font]);
-        }
-        paint.set_font_size(size);
-        if let Ok(metr) = self.canvas.measure_font(paint) {
-            metr.height() / self.scale
-        } else {
-            UI_ELEM_TXT_H as f32
-        }
-    }
-}
-
 impl WindowHandler for GUIWindowHandler {
 
     fn on_event(&mut self, _: &mut Window, event: Event) {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
-                self.ui.handle_window_event(
-                    WindowEvent::MousePosition(
+                self.ui.handle_input_event(
+                    InputEvent::MousePosition(
                         p.x / self.scale as f64,
                         p.y / self.scale as f64));
             },
             Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
                 let ev_btn =
                     match btn {
-                        MouseButton::Left   => ui::MouseButton::Left,
-                        MouseButton::Right  => ui::MouseButton::Right,
-                        MouseButton::Middle => ui::MouseButton::Middle,
-                        _                   => ui::MouseButton::Left,
+                        MouseButton::Left   => MButton::Left,
+                        MouseButton::Right  => MButton::Right,
+                        MouseButton::Middle => MButton::Middle,
+                        _                   => MButton::Left,
                     };
-                self.ui.handle_window_event(WindowEvent::MouseButtonPressed(ev_btn));
+                self.ui.handle_input_event(InputEvent::MouseButtonPressed(ev_btn));
             },
             Event::Mouse(MouseEvent::ButtonReleased(btn)) => {
                 let ev_btn =
                     match btn {
-                        MouseButton::Left   => ui::MouseButton::Left,
-                        MouseButton::Right  => ui::MouseButton::Right,
-                        MouseButton::Middle => ui::MouseButton::Middle,
-                        _                   => ui::MouseButton::Left,
+                        MouseButton::Left   => MButton::Left,
+                        MouseButton::Right  => MButton::Right,
+                        MouseButton::Middle => MButton::Middle,
+                        _                   => MButton::Left,
                     };
-                self.ui.handle_window_event(WindowEvent::MouseButtonReleased(ev_btn));
+                self.ui.handle_input_event(InputEvent::MouseButtonReleased(ev_btn));
             },
             Event::Mouse(MouseEvent::WheelScrolled(scroll)) => {
                 match scroll {
                     ScrollDelta::Lines { y, .. } => {
-                        self.ui.handle_window_event(WindowEvent::MouseWheel(y as f64));
+                        self.ui.handle_input_event(InputEvent::MouseWheel(y as f64));
                     },
                     ScrollDelta::Pixels { y, .. } => {
-                        self.ui.handle_window_event(WindowEvent::MouseWheel((y / 50.0) as f64));
+                        self.ui.handle_input_event(InputEvent::MouseWheel((y / 50.0) as f64));
                     },
                 }
             },
@@ -251,15 +130,15 @@ impl WindowHandler for GUIWindowHandler {
                 use keyboard_types::KeyState;
                 match ev.state {
                     KeyState::Up => {
-                        self.ui.handle_window_event(WindowEvent::KeyReleased(ev));
+                        self.ui.handle_input_event(InputEvent::KeyReleased(ev));
                     },
                     KeyState::Down => {
-                        self.ui.handle_window_event(WindowEvent::KeyPressed(ev));
+                        self.ui.handle_input_event(InputEvent::KeyPressed(ev));
                     },
                 }
             },
             Event::Window(WindowEvent::WillClose) => {
-                self.ui.handle_window_event(WindowEvent::WindowClose);
+                self.ui.handle_input_event(InputEvent::WindowClose);
             },
             Event::Window(WindowEvent::Focused) => {
                 self.focused = true;
@@ -304,7 +183,7 @@ impl WindowHandler for GUIWindowHandler {
         }
 
         // some hosts only stop calling idle(), so we stop the UI redraw here:
-        if !self.ui.window_is_active() {
+        if !self.ui.is_active() {
             return;
         }
 
@@ -373,7 +252,7 @@ unsafe impl raw_window_handle::HasRawWindowHandle for StupidWindowHandleHolder {
     }
 }
 
-pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<*mut ::std::ffi::c_void>, factory: Box<dyn FN() -> Box<dyn WindowUI>>) {
+pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<*mut ::std::ffi::c_void>, factory: Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>) {
     println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {

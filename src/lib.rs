@@ -1,3 +1,6 @@
+// Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
+// This is a part of HexoTK. See README.md and COPYING for details.
+
 // trait for WidgetType
 // - provides active zones
 // - can set "input modes" which forward interaction to the widget
@@ -7,8 +10,12 @@
 // => Think if container types can be implemented this way.
 mod widgets;
 mod window;
+mod constants;
+mod femtovg_painter;
 
 use keyboard_types::{Key, KeyboardEvent};
+
+pub use window::open_window;
 
 use std::fmt::Debug;
 
@@ -31,7 +38,7 @@ struct Rect {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum MouseButton {
+pub enum MButton {
     Left,
     Right,
     Middle,
@@ -45,14 +52,19 @@ pub enum ActiveZone {
 }
 
 #[derive(Debug, Clone)]
-pub enum WindowEvent {
+pub enum InputEvent {
     MousePosition(f64, f64),
-    MouseButtonPressed(MouseButton),
-    MouseButtonReleased(MouseButton),
+    MouseButtonPressed(MButton),
+    MouseButtonReleased(MButton),
     MouseWheel(f64),
     KeyPressed(KeyboardEvent),
     KeyReleased(KeyboardEvent),
     WindowClose,
+}
+
+#[derive(Debug, Clone)]
+pub enum WidgetEvent {
+    Clicked,
 }
 
 pub trait Painter {
@@ -66,33 +78,35 @@ pub trait Painter {
     fn font_height(&mut self, size: f32, mono: bool) -> f32;
 }
 
-trait WindowUI<EV: Copy + Clone + Debug> {
+pub trait WindowUI {
     fn pre_frame(&mut self);
     fn post_frame(&mut self);
     fn needs_redraw(&mut self) -> bool;
-    fn handle_window_event(&mut self, event: WindowEvent);
+    fn is_active(&mut self) -> bool;
+    fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut dyn Painter);
     fn set_window_size(&mut self, w: f64, h: f64);
 }
 
-trait WidgetUI<EV: Copy + Clone + Debug>: Painter {
+trait WidgetUI: Painter {
     fn define_active_zone_rect(&self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
-    fn add_widget_type(&self, w_type_id: usize, wtype: Box<dyn WidgetType<EV>>);
+    fn add_widget_type(&self, w_type_id: usize, wtype: Box<dyn WidgetType>);
     fn grab_focus(&self);
     fn release_focus(&self);
-    fn emit_event(&self, event: EV);
+    fn emit_event(&self, event: UIEvent);
 }
 
 enum UIEvent {
     ValueDragStart,
     ValueDrag { steps: f64 },
     ValueDragEnd,
-    Click { button: MouseButton, x: f64, y: f64 },
+    EnteredValue { val: String },
+    Click { button: MButton, x: f64, y: f64 },
     Hover { x: f64, y: f64 },
 }
 
-trait WidgetType<EV: Copy + Clone + Debug>: Debug {
-    fn draw(&self, ui: &dyn WidgetUI<EV>, data: &mut WidgetData, pos: Rect);
-    fn size(&self, ui: &dyn WidgetUI<EV>, data: &mut WidgetData);
-    fn event(&self, ui: &dyn WidgetUI<EV>, data: &mut WidgetData, ev: UIEvent);
+trait WidgetType: Debug {
+    fn draw(&self, ui: &dyn WidgetUI, data: &mut WidgetData, pos: Rect);
+    fn size(&self, ui: &dyn WidgetUI, data: &mut WidgetData);
+    fn event(&self, ui: &dyn WidgetUI, data: &mut WidgetData, ev: UIEvent);
 }
