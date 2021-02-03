@@ -1,5 +1,34 @@
 use hexotk::*;
 
+struct OpDesc {
+    // - Description for module
+    // - Ports
+    //    - Input / Output
+    //    - Type: Control, Audio, Range (200...10000)
+    //    - Label
+    //    - Description (Help Text)
+    // - UI Definition
+    //    - Private Settings (UI Only)
+    //    - Layout for Ports (multiple containers?)
+}
+
+// Widgets:
+//  - Matrix
+//      - Access to data model?
+//      - draws the hex tiles
+//      - and the labels
+//  - Envelope view
+//      - Point formular in Data
+//  - Toggle Button
+//      - Labels and values in Data
+//  - Knob (3 Sizes?)
+//  - Container
+//      - Bordered Container
+//      - Bordered Container with Title
+//      - Tabs!
+
+// - How to connect with UI code?
+
 struct DemoUI {
     types: Vec<Box<dyn WidgetType>>,
 }
