@@ -91,7 +91,7 @@ pub trait WindowUI {
 pub trait WidgetUI {
     fn define_active_zone_rect(&mut self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
     fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>);
-    fn draw_widget(&mut self, w_type_id: usize, rect: Rect);
+    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, rect: Rect);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
     fn emit_event(&self, event: UIEvent);

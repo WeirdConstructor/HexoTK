@@ -16,6 +16,9 @@ impl WidgetUI for DemoUI {
         self.types[w_type_id] = wtype;
     }
 
+    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, rect: Rect) {
+    }
+
     fn grab_focus(&mut self) {
     }
 
