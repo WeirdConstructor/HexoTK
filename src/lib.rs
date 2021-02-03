@@ -25,12 +25,12 @@ pub struct WidgetData {
 }
 
 impl WidgetData {
-    fn with<T>(&mut self, f: &dyn FnOnce(&mut T)) {
+    pub fn with<T>(&mut self, f: &dyn FnOnce(&mut T)) {
         // TODO
     }
 }
 
-struct Rect {
+pub struct Rect {
     x: f64,
     y: f64,
     w: f64,
@@ -88,15 +88,15 @@ pub trait WindowUI {
     fn set_window_size(&mut self, w: f64, h: f64);
 }
 
-trait WidgetUI: Painter {
-    fn define_active_zone_rect(&self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
-    fn add_widget_type(&self, w_type_id: usize, wtype: Box<dyn WidgetType>);
-    fn grab_focus(&self);
-    fn release_focus(&self);
+pub trait WidgetUI {
+    fn define_active_zone_rect(&mut self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
+    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>);
+    fn grab_focus(&mut self);
+    fn release_focus(&mut self);
     fn emit_event(&self, event: UIEvent);
 }
 
-enum UIEvent {
+pub enum UIEvent {
     ValueDragStart,
     ValueDrag { steps: f64 },
     ValueDragEnd,
@@ -105,8 +105,21 @@ enum UIEvent {
     Hover { x: f64, y: f64 },
 }
 
-trait WidgetType: Debug {
+#[derive(Debug, Clone, Copy)]
+pub struct DummyWidget { }
+
+impl DummyWidget {
+    pub fn new() -> Self { Self { } }
+}
+
+impl WidgetType for DummyWidget {
+    fn draw(&self, _ui: &dyn WidgetUI, _data: &mut WidgetData, _pos: Rect) { }
+    fn size(&self, _ui: &dyn WidgetUI, _data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
+    fn event(&self, _ui: &dyn WidgetUI, _data: &mut WidgetData, _ev: UIEvent) { }
+}
+
+pub trait WidgetType: Debug {
     fn draw(&self, ui: &dyn WidgetUI, data: &mut WidgetData, pos: Rect);
-    fn size(&self, ui: &dyn WidgetUI, data: &mut WidgetData);
+    fn size(&self, ui: &dyn WidgetUI, data: &mut WidgetData) -> (f64, f64);
     fn event(&self, ui: &dyn WidgetUI, data: &mut WidgetData, ev: UIEvent);
 }
