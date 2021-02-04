@@ -33,7 +33,7 @@ pub struct ButtonData {
 
 impl WidgetType for Button {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        ui.define_active_zone(ActiveZone::Click { id: 10, pos });
+        ui.define_active_zone(ActiveZone::new_click_zone(10, pos));
 
         data.with(|data: &mut ButtonData| {
             p.label(20.0, 0, (1.0, 0.0, 1.0), pos.x, pos.y, pos.w, pos.h, &data.label);
@@ -44,6 +44,7 @@ impl WidgetType for Button {
     fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {
+        println!("DISPATCHED EVENT: {:?}", ev);
         if ev.id() == 10 {
             match ev {
                 UIEvent::Click { .. } => {

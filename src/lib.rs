@@ -56,6 +56,11 @@ impl Rect {
     pub fn from(x: f64, y: f64, w: f64, h: f64) -> Self {
         Self { x, y, w, h }
     }
+
+    pub fn is_inside(&self, x: f64, y: f64) -> bool {
+           x >= self.x && x <= (self.x + self.w)
+        && y >= self.y && y <= (self.y + self.h)
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -65,11 +70,46 @@ pub enum MButton {
     Middle,
 }
 
-#[derive(Debug, Clone)]
-pub enum ActiveZone {
-    ValueDrag  { id: usize, pos: Rect },
-    ValueInput { id: usize, pos: Rect },
-    Click      { id: usize, pos: Rect },
+#[derive(Debug, Clone, Copy)]
+pub struct ActiveZone {
+    id:         usize,
+    pos:        Rect,
+    zone_type:  ZoneType,
+}
+
+impl ActiveZone {
+    pub fn new_drag_zone(id: usize, pos: Rect) -> Self {
+        Self { id, pos, zone_type: ZoneType::ValueDrag }
+    }
+
+    pub fn new_input_zone(id: usize, pos: Rect) -> Self {
+        Self { id, pos, zone_type: ZoneType::ValueInput }
+    }
+
+    pub fn new_click_zone(id: usize, pos: Rect) -> Self {
+        Self { id, pos, zone_type: ZoneType::Click }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ZoneType {
+    ValueDrag,
+    ValueInput,
+    Click,
+}
+
+impl ActiveZone {
+    pub fn id_if_inside(&self, x: f64, y: f64) -> Option<usize> {
+        if self.pos.is_inside(x, y) {
+            Some(self.id)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_zone_type(&self) -> ZoneType {
+        self.zone_type
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -128,6 +168,7 @@ pub trait WidgetUI {
 //    fn emit_event(&self, event: UIEvent);
 }
 
+#[derive(Debug, Clone)]
 pub enum UIEvent {
     ValueDragStart { id: usize, },
     ValueDrag      { id: usize, steps: f64 },

@@ -109,6 +109,30 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
 //    }
 }
 
+impl DemoUI {
+    fn dispatch<F>(&mut self, f: F) where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
+        let mut data  = self.main.take();
+        let mut zones = self.zones.take();
+
+        if let Some(mut data) = data {
+            let mut zones = zones.unwrap();
+            zones.clear();
+
+            let w_type_id = data.0;
+            let wt        = &self.types[w_type_id];
+            let mut wui   = WidgetUIHolder {
+                types: &self.types,
+                zones,
+            };
+
+            f(&mut wui, &mut data.1, wt.as_ref());
+
+            self.zones = Some(wui.zones);
+            self.main  = Some(data);
+        }
+    }
+}
+
 impl WindowUI for DemoUI {
     fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>) {
         if w_type_id >= self.types.len() {
@@ -142,15 +166,36 @@ impl WindowUI for DemoUI {
                 //   - remember to redraw if the hover zone changed
             },
             InputEvent::MouseButtonPressed(btn) => {
-                for z in self.zones.iter() {
-                    // TODO:
-                    // check if inside zone
-                    // if true:
-                    //     remember ID
-                    //     execute event() call tree with self.main.take() Data
-                    //     remember to redraw
-                    println!("CHECK {:?}", z);
+                let mut dispatch_event : Option<UIEvent> = None;
+
+                if let Some(zones) = self.zones.as_ref() {
+                    for z in zones {
+                        if let Some(id) = z.id_if_inside(self.last_mouse.0, self.last_mouse.1) {
+                            dispatch_event =
+                                Some(UIEvent::Click {
+                                    id,
+                                    button: MButton::Left,
+                                    x: self.last_mouse.0,
+                                    y: self.last_mouse.1,
+                                });
+                            break;
+                        }
+                        // TODO:
+                        // check if inside zone
+                        // if true:
+                        //     remember ID
+                        //     execute event() call tree with self.main.take() Data
+                        //     remember to redraw
+                        println!("CHECK {:?}", z);
+                    }
                 }
+
+                if let Some(event) = dispatch_event {
+                    self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
+                        wt.event(ui, data, event);
+                    });
+                }
+
             },
             _ => {},
         }
