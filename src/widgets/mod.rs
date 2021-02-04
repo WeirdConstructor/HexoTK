@@ -22,14 +22,29 @@ pub struct Button {
 #[derive(Debug, Clone)]
 pub struct ButtonData {
     pub label: String,
+    pub counter: usize,
 }
 
 impl WidgetType for Button {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
+        ui.define_active_zone(ActiveZone::Click { id: 10, pos });
+
         data.with(|data: &mut ButtonData| {
             p.label(20.0, 0, (1.0, 0.0, 1.0), pos.x, pos.y, pos.w, pos.h, &data.label);
+            p.label(20.0, 0, (1.0, 0.0, 1.0), pos.x, pos.y + 20.0, pos.w, pos.h, &format!("VL: {}", data.counter));
         });
     }
+
     fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
-    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {}
+
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {
+        if ev.id() == 10 {
+            match ev {
+                UIEvent::Click { .. } => {
+                    data.with(|data: &mut ButtonData| data.counter += 1);
+                },
+                _ => {}
+            }
+        }
+    }
 }

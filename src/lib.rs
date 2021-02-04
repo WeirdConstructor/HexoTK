@@ -40,6 +40,7 @@ impl WidgetData {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Rect {
     x: f64,
     y: f64,
@@ -66,9 +67,18 @@ pub enum MButton {
 
 #[derive(Debug, Clone)]
 pub enum ActiveZone {
-    ValueDrag  { widget_id: usize },
-    ValueInput { widget_id: usize },
-    Click      { widget_id: usize },
+    ValueDrag  { id: usize, pos: Rect },
+    ValueInput { id: usize, pos: Rect },
+    Click      { id: usize, pos: Rect },
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum HLStyle {
+    None,
+    Inactive,
+    Hover(i8),
+    ModTarget,
+    HoverModTarget,
 }
 
 #[derive(Debug, Clone)]
@@ -110,20 +120,33 @@ pub trait WindowUI {
 }
 
 pub trait WidgetUI {
-    fn define_active_zone_rect(&mut self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
+    fn define_active_zone(&mut self, az: ActiveZone);
+    fn hl_style_for(&mut self, az_id: usize) -> HLStyle;
     fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
-    fn emit_event(&self, event: UIEvent);
+//    fn emit_event(&self, event: UIEvent);
 }
 
 pub enum UIEvent {
-    ValueDragStart,
-    ValueDrag { steps: f64 },
-    ValueDragEnd,
-    EnteredValue { val: String },
-    Click { button: MButton, x: f64, y: f64 },
-    Hover { x: f64, y: f64 },
+    ValueDragStart { id: usize, },
+    ValueDrag      { id: usize, steps: f64 },
+    ValueDragEnd   { id: usize, },
+    EnteredValue   { id: usize, val: String },
+    Click          { id: usize, button: MButton, x: f64, y: f64 },
+//    Hover          { id: usize, x: f64, y: f64 },
+}
+
+impl UIEvent {
+    pub fn id(&self) -> usize {
+        match self {
+            UIEvent::ValueDragStart { id, .. } => *id,
+            UIEvent::ValueDrag      { id, .. } => *id,
+            UIEvent::ValueDragEnd   { id, .. } => *id,
+            UIEvent::EnteredValue   { id, .. } => *id,
+            UIEvent::Click          { id, .. } => *id,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

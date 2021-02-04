@@ -78,15 +78,19 @@ struct OpDesc {
 
 struct DemoUI {
     types: Vec<Box<dyn WidgetType>>,
-    main: Option<Box<(usize, WidgetData)>>
+    main: Option<Box<(usize, WidgetData)>>,
+    zones: Option<Vec<ActiveZone>>,
+    last_mouse: (f64, f64),
 }
 
 struct WidgetUIHolder<'a> {
     types: &'a Vec<Box<dyn WidgetType>>,
+    zones: Vec<ActiveZone>,
 }
 
 impl<'a> WidgetUI for WidgetUIHolder<'a> {
-    fn define_active_zone_rect(&mut self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64) {
+    fn define_active_zone(&mut self, az: ActiveZone) {
+        self.zones.push(az);
     }
 
     fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect) {
@@ -98,8 +102,11 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn release_focus(&mut self) {
     }
 
-    fn emit_event(&self, event: UIEvent) {
+    fn hl_style_for(&mut self, az_id: usize) -> HLStyle {
+        HLStyle::None
     }
+//    fn emit_event(&self, event: UIEvent) {
+//    }
 }
 
 impl WindowUI for DemoUI {
@@ -127,21 +134,49 @@ impl WindowUI for DemoUI {
 
     fn handle_input_event(&mut self, event: InputEvent) {
         println!("INPUT: {:?}", event);
+        match event {
+            InputEvent::MousePosition(x, y) => {
+                self.last_mouse = (x, y);
+                // TODO:
+                //   - determine hover zone here
+                //   - remember to redraw if the hover zone changed
+            },
+            InputEvent::MouseButtonPressed(btn) => {
+                for z in self.zones.iter() {
+                    // TODO:
+                    // check if inside zone
+                    // if true:
+                    //     remember ID
+                    //     execute event() call tree with self.main.take() Data
+                    //     remember to redraw
+                    println!("CHECK {:?}", z);
+                }
+            },
+            _ => {},
+        }
     }
 
     fn draw(&mut self, painter: &mut dyn Painter) {
         painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
-        let mut data = self.main.take();
+        let mut data  = self.main.take();
+        let mut zones = self.zones.take();
 
         if let Some(mut data) = data {
+            let mut zones = zones.unwrap();
+            zones.clear();
+
             let w_type_id = data.0;
             let wt        = &self.types[w_type_id];
-            let mut wui   = WidgetUIHolder { types: &self.types };
+            let mut wui   = WidgetUIHolder {
+                types: &self.types,
+                zones,
+            };
 
             wt.draw(
                 &mut wui, &mut data.1, painter, Rect::from(100.0, 100.0, 50.0, 20.0));
 
-            self.main = Some(data);
+            self.zones = Some(wui.zones);
+            self.main  = Some(data);
         }
     }
 
@@ -153,11 +188,14 @@ fn main() {
     open_window("HexoTK Demo", 400, 400, None, Box::new(|| {
         let mut ui = Box::new(DemoUI {
             types: vec![],
+            zones: Some(vec![]),
+            last_mouse: (0.0, 0.0),
             main:
                 Some(Box::new((0, hexotk::WidgetData::new(
-                    0,
+                    10,
                     Box::new(hexotk::widgets::ButtonData {
                         label:  String::from("UWU"),
+                        counter: 0,
                     })))))
         });
 
