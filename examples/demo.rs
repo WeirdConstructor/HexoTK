@@ -132,12 +132,15 @@ impl WindowUI for DemoUI {
     fn draw(&mut self, painter: &mut dyn Painter) {
         painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
         let mut data = self.main.take();
+
         if let Some(mut data) = data {
             let w_type_id = data.0;
-            let wt = &self.types[w_type_id];
-            let mut wui = WidgetUIHolder { types: &self.types };
+            let wt        = &self.types[w_type_id];
+            let mut wui   = WidgetUIHolder { types: &self.types };
+
             wt.draw(
                 &mut wui, &mut data.1, painter, Rect::from(100.0, 100.0, 50.0, 20.0));
+
             self.main = Some(data);
         }
     }
