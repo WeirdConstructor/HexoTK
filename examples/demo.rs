@@ -43,6 +43,9 @@ struct OpDesc {
 //      - They get 3 in/out indices stored
 //      - If one exec node operates, it runs the Node
 //        and then maps to/from the indices
+//      => XXX: How to handle Audio <-> Control Signal changes?
+//         - One idea is to introduce a state less node, that is reexecuted
+//           and 3 in/outs are then converted.
 //      => This means, the byte code is only interpreted once and then transferred
 //         into a executable data structure
 //              => u16 to usize conversion only once
@@ -75,21 +78,18 @@ struct OpDesc {
 
 struct DemoUI {
     types: Vec<Box<dyn WidgetType>>,
+    main: Option<Box<(usize, WidgetData)>>
 }
 
-impl WidgetUI for DemoUI {
+struct WidgetUIHolder<'a> {
+    types: &'a Vec<Box<dyn WidgetType>>,
+}
+
+impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn define_active_zone_rect(&mut self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64) {
     }
 
-    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>) {
-        if w_type_id >= self.types.len() {
-            self.types.resize_with((w_type_id + 1) * 2, || Box::new(DummyWidget::new()));
-        }
-
-        self.types[w_type_id] = wtype;
-    }
-
-    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, rect: Rect) {
+    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect) {
     }
 
     fn grab_focus(&mut self) {
@@ -103,6 +103,14 @@ impl WidgetUI for DemoUI {
 }
 
 impl WindowUI for DemoUI {
+    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>) {
+        if w_type_id >= self.types.len() {
+            self.types.resize_with((w_type_id + 1) * 2, || Box::new(DummyWidget::new()));
+        }
+
+        self.types[w_type_id] = wtype;
+    }
+
     fn pre_frame(&mut self) {
     }
 
@@ -123,6 +131,15 @@ impl WindowUI for DemoUI {
 
     fn draw(&mut self, painter: &mut dyn Painter) {
         painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
+        let mut data = self.main.take();
+        if let Some(mut data) = data {
+            let w_type_id = data.0;
+            let wt = &self.types[w_type_id];
+            let mut wui = WidgetUIHolder { types: &self.types };
+            wt.draw(
+                &mut wui, &mut data.1, painter, Rect::from(100.0, 100.0, 50.0, 20.0));
+            self.main = Some(data);
+        }
     }
 
     fn set_window_size(&mut self, w: f64, h: f64) {
@@ -131,9 +148,19 @@ impl WindowUI for DemoUI {
 
 fn main() {
     open_window("HexoTK Demo", 400, 400, None, Box::new(|| {
-        Box::new(DemoUI {
+        let mut ui = Box::new(DemoUI {
             types: vec![],
-        })
+            main:
+                Some(Box::new((0, hexotk::WidgetData::new(
+                    0,
+                    Box::new(hexotk::widgets::ButtonData {
+                        label:  String::from("UWU"),
+                    })))))
+        });
+
+        ui.add_widget_type(0, Box::new(hexotk::widgets::Button { }));
+
+        ui
     }));
 }
 

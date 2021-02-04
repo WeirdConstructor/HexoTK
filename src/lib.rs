@@ -8,7 +8,7 @@
 // - get a reference to their state data, which is stored externally
 //   => need to define how and how to interact with client code!
 // => Think if container types can be implemented this way.
-mod widgets;
+pub mod widgets;
 mod window;
 mod constants;
 mod femtovg_painter;
@@ -25,8 +25,18 @@ pub struct WidgetData {
 }
 
 impl WidgetData {
-    pub fn with<T>(&mut self, f: &dyn FnOnce(&mut T)) {
-        // TODO
+    pub fn new(id: usize, data: Box<dyn std::any::Any>) -> Self {
+        Self { id, data }
+    }
+
+    pub fn with<F, T: 'static, R>(&mut self, f: F) -> Option<R>
+        where F: FnOnce(&mut T) -> R
+    {
+        if let Some(data) = self.data.downcast_mut::<T>() {
+            Some(f(data))
+        } else {
+            None
+        }
     }
 }
 
@@ -35,6 +45,16 @@ pub struct Rect {
     y: f64,
     w: f64,
     h: f64,
+}
+
+impl Rect {
+    pub fn from_tpl(t: (f64, f64, f64, f64)) -> Self {
+        Self { x: t.0, y: t.1, w: t.2, h: t.3 }
+    }
+
+    pub fn from(x: f64, y: f64, w: f64, h: f64) -> Self {
+        Self { x, y, w, h }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -86,12 +106,12 @@ pub trait WindowUI {
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut dyn Painter);
     fn set_window_size(&mut self, w: f64, h: f64);
+    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>);
 }
 
 pub trait WidgetUI {
     fn define_active_zone_rect(&mut self, az: ActiveZone, x: f64, y: f64, w: f64, h: f64);
-    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>);
-    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, rect: Rect);
+    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
     fn emit_event(&self, event: UIEvent);
@@ -114,13 +134,13 @@ impl DummyWidget {
 }
 
 impl WidgetType for DummyWidget {
-    fn draw(&self, _ui: &dyn WidgetUI, _data: &mut WidgetData, _pos: Rect) { }
-    fn size(&self, _ui: &dyn WidgetUI, _data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
-    fn event(&self, _ui: &dyn WidgetUI, _data: &mut WidgetData, _ev: UIEvent) { }
+    fn draw(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _p: &mut dyn Painter, _pos: Rect) { }
+    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
+    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: UIEvent) { }
 }
 
 pub trait WidgetType: Debug {
-    fn draw(&self, ui: &dyn WidgetUI, data: &mut WidgetData, pos: Rect);
-    fn size(&self, ui: &dyn WidgetUI, data: &mut WidgetData) -> (f64, f64);
-    fn event(&self, ui: &dyn WidgetUI, data: &mut WidgetData, ev: UIEvent);
+    fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect);
+    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64);
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent);
 }
