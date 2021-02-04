@@ -22,6 +22,12 @@ pub struct Button {
 #[derive(Debug, Clone)]
 pub struct ButtonData {
     pub label: String,
+    /// TODO: Buttons don't store the value themself, they should access
+    ///       a shared trait object for parameter access!
+    ///       The trait will be used:
+    ///         - for accessing the string representation of the value.
+    ///         - for sending value changes.
+    ///       For the matrix we will define a different kind of data model trait.
     pub counter: usize,
 }
 
