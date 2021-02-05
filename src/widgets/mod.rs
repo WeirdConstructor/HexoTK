@@ -35,9 +35,17 @@ impl WidgetType for Button {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         ui.define_active_zone(ActiveZone::new_click_zone(10, pos));
 
+        let hl = ui.hl_style_for(10);
+
         data.with(|data: &mut ButtonData| {
-            p.label(20.0, 0, (1.0, 0.0, 1.0), pos.x, pos.y, pos.w, pos.h, &data.label);
-            p.label(20.0, 0, (1.0, 0.0, 1.0), pos.x, pos.y + 20.0, pos.w, pos.h, &format!("VL: {}", data.counter));
+            let clr =
+                match hl {
+                    HLStyle::Hover(_) => (1.0, 1.0, 0.0),
+                    _                 => (1.0, 0.0, 1.0),
+                };
+
+            p.label(20.0, 0, clr, pos.x, pos.y, pos.w, pos.h, &data.label);
+            p.label(20.0, 0, clr, pos.x, pos.y + 20.0, pos.w, pos.h, &format!("VL: {}", data.counter));
         });
     }
 

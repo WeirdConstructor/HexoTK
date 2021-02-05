@@ -1,4 +1,7 @@
 use hexotk::*;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::io::BufWriter;
 
 struct OpDesc {
     // - Description for module
@@ -66,13 +69,49 @@ struct DemoUI {
     types:      Vec<Box<dyn WidgetType>>,
     main:       Option<Box<(usize, WidgetData)>>,
     zones:      Option<Vec<ActiveZone>>,
+    hover_zone: Option<ActiveZone>,
     last_mouse: (f64, f64),
+    params:     Option<Box<dyn Parameters>>,
 }
 
 struct WidgetUIHolder<'a> {
-    types: &'a Vec<Box<dyn WidgetType>>,
-    zones: Vec<ActiveZone>,
+    types:          &'a Vec<Box<dyn WidgetType>>,
+    zones:          Vec<ActiveZone>,
+    hover_zone:     Option<ActiveZone>,
+    params:         Box<dyn Parameters>,
 }
+
+struct SomeParameters {
+    params: [f32; 10],
+}
+
+impl Parameters for SomeParameters {
+    fn len(&self) -> usize { self.params.len() }
+    fn get(&self, id: usize) -> f32 { self.params[id] }
+    fn set(&mut self, id: usize, v: f32) { self.params[id] = v; }
+    fn fmt(&self, id: usize, buf: &mut [u8]) {
+        // TODO
+    }
+}
+
+#[derive(Debug, Clone)]
+enum InputMode {
+    None,
+    ValueDrag {
+        zone:           ActiveZone,
+        orig_pos:       (f64, f64),
+        pre_fine_delta: f64,
+        fine_key:       bool
+    },
+    SelectMod  { zone: ActiveZone },
+    InputValue {
+        zone:   ActiveZone,
+        value:  String,
+        input:  Rc<RefCell<BufWriter<Vec<u8>>>>
+    },
+    GetHelp,
+}
+
 
 impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn define_active_zone(&mut self, az: ActiveZone) {
@@ -89,32 +128,69 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
     }
 
     fn hl_style_for(&mut self, az_id: usize) -> HLStyle {
-        HLStyle::None
+        if let Some(hz) = self.hover_zone {
+            if hz.id == az_id {
+                HLStyle::Hover(hz.zone_type)
+            } else {
+                HLStyle::None
+            }
+        } else {
+            HLStyle::None
+        }
+    }
+
+    fn params_mut(&mut self) -> &mut dyn Parameters {
+        &mut *self.params
+    }
+    fn params(&self) -> &dyn Parameters {
+        &*self.params
     }
 //    fn emit_event(&self, event: UIEvent) {
 //    }
 }
 
 impl DemoUI {
+    fn get_zone_at(&self, pos: (f64, f64)) -> Option<ActiveZone> {
+        if let Some(zones) = self.zones.as_ref() {
+            let mut zone : Option<ActiveZone> = None;
+
+            for z in zones {
+                if let Some(id) = z.id_if_inside(pos) {
+                    zone = Some(*z);
+                    break;
+                }
+            }
+
+            zone
+        } else {
+            None
+        }
+    }
+
     fn dispatch<F>(&mut self, f: F) where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
-        let mut data  = self.main.take();
-        let mut zones = self.zones.take();
+        let mut data    = self.main.take();
+        let mut zones   = self.zones.take();
+        let mut params  = self.params.take();
 
         if let Some(mut data) = data {
-            let mut zones = zones.unwrap();
+            let mut zones  = zones.unwrap();
+            let mut params = params.unwrap();
             zones.clear();
 
             let w_type_id = data.0;
             let wt        = &self.types[w_type_id];
             let mut wui   = WidgetUIHolder {
-                types: &self.types,
+                types:      &self.types,
+                hover_zone: self.hover_zone,
+                params,
                 zones,
             };
 
             f(&mut wui, &mut data.1, wt.as_ref());
 
-            self.zones = Some(wui.zones);
-            self.main  = Some(data);
+            self.zones  = Some(wui.zones);
+            self.main   = Some(data);
+            self.params = Some(wui.params);
         }
     }
 }
@@ -147,6 +223,7 @@ impl WindowUI for DemoUI {
         match event {
             InputEvent::MousePosition(x, y) => {
                 self.last_mouse = (x, y);
+                self.hover_zone = self.get_zone_at(self.last_mouse);
                 // TODO:
                 //   - determine hover zone here
                 //   - remember to redraw if the hover zone changed
@@ -154,29 +231,15 @@ impl WindowUI for DemoUI {
             InputEvent::MouseButtonPressed(btn) => {
                 let mut dispatch_event : Option<UIEvent> = None;
 
-                if let Some(zones) = self.zones.as_ref() {
-                    for z in zones {
-                        if let Some(id) = z.id_if_inside(self.last_mouse.0, self.last_mouse.1) {
-                            dispatch_event =
-                                Some(UIEvent::Click {
-                                    id,
-                                    button: MButton::Left,
-                                    x: self.last_mouse.0,
-                                    y: self.last_mouse.1,
-                                });
-                            break;
-                        }
-                        // TODO:
-                        // check if inside zone
-                        // if true:
-                        //     remember ID
-                        //     execute event() call tree with self.main.take() Data
-                        //     remember to redraw
-                        println!("CHECK {:?}", z);
-                    }
-                }
-
-                if let Some(event) = dispatch_event {
+                let az = self.get_zone_at(self.last_mouse);
+                if let Some(az) = az {
+                    let event =
+                        UIEvent::Click {
+                            id: az.id,
+                            button: MButton::Left,
+                            x: self.last_mouse.0,
+                            y: self.last_mouse.1,
+                        };
                     self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
                         wt.event(ui, data, event);
                     });
@@ -204,6 +267,8 @@ fn main() {
             types: vec![],
             zones: Some(vec![]),
             last_mouse: (0.0, 0.0),
+            hover_zone: None,
+            params: Some(Box::new(SomeParameters { params: [0.0; 10] })),
             main:
                 Some(Box::new((0, hexotk::WidgetData::new(
                     10,

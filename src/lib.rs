@@ -72,14 +72,18 @@ pub enum MButton {
 
 #[derive(Debug, Clone, Copy)]
 pub struct ActiveZone {
-    id:         usize,
-    pos:        Rect,
-    zone_type:  ZoneType,
+    pub id:         usize,
+    pub pos:        Rect,
+    pub zone_type:  ZoneType,
 }
 
 impl ActiveZone {
-    pub fn new_drag_zone(id: usize, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::ValueDrag }
+    pub fn new_drag_zone(id: usize, pos: Rect, coarse: bool) -> Self {
+        if coarse {
+            Self { id, pos, zone_type: ZoneType::ValueDragCoarse }
+        } else {
+            Self { id, pos, zone_type: ZoneType::ValueDragFine }
+        }
     }
 
     pub fn new_input_zone(id: usize, pos: Rect) -> Self {
@@ -93,14 +97,15 @@ impl ActiveZone {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ZoneType {
-    ValueDrag,
+    ValueDragFine,
+    ValueDragCoarse,
     ValueInput,
     Click,
 }
 
 impl ActiveZone {
-    pub fn id_if_inside(&self, x: f64, y: f64) -> Option<usize> {
-        if self.pos.is_inside(x, y) {
+    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<usize> {
+        if self.pos.is_inside(pos.0, pos.1) {
             Some(self.id)
         } else {
             None
@@ -112,11 +117,18 @@ impl ActiveZone {
     }
 }
 
+pub trait Parameters {
+    fn len(&self) -> usize;
+    fn get(&self, id: usize) -> f32;
+    fn set(&mut self, id: usize, v: f32);
+    fn fmt(&self, id: usize, buf: &mut [u8]);
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum HLStyle {
     None,
     Inactive,
-    Hover(i8),
+    Hover(ZoneType),
     ModTarget,
     HoverModTarget,
 }
@@ -165,6 +177,9 @@ pub trait WidgetUI {
     fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
+    fn params(&self) -> &dyn Parameters;
+    fn params_mut(&mut self) -> &mut dyn Parameters;
+
 //    fn emit_event(&self, event: UIEvent);
 }
 
