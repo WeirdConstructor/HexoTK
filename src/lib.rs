@@ -57,6 +57,15 @@ impl Rect {
         Self { x, y, w, h }
     }
 
+    pub fn offs(&self, x: f64, y: f64) -> Self {
+        Self {
+            x: self.x + x,
+            y: self.y + y,
+            w: self.w,
+            h: self.h,
+        }
+    }
+
     pub fn is_inside(&self, x: f64, y: f64) -> bool {
            x >= self.x && x <= (self.x + self.w)
         && y >= self.y && y <= (self.y + self.h)
@@ -122,6 +131,9 @@ pub trait Parameters {
     fn get(&self, id: usize) -> f32;
     fn set(&mut self, id: usize, v: f32);
     fn fmt(&self, id: usize, buf: &mut [u8]);
+    fn change_start(&mut self, id: usize);
+    fn change(&mut self, id: usize, v: f32, single: bool);
+    fn change_end(&mut self, id: usize, v: f32);
 }
 
 #[derive(Debug, Clone, Copy)]

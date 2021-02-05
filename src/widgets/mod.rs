@@ -34,6 +34,8 @@ pub struct ButtonData {
 impl WidgetType for Button {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         ui.define_active_zone(ActiveZone::new_click_zone(10, pos));
+        let pos2 = pos.offs(0.0, 20.0);
+        ui.define_active_zone(ActiveZone::new_drag_zone(10, pos2, true));
 
         let hl = ui.hl_style_for(10);
 
@@ -45,7 +47,9 @@ impl WidgetType for Button {
                 };
 
             p.label(20.0, 0, clr, pos.x, pos.y, pos.w, pos.h, &data.label);
-            p.label(20.0, 0, clr, pos.x, pos.y + 20.0, pos.w, pos.h, &format!("VL: {}", data.counter));
+            p.label(20.0, 1, clr, pos.x, pos.y + 20.0, pos.w, pos.h, &format!("VL: {}", data.counter));
+            p.label(20.0,-1, clr, pos.x, pos.y + 40.0, pos.w, pos.h,
+                &format!("V: {:6.4}", ui.params().get(10)));
         });
     }
 

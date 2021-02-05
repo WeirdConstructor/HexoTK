@@ -3,6 +3,9 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::io::BufWriter;
 
+const DEFAULT_COARSE_STEP : f32 = 0.05;
+const DEFAULT_FINE_STEP   : f32 = 0.01;
+
 struct OpDesc {
     // - Description for module
     // - Ports
@@ -70,8 +73,14 @@ struct DemoUI {
     main:       Option<Box<(usize, WidgetData)>>,
     zones:      Option<Vec<ActiveZone>>,
     hover_zone: Option<ActiveZone>,
-    last_mouse: (f64, f64),
+    mouse_pos:  (f64, f64),
     params:     Option<Box<dyn Parameters>>,
+    input_mode: Option<InputMode>,
+    mod_keys:   ModifierKeys,
+}
+
+struct ModifierKeys {
+    fine_drag_key: bool,
 }
 
 struct WidgetUIHolder<'a> {
@@ -79,16 +88,28 @@ struct WidgetUIHolder<'a> {
     zones:          Vec<ActiveZone>,
     hover_zone:     Option<ActiveZone>,
     params:         Box<dyn Parameters>,
+    input_mode:     Option<InputMode>,
 }
 
 struct SomeParameters {
-    params: [f32; 10],
+    params: [f32; 100],
 }
 
 impl Parameters for SomeParameters {
     fn len(&self) -> usize { self.params.len() }
     fn get(&self, id: usize) -> f32 { self.params[id] }
     fn set(&mut self, id: usize, v: f32) { self.params[id] = v; }
+    fn change_start(&mut self, id: usize) {
+        println!("CHANGE START: {}", id);
+    }
+    fn change(&mut self, id: usize, v: f32, single: bool) {
+        println!("CHANGE: {},{} ({})", id, v, single);
+        self.set(id, v);
+    }
+    fn change_end(&mut self, id: usize, v: f32) {
+        println!("CHANGE END: {},{}", id, v);
+        self.set(id, v);
+    }
     fn fmt(&self, id: usize, buf: &mut [u8]) {
         // TODO
     }
@@ -98,9 +119,11 @@ impl Parameters for SomeParameters {
 enum InputMode {
     None,
     ValueDrag {
+        value:          f32,
+        step_dt:        f32,
         zone:           ActiveZone,
         orig_pos:       (f64, f64),
-        pre_fine_delta: f64,
+        pre_fine_delta: f32,
         fine_key:       bool
     },
     SelectMod  { zone: ActiveZone },
@@ -168,9 +191,10 @@ impl DemoUI {
     }
 
     fn dispatch<F>(&mut self, f: F) where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
-        let mut data    = self.main.take();
-        let mut zones   = self.zones.take();
-        let mut params  = self.params.take();
+        let mut data        = self.main.take();
+        let mut zones       = self.zones.take();
+        let mut params      = self.params.take();
+        let mut input_mode  = self.input_mode.take();
 
         if let Some(mut data) = data {
             let mut zones  = zones.unwrap();
@@ -179,18 +203,21 @@ impl DemoUI {
 
             let w_type_id = data.0;
             let wt        = &self.types[w_type_id];
-            let mut wui   = WidgetUIHolder {
-                types:      &self.types,
-                hover_zone: self.hover_zone,
-                params,
-                zones,
-            };
+            let mut wui   =
+                WidgetUIHolder {
+                    types:      &self.types,
+                    hover_zone: self.hover_zone,
+                    params,
+                    zones,
+                    input_mode,
+                };
 
             f(&mut wui, &mut data.1, wt.as_ref());
 
-            self.zones  = Some(wui.zones);
-            self.main   = Some(data);
-            self.params = Some(wui.params);
+            self.zones      = Some(wui.zones);
+            self.main       = Some(data);
+            self.params     = Some(wui.params);
+            self.input_mode = wui.input_mode;
         }
     }
 }
@@ -219,34 +246,112 @@ impl WindowUI for DemoUI {
     }
 
     fn handle_input_event(&mut self, event: InputEvent) {
+        let mut dispatch_event = None;
+
         println!("INPUT: {:?}", event);
         match event {
             InputEvent::MousePosition(x, y) => {
-                self.last_mouse = (x, y);
-                self.hover_zone = self.get_zone_at(self.last_mouse);
-                // TODO:
-                //   - determine hover zone here
-                //   - remember to redraw if the hover zone changed
+                self.mouse_pos = (x, y);
+
+                self.hover_zone = None;
+
+                let mut new_hz = None;
+                let mut param_change = None;
+
+                if let Some(input_mode) = &self.input_mode {
+                    match input_mode {
+                        InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
+                                               fine_key, orig_pos, .. } => {
+
+                            let distance = (orig_pos.1 - self.mouse_pos.1) as f32;
+                            let steps =
+                                if *fine_key { distance / 25.0 }
+                                else         { distance / 10.0 };
+
+                            param_change =
+                                Some((
+                                    zone.id,
+                                    (value + steps * step_dt + pre_fine_delta)
+                                    .max(0.0).min(1.0)
+                                ));
+                        },
+                        _ => {
+                            new_hz = self.get_zone_at(self.mouse_pos);
+                        },
+                    }
+                }
+
+                if let Some((id, val)) = param_change {
+                    self.params.as_mut().unwrap().change(id, val, false);
+                }
+
+                self.hover_zone = new_hz;
+            },
+            InputEvent::MouseButtonReleased(btn) => {
+                let az = self.get_zone_at(self.mouse_pos);
+
+                if let Some(az) = az {
+                    match az.zone_type {
+                        ZoneType::Click => {
+                            dispatch_event =
+                                Some(UIEvent::Click {
+                                    id:     az.id,
+                                    button: btn,
+                                    x:      self.mouse_pos.0,
+                                    y:      self.mouse_pos.1,
+                                });
+                        },
+                        _ => {},
+                    }
+                }
+
+                // TODO: Handle drag mode end!
+
+                self.input_mode = None;
             },
             InputEvent::MouseButtonPressed(btn) => {
-                let mut dispatch_event : Option<UIEvent> = None;
+                let az = self.get_zone_at(self.mouse_pos);
 
-                let az = self.get_zone_at(self.last_mouse);
                 if let Some(az) = az {
-                    let event =
-                        UIEvent::Click {
-                            id: az.id,
-                            button: MButton::Left,
-                            x: self.last_mouse.0,
-                            y: self.last_mouse.1,
-                        };
-                    self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
-                        wt.event(ui, data, event);
-                    });
+                    if let MButton::Left = btn {
+                        match az.zone_type {
+                            ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
+                                let step_dt =
+                                    if let ZoneType::ValueDragCoarse = az.zone_type {
+                                        DEFAULT_COARSE_STEP
+                                    } else {
+                                        DEFAULT_FINE_STEP
+                                    };
+
+                                let v = self.params.as_mut().unwrap().get(az.id);
+
+                                self.input_mode =
+                                    Some(InputMode::ValueDrag {
+                                        step_dt,
+                                        value:          v,
+                                        orig_pos:       self.mouse_pos,
+                                        zone:           az,
+                                        fine_key:       self.mod_keys.fine_drag_key,
+                                        pre_fine_delta: 0.0,
+                                    });
+
+                                self.params.as_mut().unwrap().change_start(az.id);
+                            },
+                            _ => {},
+                        }
+                    }
                 }
 
             },
             _ => {},
+        }
+
+        if let Some(event) = dispatch_event {
+            self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData,
+                           wt: &dyn WidgetType| {
+
+                wt.event(ui, data, event);
+            });
         }
     }
 
@@ -264,11 +369,16 @@ impl WindowUI for DemoUI {
 fn main() {
     open_window("HexoTK Demo", 400, 400, None, Box::new(|| {
         let mut ui = Box::new(DemoUI {
-            types: vec![],
-            zones: Some(vec![]),
-            last_mouse: (0.0, 0.0),
+            types:      vec![],
+            zones:      Some(vec![]),
+            mouse_pos:  (0.0, 0.0),
             hover_zone: None,
-            params: Some(Box::new(SomeParameters { params: [0.0; 10] })),
+            input_mode: None,
+            params:     Some(Box::new(SomeParameters { params: [0.0; 100] })),
+            mod_keys:
+                ModifierKeys {
+                    fine_drag_key: false
+                },
             main:
                 Some(Box::new((0, hexotk::WidgetData::new(
                     10,
