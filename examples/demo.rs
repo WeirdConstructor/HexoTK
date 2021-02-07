@@ -135,6 +135,29 @@ enum InputMode {
     GetHelp,
 }
 
+impl InputMode {
+    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(usize, f32)> {
+        match self {
+            InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
+                                   fine_key, orig_pos, .. } => {
+
+                let distance = (orig_pos.1 - mouse_pos.1) as f32;
+                let steps =
+                    if *fine_key { distance / 25.0 }
+                    else         { distance / 10.0 };
+
+                Some((
+                    zone.id,
+                    (value + steps * step_dt + pre_fine_delta)
+                    .max(0.0).min(1.0)
+                ))
+            },
+            _ => None,
+        }
+    }
+}
+
+
 
 impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn define_active_zone(&mut self, az: ActiveZone) {
@@ -178,9 +201,37 @@ impl DemoUI {
             let mut zone : Option<ActiveZone> = None;
 
             for z in zones {
-                if let Some(id) = z.id_if_inside(pos) {
-                    zone = Some(*z);
-                    break;
+                match z.zone_type {
+                    ZoneType::HexFieldClick { tile_size, .. } => {
+                        println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
+                        if let Some(id) = z.id_if_inside(pos) {
+                            let xhex = pos.0 - z.pos.x as f64;
+                            let yhex = pos.1 - z.pos.y as f64;
+
+                            let xhex = xhex / (tile_size * (3.0_f64).sqrt());
+                            let yhex = yhex / (tile_size * (3.0_f64).sqrt());
+
+                            let temp = (xhex + (3.0_f64).sqrt() * yhex + 1.0).floor();
+                            let q = (((2.0 * xhex + 1.0).floor() + temp) / 3.0).floor();
+                            let r = ((temp + (-xhex + (3.0_f64).sqrt() * yhex + 1.0).floor()) / 3.0).floor();
+
+                            println!("q={}, r={}", q, r);
+
+                            let mut new_az = *z;
+                            new_az.zone_type = ZoneType::HexFieldClick {
+                                tile_size,
+                                pos: (2, 2),
+                            };
+                            zone = Some(new_az);
+                            break;
+                        }
+                    },
+                    _ => {
+                        if let Some(id) = z.id_if_inside(pos) {
+                            zone = Some(*z);
+                            break;
+                        }
+                    },
                 }
             }
 
@@ -259,26 +310,14 @@ impl WindowUI for DemoUI {
                 let mut param_change = None;
 
                 if let Some(input_mode) = &self.input_mode {
-                    match input_mode {
-                        InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
-                                               fine_key, orig_pos, .. } => {
+                    if let Some(pc) = input_mode.get_param_change_when_drag(self.mouse_pos) {
 
-                            let distance = (orig_pos.1 - self.mouse_pos.1) as f32;
-                            let steps =
-                                if *fine_key { distance / 25.0 }
-                                else         { distance / 10.0 };
-
-                            param_change =
-                                Some((
-                                    zone.id,
-                                    (value + steps * step_dt + pre_fine_delta)
-                                    .max(0.0).min(1.0)
-                                ));
-                        },
-                        _ => {
-                            new_hz = self.get_zone_at(self.mouse_pos);
-                        },
-                    }
+                        param_change = Some(pc);
+                    } else {
+                        new_hz = self.get_zone_at(self.mouse_pos);
+                    };
+                } else {
+                    new_hz = self.get_zone_at(self.mouse_pos);
                 }
 
                 if let Some((id, val)) = param_change {
@@ -288,20 +327,29 @@ impl WindowUI for DemoUI {
                 self.hover_zone = new_hz;
             },
             InputEvent::MouseButtonReleased(btn) => {
-                let az = self.get_zone_at(self.mouse_pos);
+                if let Some(input_mode) = self.input_mode.take() {
+                    if let Some((id, val)) =
+                        input_mode.get_param_change_when_drag(self.mouse_pos) {
 
-                if let Some(az) = az {
-                    match az.zone_type {
-                        ZoneType::Click => {
-                            dispatch_event =
-                                Some(UIEvent::Click {
-                                    id:     az.id,
-                                    button: btn,
-                                    x:      self.mouse_pos.0,
-                                    y:      self.mouse_pos.1,
-                                });
-                        },
-                        _ => {},
+                        self.params.as_mut().unwrap().change_end(id, val);
+                    }
+
+                } else {
+                    let az = self.get_zone_at(self.mouse_pos);
+
+                    if let Some(az) = az {
+                        match az.zone_type {
+                            ZoneType::Click => {
+                                dispatch_event =
+                                    Some(UIEvent::Click {
+                                        id:     az.id,
+                                        button: btn,
+                                        x:      self.mouse_pos.0,
+                                        y:      self.mouse_pos.1,
+                                    });
+                            },
+                            _ => {},
+                        }
                     }
                 }
 
@@ -358,7 +406,7 @@ impl WindowUI for DemoUI {
     fn draw(&mut self, painter: &mut dyn Painter) {
         painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
-            wt.draw(ui, data, painter, Rect::from(100.0, 100.0, 50.0, 20.0));
+            wt.draw(ui, data, painter, Rect::from(30.0, 30.0, 600.0, 320.0));
         });
     }
 
@@ -367,7 +415,7 @@ impl WindowUI for DemoUI {
 }
 
 fn main() {
-    open_window("HexoTK Demo", 400, 400, None, Box::new(|| {
+    open_window("HexoTK Demo", 800, 700, None, Box::new(|| {
         let mut ui = Box::new(DemoUI {
             types:      vec![],
             zones:      Some(vec![]),
@@ -380,15 +428,18 @@ fn main() {
                     fine_drag_key: false
                 },
             main:
-                Some(Box::new((0, hexotk::WidgetData::new(
+//                Some(Box::new((0, hexotk::WidgetData::new(
+                Some(Box::new((1, hexotk::WidgetData::new(
                     10,
-                    Box::new(hexotk::widgets::ButtonData {
-                        label:  String::from("UWU"),
-                        counter: 0,
-                    })))))
+                    Box::new(hexotk::widgets::HexGridData { })))))
+//                    Box::new(hexotk::widgets::ButtonData {
+//                        label:  String::from("UWU"),
+//                        counter: 0,
+//                    })))))
         });
 
         ui.add_widget_type(0, Box::new(hexotk::widgets::Button { }));
+        ui.add_widget_type(1, Box::new(hexotk::widgets::HexGrid { }));
 
         ui
     }));

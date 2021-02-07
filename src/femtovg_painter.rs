@@ -16,6 +16,7 @@ pub struct FemtovgPainter<'a> {
     pub canvas:     &'a mut Canvas<OpenGl>,
     pub font:       FontId,
     pub font_mono:  FontId,
+//    pub images:     Vec<Option<ImageId>>,
     pub scale:      f32,
 }
 
@@ -52,6 +53,15 @@ impl<'a> FemtovgPainter<'a> {
 }
 
 impl<'a> Painter for FemtovgPainter<'a> {
+//    fn start_imgbuf(&mut self, global_id: usize, w: usize, h: usize) {
+//    }
+//
+//    fn stop_imgbuf(&mut self) {
+//    }
+//
+//    fn imgbuf(&mut self, global_id: usize, x: f64, y: f64) {
+//    }
+
     fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool) {
         let mut p = femtovg::Path::new();
         let mut paint = color_paint(color);

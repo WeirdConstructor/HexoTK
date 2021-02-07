@@ -13,6 +13,9 @@ mod window;
 mod constants;
 mod femtovg_painter;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use keyboard_types::{Key, KeyboardEvent};
 
 pub use window::open_window;
@@ -42,10 +45,10 @@ impl WidgetData {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Rect {
-    x: f64,
-    y: f64,
-    w: f64,
-    h: f64,
+    pub x: f64,
+    pub y: f64,
+    pub w: f64,
+    pub h: f64,
 }
 
 impl Rect {
@@ -95,6 +98,10 @@ impl ActiveZone {
         }
     }
 
+    pub fn new_hex_field(id: usize, pos: Rect, tile_size: f64) -> Self {
+        Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, pos: (0, 0) } }
+    }
+
     pub fn new_input_zone(id: usize, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::ValueInput }
     }
@@ -109,6 +116,7 @@ pub enum ZoneType {
     ValueDragFine,
     ValueDragCoarse,
     ValueInput,
+    HexFieldClick { tile_size: f64, pos: (usize, usize), },
     Click,
 }
 
@@ -162,6 +170,10 @@ pub enum WidgetEvent {
 }
 
 pub trait Painter {
+//    fn start_imgbuf(&mut self, global_id: usize, w: usize, h: usize);
+//    fn stop_imgbuf(&mut self);
+//    fn imgbuf(&mut self, global_id: usize, x: f64, y: f64);
+
     fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool);
     fn path_stroke(&mut self, width: f64, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool);
     fn arc_stroke(&mut self, width: f64, color: (f64, f64, f64), radius: f64, from_rad: f64, to_rad: f64, x: f64, y: f64);

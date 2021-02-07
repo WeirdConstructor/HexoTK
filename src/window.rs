@@ -28,7 +28,7 @@ use baseview::{
 use crate::{InputEvent, MButton, WindowUI};
 
 struct FrameTimeMeasurement {
-    buf: [u128; 60],
+    buf: [u128; 240],
     idx: usize,
     cur: Option<std::time::Instant>,
     lbl: String,
@@ -37,7 +37,7 @@ struct FrameTimeMeasurement {
 impl FrameTimeMeasurement {
     fn new(lbl: &str) -> Self {
         Self {
-            buf: [0; 60],
+            buf: [0; 240],
             idx: 0,
             cur: None,
             lbl: lbl.to_string(),
@@ -210,6 +210,7 @@ impl WindowHandler for GUIWindowHandler {
             self.ui.draw(&mut FemtovgPainter {
                 canvas:     &mut self.canvas,
                 font:       self.font,
+//                images:     vec![],
                 font_mono:  self.font_mono,
                 scale:      self.scale,
             });
@@ -230,6 +231,7 @@ impl WindowHandler for GUIWindowHandler {
         self.canvas.fill_path(&mut path, img_paint);
 
         self.canvas.flush();
+
         self.context.swap_buffers();
 
         if redraw {
