@@ -173,13 +173,21 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn release_focus(&mut self) {
     }
 
-    fn hl_style_for(&mut self, az_id: usize) -> HLStyle {
+    fn hover_zone_for(&self, az_id: usize) -> Option<ActiveZone> {
         if let Some(hz) = self.hover_zone {
             if hz.id == az_id {
-                HLStyle::Hover(hz.zone_type)
+                Some(hz)
             } else {
-                HLStyle::None
+                None
             }
+        } else {
+            None
+        }
+    }
+
+    fn hl_style_for(&self, az_id: usize) -> HLStyle {
+        if let Some(hz) = self.hover_zone_for(az_id) {
+            HLStyle::Hover(hz.zone_type)
         } else {
             HLStyle::None
         }
@@ -249,7 +257,7 @@ impl DemoUI {
                             let mut new_az = *z;
                             new_az.zone_type = ZoneType::HexFieldClick {
                                 tile_size,
-                                pos: (2, 2),
+                                pos: (i as usize, j as usize),
                             };
                             zone = Some(new_az);
                             break;

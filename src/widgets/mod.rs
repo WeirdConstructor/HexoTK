@@ -97,7 +97,16 @@ impl WidgetType for HexGrid {
         let w    = 2.0_f64 * size;
         let h    = (3.0_f64).sqrt() * size;
 
-        let marked = (1,1);
+        let marked =
+            if let Some(az) = ui.hover_zone_for(11) {
+                if let ZoneType::HexFieldClick { pos, ..} = az.zone_type {
+                    pos
+                } else {
+                    (0, 0)
+                }
+            } else {
+                (0, 0)
+            };
 
         data.with(|data: &mut HexGridData| {
             p.rect_fill(
@@ -139,13 +148,17 @@ impl WidgetType for HexGrid {
                             (0.75 * w + xo - pad, 1.5 * h + yo - pad),
                             (0.25 * w + xo + pad, 1.5 * h + yo - pad),
                         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
+//                    p.rect_fill((1.0, 1.0, 1.0), 
+//                        (pos.x + x * 0.75 * w).floor(),
+//                        (pos.y + h + y * h).floor(),
+//                        2.0, 2.0);
                     p.label(
-                        10.0, 0, (0.5, 1.0, 0.0),
+                        20.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
                         (pos.x + x * 0.75 * w).floor(),
-                        (pos.y + h + y * h).floor(),
+                        (pos.y + h + y * h - 10.0).floor(),
                         w,
                         20.0,
-                        "test");
+                        "Test");
                 }
             }
 

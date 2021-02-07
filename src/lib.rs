@@ -197,7 +197,8 @@ pub trait WindowUI {
 
 pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
-    fn hl_style_for(&mut self, az_id: usize) -> HLStyle;
+    fn hl_style_for(&self, az_id: usize) -> HLStyle;
+    fn hover_zone_for(&self, az_id: usize) -> Option<ActiveZone>;
     fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
