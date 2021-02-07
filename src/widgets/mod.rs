@@ -113,8 +113,8 @@ impl WidgetType for HexGrid {
 
                 for yi in 0..ny {
                     let y =
-                        if xi % 2 == 0 { yi as f64 }
-                        else           { yi as f64 - 0.5 };
+                        if xi % 2 == 0 { yi as f64 - 0.5 }
+                        else           { yi as f64 };
 
                     let (line, clr) =
                         if marked.0 == xi && marked.1 == yi {

@@ -205,17 +205,46 @@ impl DemoUI {
                     ZoneType::HexFieldClick { tile_size, .. } => {
                         println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
                         if let Some(id) = z.id_if_inside(pos) {
-                            let xhex = pos.0 - z.pos.x as f64;
-                            let yhex = pos.1 - z.pos.y as f64;
+                            let x = pos.0 - z.pos.x as f64;
+                            let y = pos.1 - z.pos.y as f64;
 
-                            let xhex = xhex / (tile_size * (3.0_f64).sqrt());
-                            let yhex = yhex / (tile_size * (3.0_f64).sqrt());
+                            // https://web.archive.org/web/20161024224848/http://gdreflections.com/2011/02/hexagonal-grid-math.html
+                            let side   = ((tile_size * 3.0) / 2.0).floor();
+                            let radius = tile_size;
+                            let width  = tile_size * 2.0;
+                            let height = (tile_size * (3.0_f64).sqrt()).floor();
 
-                            let temp = (xhex + (3.0_f64).sqrt() * yhex + 1.0).floor();
-                            let q = (((2.0 * xhex + 1.0).floor() + temp) / 3.0).floor();
-                            let r = ((temp + (-xhex + (3.0_f64).sqrt() * yhex + 1.0).floor()) / 3.0).floor();
+                            let ci = (x / side).floor();
+                            let cx = x - side * ci;
 
-                            println!("q={}, r={}", q, r);
+                            let ty = (y - (ci as usize % 2) as f64 * height / 2.0).floor();
+                            let cj = (ty / height).floor();
+                            let cy = (ty - height * cj).floor();
+
+                            let (i, j) =
+                                if cx > (radius / 2.0 - radius * cy / height).abs() {
+                                    (ci, cj)
+                                } else {
+                                    (ci - 1.0,
+                                     cj + (ci % 2.0)
+                                        - (if cy < height / 2.0 { 1.0 } else { 0.0 }))
+                                };
+
+//                            let x = (x - tile_size) / (2.0 * tile_size);
+//                            let t1 = y / tile_size;
+//                            let t2 = (x + t1).floor();
+//                            let r = (((t1 - x).floor() + t2) / 3.0).floor();
+//                            let q = (((2.0 * x + 1.0).floor() + t2) / 3.0).floor() - r;
+
+//                            let x = x / (tile_size * (3.0_f64).sqrt());
+//                            let y = y / (tile_size * (3.0_f64).sqrt());
+//
+//                            let temp = (x + (3.0_f64).sqrt() * y + 1.0).floor();
+//                            let q = (((2.0 * x + 1.0).floor() + temp) / 3.0).floor();
+//                            let r = ((temp + (-x + (3.0_f64).sqrt() * y + 1.0).floor()) / 3.0).floor();
+
+//                            println!("q={}, r={}", q, r);
+                            println!("i={}, j={}", i, j);
 
                             let mut new_az = *z;
                             new_az.zone_type = ZoneType::HexFieldClick {
