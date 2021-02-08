@@ -76,6 +76,7 @@ impl<'a> FemtovgPainter<'a> {
 
         let mut p = femtovg::Path::new();
         let mut paint2 = color_paint((1.0, 1.0, 1.0));
+        p.rect((x - 1.0) as f32, (y - 1.0) as f32, 2.0, 2.0);
         p.rect(((x + 0.5 * w) - 1.0) as f32, ((y + 0.5 * h) - 1.0) as f32, 2.0, 2.0);
         self.canvas.stroke_path(&mut p, paint2);
 

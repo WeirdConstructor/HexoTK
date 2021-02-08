@@ -87,15 +87,18 @@ pub struct HexGridData {
 
 impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let size = 40.0_f64;
+        let size = 60.0_f64;
 
         ui.define_active_zone(ActiveZone::new_hex_field(11, pos, size));
 //        let pos2 = pos.offs(0.0, 20.0);
 //        ui.define_active_zone(ActiveZone::new_drag_zone(10, pos2, true));
 
 //        let hl = ui.hl_style_for(10);
-        let w    = 2.0_f64 * size;
+        let pad  = 10.0;
+        let w    = 2.0_f64          * size;
         let h    = (3.0_f64).sqrt() * size;
+        let w_in = 2.0_f64          * (size - pad);
+        let h_in = (3.0_f64).sqrt() * (size - pad);
 
         let marked =
             if let Some(az) = ui.hover_zone_for(11) {
@@ -132,36 +135,69 @@ impl WidgetType for HexGrid {
                             (3.0, (77.0 / 255.0, 24.0 / 255.0, 74.0 / 255.0))
                         };
 
-                    let pad = 3.0;
+                    let pad  = 12.0;
+                    let padw = pad;
+                    let padh = 0.5 * (3.0_f64).sqrt() * pad;
 
-                    let xo = pos.x + x * 0.75 * w;
-                    let yo = pos.y + y * h;
+                    let xo = pos.x + x * 0.75 * w + size;
+                    let yo = pos.y + (1.00 + y) * h;
 
                     p.path_stroke(
                         line,
                         clr,
                         &mut ([
-                            (0.0      + xo + pad,       h + yo),
-                            (0.25 * w + xo + pad, 0.5 * h + yo + pad),
-                            (0.75 * w + xo - pad, 0.5 * h + yo + pad),
-                            (       w + xo - pad,       h + yo),
-                            (0.75 * w + xo - pad, 1.5 * h + yo - pad),
-                            (0.25 * w + xo + pad, 1.5 * h + yo - pad),
+                            (xo - 0.50 * w_in, yo          ),
+                            (xo - 0.25 * w_in, yo - 0.5 * h_in),
+                            (xo + 0.25 * w_in, yo - 0.5 * h_in),
+                            (xo + 0.50 * w_in, yo          ),
+                            (xo + 0.25 * w_in, yo + 0.5 * h_in),
+                            (xo - 0.25 * w_in, yo + 0.5 * h_in),
                         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 //                    p.rect_fill((1.0, 1.0, 1.0), 
 //                        (pos.x + x * 0.75 * w).floor(),
 //                        (pos.y + h + y * h).floor(),
 //                        2.0, 2.0);
                     let th = 20.0;
+                    let center = (
+                        pos.x + x * 0.75 * w,
+                        pos.y + h + y * h - th * 0.5,
+                    );
+
+
                     p.label_rot(
-                        20.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
-                        (pos.x + (w / 3.0) - (th / 2.0) + x * 0.75 * w).floor(),
-                        (pos.y + y * h).floor(),
-//                        (pos.x + x * 0.75 * w).floor(),
-//                        (pos.y + h + y * h - 10.0).floor(),
-                        w,
-                        th,
-                        "Test");
+                        20.0, 0, 0.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0.floor(),
+                        center.1.floor(),
+                        w, th, "CENTER");
+
+
+                    p.label_rot(
+                        20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0.floor() + (0.75) * size - pad,
+                        center.1.floor() - 0.25 * h,
+                        w, th, "BR");
+
+//                    p.label_rot(
+//                        // center
+//                        // 20.0, 0, 0.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+//                        // (pos.x + x * 0.75 * w).floor(),
+//                        // (pos.y + h + y * h - th * 0.5).floor(),
+//
+//                        // top right
+//                        20.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+//                        (pos.x + x * 0.75 * w    ).floor(),
+//                        (pos.y + y * h        + h - 0.5 * th).floor(),
+//
+//                        // bottom right
+////                         20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+////                         (pos.x + (w / 3.0) - (th / 2.0) + x * 0.75 * w).floor(),
+////                         (pos.y + y * h + h).floor(),
+//
+////                        (pos.x + x * 0.75 * w).floor(),
+////                        (pos.y + h + y * h - 10.0).floor(),
+//                        w,
+//                        th,
+//                        "Test");
                 }
             }
 
