@@ -158,24 +158,20 @@ impl WidgetType for HexGrid {
 //                        (pos.y + h + y * h).floor(),
 //                        2.0, 2.0);
                     let th = 20.0;
-                    let center = (
-                        pos.x + x * 0.75 * w,
-                        pos.y + h + y * h - th * 0.5,
-                    );
+                    let tw = w;
+                    let center = (xo - 0.5 * tw, yo - 0.5 * th);
 
 
                     p.label_rot(
-                        20.0, 0, 0.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
-                        center.0.floor(),
-                        center.1.floor(),
-                        w, th, "CENTER");
+                        20.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0, center.1, w, th, "CENTER");
 
 
-                    p.label_rot(
-                        20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
-                        center.0.floor() + (0.75) * size - pad,
-                        center.1.floor() - 0.25 * h,
-                        w, th, "BR");
+//                    p.label_rot(
+//                        20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+//                        center.0.floor() + (0.75) * size - pad,
+//                        center.1.floor() - 0.25 * h,
+//                        w, th, "BR");
 
 //                    p.label_rot(
 //                        // center
