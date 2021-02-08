@@ -29,12 +29,36 @@ fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
 }
 
 impl<'a> FemtovgPainter<'a> {
-    fn label_with_font(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, font: FontId) {
+    fn label_with_font(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, font: FontId) {
         let mut paint = color_paint(color);
         paint.set_font(&[font]);
         paint.set_font_size(size as f32);
         paint.set_text_baseline(femtovg::Baseline::Middle);
         let x = x.round();
+        let xo = x;
+        let yo = y;
+
+        let (x, y) =
+            if rot > 0.0 {
+                self.canvas.save();
+                let x = x as f32;
+                let y = y as f32;
+                let wh = (w / 2.0) as f32;
+                let hh = (h / 2.0) as f32;
+
+                let rot = rot.to_radians() as f32;
+
+                self.canvas.translate(x + wh, y + hh);
+                self.canvas.rotate(rot);
+
+                (-wh as f64, -hh as f64)
+            } else {
+                (x, y)
+            };
+
+        let mut p = femtovg::Path::new();
+        p.rect(x as f32, y as f32, w as f32, h as f32);
+        self.canvas.stroke_path(&mut p, paint);
         match align {
             -1 => {
                 paint.set_text_align(femtovg::Align::Left);
@@ -48,6 +72,16 @@ impl<'a> FemtovgPainter<'a> {
                 paint.set_text_align(femtovg::Align::Right);
                 self.canvas.fill_text((x + w) as f32, (y + h / 2.0).round() as f32, text, paint);
             },
+        }
+
+        let mut p = femtovg::Path::new();
+        let mut paint2 = color_paint((1.0, 1.0, 1.0));
+        p.rect(((x + 0.5 * w) - 1.0) as f32, ((y + 0.5 * h) - 1.0) as f32, 2.0, 2.0);
+        self.canvas.stroke_path(&mut p, paint2);
+
+        if rot > 0.0 {
+//            self.canvas.translate(-(0.5 * w) as f32, 0.0);
+            self.canvas.restore();
         }
     }
 }
@@ -124,11 +158,15 @@ impl<'a> Painter for FemtovgPainter<'a> {
     }
 
     fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, color, x, y, w, h, text, self.font);
+        self.label_with_font(size, align, 0.0, color, x, y, w, h, text, self.font);
+    }
+
+    fn label_rot(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
+        self.label_with_font(size, align, rot, color, x, y, w, h, text, self.font);
     }
 
     fn label_mono(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, color, x, y, w, h, text, self.font_mono);
+        self.label_with_font(size, align, 0.0, color, x, y, w, h, text, self.font_mono);
     }
 
     fn font_height(&mut self, size: f32, mono: bool) -> f32 {
