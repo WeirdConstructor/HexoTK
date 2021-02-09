@@ -443,7 +443,7 @@ impl WindowUI for DemoUI {
     fn draw(&mut self, painter: &mut dyn Painter) {
         painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
-            wt.draw(ui, data, painter, Rect::from(30.0, 30.0, 600.0, 320.0));
+            wt.draw(ui, data, painter, Rect::from(30.0, 30.0, 600.0, 440.0));
         });
     }
 

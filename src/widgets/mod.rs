@@ -87,18 +87,22 @@ pub struct HexGridData {
 
 impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let size = 60.0_f64;
+        let size = 54.0_f64;
 
         ui.define_active_zone(ActiveZone::new_hex_field(11, pos, size));
 //        let pos2 = pos.offs(0.0, 20.0);
 //        ui.define_active_zone(ActiveZone::new_drag_zone(10, pos2, true));
 
 //        let hl = ui.hl_style_for(10);
-        let pad  = 10.0;
-        let w    = 2.0_f64          * size;
-        let h    = (3.0_f64).sqrt() * size;
-        let w_in = 2.0_f64          * (size - pad);
-        let h_in = (3.0_f64).sqrt() * (size - pad);
+        let pad     = 10.0;
+        let w       = 2.0_f64          * size;
+        let h       = (3.0_f64).sqrt() * size;
+        let size_in = size - pad;
+        let w_in    = 2.0_f64          * size_in;
+        let h_in    = (3.0_f64).sqrt() * size_in;
+        let size_in2 = size * 0.5;
+        let w_in2    = 2.0_f64          * size_in2;
+        let h_in2    = (3.0_f64).sqrt() * size_in2;
 
         let marked =
             if let Some(az) = ui.hover_zone_for(11) {
@@ -135,10 +139,6 @@ impl WidgetType for HexGrid {
                             (3.0, (77.0 / 255.0, 24.0 / 255.0, 74.0 / 255.0))
                         };
 
-                    let pad  = 12.0;
-                    let padw = pad;
-                    let padh = 0.5 * (3.0_f64).sqrt() * pad;
-
                     let xo = pos.x + x * 0.75 * w + size;
                     let yo = pos.y + (1.00 + y) * h;
 
@@ -153,19 +153,73 @@ impl WidgetType for HexGrid {
                             (xo + 0.25 * w_in, yo + 0.5 * h_in),
                             (xo - 0.25 * w_in, yo + 0.5 * h_in),
                         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
+
+                    p.path_stroke(
+                        line * 0.5,
+                        clr,
+                        &mut ([
+                            (xo - 0.50 * w_in2, yo          ),
+                            (xo - 0.25 * w_in2, yo - 0.5 * h_in2),
+                            (xo + 0.25 * w_in2, yo - 0.5 * h_in2),
+                            (xo + 0.50 * w_in2, yo          ),
+                            (xo + 0.25 * w_in2, yo + 0.5 * h_in2),
+                            (xo - 0.25 * w_in2, yo + 0.5 * h_in2),
+                        ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 //                    p.rect_fill((1.0, 1.0, 1.0), 
 //                        (pos.x + x * 0.75 * w).floor(),
 //                        (pos.y + h + y * h).floor(),
 //                        2.0, 2.0);
-                    let th = 20.0;
+                    let th = 15.0;
                     let tw = w;
                     let center = (xo - 0.5 * tw, yo - 0.5 * th);
 
+                    p.label(
+                        15.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0, center.1, w, th, "Env 1");
+
+                    let th = 14.0;
+                    let center = (xo - 0.5 * tw, yo - 0.5 * th);
+
+                    p.label(
+                        10.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0, center.1 - 0.5 * h_in + 0.5 * th, w, th, "Top");
+
+                    p.label(
+                        10.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0, center.1 + 0.5 * h_in - 0.5 * th, w, th, "Bot");
+
 
                     p.label_rot(
-                        20.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
-                        center.0, center.1, w, th, "CENTER");
+                        10.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0 + 0.75 * size_in,
+                        center.1 - 0.25 * h_in,
+                        0.0,
+                        0.5 * th,
+                        w, th, "TR");
 
+                    p.label_rot(
+                        10.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0 - 0.75 * size_in,
+                        center.1 - 0.25 * h_in,
+                        0.0,
+                        0.5 * th,
+                        w, th, "TL");
+
+                    p.label_rot(
+                        10.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0 - 0.75 * size_in,
+                        center.1 + 0.25 * h_in,
+                        0.0,
+                        -0.5 * th,
+                        w, th, "BL");
+
+                    p.label_rot(
+                        10.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        center.0 + 0.75 * size_in,
+                        center.1 + 0.25 * h_in,
+                        0.0,
+                        -0.5 * th,
+                        w, th, "BR");
 
 //                    p.label_rot(
 //                        20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
