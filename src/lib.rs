@@ -174,9 +174,24 @@ pub trait Painter {
 //    fn stop_imgbuf(&mut self);
 //    fn imgbuf(&mut self, global_id: usize, x: f64, y: f64);
 
-    fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool);
-    fn path_stroke(&mut self, width: f64, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool);
-    fn arc_stroke(&mut self, width: f64, color: (f64, f64, f64), radius: f64, from_rad: f64, to_rad: f64, x: f64, y: f64);
+    fn path_fill(&mut self, color: (f64, f64, f64),
+                 segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+                 closed: bool);
+    fn path_stroke(&mut self, width: f64, color: (f64, f64, f64),
+                   segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+                   closed: bool);
+
+    fn path_fill_rot(&mut self, color: (f64, f64, f64),
+                     rot: f64, x: f64, y: f64, xo: f64, yo: f64,
+                     segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+                     closed: bool);
+    fn path_stroke_rot(&mut self, width: f64, color: (f64, f64, f64),
+                       rot: f64, x: f64, y: f64, xo: f64, yo: f64,
+                       segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+                       closed: bool);
+
+    fn arc_stroke(&mut self, width: f64, color: (f64, f64, f64), radius: f64,
+                  from_rad: f64, to_rad: f64, x: f64, y: f64);
     fn rect_fill(&mut self, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64);
     fn rect_stroke(&mut self, width: f64, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64);
     fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str);

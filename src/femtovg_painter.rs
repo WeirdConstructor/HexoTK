@@ -89,14 +89,39 @@ impl<'a> FemtovgPainter<'a> {
 }
 
 impl<'a> Painter for FemtovgPainter<'a> {
-//    fn start_imgbuf(&mut self, global_id: usize, w: usize, h: usize) {
-//    }
-//
-//    fn stop_imgbuf(&mut self) {
-//    }
-//
-//    fn imgbuf(&mut self, global_id: usize, x: f64, y: f64) {
-//    }
+    fn path_fill_rot(&mut self, color: (f64, f64, f64),
+                     rot: f64, x: f64, y: f64, xo: f64, yo: f64,
+                     segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+                     closed: bool) {
+
+        self.canvas.save();
+        let rot = rot.to_radians();
+
+        self.canvas.translate(x as f32, y as f32);
+        self.canvas.rotate(rot as f32);
+        self.canvas.translate(xo as f32, yo as f32);
+
+        self.path_fill(color, segments, closed);
+
+        self.canvas.restore();
+    }
+
+    fn path_stroke_rot(&mut self, width: f64, color: (f64, f64, f64),
+                       rot: f64, x: f64, y: f64, xo: f64, yo: f64,
+                       segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+                       closed: bool) {
+
+        self.canvas.save();
+        let rot = rot.to_radians();
+
+        self.canvas.translate(x as f32, y as f32);
+        self.canvas.rotate(rot as f32);
+        self.canvas.translate(xo as f32, yo as f32);
+
+        self.path_stroke(width, color, segments, closed);
+
+        self.canvas.restore();
+    }
 
     fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool) {
         let mut p = femtovg::Path::new();

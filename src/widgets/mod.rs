@@ -85,6 +85,10 @@ pub struct HexGrid {
 pub struct HexGridData {
 }
 
+// TODO: Develop code for the 3 output markers of a hex cell
+// TODO: Factor out hex drawing to a function, parameter: size, line width, color
+// TODO: Make the HexGrid use a trait to determine the contents of the hex cells
+// TODO: Develop a menu eg. from HexGrid (limiting the visible cells by the trait)
 impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let size = 54.0_f64;
@@ -115,6 +119,8 @@ impl WidgetType for HexGrid {
                 (0, 0)
             };
 
+        let txt_clr = (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0);
+
         data.with(|data: &mut HexGridData| {
             p.rect_fill(
                 (32.0 / 255.0, 14.0 / 255.0, 31.0 / 255.0),
@@ -142,6 +148,55 @@ impl WidgetType for HexGrid {
                     let xo = pos.x + x * 0.75 * w + size;
                     let yo = pos.y + (1.00 + y) * h;
 
+                    // TR arrow
+                    p.path_fill_rot(
+                        txt_clr,
+                        -30.0,
+                        (xo + 0.75 * size_in).floor(),
+                        (yo - 0.25 * h_in).floor(),
+                        1.0, 1.0,
+                        &mut ([
+                            (0.0_f64, -0.6_f64),
+                            (0.0,      0.6),
+                            (1.4,      0.0),
+                        ].iter().copied()
+                         .map(|p| ((10.0 * p.0).floor(),
+                                   (10.0 * p.1).floor()))),
+                        true);
+
+                    // BR arrow
+                    p.path_fill_rot(
+                        txt_clr,
+                        30.0,
+                        (xo + 0.75 * size_in).floor(),
+                        (yo + 0.25 * h_in).floor(),
+                        1.0, 1.0,
+                        &mut ([
+                            (0.0_f64, -0.6_f64),
+                            (0.0,      0.6),
+                            (1.4,      0.0),
+                        ].iter().copied()
+                         .map(|p| ((10.0 * p.0).floor(),
+                                   (10.0 * p.1).floor()))),
+                        true);
+
+                    // Bot arrow
+                    p.path_fill_rot(
+                        txt_clr,
+                        90.0,
+                        xo,
+                        0.5 + (yo + 0.5 * h_in).floor(),
+                        1.0, 1.0,
+                        &mut ([
+                            (0.0_f64, -0.6_f64),
+                            (0.0,      0.6),
+                            (1.4,      0.0),
+                        ].iter().copied()
+                         .map(|p| ((10.0 * p.0).floor(),
+                                   (10.0 * p.1).floor()))),
+                        true);
+
+                    // padded outer hex
                     p.path_stroke(
                         line,
                         clr,
@@ -154,6 +209,7 @@ impl WidgetType for HexGrid {
                             (xo - 0.25 * w_in, yo + 0.5 * h_in),
                         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 
+                    // inner hex
                     p.path_stroke(
                         line * 0.5,
                         clr,
@@ -169,28 +225,31 @@ impl WidgetType for HexGrid {
 //                        (pos.x + x * 0.75 * w).floor(),
 //                        (pos.y + h + y * h).floor(),
 //                        2.0, 2.0);
+
                     let th = 15.0;
                     let tw = w;
+                    // text center!
                     let center = (xo - 0.5 * tw, yo - 0.5 * th);
 
                     p.label(
-                        15.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        15.0, 0, txt_clr,
                         center.0, center.1, w, th, "Env 1");
 
                     let th = 14.0;
+                    // text center!
                     let center = (xo - 0.5 * tw, yo - 0.5 * th);
 
                     p.label(
-                        10.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        10.0, 0, txt_clr,
                         center.0, center.1 - 0.5 * h_in + 0.5 * th, w, th, "Top");
 
                     p.label(
-                        10.0, 0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        10.0, 0, txt_clr,
                         center.0, center.1 + 0.5 * h_in - 0.5 * th, w, th, "Bot");
 
 
                     p.label_rot(
-                        10.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        10.0, 0, 60.0, txt_clr,
                         center.0 + 0.75 * size_in,
                         center.1 - 0.25 * h_in,
                         0.0,
@@ -198,7 +257,7 @@ impl WidgetType for HexGrid {
                         w, th, "TR");
 
                     p.label_rot(
-                        10.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        10.0, 0, 300.0, txt_clr,
                         center.0 - 0.75 * size_in,
                         center.1 - 0.25 * h_in,
                         0.0,
@@ -206,7 +265,7 @@ impl WidgetType for HexGrid {
                         w, th, "TL");
 
                     p.label_rot(
-                        10.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        10.0, 0, 60.0, txt_clr,
                         center.0 - 0.75 * size_in,
                         center.1 + 0.25 * h_in,
                         0.0,
@@ -214,7 +273,7 @@ impl WidgetType for HexGrid {
                         w, th, "BL");
 
                     p.label_rot(
-                        10.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+                        10.0, 0, 300.0, txt_clr,
                         center.0 + 0.75 * size_in,
                         center.1 + 0.25 * h_in,
                         0.0,
@@ -222,24 +281,24 @@ impl WidgetType for HexGrid {
                         w, th, "BR");
 
 //                    p.label_rot(
-//                        20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+//                        20.0, 0, 300.0, txt_clr,
 //                        center.0.floor() + (0.75) * size - pad,
 //                        center.1.floor() - 0.25 * h,
 //                        w, th, "BR");
 
 //                    p.label_rot(
 //                        // center
-//                        // 20.0, 0, 0.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+//                        // 20.0, 0, 0.0, txt_clr,
 //                        // (pos.x + x * 0.75 * w).floor(),
 //                        // (pos.y + h + y * h - th * 0.5).floor(),
 //
 //                        // top right
-//                        20.0, 0, 60.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+//                        20.0, 0, 60.0, txt_clr,
 //                        (pos.x + x * 0.75 * w    ).floor(),
 //                        (pos.y + y * h        + h - 0.5 * th).floor(),
 //
 //                        // bottom right
-////                         20.0, 0, 300.0, (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0),
+////                         20.0, 0, 300.0, txt_clr,
 ////                         (pos.x + (w / 3.0) - (th / 2.0) + x * 0.75 * w).floor(),
 ////                         (pos.y + y * h + h).floor(),
 //
