@@ -105,8 +105,6 @@ fn draw_hexagon<F: Fn(&mut dyn Painter, HexDecorPos, (f64, f64, f64))>(p: &mut d
         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 }
 
-// TODO: Develop code for the 3 output markers of a hex cell
-// TODO: Factor out hex drawing to a function, parameter: size, line width, color
 // TODO: Make the HexGrid use a trait to determine the contents of the hex cells
 // TODO: Develop a menu eg. from HexGrid (limiting the visible cells by the trait)
 impl WidgetType for HexGrid {
@@ -117,11 +115,7 @@ impl WidgetType for HexGrid {
 
         let pad     = 10.0;
         let size_in = size - pad;
-        let size_in2 = size * 0.5;
-
-        let (w, h)         = hex_size2wh(size);
-        let (w_in, h_in)   = hex_size2wh(size_in);
-        let (w_in2, h_in2) = hex_size2wh(size_in2);
+        let (w, h)  = hex_size2wh(size);
 
         let marked =
             if let Some(az) = ui.hover_zone_for(11) {
