@@ -97,21 +97,21 @@ struct SomeParameters {
 
 impl Parameters for SomeParameters {
     fn len(&self) -> usize { self.params.len() }
-    fn get(&self, id: usize) -> f32 { self.params[id] }
-    fn get_denorm(&self, id: usize) -> f32 { self.params[id] }
-    fn set(&mut self, id: usize, v: f32) { self.params[id] = v; }
-    fn change_start(&mut self, id: usize) {
+    fn get(&self, id: ParamID) -> f32 { self.params[id.param_id() as usize] }
+    fn get_denorm(&self, id: ParamID) -> f32 { self.params[id.param_id() as usize] }
+    fn set(&mut self, id: ParamID, v: f32) { self.params[id.param_id() as usize] = v; }
+    fn change_start(&mut self, id: ParamID) {
         println!("CHANGE START: {}", id);
     }
-    fn change(&mut self, id: usize, v: f32, single: bool) {
+    fn change(&mut self, id: ParamID, v: f32, single: bool) {
         println!("CHANGE: {},{} ({})", id, v, single);
         self.set(id, v);
     }
-    fn change_end(&mut self, id: usize, v: f32) {
+    fn change_end(&mut self, id: ParamID, v: f32) {
         println!("CHANGE END: {},{}", id, v);
         self.set(id, v);
     }
-    fn fmt<'a>(&self, id: usize, buf: &'a mut [u8]) -> usize {
+    fn fmt<'a>(&self, id: ParamID, buf: &'a mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
         match write!(bw, "{:6.3}", self.get_denorm(id)) {
@@ -142,7 +142,7 @@ enum InputMode {
 }
 
 impl InputMode {
-    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(usize, f32)> {
+    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(ParamID, f32)> {
         match self {
             InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
                                    fine_key, orig_pos, .. } => {
@@ -179,7 +179,7 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn release_focus(&mut self) {
     }
 
-    fn hover_zone_for(&self, az_id: usize) -> Option<ActiveZone> {
+    fn hover_zone_for(&self, az_id: ParamID) -> Option<ActiveZone> {
         if let Some(hz) = self.hover_zone {
             if hz.id == az_id {
                 Some(hz)
@@ -191,7 +191,7 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
         }
     }
 
-    fn hl_style_for(&self, az_id: usize) -> HLStyle {
+    fn hl_style_for(&self, az_id: ParamID) -> HLStyle {
         if let Some(hz) = self.hover_zone_for(az_id) {
             HLStyle::Hover(hz.zone_type)
         } else {
@@ -518,7 +518,7 @@ fn main() {
 //                Some(Box::new((0, hexotk::WidgetData::new(
                 Some(Box::new(hexotk::WidgetData::new(
                     0,
-                    10,
+                    10.into(),
                     Box::new(hexotk::widgets::ButtonData::new("Test Btn"))
 //                   Box::new(hexotk::widgets::KnobData::new())
 //                   Box::new(hexotk::widgets::HexGridData::new(

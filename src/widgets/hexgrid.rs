@@ -127,14 +127,14 @@ impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let size = 54.0_f64;
 
-        ui.define_active_zone(ActiveZone::new_hex_field(11, pos, size));
+        ui.define_active_zone(ActiveZone::new_hex_field(data.id(), pos, size));
 
         let pad     = 10.0;
         let size_in = size - pad;
         let (w, h)  = hex_size2wh(size);
 
         let marked =
-            if let Some(az) = ui.hover_zone_for(11) {
+            if let Some(az) = ui.hover_zone_for(data.id()) {
                 if let ZoneType::HexFieldClick { pos, ..} = az.zone_type {
                     pos
                 } else {

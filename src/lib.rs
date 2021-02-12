@@ -23,17 +23,17 @@ pub use window::open_window;
 use std::fmt::Debug;
 
 pub struct WidgetData {
-    id:    usize,
+    id:    ParamID,
     wtype: usize,
     data:  Box<dyn std::any::Any>,
 }
 
 impl WidgetData {
-    pub fn new(wtype: usize, id: usize, data: Box<dyn std::any::Any>) -> Self {
+    pub fn new(wtype: usize, id: ParamID, data: Box<dyn std::any::Any>) -> Self {
         Self { wtype, id, data }
     }
 
-    pub fn id(&self) -> usize { self.id }
+    pub fn id(&self) -> ParamID { self.id }
 
     pub fn widget_type(&self) -> usize { self.wtype }
 
@@ -89,13 +89,13 @@ pub enum MButton {
 
 #[derive(Debug, Clone, Copy)]
 pub struct ActiveZone {
-    pub id:         usize,
+    pub id:         ParamID,
     pub pos:        Rect,
     pub zone_type:  ZoneType,
 }
 
 impl ActiveZone {
-    pub fn new_drag_zone(id: usize, pos: Rect, coarse: bool) -> Self {
+    pub fn new_drag_zone(id: ParamID, pos: Rect, coarse: bool) -> Self {
         if coarse {
             Self { id, pos, zone_type: ZoneType::ValueDragCoarse }
         } else {
@@ -103,15 +103,15 @@ impl ActiveZone {
         }
     }
 
-    pub fn new_hex_field(id: usize, pos: Rect, tile_size: f64) -> Self {
+    pub fn new_hex_field(id: ParamID, pos: Rect, tile_size: f64) -> Self {
         Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, pos: (0, 0) } }
     }
 
-    pub fn new_input_zone(id: usize, pos: Rect) -> Self {
+    pub fn new_input_zone(id: ParamID, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::ValueInput }
     }
 
-    pub fn new_click_zone(id: usize, pos: Rect) -> Self {
+    pub fn new_click_zone(id: ParamID, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::Click }
     }
 }
@@ -126,7 +126,7 @@ pub enum ZoneType {
 }
 
 impl ActiveZone {
-    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<usize> {
+    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<ParamID> {
         if self.pos.is_inside(pos.0, pos.1) {
             Some(self.id)
         } else {
@@ -139,15 +139,63 @@ impl ActiveZone {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct ParamID {
+    node_id: u32,
+    param_id: u32,
+}
+
+impl ParamID {
+    pub fn new(node_id: u32, param_id: u32) -> Self {
+        Self { node_id, param_id }
+    }
+
+    pub fn node_id(&self) -> u32 { self.node_id }
+    pub fn param_id(&self) -> u32 { self.param_id }
+}
+
+impl std::fmt::Display for ParamID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ParamID(n={}, p={})", self.node_id, self.param_id)
+    }
+}
+
+impl From<usize> for ParamID {
+    fn from(p: usize) -> Self {
+        Self {
+            node_id: 0,
+            param_id: p as u32,
+        }
+    }
+}
+
+impl From<(u32, u32)> for ParamID {
+    fn from(p: (u32, u32)) -> Self {
+        Self {
+            node_id: p.0,
+            param_id: p.1,
+        }
+    }
+}
+
+impl From<(usize, usize)> for ParamID {
+    fn from(p: (usize, usize)) -> Self {
+        Self {
+            node_id: p.0 as u32,
+            param_id: p.1 as u32,
+        }
+    }
+}
+
 pub trait Parameters {
     fn len(&self) -> usize;
-    fn get(&self, id: usize) -> f32;
-    fn get_denorm(&self, id: usize) -> f32;
-    fn set(&mut self, id: usize, v: f32);
-    fn fmt<'a>(&self, id: usize, buf: &'a mut [u8]) -> usize;
-    fn change_start(&mut self, id: usize);
-    fn change(&mut self, id: usize, v: f32, single: bool);
-    fn change_end(&mut self, id: usize, v: f32);
+    fn get(&self, id: ParamID) -> f32;
+    fn get_denorm(&self, id: ParamID) -> f32;
+    fn set(&mut self, id: ParamID, v: f32);
+    fn fmt<'a>(&self, id: ParamID, buf: &'a mut [u8]) -> usize;
+    fn change_start(&mut self, id: ParamID);
+    fn change(&mut self, id: ParamID, v: f32, single: bool);
+    fn change_end(&mut self, id: ParamID, v: f32);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -219,8 +267,8 @@ pub trait WindowUI {
 
 pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
-    fn hl_style_for(&self, az_id: usize) -> HLStyle;
-    fn hover_zone_for(&self, az_id: usize) -> Option<ActiveZone>;
+    fn hl_style_for(&self, id: ParamID) -> HLStyle;
+    fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
     fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
@@ -232,16 +280,16 @@ pub trait WidgetUI {
 
 #[derive(Debug, Clone)]
 pub enum UIEvent {
-    ValueDragStart { id: usize, },
-    ValueDrag      { id: usize, steps: f64 },
-    ValueDragEnd   { id: usize, },
-    EnteredValue   { id: usize, val: String },
-    Click          { id: usize, button: MButton, x: f64, y: f64 },
+    ValueDragStart { id: ParamID, },
+    ValueDrag      { id: ParamID, steps: f64 },
+    ValueDragEnd   { id: ParamID, },
+    EnteredValue   { id: ParamID, val: String },
+    Click          { id: ParamID, button: MButton, x: f64, y: f64 },
 //    Hover          { id: usize, x: f64, y: f64 },
 }
 
 impl UIEvent {
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> ParamID {
         match self {
             UIEvent::ValueDragStart { id, .. } => *id,
             UIEvent::ValueDrag      { id, .. } => *id,
