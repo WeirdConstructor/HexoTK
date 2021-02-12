@@ -23,14 +23,19 @@ pub use window::open_window;
 use std::fmt::Debug;
 
 pub struct WidgetData {
-    id:   usize,
-    data: Box<dyn std::any::Any>,
+    id:    usize,
+    wtype: usize,
+    data:  Box<dyn std::any::Any>,
 }
 
 impl WidgetData {
-    pub fn new(id: usize, data: Box<dyn std::any::Any>) -> Self {
-        Self { id, data }
+    pub fn new(wtype: usize, id: usize, data: Box<dyn std::any::Any>) -> Self {
+        Self { wtype, id, data }
     }
+
+    pub fn id(&self) -> usize { self.id }
+
+    pub fn widget_type(&self) -> usize { self.wtype }
 
     pub fn with<F, T: 'static, R>(&mut self, f: F) -> Option<R>
         where F: FnOnce(&mut T) -> R
@@ -137,8 +142,9 @@ impl ActiveZone {
 pub trait Parameters {
     fn len(&self) -> usize;
     fn get(&self, id: usize) -> f32;
+    fn get_denorm(&self, id: usize) -> f32;
     fn set(&mut self, id: usize, v: f32);
-    fn fmt(&self, id: usize, buf: &mut [u8]);
+    fn fmt<'a>(&self, id: usize, buf: &'a mut [u8]) -> usize;
     fn change_start(&mut self, id: usize);
     fn change(&mut self, id: usize, v: f32, single: bool);
     fn change_end(&mut self, id: usize, v: f32);

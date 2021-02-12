@@ -1,14 +1,6 @@
 use super::*;
 use std::sync::Arc;
 
-use femtovg::{
-    renderer::OpenGl,
-    Canvas,
-    FontId,
-    ImageId,
-    Color,
-};
-
 #[derive(Debug, Clone)]
 pub enum CellEdge {
     Top,

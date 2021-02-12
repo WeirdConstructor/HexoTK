@@ -70,7 +70,7 @@ struct OpDesc {
 
 struct DemoUI {
     types:      Vec<Box<dyn WidgetType>>,
-    main:       Option<Box<(usize, WidgetData)>>,
+    main:       Option<Box<WidgetData>>,
     zones:      Option<Vec<ActiveZone>>,
     hover_zone: Option<ActiveZone>,
     mouse_pos:  (f64, f64),
@@ -98,6 +98,7 @@ struct SomeParameters {
 impl Parameters for SomeParameters {
     fn len(&self) -> usize { self.params.len() }
     fn get(&self, id: usize) -> f32 { self.params[id] }
+    fn get_denorm(&self, id: usize) -> f32 { self.params[id] }
     fn set(&mut self, id: usize, v: f32) { self.params[id] = v; }
     fn change_start(&mut self, id: usize) {
         println!("CHANGE START: {}", id);
@@ -110,8 +111,13 @@ impl Parameters for SomeParameters {
         println!("CHANGE END: {},{}", id, v);
         self.set(id, v);
     }
-    fn fmt(&self, id: usize, buf: &mut [u8]) {
-        // TODO
+    fn fmt<'a>(&self, id: usize, buf: &'a mut [u8]) -> usize {
+        use std::io::Write;
+        let mut bw = std::io::BufWriter::new(buf);
+        match write!(bw, "{:6.3}", self.get_denorm(id)) {
+            Ok(_)  => bw.buffer().len(),
+            Err(_) => 0,
+        }
     }
 }
 
@@ -289,7 +295,7 @@ impl DemoUI {
             let mut params = params.unwrap();
             zones.clear();
 
-            let w_type_id = data.0;
+            let w_type_id = data.widget_type();
             let wt        = &self.types[w_type_id];
             let mut wui   =
                 WidgetUIHolder {
@@ -300,7 +306,7 @@ impl DemoUI {
                     input_mode,
                 };
 
-            f(&mut wui, &mut data.1, wt.as_ref());
+            f(&mut wui, &mut data, wt.as_ref());
 
             self.zones      = Some(wui.zones);
             self.main       = Some(data);
@@ -510,10 +516,13 @@ fn main() {
                 },
             main:
 //                Some(Box::new((0, hexotk::WidgetData::new(
-                Some(Box::new((1, hexotk::WidgetData::new(
+                Some(Box::new(hexotk::WidgetData::new(
+                    2,
                     10,
-                   Box::new(hexotk::widgets::HexGridData::new(std::sync::Arc::new(MatrixModel::new())))
-                ))))
+                   Box::new(hexotk::widgets::KnobData::new())
+//                   Box::new(hexotk::widgets::HexGridData::new(
+//                      std::sync::Arc::new(MatrixModel::new())))
+                )))
 //                    Box::new(hexotk::widgets::ButtonData {
 //                        label:  String::from("UWU"),
 //                        counter: 0,
@@ -522,6 +531,7 @@ fn main() {
 
         ui.add_widget_type(0, Box::new(hexotk::widgets::Button { }));
         ui.add_widget_type(1, Box::new(hexotk::widgets::HexGrid { }));
+        ui.add_widget_type(2, Box::new(hexotk::widgets::Knob::new(30.0, 10.0, 10.0)));
 
         ui
     }));
