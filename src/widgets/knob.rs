@@ -330,10 +330,14 @@ impl WidgetType for Knob {
             self.draw_name(p, xo, yo, &data.name);
         });
 
-//        let z1 = ActiveZone::from_rect(xo, yo, AZ_COARSE_DRAG, self.get_coarse_adjustment_rect());
-//        (f)(z1);
-//        let z2 = ActiveZone::from_rect(xo, yo, AZ_FINE_DRAG, self.get_fine_adjustment_rect());
-//        (f)(z2);
+        ui.define_active_zone(
+            ActiveZone::new_drag_zone(
+                id,
+                Rect::from_tpl(self.get_coarse_adjustment_rect()).offs(xo, yo), true));
+        ui.define_active_zone(
+            ActiveZone::new_drag_zone(
+                id,
+                Rect::from_tpl(self.get_fine_adjustment_rect()).offs(xo, yo), false));
     }
 
     fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) {
