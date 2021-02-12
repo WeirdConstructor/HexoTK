@@ -451,6 +451,50 @@ impl WindowUI for DemoUI {
     }
 }
 
+#[derive(Debug)]
+pub struct Connection {
+    node: Box<dyn NodeType>,
+    input_param: u8,
+}
+
+pub trait NodeType : std::fmt::Debug {
+    fn name(&self) -> &str;
+    fn instance_num(&self) -> usize;
+    fn connection(&self, edge: u8) -> Option<Connection>;
+    fn param_label(&self, param: usize) -> Option<&str>;
+}
+
+#[derive(Debug)]
+struct MatrixCell {
+    node: Option<Box<dyn NodeType>>,
+}
+
+#[derive(Debug)]
+struct MatrixModel {
+    cells: Vec<MatrixCell>,
+}
+
+impl MatrixModel {
+    fn new() -> Self {
+        Self {
+            cells: vec![],
+        }
+    }
+}
+
+impl hexotk::widgets::hexgrid::HexGridModel for MatrixModel {
+    fn cell_visible(&self, x: usize, y: usize) -> bool {
+        true
+    }
+
+    fn cell_label(&self, x: usize, y: usize, out: &mut [u8]) {
+    }
+
+    fn cell_edge_connection(&self, x: usize, y: usize, edge: u8, out: &mut [u8]) -> bool {
+        true
+    }
+}
+
 fn main() {
     open_window("HexoTK Demo", 800, 700, None, Box::new(|| {
         let mut ui = Box::new(DemoUI {
@@ -468,7 +512,8 @@ fn main() {
 //                Some(Box::new((0, hexotk::WidgetData::new(
                 Some(Box::new((1, hexotk::WidgetData::new(
                     10,
-                    Box::new(hexotk::widgets::HexGridData { })))))
+                   Box::new(hexotk::widgets::HexGridData::new(std::sync::Arc::new(MatrixModel::new())))
+                ))))
 //                    Box::new(hexotk::widgets::ButtonData {
 //                        label:  String::from("UWU"),
 //                        counter: 0,

@@ -1,10 +1,11 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
-mod hexgrid;
+pub mod hexgrid;
 
 pub use hexgrid::HexGrid;
 pub use hexgrid::HexGridData;
+pub use hexgrid::HexGridModel;
 
 use super::*;
 

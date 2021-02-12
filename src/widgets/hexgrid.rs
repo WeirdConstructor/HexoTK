@@ -1,4 +1,5 @@
 use super::*;
+use std::sync::Arc;
 
 use femtovg::{
     renderer::OpenGl,
@@ -9,11 +10,34 @@ use femtovg::{
 };
 
 #[derive(Debug, Clone)]
-pub struct HexGrid {
+pub enum CellEdge {
+    Top,
+    TopRight,
+    BotRight,
+    Bottom,
+    BotLeft,
+    TopLeft
+}
+
+pub trait HexGridModel {
+    fn cell_visible(&self, x: usize, y: usize) -> bool;
+    fn cell_label(&self, x: usize, y: usize, out: &mut [u8]);
+    fn cell_edge_connection(&self, x: usize, y: usize, edge: u8, out: &mut [u8]) -> bool;
 }
 
 #[derive(Debug, Clone)]
+pub struct HexGrid {
+}
+
+#[derive(Clone)]
 pub struct HexGridData {
+    model: Arc<dyn HexGridModel>,
+}
+
+impl HexGridData {
+    pub fn new(model: Arc<dyn HexGridModel>) -> Self {
+        Self { model }
+    }
 }
 
 fn hex_size2wh(size: f64) -> (f64, f64) {
