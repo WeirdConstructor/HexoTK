@@ -10,16 +10,32 @@ pub struct Button {
     font_size:  f64,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ButtonMode {
+    Toggle,
+    ValueDrag
+}
+
 #[derive(Debug)]
 pub struct ButtonData {
     name:      String,
+    mode:      ButtonMode,
     value_buf: [u8; 20],
 }
 
 impl ButtonData {
-    pub fn new(name: &str) -> Self {
+    pub fn new_value_drag(name: &str) -> Self {
         Self {
             value_buf:  [0; 20],
+            mode:       ButtonMode::ValueDrag,
+            name:       String::from(name),
+        }
+    }
+
+    pub fn new_toggle(name: &str) -> Self {
+        Self {
+            value_buf:  [0; 20],
+            mode:       ButtonMode::Toggle,
             name:       String::from(name),
         }
     }
@@ -76,18 +92,6 @@ impl Button {
 }
 
 impl WidgetType for Button {
-//    fn define_active_zones(&self, x: f64, y: f64, elem_data: &dyn UIElementData, f: &mut dyn FnMut(ActiveZone)) {
-//        let size     = self.size();
-//        let sub_type =
-//            match elem_data.as_btn_data().unwrap().mode {
-//                UIBtnMode::Toggle    => AZ_TOGGLE,
-//                UIBtnMode::ValueDrag => AZ_COARSE_DRAG,
-//                UIBtnMode::ModTarget => AZ_MOD_SELECT,
-//            };
-//        let z1 = ActiveZone::from_rect(x, y, sub_type, (0.0, 0.0, size.0, size.1));
-//        (f)(z1);
-//    }
-
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let (x, y) = (pos.x, pos.y);
 
@@ -158,6 +162,24 @@ impl WidgetType for Button {
                 xo,
                 yo + UI_ELEM_TXT_H + UI_BTN_BORDER2_WIDTH,
                 w, (h / 2.0).round(), &data.name);
+
+            p.rect_stroke(1.0, (1.0, 1.0, 1.0), xo, yo, w, h);
+
+            match data.mode {
+                ButtonMode::Toggle => {
+                    ui.define_active_zone(
+                        ActiveZone::new_click_zone(
+                            id,
+                            Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo)));
+                },
+                ButtonMode::ValueDrag => {
+                    ui.define_active_zone(
+                        ActiveZone::new_drag_zone(
+                            id,
+                            Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo),
+                            true));
+                },
+            }
         });
     }
 
@@ -169,5 +191,15 @@ impl WidgetType for Button {
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {
+        match ev {
+            UIEvent::Click { id, button, .. } => {
+                match button {
+                    MButton::Left   => { ui.params_mut().step_next(id); },
+                    MButton::Right  => { ui.params_mut().step_prev(id); },
+                    MButton::Middle => { ui.params_mut().set_default(id); },
+                }
+            },
+            _ => {},
+        }
     }
 }

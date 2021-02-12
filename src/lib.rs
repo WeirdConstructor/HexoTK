@@ -193,6 +193,9 @@ pub trait Parameters {
     fn get_denorm(&self, id: ParamID) -> f32;
     fn set(&mut self, id: ParamID, v: f32);
     fn fmt<'a>(&self, id: ParamID, buf: &'a mut [u8]) -> usize;
+    fn step_next(&mut self, id: ParamID);
+    fn step_prev(&mut self, id: ParamID);
+    fn set_default(&mut self, id: ParamID);
     fn change_start(&mut self, id: ParamID);
     fn change(&mut self, id: ParamID, v: f32, single: bool);
     fn change_end(&mut self, id: ParamID, v: f32);
@@ -274,8 +277,6 @@ pub trait WidgetUI {
     fn release_focus(&mut self);
     fn params(&self) -> &dyn Parameters;
     fn params_mut(&mut self) -> &mut dyn Parameters;
-
-//    fn emit_event(&self, event: UIEvent);
 }
 
 #[derive(Debug, Clone)]
@@ -285,7 +286,6 @@ pub enum UIEvent {
     ValueDragEnd   { id: ParamID, },
     EnteredValue   { id: ParamID, val: String },
     Click          { id: ParamID, button: MButton, x: f64, y: f64 },
-//    Hover          { id: usize, x: f64, y: f64 },
 }
 
 impl UIEvent {

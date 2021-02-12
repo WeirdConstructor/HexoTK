@@ -100,17 +100,32 @@ impl Parameters for SomeParameters {
     fn get(&self, id: ParamID) -> f32 { self.params[id.param_id() as usize] }
     fn get_denorm(&self, id: ParamID) -> f32 { self.params[id.param_id() as usize] }
     fn set(&mut self, id: ParamID, v: f32) { self.params[id.param_id() as usize] = v; }
+    fn set_default(&mut self, id: ParamID) {
+        self.set(id, 0.0);
+    }
+
     fn change_start(&mut self, id: ParamID) {
         println!("CHANGE START: {}", id);
     }
+
     fn change(&mut self, id: ParamID, v: f32, single: bool) {
         println!("CHANGE: {},{} ({})", id, v, single);
         self.set(id, v);
     }
+
     fn change_end(&mut self, id: ParamID, v: f32) {
         println!("CHANGE END: {},{}", id, v);
         self.set(id, v);
     }
+
+    fn step_next(&mut self, id: ParamID) {
+        self.set(id, (self.get(id) + 0.2).fract());
+    }
+
+    fn step_prev(&mut self, id: ParamID) {
+        self.set(id, ((self.get(id) - 0.2) + 1.0).fract());
+    }
+
     fn fmt<'a>(&self, id: ParamID, buf: &'a mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
@@ -202,6 +217,7 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
     fn params_mut(&mut self) -> &mut dyn Parameters {
         &mut *self.params
     }
+
     fn params(&self) -> &dyn Parameters {
         &*self.params
     }
@@ -217,7 +233,7 @@ impl DemoUI {
             for z in zones {
                 match z.zone_type {
                     ZoneType::HexFieldClick { tile_size, .. } => {
-                        println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
+                        //d// println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
                         if let Some(id) = z.id_if_inside(pos) {
                             let x = pos.0 - z.pos.x as f64;
                             let y = pos.1 - z.pos.y as f64;
@@ -244,20 +260,6 @@ impl DemoUI {
                                         - (if cy < height / 2.0 { 1.0 } else { 0.0 }))
                                 };
 
-//                            let x = (x - tile_size) / (2.0 * tile_size);
-//                            let t1 = y / tile_size;
-//                            let t2 = (x + t1).floor();
-//                            let r = (((t1 - x).floor() + t2) / 3.0).floor();
-//                            let q = (((2.0 * x + 1.0).floor() + t2) / 3.0).floor() - r;
-
-//                            let x = x / (tile_size * (3.0_f64).sqrt());
-//                            let y = y / (tile_size * (3.0_f64).sqrt());
-//
-//                            let temp = (x + (3.0_f64).sqrt() * y + 1.0).floor();
-//                            let q = (((2.0 * x + 1.0).floor() + temp) / 3.0).floor();
-//                            let r = ((temp + (-x + (3.0_f64).sqrt() * y + 1.0).floor()) / 3.0).floor();
-
-//                            println!("q={}, r={}", q, r);
                             println!("i={}, j={}", i, j);
 
                             let mut new_az = *z;
@@ -396,8 +398,6 @@ impl WindowUI for DemoUI {
                     }
                 }
 
-                // TODO: Handle drag mode end!
-
                 self.input_mode = None;
             },
             InputEvent::MouseButtonPressed(btn) => {
@@ -519,7 +519,7 @@ fn main() {
                 Some(Box::new(hexotk::WidgetData::new(
                     0,
                     10.into(),
-                    Box::new(hexotk::widgets::ButtonData::new("Test Btn"))
+                    Box::new(hexotk::widgets::ButtonData::new_toggle("Test Btn"))
 //                   Box::new(hexotk::widgets::KnobData::new())
 //                   Box::new(hexotk::widgets::HexGridData::new(
 //                      std::sync::Arc::new(MatrixModel::new())))
