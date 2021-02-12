@@ -216,10 +216,12 @@ pub struct KnobData {
 }
 
 impl KnobData {
-	pub fn new() -> Self { Self {
-        value_buf: [0; 10],
-        name: String::from("?"),
-    } }
+	pub fn new() -> Box<dyn std::any::Any> {
+        Box::new(Self {
+            value_buf:  [0; 10],
+            name:       String::from("?"),
+        })
+    }
 }
 
 impl WidgetType for Knob {
@@ -351,6 +353,6 @@ impl WidgetType for Knob {
          + UI_SAFETY_PAD)
     }
 
-    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
     }
 }

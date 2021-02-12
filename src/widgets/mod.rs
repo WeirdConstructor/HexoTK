@@ -4,6 +4,7 @@
 pub mod hexgrid;
 mod knob;
 mod button;
+mod container;
 
 pub use hexgrid::HexGrid;
 pub use hexgrid::HexGridData;
@@ -12,21 +13,24 @@ pub use hexgrid::HexGridModel;
 pub use knob::Knob;
 pub use knob::KnobData;
 
+pub use container::Container;
+pub use container::ContainerData;
+
 pub use button::Button;
 pub use button::ButtonData;
 
 use super::*;
 
-#[derive(Debug)]
-pub struct Container {
-    w: f64,
-}
-
-impl WidgetType for Container {
-    fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {}
-    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
-    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {}
-}
+//#[derive(Debug)]
+//pub struct Container {
+//    w: f64,
+//}
+//
+//impl WidgetType for Container {
+//    fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {}
+//    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
+//    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {}
+//}
 
 
 //#[derive(Debug, Clone)]

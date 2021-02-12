@@ -24,20 +24,20 @@ pub struct ButtonData {
 }
 
 impl ButtonData {
-    pub fn new_value_drag(name: &str) -> Self {
-        Self {
+    pub fn new_value_drag(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
             value_buf:  [0; 20],
             mode:       ButtonMode::ValueDrag,
             name:       String::from(name),
-        }
+        })
     }
 
-    pub fn new_toggle(name: &str) -> Self {
-        Self {
+    pub fn new_toggle(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
             value_buf:  [0; 20],
             mode:       ButtonMode::Toggle,
             name:       String::from(name),
-        }
+        })
     }
 }
 
@@ -190,13 +190,13 @@ impl WidgetType for Button {
          + UI_BTN_BORDER_WIDTH + UI_SAFETY_PAD)
     }
 
-    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent) {
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
             UIEvent::Click { id, button, .. } => {
                 match button {
-                    MButton::Left   => { ui.params_mut().step_next(id); },
-                    MButton::Right  => { ui.params_mut().step_prev(id); },
-                    MButton::Middle => { ui.params_mut().set_default(id); },
+                    MButton::Left   => { ui.params_mut().step_next(*id); },
+                    MButton::Right  => { ui.params_mut().step_prev(*id); },
+                    MButton::Middle => { ui.params_mut().set_default(*id); },
                 }
             },
             _ => {},

@@ -185,7 +185,18 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
         self.zones.push(az);
     }
 
-    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect) {
+    fn propagate_event(&mut self, data: &mut WidgetData, ev: &UIEvent) {
+        let w_type_id = data.widget_type();
+        let wt        = &self.types[w_type_id];
+
+        wt.event(self, data, ev);
+    }
+
+    fn draw_widget(&mut self, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect) {
+        let w_type_id = data.widget_type();
+        let wt        = &self.types[w_type_id];
+
+        wt.draw(self, data, p, rect);
     }
 
     fn grab_focus(&mut self) {
@@ -441,7 +452,7 @@ impl WindowUI for DemoUI {
             self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData,
                            wt: &dyn WidgetType| {
 
-                wt.event(ui, data, event);
+                wt.event(ui, data, &event);
             });
         }
     }
@@ -502,7 +513,14 @@ impl hexotk::widgets::hexgrid::HexGridModel for MatrixModel {
 }
 
 fn main() {
+    use hexotk::widgets::*;
+
     open_window("HexoTK Demo", 800, 700, None, Box::new(|| {
+        let mut con = ContainerData::new();
+        con.new_row()
+           .add(1, 1.into(), UIPos::center(6, 12), ButtonData::new_toggle("Test Btn"))
+           .add(3, 2.into(), UIPos::center(6, 12), KnobData::new());
+
         let mut ui = Box::new(DemoUI {
             types:      vec![],
             zones:      Some(vec![]),
@@ -514,25 +532,26 @@ fn main() {
                 ModifierKeys {
                     fine_drag_key: false
                 },
-            main:
+            main: Some(WidgetData::new_box(
+                0,
+                0.into(),
+                UIPos::center(12, 12),
+                Box::new(con))),
+
 //                Some(Box::new((0, hexotk::WidgetData::new(
-                Some(Box::new(hexotk::WidgetData::new(
-                    0,
-                    10.into(),
-                    Box::new(hexotk::widgets::ButtonData::new_toggle("Test Btn"))
 //                   Box::new(hexotk::widgets::KnobData::new())
 //                   Box::new(hexotk::widgets::HexGridData::new(
 //                      std::sync::Arc::new(MatrixModel::new())))
-                )))
 //                    Box::new(hexotk::widgets::ButtonData {
 //                        label:  String::from("UWU"),
 //                        counter: 0,
 //                    })))))
         });
 
-        ui.add_widget_type(0, Box::new(hexotk::widgets::Button::new(80.0, 10.0)));
-        ui.add_widget_type(1, Box::new(hexotk::widgets::HexGrid { }));
-        ui.add_widget_type(2, Box::new(hexotk::widgets::Knob::new(30.0, 10.0, 10.0)));
+        ui.add_widget_type(1, Box::new(Button::new(80.0, 10.0)));
+        ui.add_widget_type(2, Box::new(HexGrid { }));
+        ui.add_widget_type(3, Box::new(Knob::new(30.0, 10.0, 10.0)));
+        ui.add_widget_type(0, Box::new(Container::new()));
 
         ui
     }));

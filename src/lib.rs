@@ -22,16 +22,44 @@ pub use window::open_window;
 
 use std::fmt::Debug;
 
+// TODO: Define default margin/padding between grid cells
+#[derive(Debug, Clone, Copy)]
+pub struct UIPos {
+    pub col_size: u8,
+    pub row_size: u8,
+    pub align:    i8,
+    pub valign:   i8,
+}
+
+impl UIPos {
+    pub fn center(col_size: u8, row_size: u8)  -> Self { UIPos { col_size, row_size, align:  0, valign: 0 } }
+    pub fn left(col_size: u8, row_size: u8)    -> Self { UIPos { col_size, row_size, align: -1, valign: 0 } }
+    pub fn right(col_size: u8, row_size: u8)   -> Self { UIPos { col_size, row_size, align:  1, valign: 0 } }
+    pub fn middle(mut self) -> Self { self.valign = 0;  self }
+    pub fn top(mut self) -> Self    { self.valign = -1; self }
+    pub fn bottom(mut self) -> Self { self.valign = 1;  self }
+    pub fn alignment(&self) -> (i8, i8) {
+        (self.align, self.valign)
+    }
+}
+
 pub struct WidgetData {
     id:    ParamID,
     wtype: usize,
+    pos:   UIPos,
     data:  Box<dyn std::any::Any>,
 }
 
 impl WidgetData {
-    pub fn new(wtype: usize, id: ParamID, data: Box<dyn std::any::Any>) -> Self {
-        Self { wtype, id, data }
+    pub fn new_box(wtype: usize, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
+        Box::new(Self { wtype, id, data, pos })
     }
+
+    pub fn new(wtype: usize, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
+        Self { wtype, id, data, pos }
+    }
+
+    pub fn pos(&self) -> UIPos { self.pos }
 
     pub fn id(&self) -> ParamID { self.id }
 
@@ -77,6 +105,18 @@ impl Rect {
     pub fn is_inside(&self, x: f64, y: f64) -> bool {
            x >= self.x && x <= (self.x + self.w)
         && y >= self.y && y <= (self.y + self.h)
+    }
+
+    fn calc_widget_rect(&self, row_offs: u8, col_offs: u8, pos: UIPos) -> (Rect, u8, u8) {
+        let x = self.x + ((self.w * (col_offs     as f64)) / 12.0).round();
+        let y = self.y + ((self.h * (row_offs     as f64)) / 12.0).round();
+        let w =          ((self.w * (pos.col_size as f64)) / 12.0).round();
+        let h =          ((self.h * (pos.row_size as f64)) / 12.0).round();
+
+        let new_row_offs = row_offs + pos.row_size;
+        let new_col_offs = col_offs + pos.col_size;
+
+        (Rect { x, y, w, h }, new_row_offs, new_col_offs)
     }
 }
 
@@ -272,7 +312,8 @@ pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
     fn hl_style_for(&self, id: ParamID) -> HLStyle;
     fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
-    fn draw_widget(&mut self, w_type_id: usize, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
+    fn draw_widget(&mut self, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
+    fn propagate_event(&mut self, data: &mut WidgetData, ev: &UIEvent);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
     fn params(&self) -> &dyn Parameters;
@@ -310,11 +351,11 @@ impl DummyWidget {
 impl WidgetType for DummyWidget {
     fn draw(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _p: &mut dyn Painter, _pos: Rect) { }
     fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
-    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: UIEvent) { }
+    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) { }
 }
 
 pub trait WidgetType: Debug {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect);
     fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64);
-    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: UIEvent);
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent);
 }
