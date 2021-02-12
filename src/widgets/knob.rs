@@ -230,7 +230,7 @@ impl WidgetType for Knob {
 
         let (knob_xo, knob_yo) =
             self.get_center_offset(UI_BG_KNOB_STROKE);
-        let (knob_w, knob_h) = self.size(ui, data);
+        let (knob_w, knob_h) = self.size(ui, data, (pos.w, pos.h));
         let (xo, yo) = (x + knob_xo, y + knob_yo);
 
         self.draw_oct_arc(
@@ -345,7 +345,7 @@ impl WidgetType for Knob {
                 Rect::from_tpl(self.get_fine_adjustment_rect()).offs(xo, yo), false));
     }
 
-    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) {
+    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
         let (_lbl_x, lbl_y, lbl_w, lbl_h) = self.get_label_rect();
 
         (lbl_w + 2.0 * UI_SAFETY_PAD,

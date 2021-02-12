@@ -254,8 +254,6 @@ impl WidgetType for HexGrid {
         });
     }
 
-    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
-
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         println!("HEX GRID DISPATCHED EVENT: {:?}", ev);
 //        if ev.id() == 10 {

@@ -314,6 +314,7 @@ pub trait WidgetUI {
     fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
     fn draw_widget(&mut self, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
     fn propagate_event(&mut self, data: &mut WidgetData, ev: &UIEvent);
+    fn widget_size(&mut self, data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
     fn params(&self) -> &dyn Parameters;
@@ -350,12 +351,12 @@ impl DummyWidget {
 
 impl WidgetType for DummyWidget {
     fn draw(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _p: &mut dyn Painter, _pos: Rect) { }
-    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData) -> (f64, f64) { (0.0, 0.0) }
+    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64) { avail }
     fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) { }
 }
 
 pub trait WidgetType: Debug {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect);
-    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64);
+    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64) { avail }
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent);
 }

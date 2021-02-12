@@ -183,7 +183,7 @@ impl WidgetType for Button {
         });
     }
 
-    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData) -> (f64, f64) {
+    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
         (self.width
          + UI_BTN_BORDER_WIDTH + UI_SAFETY_PAD,
          UI_ELEM_TXT_H + UI_BTN_BORDER_WIDTH + UI_ELEM_TXT_H
