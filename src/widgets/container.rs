@@ -6,11 +6,12 @@ use super::*;
 
 #[derive(Debug)]
 pub struct Container {
+    debug: bool,
 }
 
 impl Container {
     pub fn new() -> Self {
-        Self { }
+        Self { debug: true }
     }
 }
 
@@ -56,10 +57,6 @@ impl WidgetType for Container {
 
                     let (widget_rect, ro, co) =
                         cont_pos.calc_widget_rect(row_offs, col_offs, pos);
-    //                            println!("CALC ELEM POS={:?} => row={},col={} => ro={},co={}",
-    //                                    pos,
-    //                                    row_offs, col_offs,
-    //                                    ro, co);
 
                     col_offs = co;
 
@@ -83,7 +80,20 @@ impl WidgetType for Container {
                         _ => { /* top align is a nop */ },
                     }
 
+                    let xe = xe.floor();
+                    let ye = ye.floor();
+
                     ui.draw_widget(data, p, Rect { x: xe, y: ye, w: size.0, h: size.1 });
+
+                    if self.debug {
+                        p.rect_stroke(1.0, (0.0, 1.0, 0.0), xe - 0.5, ye - 0.5, size.0 - 1.0, size.1 - 1.0);
+                        p.rect_stroke(1.0, (1.0, 0.0, 0.0),
+                            widget_rect.x + 0.5,
+                            widget_rect.y + 0.5,
+                            widget_rect.w - 1.0,
+                            widget_rect.h - 1.0);
+                    }
+
                 }
 
                 row_offs = min_row_offs;

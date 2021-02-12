@@ -163,8 +163,6 @@ impl WidgetType for Button {
                 yo + UI_ELEM_TXT_H + UI_BTN_BORDER2_WIDTH,
                 w, (h / 2.0).round(), &data.name);
 
-            p.rect_stroke(1.0, (1.0, 1.0, 1.0), xo, yo, w, h);
-
             match data.mode {
                 ButtonMode::Toggle => {
                     ui.define_active_zone(

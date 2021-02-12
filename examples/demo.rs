@@ -525,8 +525,9 @@ fn main() {
     open_window("HexoTK Demo", 800, 700, None, Box::new(|| {
         let mut con = ContainerData::new();
         con.new_row()
-           .add(1, 1.into(), UIPos::center(6, 12), ButtonData::new_toggle("Test Btn"))
-           .add(3, 2.into(), UIPos::center(6, 12), KnobData::new());
+           .add(1, 1.into(), UIPos::right(6, 12), ButtonData::new_toggle("Test Btn"))
+           .add(3, 2.into(), UIPos::center(3, 12), KnobData::new())
+           .add(3, 2.into(), UIPos::center(3, 12), KnobData::new());
 
         let mut ui = Box::new(DemoUI {
             types:      vec![],
