@@ -517,9 +517,10 @@ fn main() {
             main:
 //                Some(Box::new((0, hexotk::WidgetData::new(
                 Some(Box::new(hexotk::WidgetData::new(
-                    2,
+                    0,
                     10,
-                   Box::new(hexotk::widgets::KnobData::new())
+                    Box::new(hexotk::widgets::ButtonData::new("Test Btn"))
+//                   Box::new(hexotk::widgets::KnobData::new())
 //                   Box::new(hexotk::widgets::HexGridData::new(
 //                      std::sync::Arc::new(MatrixModel::new())))
                 )))
@@ -529,7 +530,7 @@ fn main() {
 //                    })))))
         });
 
-        ui.add_widget_type(0, Box::new(hexotk::widgets::Button { }));
+        ui.add_widget_type(0, Box::new(hexotk::widgets::Button::new(80.0, 10.0)));
         ui.add_widget_type(1, Box::new(hexotk::widgets::HexGrid { }));
         ui.add_widget_type(2, Box::new(hexotk::widgets::Knob::new(30.0, 10.0, 10.0)));
 
