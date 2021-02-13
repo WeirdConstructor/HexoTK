@@ -2,16 +2,6 @@ use super::*;
 use crate::constants::*;
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
-pub enum CellEdge {
-    Top,
-    TopRight,
-    BotRight,
-    Bottom,
-    BotLeft,
-    TopLeft
-}
-
 pub trait HexGridModel {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
@@ -20,6 +10,7 @@ pub trait HexGridModel {
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<&'a str>;
     // Edge: 0 top, 1 top right, ... 3 bottom, 5 top left
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<&'a str>;
+    fn cell_click(&self, x: usize, y: usize, btn: MButton);
 }
 
 #[derive(Debug, Clone)]
@@ -134,8 +125,6 @@ fn draw_hexagon<F: Fn(&mut dyn Painter, HexDecorPos, (f64, f64, f64))>(p: &mut d
         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 }
 
-// TODO: Make the HexGrid use a trait to determine the contents of the hex cells
-// TODO: Develop a menu eg. from HexGrid (limiting the visible cells by the trait)
 impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let size = 54.0_f64;
@@ -295,13 +284,8 @@ impl WidgetType for HexGrid {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         println!("HEX GRID DISPATCHED EVENT: {:?}", ev);
-//        if ev.id() == 10 {
-//            match ev {
-//                UIEvent::Click { .. } => {
-//                    data.with(|data: &mut ButtonData| data.counter += 1);
-//                },
-//                _ => {}
-//            }
-//        }
+        if let Some(az) = ui.hover_zone_for(data.id()) {
+            println!("X {:?}", az);
+        }
     }
 }

@@ -1,4 +1,5 @@
 use crate::widgets::hexgrid::HexGridModel;
+use crate::MButton;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -127,6 +128,9 @@ impl MatrixModel {
 impl HexGridModel for MatrixModel {
     fn width(&self) -> usize { self.w }
     fn height(&self) -> usize { self.h }
+
+    fn cell_click(&self, x: usize, y: usize, btn: MButton) {
+    }
 
     fn cell_empty(&self, x: usize, y: usize) -> bool {
         if x >= self.w || y >= self.h { return true; }

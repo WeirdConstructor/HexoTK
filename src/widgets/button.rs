@@ -196,6 +196,8 @@ impl WidgetType for Button {
                     MButton::Right  => { ui.params_mut().step_prev(*id); },
                     MButton::Middle => { ui.params_mut().set_default(*id); },
                 }
+
+                ui.queue_redraw();
             },
             _ => {},
         }

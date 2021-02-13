@@ -109,16 +109,16 @@ impl Parameters for SomeParameters {
     }
 
     fn change_start(&mut self, id: ParamID) {
-        println!("CHANGE START: {}", id);
+//        println!("CHANGE START: {}", id);
     }
 
     fn change(&mut self, id: ParamID, v: f32, single: bool) {
-        println!("CHANGE: {},{} ({})", id, v, single);
+//        println!("CHANGE: {},{} ({})", id, v, single);
         self.set(id, v);
     }
 
     fn change_end(&mut self, id: ParamID, v: f32) {
-        println!("CHANGE END: {},{}", id, v);
+//        println!("CHANGE END: {},{}", id, v);
         self.set(id, v);
     }
 
@@ -405,6 +405,15 @@ impl WindowUI for DemoUI {
                                         y:      self.mouse_pos.1,
                                     });
                             },
+                            ZoneType::HexFieldClick { .. } => {
+                                dispatch_event =
+                                    Some(UIEvent::Click {
+                                        id:     az.id,
+                                        button: btn,
+                                        x:      self.mouse_pos.0,
+                                        y:      self.mouse_pos.1,
+                                    });
+                            },
                             _ => {},
                         }
                     }
@@ -515,15 +524,6 @@ fn main() {
                 },
             main: Some(WidgetData::new_box(
                 wt_cont, 0.into(), UIPos::center(12, 12), con)),
-
-//                Some(Box::new((0, hexotk::WidgetData::new(
-//                   Box::new(hexotk::widgets::KnobData::new())
-//                   Box::new(hexotk::widgets::HexGridData::new(
-//                      std::sync::Arc::new(MatrixModel::new())))
-//                    Box::new(hexotk::widgets::ButtonData {
-//                        label:  String::from("UWU"),
-//                        counter: 0,
-//                    })))))
         });
 
         ui
