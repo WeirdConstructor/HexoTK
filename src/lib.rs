@@ -48,6 +48,10 @@ impl WidgetData {
         Box::new(Self { wtype, id, data, pos })
     }
 
+    pub fn new_tl_box(wtype: Rc<dyn WidgetType>, id: ParamID, data: Box<dyn std::any::Any>) -> Box<Self> {
+        Box::new(Self { wtype, id, data, pos: UIPos::center(12, 12) })
+    }
+
     pub fn new(wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
         Self { wtype, id, data, pos }
     }
@@ -151,8 +155,8 @@ impl ActiveZone {
         }
     }
 
-    pub fn new_hex_field(id: ParamID, pos: Rect, tile_size: f64) -> Self {
-        Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, pos: (0, 0) } }
+    pub fn new_hex_field(id: ParamID, pos: Rect, y_offs: bool, tile_size: f64) -> Self {
+        Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, y_offs, pos: (0, 0) } }
     }
 
     pub fn new_input_zone(id: ParamID, pos: Rect) -> Self {
@@ -169,7 +173,11 @@ pub enum ZoneType {
     ValueDragFine,
     ValueDragCoarse,
     ValueInput,
-    HexFieldClick { tile_size: f64, pos: (usize, usize), },
+    HexFieldClick {
+        tile_size: f64,
+        y_offs:    bool,
+        pos:       (usize, usize),
+    },
     Click,
 }
 

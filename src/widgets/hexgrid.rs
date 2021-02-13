@@ -1,6 +1,6 @@
 use super::*;
 use crate::constants::*;
-use std::sync::Arc;
+use std::rc::Rc;
 
 pub trait HexGridModel {
     fn width(&self) -> usize;
@@ -17,21 +17,26 @@ pub trait HexGridModel {
 pub struct HexGrid {
     center_font_size: f64,
     edge_font_size:   f64,
+    y_offs:           bool,
 }
 
 impl HexGrid {
     pub fn new(center_font_size: f64, edge_font_size: f64) -> Self {
-        Self { center_font_size, edge_font_size }
+        Self { center_font_size, edge_font_size, y_offs: false }
+    }
+
+    pub fn new_y_offs(center_font_size: f64, edge_font_size: f64) -> Self {
+        Self { center_font_size, edge_font_size, y_offs: true }
     }
 }
 
 #[derive(Clone)]
 pub struct HexGridData {
-    model: Arc<dyn HexGridModel>,
+    model: Rc<dyn HexGridModel>,
 }
 
 impl HexGridData {
-    pub fn new(model: Arc<dyn HexGridModel>) -> Box<Self> {
+    pub fn new(model: Rc<dyn HexGridModel>) -> Box<Self> {
         Box::new(Self { model })
     }
 }
@@ -129,7 +134,7 @@ impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let size = 54.0_f64;
 
-        ui.define_active_zone(ActiveZone::new_hex_field(data.id(), pos, size));
+        ui.define_active_zone(ActiveZone::new_hex_field(data.id(), pos, self.y_offs, size));
 
         let pad     = 10.0;
         let size_in = size - pad;
@@ -183,6 +188,8 @@ impl WidgetType for HexGrid {
 
                     let xo = pos.x + x * 0.75 * w + size;
                     let yo = pos.y + (1.00 + y) * h;
+
+                    let yo = if self.y_offs { yo - 0.5 * h } else { yo };
 
                     let th  = p.font_height(self.center_font_size as f32, false) as f64;
                     let fs  = self.center_font_size;
@@ -283,9 +290,16 @@ impl WidgetType for HexGrid {
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
-        println!("HEX GRID DISPATCHED EVENT: {:?}", ev);
-        if let Some(az) = ui.hover_zone_for(data.id()) {
-            println!("X {:?}", az);
+        if let UIEvent::Click { id, button, .. } = ev {
+            if let Some(az) = ui.hover_zone_for(data.id()) {
+                if az.id == data.id() && *id == data.id() {
+                    if let ZoneType::HexFieldClick { pos, .. } = az.zone_type {
+                        data.with(|data: &mut HexGridData| {
+                            data.model.cell_click(pos.0, pos.1, *button);
+                        });
+                    }
+                }
+            }
         }
     }
 }

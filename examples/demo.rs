@@ -238,9 +238,9 @@ impl DemoUI {
         if let Some(zones) = self.zones.as_ref() {
             let mut zone : Option<ActiveZone> = None;
 
-            for z in zones {
+            for z in zones.iter().rev() {
                 match z.zone_type {
-                    ZoneType::HexFieldClick { tile_size, .. } => {
+                    ZoneType::HexFieldClick { tile_size, y_offs, .. } => {
                         //d// println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
                         if let Some(id) = z.id_if_inside(pos) {
                             let x = pos.0 - z.pos.x as f64;
@@ -251,6 +251,8 @@ impl DemoUI {
                             let radius = tile_size;
                             let width  = tile_size * 2.0;
                             let height = (tile_size * (3.0_f64).sqrt()).floor();
+
+                            let y = if y_offs { y + 0.5 * height } else { y };
 
                             let ci = (x / side).floor();
                             let cx = x - side * ci;
@@ -273,6 +275,7 @@ impl DemoUI {
                             let mut new_az = *z;
                             new_az.zone_type = ZoneType::HexFieldClick {
                                 tile_size,
+                                y_offs,
                                 pos: (i as usize, j as usize),
                             };
                             zone = Some(new_az);
@@ -485,14 +488,17 @@ impl WindowUI for DemoUI {
 
 fn main() {
     use hexotk::widgets::*;
+    use hexotk::hexosynth::{NodeMatrix, NodeMatrixModel, NodeMatrixData};
 
     open_window("HexoTK Demo", window_w, window_h, None, Box::new(|| {
         let wt_btn      = Rc::new(Button::new(80.0, 10.0));
         let wt_hexgrid  = Rc::new(HexGrid::new(14.0, 10.0));
         let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
         let wt_cont     = Rc::new(Container::new());
+        let wt_nmatrix  = Rc::new(NodeMatrix::new());
 
-        let matrix_model = std::sync::Arc::new(hexotk::hexosynth::MatrixModel::new(8, 7));
+//        let matrix_model = std::rc::Rc::new(hexotk::hexosynth::MatrixModel::new(8, 7));
+        let node_matrix_model = Rc::new(NodeMatrixModel::new());
 
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
@@ -507,8 +513,10 @@ fn main() {
 
         let mut con = ContainerData::new();
         con.new_row()
-           .add(wt_hexgrid.clone(), 0.into(), UIPos::center(7, 12),
-                HexGridData::new(matrix_model))
+            .add(wt_nmatrix.clone(), 0.into(), UIPos::center(7, 12),
+                NodeMatrixData::new())
+//           .add(wt_hexgrid.clone(), 0.into(), UIPos::center(7, 12),
+//                HexGridData::new(matrix_model))
            .add(wt_cont.clone(), 0.into(), UIPos::center(5, 12), node_ctrls);
 
         let mut ui = Box::new(DemoUI {

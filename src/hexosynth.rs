@@ -103,7 +103,7 @@ impl MatrixModel {
         let dmy = Rc::new(DummyNode { name: String::from("Dmy") });
 
         cells[10] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), None).input(Some(2), Some(0), None);
-        cells[11] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), None).input(Some(1), Some(3), None);;
+        cells[11] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), None).input(Some(1), Some(3), None);
 
         Self {
             w,
@@ -199,5 +199,185 @@ impl HexGridModel for MatrixModel {
         } else {
             None
         }
+    }
+}
+
+
+#[derive(Debug, Clone)]
+pub struct NodeMatrix {
+}
+
+impl NodeMatrix {
+    pub fn new() -> Self {
+        Self { }
+    }
+}
+
+use std::cell::RefCell;
+use crate::widgets::{HexGrid, HexGridData};
+use crate::{Rect, WidgetUI, Painter, WidgetData, WidgetType, UIEvent};
+
+pub struct NodeMatrixModel {
+    matrix: Rc<MatrixModel>,
+    menu:   Rc<NodeMenuModel>,
+}
+
+impl NodeMatrixModel {
+    pub fn new() -> Self {
+        Self {
+            matrix: Rc::new(MatrixModel::new(8, 7)),
+            menu:   Rc::new(NodeMenuModel::new()),
+        }
+    }
+}
+
+pub struct NodeMenuModel {
+}
+
+impl HexGridModel for NodeMenuModel {
+    fn width(&self) -> usize { 3 }
+    fn height(&self) -> usize { 3 }
+
+    fn cell_click(&self, x: usize, y: usize, btn: MButton) {
+        println!("MENU CLICK CELL: {},{}: {:?}", x, y, btn);
+    }
+
+    fn cell_empty(&self, x: usize, y: usize) -> bool {
+        if x >= 3 || y >= 3 { return true; }
+        false
+    }
+
+    fn cell_visible(&self, x: usize, y: usize) -> bool {
+        if x >= 3 || y >= 3 { return false; }
+        if x == 0 && y == 0 || x == 2 && y == 0 { return false; }
+        true
+    }
+
+    fn cell_label<'a>(&self, x: usize, y: usize, mut buf: &'a mut [u8]) -> Option<&'a str> {
+        if x >= 3 || y >= 3 { return None; }
+        Some("test")
+//        let cell = &self.cells[y * self.w + x];
+//
+//        if let Some(node) = &cell.node {
+//            use std::io::Write;
+//            let orig_len = buf.len();
+//            let mut cur = std::io::Cursor::new(buf);
+//            match write!(cur, "{} {}", node.0.name(), node.1 + 1) {
+//                Ok(_)  => {
+//                    let len = cur.position() as usize;
+//                    Some(
+//                        std::str::from_utf8(&(cur.into_inner())[0..len])
+//                        .unwrap())
+//                },
+//                Err(_) => None,
+//            }
+//        } else {
+//            None
+//        }
+    }
+
+    fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<&'a str> {
+        None
+//        if x >= 3 || y >= 3 { return None; }
+//        Some("test")
+//        let cell = &self.cells[y * self.w + x];
+//
+//        if let Some(node) = &cell.node {
+//            let param_idx =
+//                match edge {
+//                    0 => cell.in1,
+//                    1 => cell.out1,
+//                    2 => cell.out2,
+//                    3 => cell.out3,
+//                    4 => cell.in3,
+//                    5 => cell.in2,
+//                    _ => None,
+//                };
+//
+//            if let Some(param_idx) = param_idx {
+//                let param_name =
+//                    if edge == 1 || edge == 2 || edge == 3 {
+//                        node.0.output_label(param_idx).unwrap_or("?")
+//                    } else {
+//                        node.0.input_label(param_idx).unwrap_or("?")
+//                    };
+//
+//                let byt_len = param_name.as_bytes().len();
+//                out[0..byt_len].copy_from_slice(param_name.as_bytes());
+//                Some(std::str::from_utf8(&out[0..byt_len]).unwrap())
+//            } else {
+//                None
+//            }
+//        } else {
+//            None
+//        }
+    }
+}
+
+
+impl NodeMenuModel {
+    pub fn new() -> Self {
+        Self {
+        }
+    }
+}
+
+pub struct NodeMatrixData {
+    hex_grid:     Box<WidgetData>,
+    hex_menu:     Box<WidgetData>,
+    model:        Rc<RefCell<NodeMatrixModel>>,
+    matrix_model: Rc<MatrixModel>,
+    menu_model:   Rc<NodeMenuModel>,
+    display_menu: bool,
+}
+
+impl NodeMatrixData {
+    pub fn new() -> Box<Self> {
+        let model = Rc::new(RefCell::new(NodeMatrixModel::new()));
+        let matrix_model = model.borrow().matrix.clone();
+        let menu_model   = model.borrow().menu.clone();
+
+        let wt_hexgrid = Rc::new(HexGrid::new(14.0, 10.0));
+        let wt_hexgrid_menu = Rc::new(HexGrid::new_y_offs(14.0, 10.0));
+
+        Box::new(Self {
+            hex_grid: WidgetData::new_tl_box(
+                wt_hexgrid.clone(), 88.into(),
+                HexGridData::new(matrix_model.clone())),
+            hex_menu: WidgetData::new_tl_box(
+                wt_hexgrid_menu.clone(), 89.into(),
+                HexGridData::new(menu_model.clone())),
+            model,
+            matrix_model,
+            menu_model,
+            display_menu: false,
+        })
+    }
+}
+
+impl WidgetType for NodeMatrix {
+    fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
+        data.with(|data: &mut NodeMatrixData| {
+            (*data.hex_grid).draw(ui, p, pos);
+            if data.display_menu {
+                (*data.hex_menu).draw(ui, p, Rect::from(
+                    pos.x + 100.0,
+                    pos.y + 100.0,
+                    300.0,
+                    400.0,
+                ));
+            }
+        });
+    }
+
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
+        data.with(|data: &mut NodeMatrixData| {
+            if data.display_menu {
+                data.hex_menu.event(ui, ev);
+            }
+            data.display_menu = !data.display_menu;
+        });
+        ui.queue_redraw();
+        println!("EV: {:?}", ev);
     }
 }
