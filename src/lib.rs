@@ -1,22 +1,14 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
-// trait for WidgetType
-// - provides active zones
-// - can set "input modes" which forward interaction to the widget
-// - can draw themself
-// - get a reference to their state data, which is stored externally
-//   => need to define how and how to interact with client code!
-// => Think if container types can be implemented this way.
 pub mod widgets;
 mod window;
 mod constants;
 mod femtovg_painter;
 
 use std::rc::Rc;
-use std::cell::RefCell;
 
-use keyboard_types::{Key, KeyboardEvent};
+use keyboard_types::KeyboardEvent;
 
 pub use window::open_window;
 
@@ -45,17 +37,17 @@ impl UIPos {
 
 pub struct WidgetData {
     id:    ParamID,
-    wtype: usize,
+    wtype: Rc<dyn WidgetType>,
     pos:   UIPos,
     data:  Box<dyn std::any::Any>,
 }
 
 impl WidgetData {
-    pub fn new_box(wtype: usize, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
+    pub fn new_box(wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
         Box::new(Self { wtype, id, data, pos })
     }
 
-    pub fn new(wtype: usize, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
+    pub fn new(wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
         Self { wtype, id, data, pos }
     }
 
@@ -63,7 +55,7 @@ impl WidgetData {
 
     pub fn id(&self) -> ParamID { self.id }
 
-    pub fn widget_type(&self) -> usize { self.wtype }
+    pub fn widget_type(&self) -> Rc<dyn WidgetType> { self.wtype.clone() }
 
     pub fn with<F, T: 'static, R>(&mut self, f: F) -> Option<R>
         where F: FnOnce(&mut T) -> R
@@ -74,9 +66,24 @@ impl WidgetData {
             None
         }
     }
+
+    fn event(&mut self, ui: &mut dyn WidgetUI, ev: &UIEvent) {
+        let wt = self.widget_type();
+        wt.event(ui, self, ev);
+    }
+
+    fn size(&mut self, ui: &mut dyn WidgetUI, avail: (f64, f64)) -> (f64, f64) {
+        let wt = self.widget_type();
+        wt.size(ui, self, avail)
+    }
+
+    fn draw(&mut self, ui: &mut dyn WidgetUI, p: &mut dyn Painter, rect: Rect) {
+        let wt = self.widget_type();
+        wt.draw(ui, self, p, rect);
+    }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
@@ -120,14 +127,14 @@ impl Rect {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MButton {
     Left,
     Right,
     Middle,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ActiveZone {
     pub id:         ParamID,
     pub pos:        Rect,
@@ -156,7 +163,7 @@ impl ActiveZone {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ZoneType {
     ValueDragFine,
     ValueDragCoarse,
@@ -241,7 +248,7 @@ pub trait Parameters {
     fn change_end(&mut self, id: ParamID, v: f32);
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum HLStyle {
     None,
     Inactive,
@@ -305,16 +312,13 @@ pub trait WindowUI {
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut dyn Painter);
     fn set_window_size(&mut self, w: f64, h: f64);
-    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>);
 }
 
 pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
     fn hl_style_for(&self, id: ParamID) -> HLStyle;
     fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
-    fn draw_widget(&mut self, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect);
-    fn propagate_event(&mut self, data: &mut WidgetData, ev: &UIEvent);
-    fn widget_size(&mut self, data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64);
+    fn queue_redraw(&mut self);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
     fn params(&self) -> &dyn Parameters;

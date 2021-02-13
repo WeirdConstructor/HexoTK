@@ -19,6 +19,14 @@ pub trait HexGridModel {
 
 #[derive(Debug, Clone)]
 pub struct HexGrid {
+    center_font_size: f64,
+    edge_font_size:   f64,
+}
+
+impl HexGrid {
+    pub fn new(center_font_size: f64, edge_font_size: f64) -> Self {
+        Self { center_font_size, edge_font_size }
+    }
 }
 
 #[derive(Clone)]
@@ -27,8 +35,8 @@ pub struct HexGridData {
 }
 
 impl HexGridData {
-    pub fn new(model: Arc<dyn HexGridModel>) -> Self {
-        Self { model }
+    pub fn new(model: Arc<dyn HexGridModel>) -> Box<Self> {
+        Box::new(Self { model })
     }
 }
 
@@ -174,41 +182,44 @@ impl WidgetType for HexGrid {
                     let xo = pos.x + x * 0.75 * w + size;
                     let yo = pos.y + (1.00 + y) * h;
 
-                    let tw = w;
-                    let th  = 15.0;
-                    let th2 = 14.0;
+                    let th  = p.font_height(self.center_font_size as f32, false) as f64;
+                    let fs  = self.center_font_size;
+                    let th2 = p.font_height(self.edge_font_size as f32, false) as f64;
+                    let fs2 = self.edge_font_size;
 
                     // padded outer hex
                     draw_hexagon(p, size_in, line, xo, yo, clr, |p, pos, sz| {
                         match pos {
                             HexDecorPos::Center(x, y) => {
                                 p.label(
-                                    15.0, 0, txt_clr,
+                                    fs, 0, txt_clr,
                                     x - 0.5 * sz.0,
                                     y - 0.5 * th,
                                     sz.0, th, "Env 1");
 
-                                draw_hexagon(p, size * 0.5, line * 0.5, x, y, clr, |p, pos, sz| ());
+                                draw_hexagon(
+                                    p, size * 0.5, line * 0.5, x, y, clr,
+                                    |_p, _pos, _sz| ());
                             },
                             HexDecorPos::Top(x, y) => {
                                 p.label(
-                                    10.0, 0, txt_clr,
+                                    fs2, 0, txt_clr,
                                     x - 0.5 * sz.0,
                                     y - 1.0,
                                     sz.0, th, "Top");
                             },
                             HexDecorPos::Bottom(x, y) => {
                                 p.label(
-                                    10.0, 0, txt_clr,
+                                    fs2, 0, txt_clr,
                                     x - 0.5 * sz.0,
                                     y - th,
                                     sz.0, th, "Bot");
 
-                                draw_arrow(p, txt_clr, x, y, 10.0, 90.0);
+                                draw_arrow(p, txt_clr, x, y, fs2, 90.0);
                             },
                             HexDecorPos::TopLeft(x, y) => {
                                 p.label_rot(
-                                    10.0, 0, 300.0, txt_clr,
+                                    fs2, 0, 300.0, txt_clr,
                                     (x - 0.5 * sz.0).floor(),
                                     (y - 0.5 * th2).floor(),
                                     0.0,
@@ -217,7 +228,7 @@ impl WidgetType for HexGrid {
                             },
                             HexDecorPos::TopRight(x, y) => {
                                 p.label_rot(
-                                    10.0, 0, 60.0, txt_clr,
+                                    fs2, 0, 60.0, txt_clr,
                                     (x - 0.5 * sz.0).floor(),
                                     (y - 0.5 * th2).floor(),
                                     0.0,
@@ -228,7 +239,7 @@ impl WidgetType for HexGrid {
                             },
                             HexDecorPos::BotLeft(x, y) => {
                                 p.label_rot(
-                                    10.0, 0, 60.0, txt_clr,
+                                    fs2, 0, 60.0, txt_clr,
                                     (x - 0.5 * sz.0).floor(),
                                     (y - 0.5 * th2).floor(),
                                     0.0,
@@ -237,7 +248,7 @@ impl WidgetType for HexGrid {
                             },
                             HexDecorPos::BotRight(x, y) => {
                                 p.label_rot(
-                                    10.0, 0, 300.0, txt_clr,
+                                    fs2, 0, 300.0, txt_clr,
                                     (x - 0.5 * sz.0).floor(),
                                     (y - 0.5 * th2).floor(),
                                     0.0,
@@ -246,7 +257,6 @@ impl WidgetType for HexGrid {
 
                                 draw_arrow(p, txt_clr, x, y, 10.0, 30.0);
                             },
-                            _ => {},
                         }
                     });
                 }

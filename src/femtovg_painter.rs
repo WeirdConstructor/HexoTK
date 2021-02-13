@@ -5,7 +5,6 @@ use femtovg::{
     renderer::OpenGl,
     Canvas,
     FontId,
-    ImageId,
     Color,
 };
 

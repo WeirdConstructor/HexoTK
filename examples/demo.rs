@@ -3,6 +3,10 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::io::BufWriter;
 
+const window_w : i32 = 1150;
+const window_h : i32 = 720;
+
+
 const DEFAULT_COARSE_STEP : f32 = 0.05;
 const DEFAULT_FINE_STEP   : f32 = 0.01;
 
@@ -69,26 +73,26 @@ struct OpDesc {
 // - How to connect with UI code?
 
 struct DemoUI {
-    types:      Vec<Box<dyn WidgetType>>,
-    main:       Option<Box<WidgetData>>,
-    zones:      Option<Vec<ActiveZone>>,
-    hover_zone: Option<ActiveZone>,
-    mouse_pos:  (f64, f64),
-    params:     Option<Box<dyn Parameters>>,
-    input_mode: Option<InputMode>,
-    mod_keys:   ModifierKeys,
+    main:           Option<Box<WidgetData>>,
+    zones:          Option<Vec<ActiveZone>>,
+    hover_zone:     Option<ActiveZone>,
+    mouse_pos:      (f64, f64),
+    params:         Option<Box<dyn Parameters>>,
+    input_mode:     Option<InputMode>,
+    mod_keys:       ModifierKeys,
+    needs_redraw:   bool,
 }
 
 struct ModifierKeys {
     fine_drag_key: bool,
 }
 
-struct WidgetUIHolder<'a> {
-    types:          &'a Vec<Box<dyn WidgetType>>,
+struct WidgetUIHolder {
     zones:          Vec<ActiveZone>,
     hover_zone:     Option<ActiveZone>,
     params:         Box<dyn Parameters>,
     input_mode:     Option<InputMode>,
+    needs_redraw:   bool,
 }
 
 struct SomeParameters {
@@ -153,7 +157,6 @@ enum InputMode {
         value:  String,
         input:  Rc<RefCell<BufWriter<Vec<u8>>>>
     },
-    GetHelp,
 }
 
 impl InputMode {
@@ -180,30 +183,13 @@ impl InputMode {
 
 
 
-impl<'a> WidgetUI for WidgetUIHolder<'a> {
+impl WidgetUI for WidgetUIHolder {
     fn define_active_zone(&mut self, az: ActiveZone) {
         self.zones.push(az);
     }
 
-    fn propagate_event(&mut self, data: &mut WidgetData, ev: &UIEvent) {
-        let w_type_id = data.widget_type();
-        let wt        = &self.types[w_type_id];
-
-        wt.event(self, data, ev);
-    }
-
-    fn widget_size(&mut self, data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64) {
-        let w_type_id = data.widget_type();
-        let wt        = &self.types[w_type_id];
-
-        wt.size(self, data, avail)
-    }
-
-    fn draw_widget(&mut self, data: &mut WidgetData, p: &mut dyn Painter, rect: Rect) {
-        let w_type_id = data.widget_type();
-        let wt        = &self.types[w_type_id];
-
-        wt.draw(self, data, p, rect);
+    fn queue_redraw(&mut self) {
+        self.needs_redraw = true;
     }
 
     fn grab_focus(&mut self) {
@@ -244,6 +230,10 @@ impl<'a> WidgetUI for WidgetUIHolder<'a> {
 }
 
 impl DemoUI {
+    fn queue_redraw(&mut self) {
+        self.needs_redraw = true;
+    }
+
     fn get_zone_at(&self, pos: (f64, f64)) -> Option<ActiveZone> {
         if let Some(zones) = self.zones.as_ref() {
             let mut zone : Option<ActiveZone> = None;
@@ -278,7 +268,7 @@ impl DemoUI {
                                         - (if cy < height / 2.0 { 1.0 } else { 0.0 }))
                                 };
 
-                            println!("i={}, j={}", i, j);
+                            //d// println!("i={}, j={}", i, j);
 
                             let mut new_az = *z;
                             new_az.zone_type = ZoneType::HexFieldClick {
@@ -304,7 +294,9 @@ impl DemoUI {
         }
     }
 
-    fn dispatch<F>(&mut self, f: F) where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
+    fn dispatch<F>(&mut self, f: F)
+        where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
+
         let mut data        = self.main.take();
         let mut zones       = self.zones.take();
         let mut params      = self.params.take();
@@ -315,19 +307,21 @@ impl DemoUI {
             let mut params = params.unwrap();
             zones.clear();
 
-            let w_type_id = data.widget_type();
-            let wt        = &self.types[w_type_id];
             let mut wui   =
                 WidgetUIHolder {
-                    types:      &self.types,
                     hover_zone: self.hover_zone,
                     params,
                     zones,
                     input_mode,
+                    needs_redraw: false,
                 };
 
-            f(&mut wui, &mut data, wt.as_ref());
+            let wt = data.widget_type();
+            f(&mut wui, &mut data, &*wt);
 
+            if wui.needs_redraw {
+                self.queue_redraw();
+            }
             self.zones      = Some(wui.zones);
             self.main       = Some(data);
             self.params     = Some(wui.params);
@@ -337,22 +331,15 @@ impl DemoUI {
 }
 
 impl WindowUI for DemoUI {
-    fn add_widget_type(&mut self, w_type_id: usize, wtype: Box<dyn WidgetType>) {
-        if w_type_id >= self.types.len() {
-            self.types.resize_with((w_type_id + 1) * 2, || Box::new(DummyWidget::new()));
-        }
-
-        self.types[w_type_id] = wtype;
-    }
-
     fn pre_frame(&mut self) {
     }
 
     fn post_frame(&mut self) {
+        self.needs_redraw = false;
     }
 
     fn needs_redraw(&mut self) -> bool {
-        true
+        self.needs_redraw
     }
 
     fn is_active(&mut self) -> bool {
@@ -362,10 +349,11 @@ impl WindowUI for DemoUI {
     fn handle_input_event(&mut self, event: InputEvent) {
         let mut dispatch_event = None;
 
-        println!("INPUT: {:?}", event);
         match event {
             InputEvent::MousePosition(x, y) => {
                 self.mouse_pos = (x, y);
+
+                let prev_hz = self.hover_zone;
 
                 self.hover_zone = None;
 
@@ -385,9 +373,14 @@ impl WindowUI for DemoUI {
 
                 if let Some((id, val)) = param_change {
                     self.params.as_mut().unwrap().change(id, val, false);
+                    self.queue_redraw();
                 }
 
                 self.hover_zone = new_hz;
+
+                if self.hover_zone != prev_hz {
+                    self.queue_redraw();
+                }
             },
             InputEvent::MouseButtonReleased(btn) => {
                 if let Some(input_mode) = self.input_mode.take() {
@@ -395,6 +388,7 @@ impl WindowUI for DemoUI {
                         input_mode.get_param_change_when_drag(self.mouse_pos) {
 
                         self.params.as_mut().unwrap().change_end(id, val);
+                        self.queue_redraw();
                     }
 
                 } else {
@@ -445,6 +439,7 @@ impl WindowUI for DemoUI {
                                     });
 
                                 self.params.as_mut().unwrap().change_start(az.id);
+                                self.queue_redraw();
                             },
                             _ => {},
                         }
@@ -452,7 +447,9 @@ impl WindowUI for DemoUI {
                 }
 
             },
-            _ => {},
+            _ => {
+                println!("UNKNOWN INPUT EVENT: {:?}", event);
+            },
         }
 
         if let Some(event) = dispatch_event {
@@ -467,7 +464,8 @@ impl WindowUI for DemoUI {
     fn draw(&mut self, painter: &mut dyn Painter) {
         painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
-            wt.draw(ui, data, painter, Rect::from(0.0, 0.0, 800.0, 700.0));
+            wt.draw(ui, data, painter,
+                Rect::from(0.0, 0.0, window_w as f64, window_h as f64));
         });
     }
 
@@ -522,29 +520,44 @@ impl hexotk::widgets::hexgrid::HexGridModel for MatrixModel {
 fn main() {
     use hexotk::widgets::*;
 
-    open_window("HexoTK Demo", 800, 700, None, Box::new(|| {
+    open_window("HexoTK Demo", window_w, window_h, None, Box::new(|| {
+        let wt_btn      = Rc::new(Button::new(80.0, 10.0));
+        let wt_hexgrid  = Rc::new(HexGrid::new(15.0, 10.0));
+        let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
+        let wt_cont     = Rc::new(Container::new());
+
+        let matrix_model = std::sync::Arc::new(MatrixModel::new());
+
+        let mut node_ctrls = ContainerData::new();
+        node_ctrls.new_row()
+           .add(wt_btn,          1.into(), UIPos::right( 6, 6), ButtonData::new_toggle("Test Btn"))
+           .add(wt_knob.clone(), 2.into(), UIPos::center(3, 6), KnobData::new())
+           .add(wt_knob.clone(), 2.into(), UIPos::center(3, 6), KnobData::new())
+           .new_row()
+           .add(wt_knob.clone(), 4.into(), UIPos::center(3, 6), KnobData::new())
+           .add(wt_knob.clone(), 5.into(), UIPos::center(3, 6), KnobData::new())
+           .add(wt_knob.clone(), 6.into(), UIPos::center(3, 6), KnobData::new())
+           .add(wt_knob.clone(), 7.into(), UIPos::center(3, 6), KnobData::new());
+
         let mut con = ContainerData::new();
         con.new_row()
-           .add(1, 1.into(), UIPos::right(6, 12), ButtonData::new_toggle("Test Btn"))
-           .add(3, 2.into(), UIPos::center(3, 12), KnobData::new())
-           .add(3, 2.into(), UIPos::center(3, 12), KnobData::new());
+           .add(wt_hexgrid.clone(), 0.into(), UIPos::center(7, 12),
+                HexGridData::new(matrix_model))
+           .add(wt_cont.clone(), 0.into(), UIPos::center(5, 12), node_ctrls);
 
         let mut ui = Box::new(DemoUI {
-            types:      vec![],
             zones:      Some(vec![]),
             mouse_pos:  (0.0, 0.0),
             hover_zone: None,
             input_mode: None,
             params:     Some(Box::new(SomeParameters { params: [0.0; 100] })),
+            needs_redraw: true,
             mod_keys:
                 ModifierKeys {
                     fine_drag_key: false
                 },
             main: Some(WidgetData::new_box(
-                0,
-                0.into(),
-                UIPos::center(12, 12),
-                Box::new(con))),
+                wt_cont, 0.into(), UIPos::center(12, 12), con)),
 
 //                Some(Box::new((0, hexotk::WidgetData::new(
 //                   Box::new(hexotk::widgets::KnobData::new())
@@ -555,11 +568,6 @@ fn main() {
 //                        counter: 0,
 //                    })))))
         });
-
-        ui.add_widget_type(1, Box::new(Button::new(80.0, 10.0)));
-        ui.add_widget_type(2, Box::new(HexGrid { }));
-        ui.add_widget_type(3, Box::new(Knob::new(30.0, 10.0, 10.0)));
-        ui.add_widget_type(0, Box::new(Container::new()));
 
         ui
     }));

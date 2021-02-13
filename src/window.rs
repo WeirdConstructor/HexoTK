@@ -14,10 +14,7 @@ use crate::femtovg_painter::FemtovgPainter;
 
 use raw_gl_context::{GlContext, GlConfig, Profile};
 
-use raw_window_handle::{
-    HasRawWindowHandle,
-    RawWindowHandle
-};
+use raw_window_handle::RawWindowHandle;
 
 #[macro_use]
 use baseview::{

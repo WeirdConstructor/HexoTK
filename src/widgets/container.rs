@@ -20,10 +20,10 @@ pub struct ContainerData {
 }
 
 impl ContainerData {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Box<Self> {
+        Box::new(Self {
             rows: vec![],
-        }
+        })
     }
 
     pub fn new_row(&mut self) -> &mut Self {
@@ -31,7 +31,7 @@ impl ContainerData {
         self
     }
 
-    pub fn add(&mut self, wtype: usize, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> &mut Self {
+    pub fn add(&mut self, wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> &mut Self {
         if self.rows.len() > 0 {
             let last_idx = self.rows.len() - 1;
             self.rows[last_idx].push(WidgetData::new(wtype, id, pos, data));
@@ -62,11 +62,11 @@ impl WidgetType for Container {
 
                     if ro < min_row_offs { min_row_offs = ro; }
 
-                    let size = ui.widget_size(data, (widget_rect.w, widget_rect.h));
-
                     let mut xe = widget_rect.x;
                     let mut ye = widget_rect.y;
                     let align = pos.alignment();
+
+                    let size = data.size(ui, (widget_rect.w, widget_rect.h));
 
                     match align.0 {
                         1 => { xe += widget_rect.w - size.0; },
@@ -83,7 +83,7 @@ impl WidgetType for Container {
                     let xe = xe.floor();
                     let ye = ye.floor();
 
-                    ui.draw_widget(data, p, Rect { x: xe, y: ye, w: size.0, h: size.1 });
+                    data.draw(ui, p, Rect { x: xe, y: ye, w: size.0, h: size.1 });
 
                     if self.debug {
                         p.rect_stroke(1.0, (0.0, 1.0, 0.0), xe - 0.5, ye - 0.5, size.0 - 1.0, size.1 - 1.0);
@@ -105,7 +105,7 @@ impl WidgetType for Container {
         data.with(|data: &mut ContainerData| {
             for cols in data.rows.iter_mut() {
                 for data in cols.iter_mut() {
-                    ui.propagate_event(data, ev);
+                    data.event(ui, ev);
                 }
             }
         });
