@@ -1,6 +1,7 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
+pub mod hexosynth;
 pub mod widgets;
 mod window;
 mod constants;

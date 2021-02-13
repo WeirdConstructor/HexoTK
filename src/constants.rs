@@ -95,3 +95,9 @@ pub const UI_INPUT_BOX_FONT_SIZE : f64 = 16.0;
 
 pub const UI_DRAG_INFO_W         : f64 = 70.0;
 pub const UI_DRAG_INFO_FONT_SIZE : f64 = 10.0;
+
+pub const UI_GRID_TXT_CENTER_CLR   : (f64, f64, f64) = UI_PRIM_CLR;
+pub const UI_GRID_TXT_EDGE_CLR     : (f64, f64, f64) = UI_PRIM_CLR;
+pub const UI_GRID_CELL_BORDER_CLR  : (f64, f64, f64) = UI_ACCENT_CLR;
+pub const UI_GRID_EMPTY_BORDER_CLR : (f64, f64, f64) = (77.0 / 255.0, 24.0 / 255.0, 74.0 / 255.0);
+pub const UI_GRID_HOVER_BORDER_CLR : (f64, f64, f64) = UI_ACCENT_CLR;

@@ -470,50 +470,7 @@ impl WindowUI for DemoUI {
     }
 
     fn set_window_size(&mut self, w: f64, h: f64) {
-    }
-}
-
-#[derive(Debug)]
-pub struct Connection {
-    node: Box<dyn NodeType>,
-    input_param: u8,
-}
-
-pub trait NodeType : std::fmt::Debug {
-    fn name(&self) -> &str;
-    fn instance_num(&self) -> usize;
-    fn connection(&self, edge: u8) -> Option<Connection>;
-    fn param_label(&self, param: usize) -> Option<&str>;
-}
-
-#[derive(Debug)]
-struct MatrixCell {
-    node: Option<Box<dyn NodeType>>,
-}
-
-#[derive(Debug)]
-struct MatrixModel {
-    cells: Vec<MatrixCell>,
-}
-
-impl MatrixModel {
-    fn new() -> Self {
-        Self {
-            cells: vec![],
-        }
-    }
-}
-
-impl hexotk::widgets::hexgrid::HexGridModel for MatrixModel {
-    fn cell_visible(&self, x: usize, y: usize) -> bool {
-        true
-    }
-
-    fn cell_label(&self, x: usize, y: usize, out: &mut [u8]) {
-    }
-
-    fn cell_edge_connection(&self, x: usize, y: usize, edge: u8, out: &mut [u8]) -> bool {
-        true
+        self.queue_redraw();
     }
 }
 
@@ -522,11 +479,11 @@ fn main() {
 
     open_window("HexoTK Demo", window_w, window_h, None, Box::new(|| {
         let wt_btn      = Rc::new(Button::new(80.0, 10.0));
-        let wt_hexgrid  = Rc::new(HexGrid::new(15.0, 10.0));
+        let wt_hexgrid  = Rc::new(HexGrid::new(14.0, 10.0));
         let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
         let wt_cont     = Rc::new(Container::new());
 
-        let matrix_model = std::sync::Arc::new(MatrixModel::new());
+        let matrix_model = std::sync::Arc::new(hexotk::hexosynth::MatrixModel::new(8, 7));
 
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()

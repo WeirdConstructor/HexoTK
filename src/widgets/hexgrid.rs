@@ -1,4 +1,5 @@
 use super::*;
+use crate::constants::*;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -12,9 +13,13 @@ pub enum CellEdge {
 }
 
 pub trait HexGridModel {
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
     fn cell_visible(&self, x: usize, y: usize) -> bool;
-    fn cell_label(&self, x: usize, y: usize, out: &mut [u8]);
-    fn cell_edge_connection(&self, x: usize, y: usize, edge: u8, out: &mut [u8]) -> bool;
+    fn cell_empty(&self, x: usize, y: usize) -> bool;
+    fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<&'a str>;
+    // Edge: 0 top, 1 top right, ... 3 bottom, 5 top left
+    fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<&'a str>;
 }
 
 #[derive(Debug, Clone)]
@@ -152,17 +157,17 @@ impl WidgetType for HexGrid {
                 (0, 0)
             };
 
-        let txt_clr = (81.0 / 255.0, 162.0 / 255.0, 171.0 / 255.0);
-
         data.with(|data: &mut HexGridData| {
             p.rect_fill(
                 (32.0 / 255.0, 14.0 / 255.0, 31.0 / 255.0),
                 pos.x, pos.y,
                 pos.w, pos.h);
 
-            // Calculate the number of hexagons fitting into the pos Rect:
-            let nx = ((pos.w - (0.5 * w)) / (0.75 * w)).floor() as usize;
-            let ny = ((pos.h - (0.5 * h)) / h).floor() as usize;
+            //// Calculate the number of hexagons fitting into the pos Rect:
+            //let nx = ((pos.w - (0.5 * w)) / (0.75 * w)).floor() as usize;
+            //let ny = ((pos.h - (0.5 * h)) / h).floor() as usize;
+            let nx = data.model.width();
+            let ny = data.model.height();
 
             for xi in 0..nx {
                 let x = xi as f64;
@@ -172,11 +177,19 @@ impl WidgetType for HexGrid {
                         if xi % 2 == 0 { yi as f64 - 0.5 }
                         else           { yi as f64 };
 
+                    if !data.model.cell_visible(xi, yi) {
+                        continue;
+                    }
+
                     let (line, clr) =
                         if marked.0 == xi && marked.1 == yi {
-                            (5.0, (120.0 / 255.0, 13.0 / 255.0, 114.0 / 255.0))
+                            (5.0, UI_GRID_HOVER_BORDER_CLR)
                         } else {
-                            (3.0, (77.0 / 255.0, 24.0 / 255.0, 74.0 / 255.0))
+                            if data.model.cell_empty(xi, yi) {
+                                (3.0, UI_GRID_EMPTY_BORDER_CLR)
+                            } else {
+                                (3.0, UI_GRID_CELL_BORDER_CLR)
+                            }
                         };
 
                     let xo = pos.x + x * 0.75 * w + size;
@@ -189,73 +202,89 @@ impl WidgetType for HexGrid {
 
                     // padded outer hex
                     draw_hexagon(p, size_in, line, xo, yo, clr, |p, pos, sz| {
+                        let mut label_buf = [0; 20];
+
                         match pos {
                             HexDecorPos::Center(x, y) => {
-                                p.label(
-                                    fs, 0, txt_clr,
-                                    x - 0.5 * sz.0,
-                                    y - 0.5 * th,
-                                    sz.0, th, "Env 1");
+                                if let Some(s) = data.model.cell_label(xi, yi, &mut label_buf) {
+                                    p.label(
+                                        fs, 0, UI_GRID_TXT_CENTER_CLR,
+                                        x - 0.5 * sz.0,
+                                        y - 0.5 * th,
+                                        sz.0, th, s);
 
-                                draw_hexagon(
-                                    p, size * 0.5, line * 0.5, x, y, clr,
-                                    |_p, _pos, _sz| ());
+                                    draw_hexagon(
+                                        p, size * 0.5, line * 0.5, x, y, clr,
+                                        |_p, _pos, _sz| ());
+                                }
                             },
                             HexDecorPos::Top(x, y) => {
-                                p.label(
-                                    fs2, 0, txt_clr,
-                                    x - 0.5 * sz.0,
-                                    y - 1.0,
-                                    sz.0, th, "Top");
+                                if let Some(s) = data.model.cell_edge(xi, yi, 0, &mut label_buf) {
+                                    p.label(
+                                        fs2, 0, UI_GRID_TXT_EDGE_CLR,
+                                        x - 0.5 * sz.0,
+                                        y - 2.0,
+                                        sz.0, th, s);
+                                }
                             },
                             HexDecorPos::Bottom(x, y) => {
-                                p.label(
-                                    fs2, 0, txt_clr,
-                                    x - 0.5 * sz.0,
-                                    y - th,
-                                    sz.0, th, "Bot");
+                                if let Some(s) = data.model.cell_edge(xi, yi, 3, &mut label_buf) {
+                                    p.label(
+                                        fs2, 0, UI_GRID_TXT_EDGE_CLR,
+                                        x - 0.5 * sz.0,
+                                        y - th + 1.0,
+                                        sz.0, th, s);
 
-                                draw_arrow(p, txt_clr, x, y, fs2, 90.0);
+                                    draw_arrow(p, UI_GRID_TXT_EDGE_CLR, x, y, fs2, 90.0);
+                                }
                             },
                             HexDecorPos::TopLeft(x, y) => {
-                                p.label_rot(
-                                    fs2, 0, 300.0, txt_clr,
-                                    (x - 0.5 * sz.0).floor(),
-                                    (y - 0.5 * th2).floor(),
-                                    0.0,
-                                    (0.5 * th2).floor() - 1.0,
-                                    sz.0, th2, "TL");
+                                if let Some(s) = data.model.cell_edge(xi, yi, 5, &mut label_buf) {
+                                    p.label_rot(
+                                        fs2, 0, 300.0, UI_GRID_TXT_EDGE_CLR,
+                                        (x - 0.5 * sz.0).floor(),
+                                        (y - 0.5 * th2).floor(),
+                                        0.0,
+                                        (0.5 * th2).floor() + 1.0,
+                                        sz.0, th2, s);
+                                }
                             },
                             HexDecorPos::TopRight(x, y) => {
-                                p.label_rot(
-                                    fs2, 0, 60.0, txt_clr,
-                                    (x - 0.5 * sz.0).floor(),
-                                    (y - 0.5 * th2).floor(),
-                                    0.0,
-                                    (0.5 * th2).floor(),
-                                    sz.0, th2, "TR");
+                                if let Some(s) = data.model.cell_edge(xi, yi, 1, &mut label_buf) {
+                                    p.label_rot(
+                                        fs2, 0, 60.0, UI_GRID_TXT_EDGE_CLR,
+                                        (x - 0.5 * sz.0).floor(),
+                                        (y - 0.5 * th2).floor(),
+                                        0.0,
+                                        (0.5 * th2).floor() + 1.0,
+                                        sz.0, th2, s);
 
-                                draw_arrow(p, txt_clr, x, y, 10.0, -30.0);
+                                    draw_arrow(p, UI_GRID_TXT_EDGE_CLR, x, y, 10.0, -30.0);
+                                }
                             },
                             HexDecorPos::BotLeft(x, y) => {
-                                p.label_rot(
-                                    fs2, 0, 60.0, txt_clr,
-                                    (x - 0.5 * sz.0).floor(),
-                                    (y - 0.5 * th2).floor(),
-                                    0.0,
-                                    -(0.5 * th2).floor() + 1.0,
-                                    sz.0, th2, "BL");
+                                if let Some(s) = data.model.cell_edge(xi, yi, 4, &mut label_buf) {
+                                    p.label_rot(
+                                        fs2, 0, 60.0, UI_GRID_TXT_EDGE_CLR,
+                                        (x - 0.5 * sz.0).floor(),
+                                        (y - 0.5 * th2).floor(),
+                                        0.0,
+                                        -(0.5 * th2).floor() + 1.0,
+                                        sz.0, th2, s);
+                                }
                             },
                             HexDecorPos::BotRight(x, y) => {
-                                p.label_rot(
-                                    fs2, 0, 300.0, txt_clr,
-                                    (x - 0.5 * sz.0).floor(),
-                                    (y - 0.5 * th2).floor(),
-                                    0.0,
-                                    -(0.5 * th2).floor(),
-                                    sz.0, th2, "BR");
+                                if let Some(s) = data.model.cell_edge(xi, yi, 2, &mut label_buf) {
+                                    p.label_rot(
+                                        fs2, 0, 300.0, UI_GRID_TXT_EDGE_CLR,
+                                        (x - 0.5 * sz.0).floor(),
+                                        (y - 0.5 * th2).floor(),
+                                        0.0,
+                                        -(0.5 * th2).floor(),
+                                        sz.0, th2, s);
 
-                                draw_arrow(p, txt_clr, x, y, 10.0, 30.0);
+                                    draw_arrow(p, UI_GRID_TXT_EDGE_CLR, x, y, 10.0, 30.0);
+                                }
                             },
                         }
                     });
