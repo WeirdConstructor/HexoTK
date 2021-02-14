@@ -17,16 +17,32 @@ pub trait HexGridModel {
 pub struct HexGrid {
     center_font_size: f64,
     edge_font_size:   f64,
+    bg_color:         (f64, f64, f64),
     y_offs:           bool,
 }
 
 impl HexGrid {
     pub fn new(center_font_size: f64, edge_font_size: f64) -> Self {
-        Self { center_font_size, edge_font_size, y_offs: false }
+        Self {
+            center_font_size,
+            edge_font_size,
+            bg_color: UI_GRID_BG1_CLR,
+            y_offs:   false
+        }
     }
 
     pub fn new_y_offs(center_font_size: f64, edge_font_size: f64) -> Self {
-        Self { center_font_size, edge_font_size, y_offs: true }
+        Self {
+            center_font_size,
+            edge_font_size,
+            bg_color: UI_GRID_BG1_CLR,
+            y_offs:   true
+        }
+    }
+
+    pub fn bg_color(mut self, clr: (f64, f64, f64)) -> Self {
+        self.bg_color = clr;
+        self
     }
 }
 
@@ -153,7 +169,7 @@ impl WidgetType for HexGrid {
 
         data.with(|data: &mut HexGridData| {
             p.rect_fill(
-                (32.0 / 255.0, 14.0 / 255.0, 31.0 / 255.0),
+                self.bg_color,
                 pos.x, pos.y,
                 pos.w, pos.h);
 

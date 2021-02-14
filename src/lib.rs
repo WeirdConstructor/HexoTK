@@ -114,6 +114,21 @@ impl Rect {
         }
     }
 
+    pub fn move_into(mut self, pos: &Rect) -> Self {
+        if self.x < pos.x { self.x = pos.x; }
+        if self.y < pos.y { self.y = pos.y; }
+
+        if (self.x + self.w) > (pos.x + pos.w) {
+            self.x = (pos.x + pos.w) - self.w;
+        }
+
+        if (self.y + self.h) > (pos.y + pos.h) {
+            self.y = (pos.y + pos.h) - self.h;
+        }
+
+        self
+    }
+
     pub fn is_inside(&self, x: f64, y: f64) -> bool {
            x >= self.x && x <= (self.x + self.w)
         && y >= self.y && y <= (self.y + self.h)

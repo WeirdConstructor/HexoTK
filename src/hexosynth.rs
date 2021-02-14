@@ -1,6 +1,8 @@
 use crate::widgets::hexgrid::HexGridModel;
 use crate::MButton;
 use std::rc::Rc;
+use crate::constants::*;
+use crate::ActiveZone;
 
 #[derive(Debug)]
 struct DummyNode {
@@ -328,7 +330,7 @@ pub struct NodeMatrixData {
     model:        Rc<RefCell<NodeMatrixModel>>,
     matrix_model: Rc<MatrixModel>,
     menu_model:   Rc<NodeMenuModel>,
-    display_menu: bool,
+    display_menu: Option<(f64, f64)>,
 }
 
 impl NodeMatrixData {
@@ -338,7 +340,7 @@ impl NodeMatrixData {
         let menu_model   = model.borrow().menu.clone();
 
         let wt_hexgrid = Rc::new(HexGrid::new(14.0, 10.0));
-        let wt_hexgrid_menu = Rc::new(HexGrid::new_y_offs(14.0, 10.0));
+        let wt_hexgrid_menu = Rc::new(HexGrid::new_y_offs(14.0, 10.0).bg_color(UI_GRID_BG2_CLR));
 
         Box::new(Self {
             hex_grid: WidgetData::new_tl_box(
@@ -350,7 +352,7 @@ impl NodeMatrixData {
             model,
             matrix_model,
             menu_model,
-            display_menu: false,
+            display_menu: None,
         })
     }
 }
@@ -359,23 +361,37 @@ impl WidgetType for NodeMatrix {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         data.with(|data: &mut NodeMatrixData| {
             (*data.hex_grid).draw(ui, p, pos);
-            if data.display_menu {
-                (*data.hex_menu).draw(ui, p, Rect::from(
-                    pos.x + 100.0,
-                    pos.y + 100.0,
-                    300.0,
-                    400.0,
-                ));
+
+            if let Some(mouse_pos) = data.display_menu {
+                let menu_w = 270.0;
+                let menu_h = 280.0;
+
+                let menu_rect =
+                    Rect::from(
+                        mouse_pos.0 - menu_w * 0.5,
+                        mouse_pos.1 - menu_h * 0.5,
+                        menu_w,
+                        menu_h)
+                    .move_into(&pos);
+
+                (*data.hex_menu).draw(ui, p, menu_rect);
             }
         });
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         data.with(|data: &mut NodeMatrixData| {
-            if data.display_menu {
+            if let Some(_) = data.display_menu {
                 data.hex_menu.event(ui, ev);
+                data.display_menu = None;
+            } else {
+                match ev {
+                    UIEvent::Click { x, y, .. } => {
+                        data.display_menu = Some((*x, *y));
+                    },
+                    _ => {}
+                }
             }
-            data.display_menu = !data.display_menu;
         });
         ui.queue_redraw();
         println!("EV: {:?}", ev);
