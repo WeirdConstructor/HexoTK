@@ -519,6 +519,15 @@ fn main() {
 //                HexGridData::new(matrix_model))
            .add(wt_cont.clone(), 0.into(), UIPos::center(5, 12), node_ctrls);
 
+        // Plan:
+        // - refactor DemoUI into src/ui.rs HexoTkUI
+        // - use a factory function to create the "Parameters" implementor
+        //   (that needs to reference something that accesses the backend)
+        // - call something else that creates the WidgetData, the layout
+        // - XXX OR: open_window() is called by hexosynth directly, and
+        //           we just provide a constructor for the HexoTkUI
+        //           that takes the Parameters and the widget tree.
+
         let mut ui = Box::new(DemoUI {
             zones:      Some(vec![]),
             mouse_pos:  (0.0, 0.0),
