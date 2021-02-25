@@ -70,17 +70,30 @@ struct ModifierKeys {
 /// ```
 
 pub struct UI {
+    /// The root widget.
     main:           Option<Box<WidgetData>>,
+    /// The active zones that were defined by the last draw call.
     zones:          Option<Vec<ActiveZone>>,
+    /// The current active zone that is hovered.
     hover_zone:     Option<ActiveZone>,
+    /// The current mouse position.
     mouse_pos:      (f64, f64),
+    /// A pointer to the parameters that are modified by the UI.
     params:         Option<Box<dyn Parameters>>,
+    /// The current input mode.
     input_mode:     Option<InputMode>,
+    /// Holds the pressed modifier keys.
     mod_keys:       ModifierKeys,
+    /// Is set, when a widget requires a redraw after some event.
+    /// See also `queue_redraw`.
     needs_redraw:   bool,
+    /// The window size the UI should be drawn as.
     window_size:    (f64, f64),
 }
 
+/// A temporary holder of the UI state.
+///
+/// Please refer to `UI` about the documentation of the members.
 struct WidgetUIHolder {
     zones:          Vec<ActiveZone>,
     hover_zone:     Option<ActiveZone>,
@@ -135,21 +148,44 @@ impl WidgetUI for WidgetUIHolder {
 //    }
 }
 
+/// The input mode is a modal mode that is enabled/disabled
+/// by certain input events.
 #[derive(Debug, Clone)]
 enum InputMode {
+    /// No input mode active.
     None,
+    /// The value drag mode is enabled by clicking inside a
+    /// `ZoneType::ValueDragCoarse` or `ZoneType::ValueDragFine`
+    /// and holding down the mouse button while moving the mouse.
+    /// A mouse up event ends the drag mode.
     ValueDrag {
+        /// The original value of the parameter that was initially clicked on.
         value:          f32,
+        /// The modification step, a parameter that will define how coarse/fine
+        /// the change of the paramter is for N pixels of mouse movement.
         step_dt:        f32,
+        /// The `ActiveZone` the current drag action belongs to.
         zone:           ActiveZone,
+        /// The original position the mouse cursor was on when pressing mouse
+        /// button down.
         orig_pos:       (f64, f64),
+        /// A delta value that is set when the user hits the Shift key.
         pre_fine_delta: f32,
+        /// Whether the Shift key was pressed.
         fine_key:       bool
     },
-    SelectMod  { zone: ActiveZone },
+    /// Modulation Selection mode.
+    SelectMod  {
+        /// The zone the modulation is selected for.
+        zone: ActiveZone
+    },
+    /// Direct value input via keyboard.
     InputValue {
+        /// The zone for which the value is entered.
         zone:   ActiveZone,
+        /// The original input string.
         value:  String,
+        /// The currently edited text.
         input:  Rc<RefCell<BufWriter<Vec<u8>>>>
     },
 }
@@ -177,6 +213,11 @@ impl InputMode {
 }
 
 impl UI {
+    /// Creates a new UI instance.
+    /// Please refer to the documentation of the UI data structure above
+    /// about a comprehensive example.
+    ///
+    /// The window size is only the initial window size.
     pub fn new(main: Box<WidgetData>, params: Box<dyn Parameters>, window_size: (f64, f64)) -> Self {
         Self {
             main:           Some(main),

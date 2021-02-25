@@ -342,6 +342,17 @@ pub trait WindowUI {
 }
 
 pub trait WidgetUI {
+    /// Defines the active zone that is currently drawn by the widget.
+    ///
+    /// ```
+    /// use hexotk::*;
+    ///
+    /// ui.define_active_zone(
+    ///     ActiveZone::new_click_zone(
+    ///         ParamID::new(0, 10),
+    ///         Rect::from_tpl((0.0, 0.0, 40.0, 40.0))
+    ///             .offs(10.0, 10.0)));
+    /// ```
     fn define_active_zone(&mut self, az: ActiveZone);
     fn hl_style_for(&self, id: ParamID) -> HLStyle;
     fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
