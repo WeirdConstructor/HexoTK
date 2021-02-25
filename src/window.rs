@@ -15,6 +15,7 @@ use crate::femtovg_painter::FemtovgPainter;
 use raw_gl_context::{GlContext, GlConfig, Profile};
 
 use raw_window_handle::RawWindowHandle;
+use raw_window_handle::HasRawWindowHandle;
 
 #[macro_use]
 use baseview::{
@@ -240,18 +241,19 @@ impl WindowHandler for GUIWindowHandler {
 }
 
 struct StupidWindowHandleHolder {
-    handle: *mut ::std::ffi::c_void,
+//    handle: *mut ::std::ffi::c_void,
+    handle: RawWindowHandle,
 }
 
 unsafe impl Send for StupidWindowHandleHolder { }
 
 unsafe impl raw_window_handle::HasRawWindowHandle for StupidWindowHandleHolder {
     fn raw_window_handle(&self) -> RawWindowHandle {
-        raw_window_handle_from_parent(self.handle)
+        self.handle
     }
 }
 
-pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<*mut ::std::ffi::c_void>, factory: Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>) {
+pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<RawWindowHandle>, factory: Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>) {
     println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {
