@@ -1,8 +1,10 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
-pub mod hexosynth;
 pub mod widgets;
+pub mod components;
+
+mod ui;
 mod window;
 mod constants;
 mod femtovg_painter;
@@ -12,6 +14,7 @@ use std::rc::Rc;
 use keyboard_types::KeyboardEvent;
 
 pub use window::open_window;
+pub use ui::*;
 
 use std::fmt::Debug;
 

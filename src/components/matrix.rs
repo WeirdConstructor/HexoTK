@@ -3,6 +3,7 @@ use crate::MButton;
 use std::rc::Rc;
 use crate::constants::*;
 use crate::ActiveZone;
+use crate::{UIPos, ParamID};
 
 #[derive(Debug)]
 struct DummyNode {
@@ -91,13 +92,13 @@ impl MatrixCell {
 }
 
 #[derive(Debug)]
-pub struct MatrixModel {
+pub struct UIMatrixModel {
     w: usize,
     h: usize,
     cells: Vec<MatrixCell>,
 }
 
-impl MatrixModel {
+impl UIMatrixModel {
     pub fn new(w: usize, h: usize) -> Self {
         let mut cells = Vec::new();
         cells.resize(w * h, MatrixCell::empty());
@@ -127,7 +128,7 @@ impl MatrixModel {
     }
 }
 
-impl HexGridModel for MatrixModel {
+impl HexGridModel for UIMatrixModel {
     fn width(&self) -> usize { self.w }
     fn height(&self) -> usize { self.h }
 
@@ -220,23 +221,23 @@ use crate::widgets::{HexGrid, HexGridData};
 use crate::{Rect, WidgetUI, Painter, WidgetData, WidgetType, UIEvent};
 
 pub struct NodeMatrixModel {
-    matrix: Rc<MatrixModel>,
-    menu:   Rc<NodeMenuModel>,
+    matrix: Rc<UIMatrixModel>,
+    menu:   Rc<UINodeMenuModel>,
 }
 
 impl NodeMatrixModel {
     pub fn new() -> Self {
         Self {
-            matrix: Rc::new(MatrixModel::new(8, 7)),
-            menu:   Rc::new(NodeMenuModel::new()),
+            matrix: Rc::new(UIMatrixModel::new(8, 7)),
+            menu:   Rc::new(UINodeMenuModel::new()),
         }
     }
 }
 
-pub struct NodeMenuModel {
+pub struct UINodeMenuModel {
 }
 
-impl HexGridModel for NodeMenuModel {
+impl HexGridModel for UINodeMenuModel {
     fn width(&self) -> usize { 3 }
     fn height(&self) -> usize { 3 }
 
@@ -317,7 +318,7 @@ impl HexGridModel for NodeMenuModel {
 }
 
 
-impl NodeMenuModel {
+impl UINodeMenuModel {
     pub fn new() -> Self {
         Self {
         }
@@ -328,32 +329,42 @@ pub struct NodeMatrixData {
     hex_grid:     Box<WidgetData>,
     hex_menu:     Box<WidgetData>,
     model:        Rc<RefCell<NodeMatrixModel>>,
-    matrix_model: Rc<MatrixModel>,
-    menu_model:   Rc<NodeMenuModel>,
+    matrix_model: Rc<UIMatrixModel>,
+    menu_model:   Rc<UINodeMenuModel>,
     display_menu: Option<(f64, f64)>,
 }
 
 impl NodeMatrixData {
-    pub fn new() -> Box<Self> {
-        let model = Rc::new(RefCell::new(NodeMatrixModel::new()));
+    pub fn new(pos: UIPos, node_id: u32) -> WidgetData {
+        let wt_nmatrix  = Rc::new(NodeMatrix::new());
+
+        let model        = Rc::new(RefCell::new(NodeMatrixModel::new()));
         let matrix_model = model.borrow().matrix.clone();
         let menu_model   = model.borrow().menu.clone();
 
-        let wt_hexgrid = Rc::new(HexGrid::new(14.0, 10.0));
-        let wt_hexgrid_menu = Rc::new(HexGrid::new_y_offs(14.0, 10.0).bg_color(UI_GRID_BG2_CLR));
+        let wt_hexgrid =
+            Rc::new(HexGrid::new(14.0, 10.0));
+        let wt_hexgrid_menu =
+            Rc::new(HexGrid::new_y_offs(14.0, 10.0).bg_color(UI_GRID_BG2_CLR));
 
-        Box::new(Self {
-            hex_grid: WidgetData::new_tl_box(
-                wt_hexgrid.clone(), 88.into(),
-                HexGridData::new(matrix_model.clone())),
-            hex_menu: WidgetData::new_tl_box(
-                wt_hexgrid_menu.clone(), 89.into(),
-                HexGridData::new(menu_model.clone())),
-            model,
-            matrix_model,
-            menu_model,
-            display_menu: None,
-        })
+        WidgetData::new(
+            wt_nmatrix,
+            ParamID::new(node_id, 1),
+            pos,
+            Box::new(Self {
+                hex_grid: WidgetData::new_tl_box(
+                    wt_hexgrid.clone(),
+                    ParamID::new(node_id, 1),
+                    HexGridData::new(matrix_model.clone())),
+                hex_menu: WidgetData::new_tl_box(
+                    wt_hexgrid_menu.clone(),
+                    ParamID::new(node_id, 2),
+                    HexGridData::new(menu_model.clone())),
+                model,
+                matrix_model,
+                menu_model,
+                display_menu: None,
+            }))
     }
 }
 
@@ -380,20 +391,29 @@ impl WidgetType for NodeMatrix {
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
-        data.with(|data: &mut NodeMatrixData| {
-            if let Some(_) = data.display_menu {
-                data.hex_menu.event(ui, ev);
-                data.display_menu = None;
-            } else {
-                match ev {
-                    UIEvent::Click { x, y, .. } => {
-                        data.display_menu = Some((*x, *y));
-                    },
-                    _ => {}
+        match ev {
+            UIEvent::Click { id, button, .. } => {
+                println!("EV: {:?} id={}, data.id={}", ev, *id, data.id());
+                if id.node_id() == data.id().node_id() {
+                    data.with(|data: &mut NodeMatrixData| {
+                        if let Some(_) = data.display_menu {
+                            data.hex_menu.event(ui, ev);
+                            data.display_menu = None;
+                        } else {
+                            match ev {
+                                UIEvent::Click { x, y, .. } => {
+                                    data.display_menu = Some((*x, *y));
+                                },
+                                _ => {}
+                            }
+                        }
+                    });
+                    ui.queue_redraw();
                 }
-            }
-        });
-        ui.queue_redraw();
-        println!("EV: {:?}", ev);
+            },
+            _ => {
+                println!("EV: {:?}", ev);
+            },
+        }
     }
 }

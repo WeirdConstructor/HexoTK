@@ -191,13 +191,15 @@ impl WidgetType for Button {
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
             UIEvent::Click { id, button, .. } => {
-                match button {
-                    MButton::Left   => { ui.params_mut().step_next(*id); },
-                    MButton::Right  => { ui.params_mut().step_prev(*id); },
-                    MButton::Middle => { ui.params_mut().set_default(*id); },
-                }
+                if *id == data.id() {
+                    match button {
+                        MButton::Left   => { ui.params_mut().step_next(*id); },
+                        MButton::Right  => { ui.params_mut().step_prev(*id); },
+                        MButton::Middle => { ui.params_mut().set_default(*id); },
+                    }
 
-                ui.queue_redraw();
+                    ui.queue_redraw();
+                }
             },
             _ => {},
         }
