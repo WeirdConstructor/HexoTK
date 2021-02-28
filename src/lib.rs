@@ -3,10 +3,10 @@
 
 pub mod widgets;
 pub mod components;
+pub mod constants;
 
 mod ui;
 mod window;
-mod constants;
 mod femtovg_painter;
 
 use std::rc::Rc;
@@ -75,17 +75,17 @@ impl WidgetData {
         }
     }
 
-    fn event(&mut self, ui: &mut dyn WidgetUI, ev: &UIEvent) {
+    pub fn event(&mut self, ui: &mut dyn WidgetUI, ev: &UIEvent) {
         let wt = self.widget_type();
         wt.event(ui, self, ev);
     }
 
-    fn size(&mut self, ui: &mut dyn WidgetUI, avail: (f64, f64)) -> (f64, f64) {
+    pub fn size(&mut self, ui: &mut dyn WidgetUI, avail: (f64, f64)) -> (f64, f64) {
         let wt = self.widget_type();
         wt.size(ui, self, avail)
     }
 
-    fn draw(&mut self, ui: &mut dyn WidgetUI, p: &mut dyn Painter, rect: Rect) {
+    pub fn draw(&mut self, ui: &mut dyn WidgetUI, p: &mut dyn Painter, rect: Rect) {
         let wt = self.widget_type();
         wt.draw(ui, self, p, rect);
     }
