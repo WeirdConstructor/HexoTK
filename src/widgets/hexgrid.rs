@@ -8,7 +8,7 @@ pub trait HexGridModel {
     fn cell_visible(&self, x: usize, y: usize) -> bool;
     fn cell_empty(&self, x: usize, y: usize) -> bool;
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<&'a str>;
-    // Edge: 0 top, 1 top right, ... 3 bottom, 5 top left
+    /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<&'a str>;
     fn cell_click(&self, x: usize, y: usize, btn: MButton);
 }
@@ -231,7 +231,7 @@ impl WidgetType for HexGrid {
                                 }
                             },
                             HexDecorPos::Top(x, y) => {
-                                if let Some(s) = data.model.cell_edge(xi, yi, 0, &mut label_buf) {
+                                if let Some(s) = data.model.cell_edge(xi, yi, 5, &mut label_buf) {
                                     p.label(
                                         fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                         x - 0.5 * sz.0,
@@ -240,7 +240,7 @@ impl WidgetType for HexGrid {
                                 }
                             },
                             HexDecorPos::Bottom(x, y) => {
-                                if let Some(s) = data.model.cell_edge(xi, yi, 3, &mut label_buf) {
+                                if let Some(s) = data.model.cell_edge(xi, yi, 2, &mut label_buf) {
                                     p.label(
                                         fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                         x - 0.5 * sz.0,
@@ -251,7 +251,7 @@ impl WidgetType for HexGrid {
                                 }
                             },
                             HexDecorPos::TopLeft(x, y) => {
-                                if let Some(s) = data.model.cell_edge(xi, yi, 5, &mut label_buf) {
+                                if let Some(s) = data.model.cell_edge(xi, yi, 4, &mut label_buf) {
                                     p.label_rot(
                                         fs2, 0, 300.0, UI_GRID_TXT_EDGE_CLR,
                                         (x - 0.5 * sz.0).floor(),
@@ -262,7 +262,7 @@ impl WidgetType for HexGrid {
                                 }
                             },
                             HexDecorPos::TopRight(x, y) => {
-                                if let Some(s) = data.model.cell_edge(xi, yi, 1, &mut label_buf) {
+                                if let Some(s) = data.model.cell_edge(xi, yi, 0, &mut label_buf) {
                                     p.label_rot(
                                         fs2, 0, 60.0, UI_GRID_TXT_EDGE_CLR,
                                         (x - 0.5 * sz.0).floor(),
@@ -275,7 +275,7 @@ impl WidgetType for HexGrid {
                                 }
                             },
                             HexDecorPos::BotLeft(x, y) => {
-                                if let Some(s) = data.model.cell_edge(xi, yi, 4, &mut label_buf) {
+                                if let Some(s) = data.model.cell_edge(xi, yi, 3, &mut label_buf) {
                                     p.label_rot(
                                         fs2, 0, 60.0, UI_GRID_TXT_EDGE_CLR,
                                         (x - 0.5 * sz.0).floor(),
@@ -286,7 +286,7 @@ impl WidgetType for HexGrid {
                                 }
                             },
                             HexDecorPos::BotRight(x, y) => {
-                                if let Some(s) = data.model.cell_edge(xi, yi, 2, &mut label_buf) {
+                                if let Some(s) = data.model.cell_edge(xi, yi, 1, &mut label_buf) {
                                     p.label_rot(
                                         fs2, 0, 300.0, UI_GRID_TXT_EDGE_CLR,
                                         (x - 0.5 * sz.0).floor(),
