@@ -108,6 +108,24 @@ impl Rect {
         Self { x, y, w, h }
     }
 
+    pub fn crop_top(&self, delta: f64) -> Self {
+        Self {
+            x: self.x,
+            y: self.y + delta,
+            w: self.w,
+            h: self.h - delta,
+        }
+    }
+
+    pub fn shrink(&self, delta_x: f64, delta_y: f64) -> Self {
+        Self {
+            x: self.x + delta_x,
+            y: self.y + delta_y,
+            w: self.w - 2.0 * delta_x,
+            h: self.h - 2.0 * delta_y,
+        }
+    }
+
     pub fn offs(&self, x: f64, y: f64) -> Self {
         Self {
             x: self.x + x,

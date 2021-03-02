@@ -34,8 +34,6 @@ impl<'a> FemtovgPainter<'a> {
         paint.set_font_size(size as f32);
         paint.set_text_baseline(femtovg::Baseline::Middle);
         let x = x.round();
-        let xo = x;
-        let yo = y;
 
         let (x, y) =
             if rot > 0.0 {
@@ -62,15 +60,27 @@ impl<'a> FemtovgPainter<'a> {
         match align {
             -1 => {
                 paint.set_text_align(femtovg::Align::Left);
-                self.canvas.fill_text(x as f32, (y + h / 2.0).round() as f32, text, paint);
+                let _ =
+                    self.canvas.fill_text(
+                        x as f32,
+                        (y + h / 2.0).round() as f32,
+                        text, paint);
             },
             0  => {
                 paint.set_text_align(femtovg::Align::Center);
-                self.canvas.fill_text((x + (w / 2.0)) as f32, (y + h / 2.0).round() as f32, text, paint);
+                let _ =
+                    self.canvas.fill_text(
+                        (x + (w / 2.0)) as f32,
+                        (y + h / 2.0).round() as f32,
+                        text, paint);
             },
             _  => {
                 paint.set_text_align(femtovg::Align::Right);
-                self.canvas.fill_text((x + w) as f32, (y + h / 2.0).round() as f32, text, paint);
+                let _ =
+                    self.canvas.fill_text(
+                        (x + w) as f32,
+                        (y + h / 2.0).round() as f32,
+                        text, paint);
             },
         }
 
@@ -124,7 +134,7 @@ impl<'a> Painter for FemtovgPainter<'a> {
 
     fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool) {
         let mut p = femtovg::Path::new();
-        let mut paint = color_paint(color);
+        let paint = color_paint(color);
 
         let mut first = true;
         for s in segments {

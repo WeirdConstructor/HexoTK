@@ -69,7 +69,7 @@ impl Button {
         }
     }
 
-    fn draw_divider(&self, p: &mut dyn Painter, width: f64, color: (f64, f64, f64), x: f64, y: f64) {
+    fn draw_divider(&self, p: &mut dyn Painter, _width: f64, color: (f64, f64, f64), x: f64, y: f64) {
         let (x, y) = (
             x + (UI_BTN_BORDER_WIDTH / 2.0).round(),
             y + (UI_BTN_BORDER_WIDTH / 2.0).round(),
@@ -181,7 +181,7 @@ impl WidgetType for Button {
         });
     }
 
-    fn size(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
+    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
         (self.width
          + UI_BTN_BORDER_WIDTH + UI_SAFETY_PAD,
          UI_ELEM_TXT_H + UI_BTN_BORDER_WIDTH + UI_ELEM_TXT_H

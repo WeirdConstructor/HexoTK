@@ -15,9 +15,7 @@ use crate::femtovg_painter::FemtovgPainter;
 use raw_gl_context::{GlContext, GlConfig, Profile};
 
 use raw_window_handle::RawWindowHandle;
-use raw_window_handle::HasRawWindowHandle;
 
-#[macro_use]
 use baseview::{
     Size, Event, WindowEvent, MouseEvent, ScrollDelta, MouseButton, Window,
     WindowHandler, WindowOpenOptions, WindowScalePolicy,
@@ -80,7 +78,7 @@ pub struct GUIWindowHandler {
     ui:         Box<dyn WindowUI>,
     scale:      f32,
     size:       (f64, f64),
-    focused:    bool,
+    // focused:    bool,
     counter:    usize,
 }
 
@@ -139,10 +137,10 @@ impl WindowHandler for GUIWindowHandler {
                 self.ui.handle_input_event(InputEvent::WindowClose);
             },
             Event::Window(WindowEvent::Focused) => {
-                self.focused = true;
+                // self.focused = true;
             },
             Event::Window(WindowEvent::Unfocused) => {
-                self.focused = false;
+                // self.focused = false;
             },
             Event::Window(WindowEvent::Resized(info)) => {
                 let size = info.logical_size();
@@ -313,7 +311,7 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
             ftm:        FrameTimeMeasurement::new("img"),
             ftm_redraw: FrameTimeMeasurement::new("redraw"),
             scale:      1.0,
-            focused:    false,
+            // focused:    false,
             counter:    0,
         }
     };
@@ -324,51 +322,4 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
     } else {
         Window::open_blocking(options, window_create_fun)
     }
-}
-
-#[cfg(target_os = "macos")]
-fn raw_window_handle_from_parent(
-    parent: *mut ::std::ffi::c_void
-) -> RawWindowHandle {
-    use raw_window_handle::macos::MacOSHandle;
-    use cocoa::base::id;
-    use objc::{msg_send, sel, sel_impl};
-
-    let ns_view = parent as id;
-
-    let ns_window: id = unsafe {
-        msg_send![ns_view, window]
-    };
-
-    RawWindowHandle::MacOS(MacOSHandle {
-        ns_window: ns_window as *mut ::std::ffi::c_void,
-        ns_view: ns_view as *mut ::std::ffi::c_void,
-        ..MacOSHandle::empty()
-    })
-}
-
-
-#[cfg(target_os = "windows")]
-fn raw_window_handle_from_parent(
-    parent: *mut ::std::ffi::c_void
-) -> RawWindowHandle {
-    use raw_window_handle::windows::WindowsHandle;
-
-    RawWindowHandle::Windows(WindowsHandle {
-        hwnd: parent,
-        ..WindowsHandle::empty()
-    })
-}
-
-
-#[cfg(target_os = "linux")]
-fn raw_window_handle_from_parent(
-    parent: *mut ::std::ffi::c_void
-) -> RawWindowHandle {
-    use raw_window_handle::unix::XcbHandle;
-
-    RawWindowHandle::Xcb(XcbHandle {
-        window: parent as u32,
-        ..XcbHandle::empty()
-    })
 }

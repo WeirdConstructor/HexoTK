@@ -1,8 +1,8 @@
 use crate::widgets::hexgrid::HexGridModel;
+use crate::widgets::*;
 use crate::MButton;
 use std::rc::Rc;
 use crate::constants::*;
-use crate::ActiveZone;
 use crate::{UIPos, ParamID};
 
 #[derive(Debug)]
@@ -132,7 +132,7 @@ impl HexGridModel for UIMatrixModel {
     fn width(&self) -> usize { self.w }
     fn height(&self) -> usize { self.h }
 
-    fn cell_click(&self, x: usize, y: usize, btn: MButton) {
+    fn cell_click(&self, _x: usize, _y: usize, _btn: MButton) {
     }
 
     fn cell_empty(&self, x: usize, y: usize) -> bool {
@@ -147,13 +147,12 @@ impl HexGridModel for UIMatrixModel {
         self.cells[y * self.w + x].visible
     }
 
-    fn cell_label<'a>(&self, x: usize, y: usize, mut buf: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_label<'a>(&self, x: usize, y: usize, buf: &'a mut [u8]) -> Option<&'a str> {
         if x >= self.w || y >= self.h { return None; }
         let cell = &self.cells[y * self.w + x];
 
         if let Some(node) = &cell.node {
             use std::io::Write;
-            let orig_len = buf.len();
             let mut cur = std::io::Cursor::new(buf);
             match write!(cur, "{} {}", node.0.name(), node.1 + 1) {
                 Ok(_)  => {
@@ -256,7 +255,7 @@ impl HexGridModel for UINodeMenuModel {
         true
     }
 
-    fn cell_label<'a>(&self, x: usize, y: usize, mut buf: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_label<'a>(&self, x: usize, y: usize, mut _buf: &'a mut [u8]) -> Option<&'a str> {
         if x >= 3 || y >= 3 { return None; }
         Some("test")
 //        let cell = &self.cells[y * self.w + x];
@@ -279,7 +278,7 @@ impl HexGridModel for UINodeMenuModel {
 //        }
     }
 
-    fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: u8, _out: &'a mut [u8]) -> Option<&'a str> {
         None
 //        if x >= 3 || y >= 3 { return None; }
 //        Some("test")
@@ -325,6 +324,7 @@ impl UINodeMenuModel {
     }
 }
 
+#[allow(dead_code)]
 pub struct NodeMatrixData {
     hex_grid:     Box<WidgetData>,
     hex_menu:     Box<WidgetData>,
@@ -337,6 +337,7 @@ pub struct NodeMatrixData {
 impl NodeMatrixData {
     pub fn new(pos: UIPos, node_id: u32) -> WidgetData {
         let wt_nmatrix  = Rc::new(NodeMatrix::new());
+        let wt_cont     = Rc::new(Container::new());
 
         let model        = Rc::new(RefCell::new(NodeMatrixModel::new()));
         let matrix_model = model.borrow().matrix.clone();
@@ -346,6 +347,16 @@ impl NodeMatrixData {
             Rc::new(HexGrid::new(14.0, 10.0));
         let wt_hexgrid_menu =
             Rc::new(HexGrid::new_y_offs(14.0, 10.0).bg_color(UI_GRID_BG2_CLR));
+
+
+        let mut hex_menu = ContainerData::new();
+        hex_menu.contrast_border().title("Hex Menu")
+           .new_row()
+           .add_direct(WidgetData::new(
+                    wt_hexgrid_menu.clone(),
+                    ParamID::new(node_id, 2),
+                    UIPos::center(12, 12),
+                    HexGridData::new(menu_model.clone())));
 
         WidgetData::new(
             wt_nmatrix,
@@ -357,9 +368,9 @@ impl NodeMatrixData {
                     ParamID::new(node_id, 1),
                     HexGridData::new(matrix_model.clone())),
                 hex_menu: WidgetData::new_tl_box(
-                    wt_hexgrid_menu.clone(),
-                    ParamID::new(node_id, 2),
-                    HexGridData::new(menu_model.clone())),
+                    wt_cont,
+                    ParamID::new(node_id, 100),
+                    hex_menu),
                 model,
                 matrix_model,
                 menu_model,
@@ -375,7 +386,7 @@ impl WidgetType for NodeMatrix {
 
             if let Some(mouse_pos) = data.display_menu {
                 let menu_w = 270.0;
-                let menu_h = 280.0;
+                let menu_h = 280.0 + UI_ELEM_TXT_H + 2.0 * UI_BORDER_WIDTH;
 
                 let menu_rect =
                     Rect::from(
@@ -392,7 +403,7 @@ impl WidgetType for NodeMatrix {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
-            UIEvent::Click { id, button, .. } => {
+            UIEvent::Click { id, .. } => {
                 println!("EV: {:?} id={}, data.id={}", ev, *id, data.id());
                 if id.node_id() == data.id().node_id() {
                     data.with(|data: &mut NodeMatrixData| {

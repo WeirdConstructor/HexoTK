@@ -16,18 +16,39 @@ impl Container {
 }
 
 pub struct ContainerData {
-    rows: Vec<Vec<WidgetData>>,
+    rows:   Vec<Vec<WidgetData>>,
+    border: bool,
+    contrast_border: bool,
+    title:  Option<String>,
 }
 
 impl ContainerData {
     pub fn new() -> Box<Self> {
         Box::new(Self {
-            rows: vec![],
+            rows:               vec![],
+            border:             false,
+            contrast_border:    false,
+            title:              None,
         })
     }
 
     pub fn new_row(&mut self) -> &mut Self {
         self.rows.push(vec![]);
+        self
+    }
+
+    pub fn title(&mut self, title: &str) -> &mut Self {
+        self.title = Some(title.to_string());
+        self
+    }
+
+    pub fn contrast_border(&mut self) -> &mut Self {
+        self.contrast_border = true;
+        self.border()
+    }
+
+    pub fn border(&mut self) -> &mut Self {
+        self.border = true;
         self
     }
 
@@ -49,9 +70,40 @@ impl ContainerData {
 
 impl WidgetType for Container {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let cont_pos = pos;
 
         data.with(|data: &mut ContainerData| {
+            let inner_pos =
+                if data.border {
+                    let pos =
+                        if data.contrast_border {
+                            p.rect_fill(UI_BG_CLR, pos.x, pos.y, pos.w, pos.h);
+                            pos.shrink(UI_BORDER_WIDTH, UI_BORDER_WIDTH)
+                        } else { pos };
+
+                    let new_inner =
+                        pos.shrink(UI_BORDER_WIDTH, UI_BORDER_WIDTH);
+
+                    p.rect_fill(UI_BORDER_CLR, pos.x, pos.y, pos.w, pos.h);
+                    p.rect_fill(
+                        UI_BG_CLR,
+                        new_inner.x, new_inner.y, new_inner.w, new_inner.h);
+
+                    new_inner
+                } else { pos };
+
+            let cont_pos =
+                if let Some(ref title) = &data.title {
+                    let new_inner = inner_pos.crop_top(UI_ELEM_TXT_H);
+                    p.rect_fill(
+                        UI_LBL_BG_CLR,
+                        inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H);
+                    p.label(
+                        UI_CONT_FONT_SIZE, 0, UI_CONT_FONT_CLR,
+                        inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H,
+                        title);
+                    new_inner
+                } else { pos };
+
             let mut row_offs = 0;
             for cols in data.rows.iter_mut() {
                 let mut col_offs = 0;
@@ -92,7 +144,9 @@ impl WidgetType for Container {
                     data.draw(ui, p, Rect { x: xe, y: ye, w: size.0, h: size.1 });
 
                     if self.debug {
-                        p.rect_stroke(1.0, (0.0, 1.0, 0.0), xe - 0.5, ye - 0.5, size.0 - 1.0, size.1 - 1.0);
+                        p.rect_stroke(1.0, (0.0, 1.0, 0.0),
+                            xe - 0.5, ye - 0.5,
+                            size.0 - 1.0, size.1 - 1.0);
                         p.rect_stroke(1.0, (1.0, 0.0, 0.0),
                             widget_rect.x + 0.5,
                             widget_rect.y + 0.5,

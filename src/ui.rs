@@ -150,6 +150,7 @@ impl WidgetUI for WidgetUIHolder {
 
 /// The input mode is a modal mode that is enabled/disabled
 /// by certain input events.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 enum InputMode {
     /// No input mode active.
@@ -246,14 +247,14 @@ impl UI {
                 match z.zone_type {
                     ZoneType::HexFieldClick { tile_size, y_offs, .. } => {
                         //d// println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
-                        if let Some(id) = z.id_if_inside(pos) {
+                        if let Some(_id) = z.id_if_inside(pos) {
                             let x = pos.0 - z.pos.x as f64;
                             let y = pos.1 - z.pos.y as f64;
 
                             // https://web.archive.org/web/20161024224848/http://gdreflections.com/2011/02/hexagonal-grid-math.html
                             let side   = ((tile_size * 3.0) / 2.0).floor();
                             let radius = tile_size;
-                            let width  = tile_size * 2.0;
+                            let _width = tile_size * 2.0;
                             let height = (tile_size * (3.0_f64).sqrt()).floor();
 
                             let y = if y_offs { y + 0.5 * height } else { y };
@@ -287,7 +288,7 @@ impl UI {
                         }
                     },
                     _ => {
-                        if let Some(id) = z.id_if_inside(pos) {
+                        if let Some(_id) = z.id_if_inside(pos) {
                             zone = Some(*z);
                             break;
                         }
@@ -304,14 +305,14 @@ impl UI {
     fn dispatch<F>(&mut self, f: F)
         where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
 
-        let mut data        = self.main.take();
-        let mut zones       = self.zones.take();
-        let mut params      = self.params.take();
-        let mut input_mode  = self.input_mode.take();
+        let data        = self.main.take();
+        let zones       = self.zones.take();
+        let params      = self.params.take();
+        let input_mode  = self.input_mode.take();
 
         if let Some(mut data) = data {
-            let mut zones  = zones.unwrap();
-            let mut params = params.unwrap();
+            let mut zones = zones.unwrap();
+            let params    = params.unwrap();
             zones.clear();
 
             let mut wui   =
@@ -486,7 +487,9 @@ impl WindowUI for UI {
         });
     }
 
-    fn set_window_size(&mut self, w: f64, h: f64) {
+    fn set_window_size(&mut self, _w: f64, _h: f64) {
+        // XXX: The window content is resized by scaling!
+        //      So we ignore the real window size here.
         self.queue_redraw();
     }
 }
