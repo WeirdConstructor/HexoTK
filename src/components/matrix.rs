@@ -104,9 +104,11 @@ impl UIMatrixModel {
         cells.resize(w * h, MatrixCell::empty());
 
         let dmy = Rc::new(DummyNode { name: String::from("Dmy") });
+        let x   = Rc::new(DummyNode { name: String::from("*") });
 
         cells[10] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), None).input(Some(2), Some(0), None);
         cells[11] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), None).input(Some(1), Some(3), None);
+        cells[4]  = MatrixCell::new(x.clone(),   2).out(Some(1), Some(1), Some(2));
 
         Self {
             w,

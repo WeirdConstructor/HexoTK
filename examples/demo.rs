@@ -57,6 +57,10 @@ fn main() {
         let wt_btn      = Rc::new(Button::new(80.0, 10.0));
         let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
         let wt_cont     = Rc::new(Container::new());
+        let wt_text     = Rc::new(Text::new(15.0));
+
+        let txtsrc = Rc::new(TextSourceRef::new());
+        txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
 
         let mut fourbtns = ContainerData::new();
         fourbtns.border().title("Test Container 4 Btns")
@@ -69,7 +73,7 @@ fn main() {
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
            .add(wt_btn,          1.into(), UIPos::right( 6, 6), ButtonData::new_toggle("Test Btn"))
-           .add(wt_knob.clone(), 2.into(), UIPos::center(3, 6), KnobData::new())
+           .add(wt_text.clone(), 6.into(), UIPos::center(3, 6), TextData::new(txtsrc.clone()))
            .add(wt_knob.clone(), 2.into(), UIPos::center(3, 6), KnobData::new())
            .new_row()
            .add(wt_cont.clone(),100.into(),UIPos::center(12,6), fourbtns);

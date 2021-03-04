@@ -24,3 +24,5 @@ pub use button::ButtonData;
 
 pub use text::Text;
 pub use text::TextData;
+pub use text::TextSource;
+pub use text::TextSourceRef;

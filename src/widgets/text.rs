@@ -88,15 +88,15 @@ impl WidgetType for Text {
             let mut first = true;
             for line in data.text.split("\n") {
                 if first {
-                    p.label_mono(self.font_size, 0,
+                    p.label_mono((self.font_size * 1.5).round(), 0,
                         UI_HELP_TXT_CLR,
-                        xo, yo, pos.w, y_increment, line);
+                        xo, yo.floor(), pos.w, y_increment, line);
                     yo += y_increment;
 
                 } else {
-                    p.label_mono(self.font_size, 0,
+                    p.label_mono(self.font_size, -1,
                         UI_HELP_TXT_CLR,
-                        xo, yo, pos.w, y_increment, line);
+                        xo, yo.floor(), pos.w, y_increment, line);
                 }
 
                 yo += y_increment;
