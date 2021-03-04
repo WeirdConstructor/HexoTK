@@ -5,6 +5,7 @@ pub mod hexgrid;
 mod knob;
 mod button;
 mod container;
+mod text;
 
 use super::*;
 
@@ -20,3 +21,6 @@ pub use container::ContainerData;
 
 pub use button::Button;
 pub use button::ButtonData;
+
+pub use text::Text;
+pub use text::TextData;
