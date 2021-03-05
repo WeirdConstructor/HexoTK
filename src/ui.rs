@@ -480,9 +480,9 @@ impl WindowUI for UI {
                 let az = self.get_zone_at(self.mouse_pos);
 
                 if let Some(az) = az {
-                    if let MButton::Left = btn {
-                        match az.zone_type {
-                            ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
+                    match az.zone_type {
+                        ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
+                            if let MButton::Left = btn {
                                 let step_dt =
                                     if let ZoneType::ValueDragCoarse = az.zone_type {
                                         DEFAULT_COARSE_STEP
@@ -504,15 +504,15 @@ impl WindowUI for UI {
 
                                 self.params.as_mut().unwrap().change_start(az.id);
                                 self.queue_redraw();
-                            },
-                            ZoneType::HexFieldClick { .. } => {
-                                self.input_mode =
-                                    Some(InputMode::HexFieldDrag {
-                                        zone: az
-                                    });
-                            },
-                            _ => {},
-                        }
+                            }
+                        },
+                        ZoneType::HexFieldClick { .. } => {
+                            self.input_mode =
+                                Some(InputMode::HexFieldDrag {
+                                    zone: az
+                                });
+                        },
+                        _ => {},
                     }
                 }
 
