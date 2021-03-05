@@ -68,7 +68,7 @@ impl Text {
 }
 
 impl WidgetType for Text {
-    fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
+    fn draw(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let pos = pos.shrink(UI_PADDING, UI_PADDING);
 
         data.with(|data: &mut TextData| {

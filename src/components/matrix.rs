@@ -1,4 +1,4 @@
-use crate::widgets::hexgrid::HexGridModel;
+use crate::widgets::hexgrid::{HexEdge, HexCell, HexGridModel};
 use crate::widgets::*;
 use crate::MButton;
 use std::rc::Rc;
@@ -106,9 +106,9 @@ impl UIMatrixModel {
         let dmy = Rc::new(DummyNode { name: String::from("Dmy") });
         let x   = Rc::new(DummyNode { name: String::from("*") });
 
-        cells[10] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), None).input(Some(2), Some(0), None);
-        cells[11] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), None).input(Some(1), Some(3), None);
-        cells[4]  = MatrixCell::new(x.clone(),   2).out(Some(1), Some(1), Some(2));
+        cells[18] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), None).input(Some(2), Some(0), None);
+        cells[19] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), None).input(Some(1), Some(3), None);
+        cells[11] = MatrixCell::new(x.clone(),   2).out(Some(1), Some(1), Some(2));
 
         Self {
             w,
@@ -149,19 +149,29 @@ impl HexGridModel for UIMatrixModel {
         self.cells[y * self.w + x].visible
     }
 
-    fn cell_label<'a>(&self, x: usize, y: usize, buf: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_label<'a>(&self, x: usize, y: usize, buf: &'a mut [u8]) -> Option<(&'a str, HexCell)> {
         if x >= self.w || y >= self.h { return None; }
         let cell = &self.cells[y * self.w + x];
 
         if let Some(node) = &cell.node {
             use std::io::Write;
             let mut cur = std::io::Cursor::new(buf);
+
+            let hc =
+                match (node.0.name(), node.1 + 1) {
+                    ("Dmy", 1) => HexCell::HLight,
+                    ("Dmy", 2) => HexCell::Select,
+                    _          => HexCell::Normal,
+                };
+
             match write!(cur, "{} {}", node.0.name(), node.1 + 1) {
                 Ok(_)  => {
                     let len = cur.position() as usize;
-                    Some(
+                    Some((
                         std::str::from_utf8(&(cur.into_inner())[0..len])
-                        .unwrap())
+                        .unwrap(),
+                        hc
+                    ))
                 },
                 Err(_) => None,
             }
@@ -170,20 +180,28 @@ impl HexGridModel for UIMatrixModel {
         }
     }
 
-    fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {
         if x >= self.w || y >= self.h { return None; }
         let cell = &self.cells[y * self.w + x];
 
         if let Some(node) = &cell.node {
             let param_idx =
                 match edge {
-                    0 => cell.in1,
-                    1 => cell.out1,
-                    2 => cell.out2,
-                    3 => cell.out3,
-                    4 => cell.in3,
-                    5 => cell.in2,
+                    0 => cell.out1,
+                    1 => cell.out2,
+                    2 => cell.out3,
+                    3 => cell.in3,
+                    4 => cell.in2,
+                    5 => cell.in1,
                     _ => None,
+                };
+
+            let et =
+                match edge {
+                    0 => HexEdge::Arrow,
+                    1 => HexEdge::NoArrow,
+                    2 => HexEdge::ArrowValue { value: 0.2 },
+                    _ => HexEdge::NoArrow,
                 };
 
             if let Some(param_idx) = param_idx {
@@ -196,7 +214,10 @@ impl HexGridModel for UIMatrixModel {
 
                 let byt_len = param_name.as_bytes().len();
                 out[0..byt_len].copy_from_slice(param_name.as_bytes());
-                Some(std::str::from_utf8(&out[0..byt_len]).unwrap())
+                Some((
+                    std::str::from_utf8(&out[0..byt_len]).unwrap(),
+                    et
+                ))
             } else {
                 None
             }
@@ -257,9 +278,9 @@ impl HexGridModel for UINodeMenuModel {
         true
     }
 
-    fn cell_label<'a>(&self, x: usize, y: usize, mut _buf: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_label<'a>(&self, x: usize, y: usize, mut _buf: &'a mut [u8]) -> Option<(&'a str, HexCell)> {
         if x >= 3 || y >= 3 { return None; }
-        Some("test")
+        Some(("test", HexCell::Normal))
 //        let cell = &self.cells[y * self.w + x];
 //
 //        if let Some(node) = &cell.node {
@@ -280,7 +301,7 @@ impl HexGridModel for UINodeMenuModel {
 //        }
     }
 
-    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: u8, _out: &'a mut [u8]) -> Option<&'a str> {
+    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: u8, _out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {
         None
 //        if x >= 3 || y >= 3 { return None; }
 //        Some("test")
