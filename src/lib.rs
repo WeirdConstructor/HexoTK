@@ -374,6 +374,7 @@ pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
     fn hl_style_for(&self, id: ParamID) -> HLStyle;
     fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
+    fn drag_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
     fn queue_redraw(&mut self);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
@@ -388,6 +389,7 @@ pub enum UIEvent {
     ValueDragEnd   { id: ParamID, },
     EnteredValue   { id: ParamID, val: String },
     Click          { id: ParamID, button: MButton, x: f64, y: f64 },
+    FieldDrag      { id: ParamID, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
 
 impl UIEvent {
@@ -398,6 +400,7 @@ impl UIEvent {
             UIEvent::ValueDragEnd   { id, .. } => *id,
             UIEvent::EnteredValue   { id, .. } => *id,
             UIEvent::Click          { id, .. } => *id,
+            UIEvent::FieldDrag      { id, .. } => *id,
         }
     }
 }

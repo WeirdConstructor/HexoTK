@@ -103,6 +103,7 @@ pub const UI_GRID_TXT_EDGE_CLR      : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRID_CELL_BORDER_CLR   : (f64, f64, f64) = UI_ACCENT_CLR;
 pub const UI_GRID_EMPTY_BORDER_CLR  : (f64, f64, f64) = (77.0 / 255.0, 24.0 / 255.0, 74.0 / 255.0);
 pub const UI_GRID_HOVER_BORDER_CLR  : (f64, f64, f64) = UI_ACCENT_CLR;
+pub const UI_GRID_DRAG_BORDER_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_GRID_BG1_CLR           : (f64, f64, f64) = (32.0 / 255.0, 14.0 / 255.0, 31.0 / 255.0);
 pub const UI_GRID_BG2_CLR           : (f64, f64, f64) = (44.0 / 255.0, 19.0 / 255.0, 42.0 / 255.0);
 pub const UI_GRID_SIGNAL_OUT_CLR    : (f64, f64, f64) = UI_PRIM2_CLR;

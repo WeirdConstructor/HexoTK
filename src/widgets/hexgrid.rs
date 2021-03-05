@@ -190,6 +190,17 @@ impl WidgetType for HexGrid {
         let size_in = size - pad;
         let (w, h)  = hex_size2wh(size);
 
+        let drag_source =
+            if let Some(drag_az) = ui.drag_zone_for(data.id()) {
+                if let ZoneType::HexFieldClick { pos, ..} = drag_az.zone_type {
+                    Some(pos)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
         let marked =
             if let Some(az) = ui.hover_zone_for(data.id()) {
                 if let ZoneType::HexFieldClick { pos, ..} = az.zone_type {
@@ -229,7 +240,9 @@ impl WidgetType for HexGrid {
                         if marked.0 == xi && marked.1 == yi {
                             (5.0, UI_GRID_HOVER_BORDER_CLR)
                         } else {
-                            if data.model.cell_empty(xi, yi) {
+                            if Some((xi, yi)) == drag_source {
+                                (3.0, UI_GRID_DRAG_BORDER_CLR)
+                            } else if data.model.cell_empty(xi, yi) {
                                 (3.0, UI_GRID_EMPTY_BORDER_CLR)
                             } else {
                                 (3.0, UI_GRID_CELL_BORDER_CLR)

@@ -117,16 +117,23 @@ impl WidgetUI for WidgetUIHolder {
     fn release_focus(&mut self) {
     }
 
+    fn drag_zone_for(&self, az_id: ParamID) -> Option<ActiveZone> {
+        if let Some(InputMode::HexFieldDrag { zone }) = self.input_mode {
+            if zone.id == az_id {
+                return Some(zone);
+            }
+        }
+
+        None
+    }
+
     fn hover_zone_for(&self, az_id: ParamID) -> Option<ActiveZone> {
         if let Some(hz) = self.hover_zone {
             if hz.id == az_id {
-                Some(hz)
-            } else {
-                None
+                return Some(hz);
             }
-        } else {
-            None
         }
+        None
     }
 
     fn hl_style_for(&self, az_id: ParamID) -> HLStyle {
@@ -175,6 +182,11 @@ enum InputMode {
         /// Whether the Shift key was pressed.
         fine_key:       bool
     },
+    /// If a hexfield is dragged, this input mode stores the
+    /// origin of the dragging.
+    HexFieldDrag {
+        zone: ActiveZone,
+    },
     /// Modulation Selection mode.
     SelectMod  {
         /// The zone the modulation is selected for.
@@ -207,6 +219,42 @@ impl InputMode {
                     (value + steps * step_dt + pre_fine_delta)
                     .max(0.0).min(1.0)
                 ))
+            },
+            _ => None,
+        }
+    }
+
+    pub fn check_hex_field_click(&self, release_az: ActiveZone, btn: MButton, mouse_pos: (f64, f64))
+        -> Option<UIEvent>
+    {
+        match release_az.zone_type {
+            ZoneType::HexFieldClick { pos: dst_pos, .. } => {
+
+                match self {
+                    InputMode::HexFieldDrag { zone } => {
+
+                        if let ZoneType::HexFieldClick { pos, .. } = zone.zone_type {
+                            if dst_pos != pos {
+                                return
+                                    Some(UIEvent::FieldDrag {
+                                        id:     release_az.id,
+                                        button: btn,
+                                        src:    pos,
+                                        dst:    dst_pos,
+                                    });
+                            }
+                        }
+
+                        return
+                            Some(UIEvent::Click {
+                                id:     release_az.id,
+                                button: btn,
+                                x:      mouse_pos.0,
+                                y:      mouse_pos.1,
+                            });
+                    },
+                    _ => None,
+                }
             },
             _ => None,
         }
@@ -397,6 +445,13 @@ impl WindowUI for UI {
 
                         self.params.as_mut().unwrap().change_end(id, val);
                         self.queue_redraw();
+                    } else {
+                        if let Some(az) = self.get_zone_at(self.mouse_pos) {
+                            dispatch_event =
+                                input_mode.check_hex_field_click(
+                                    az, btn, self.mouse_pos);
+                            self.queue_redraw();
+                        }
                     }
 
                 } else {
@@ -412,15 +467,7 @@ impl WindowUI for UI {
                                         x:      self.mouse_pos.0,
                                         y:      self.mouse_pos.1,
                                     });
-                            },
-                            ZoneType::HexFieldClick { .. } => {
-                                dispatch_event =
-                                    Some(UIEvent::Click {
-                                        id:     az.id,
-                                        button: btn,
-                                        x:      self.mouse_pos.0,
-                                        y:      self.mouse_pos.1,
-                                    });
+                                self.queue_redraw();
                             },
                             _ => {},
                         }
@@ -457,6 +504,12 @@ impl WindowUI for UI {
 
                                 self.params.as_mut().unwrap().change_start(az.id);
                                 self.queue_redraw();
+                            },
+                            ZoneType::HexFieldClick { .. } => {
+                                self.input_mode =
+                                    Some(InputMode::HexFieldDrag {
+                                        zone: az
+                                    });
                             },
                             _ => {},
                         }
