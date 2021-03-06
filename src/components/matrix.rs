@@ -279,7 +279,7 @@ impl HexGridModel for UINodeMenuModel {
 
     fn cell_label<'a>(&self, x: usize, y: usize, mut _buf: &'a mut [u8]) -> Option<(&'a str, HexCell)> {
         if x >= 3 || y >= 3 { return None; }
-        Some(("test", HexCell::Normal))
+        Some(("test", HexCell::Plain))
     }
 
     fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {

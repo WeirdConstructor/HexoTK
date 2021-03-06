@@ -52,6 +52,7 @@ pub enum HexEdge {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum HexCell {
     Normal,
+    Plain,
     HLight,
     Select,
 }
@@ -309,9 +310,14 @@ impl WidgetType for HexGrid {
                                     let txt_clr =
                                         match hc {
                                             HexCell::Normal => UI_GRID_TXT_CENTER_CLR,
+                                            HexCell::Plain  => UI_GRID_TXT_CENTER_CLR,
                                             HexCell::HLight => UI_GRID_TXT_CENTER_HL_CLR,
                                             HexCell::Select => UI_GRID_TXT_CENTER_SL_CLR,
                                         };
+
+                                    let fs =
+                                        if hc == HexCell::Plain { fs * 1.4 }
+                                        else { fs };
 
                                     let num_fs = fs * 0.8;
                                     let y_inc = -1.0 + p.font_height(fs as f32, false) as f64;
@@ -333,9 +339,11 @@ impl WidgetType for HexGrid {
                                             sz.0, th, num_lbl);
                                     }
 
-                                    draw_hexagon(
-                                        p, size * 0.5, line * 0.5, x, y, clr,
-                                        |_p, _pos, _sz| ());
+                                    if hc != HexCell::Plain {
+                                        draw_hexagon(
+                                            p, size * 0.5, line * 0.5, x, y, clr,
+                                            |_p, _pos, _sz| ());
+                                    }
                                 }
                             },
                             HexDecorPos::Top(x, y) => {
