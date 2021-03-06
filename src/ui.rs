@@ -323,7 +323,7 @@ impl UI {
                                         - (if cy < height / 2.0 { 1.0 } else { 0.0 }))
                                 };
 
-                            //d// println!("i={}, j={}", i, j);
+                            //d// println!("   *HEX: i={}, j={}", i, j);
 
                             let mut new_az = *z;
                             new_az.zone_type = ZoneType::HexFieldClick {
@@ -391,7 +391,15 @@ impl WindowUI for UI {
     }
 
     fn post_frame(&mut self) {
-        self.needs_redraw = false;
+        if self.needs_redraw {
+            self.needs_redraw = false;
+
+            let old_hz = self.hover_zone;
+            self.hover_zone = self.get_zone_at(self.mouse_pos);
+            if old_hz != self.hover_zone {
+                self.queue_redraw();
+            }
+        }
     }
 
     fn needs_redraw(&mut self) -> bool {
@@ -475,6 +483,8 @@ impl WindowUI for UI {
                 }
 
                 self.input_mode = None;
+//                println!("UPDATE HOVER ZONE AFTER RELEASE!");
+//                self.hover_zone = self.get_zone_at(self.mouse_pos);
             },
             InputEvent::MouseButtonPressed(btn) => {
                 let az = self.get_zone_at(self.mouse_pos);
