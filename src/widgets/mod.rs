@@ -14,6 +14,7 @@ pub use hexgrid::HexGridData;
 pub use hexgrid::HexGridModel;
 pub use hexgrid::HexCell;
 pub use hexgrid::HexEdge;
+pub use hexgrid::HexDir;
 
 pub use knob::Knob;
 pub use knob::KnobData;
