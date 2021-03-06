@@ -1,4 +1,4 @@
-use crate::widgets::hexgrid::{HexEdge, HexCell, HexGridModel};
+use crate::widgets::hexgrid::{HexEdge, HexCell, HexDir, HexGridModel};
 use crate::widgets::*;
 use crate::MButton;
 use std::rc::Rc;
@@ -180,33 +180,32 @@ impl HexGridModel for UIMatrixModel {
         }
     }
 
-    fn cell_edge<'a>(&self, x: usize, y: usize, edge: u8, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {
+    fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {
         if x >= self.w || y >= self.h { return None; }
         let cell = &self.cells[y * self.w + x];
 
         if let Some(node) = &cell.node {
             let param_idx =
                 match edge {
-                    0 => cell.out1,
-                    1 => cell.out2,
-                    2 => cell.out3,
-                    3 => cell.in3,
-                    4 => cell.in2,
-                    5 => cell.in1,
-                    _ => None,
+                    HexDir::TR => cell.out1,
+                    HexDir::BR => cell.out2,
+                    HexDir::B  => cell.out3,
+                    HexDir::BL => cell.in3,
+                    HexDir::TL => cell.in2,
+                    HexDir::T  => cell.in1,
                 };
 
             let et =
                 match edge {
-                    0 => HexEdge::Arrow,
-                    1 => HexEdge::NoArrow,
-                    2 => HexEdge::ArrowValue { value: 0.2 },
-                    _ => HexEdge::NoArrow,
+                    HexDir::TR => HexEdge::Arrow,
+                    HexDir::BR => HexEdge::NoArrow,
+                    HexDir::B  => HexEdge::ArrowValue { value: 0.2 },
+                    _          => HexEdge::NoArrow,
                 };
 
             if let Some(param_idx) = param_idx {
                 let param_name =
-                    if edge == 1 || edge == 2 || edge == 3 {
+                    if edge.is_right_half() {
                         node.0.output_label(param_idx).unwrap_or("?")
                     } else {
                         node.0.input_label(param_idx).unwrap_or("?")
@@ -281,61 +280,10 @@ impl HexGridModel for UINodeMenuModel {
     fn cell_label<'a>(&self, x: usize, y: usize, mut _buf: &'a mut [u8]) -> Option<(&'a str, HexCell)> {
         if x >= 3 || y >= 3 { return None; }
         Some(("test", HexCell::Normal))
-//        let cell = &self.cells[y * self.w + x];
-//
-//        if let Some(node) = &cell.node {
-//            use std::io::Write;
-//            let orig_len = buf.len();
-//            let mut cur = std::io::Cursor::new(buf);
-//            match write!(cur, "{} {}", node.0.name(), node.1 + 1) {
-//                Ok(_)  => {
-//                    let len = cur.position() as usize;
-//                    Some(
-//                        std::str::from_utf8(&(cur.into_inner())[0..len])
-//                        .unwrap())
-//                },
-//                Err(_) => None,
-//            }
-//        } else {
-//            None
-//        }
     }
 
-    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: u8, _out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {
+    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8]) -> Option<(&'a str, HexEdge)> {
         None
-//        if x >= 3 || y >= 3 { return None; }
-//        Some("test")
-//        let cell = &self.cells[y * self.w + x];
-//
-//        if let Some(node) = &cell.node {
-//            let param_idx =
-//                match edge {
-//                    0 => cell.in1,
-//                    1 => cell.out1,
-//                    2 => cell.out2,
-//                    3 => cell.out3,
-//                    4 => cell.in3,
-//                    5 => cell.in2,
-//                    _ => None,
-//                };
-//
-//            if let Some(param_idx) = param_idx {
-//                let param_name =
-//                    if edge == 1 || edge == 2 || edge == 3 {
-//                        node.0.output_label(param_idx).unwrap_or("?")
-//                    } else {
-//                        node.0.input_label(param_idx).unwrap_or("?")
-//                    };
-//
-//                let byt_len = param_name.as_bytes().len();
-//                out[0..byt_len].copy_from_slice(param_name.as_bytes());
-//                Some(std::str::from_utf8(&out[0..byt_len]).unwrap())
-//            } else {
-//                None
-//            }
-//        } else {
-//            None
-//        }
     }
 }
 
