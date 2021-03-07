@@ -266,6 +266,10 @@ impl HexGridModel for UINodeMenuModel {
         println!("MENU CLICK CELL: {},{}: {:?}", x, y, btn);
     }
 
+    fn cell_hover(&self, x: usize, y: usize) {
+        println!("MENU HOVER CELL: {},{}", x, y);
+    }
+
     fn cell_empty(&self, x: usize, y: usize) -> bool {
         if x >= 3 || y >= 3 { return true; }
         false

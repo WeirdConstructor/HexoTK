@@ -66,6 +66,7 @@ pub trait HexGridModel {
     /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)>;
     fn cell_click(&self, x: usize, y: usize, btn: MButton);
+    fn cell_hover(&self, _x: usize, _y: usize) { }
 }
 
 #[derive(Debug, Clone)]
@@ -103,12 +104,13 @@ impl HexGrid {
 
 #[derive(Clone)]
 pub struct HexGridData {
-    model: Rc<dyn HexGridModel>,
+    model:          Rc<dyn HexGridModel>,
+    last_hover_pos: (usize, usize),
 }
 
 impl HexGridData {
     pub fn new(model: Rc<dyn HexGridModel>) -> Box<Self> {
-        Box::new(Self { model })
+        Box::new(Self { model, last_hover_pos: (0, 0) })
     }
 }
 
@@ -245,6 +247,13 @@ impl WidgetType for HexGrid {
         let marked =
             if let Some(az) = ui.hover_zone_for(data.id()) {
                 if let ZoneType::HexFieldClick { pos, ..} = az.zone_type {
+                    data.with(|data: &mut HexGridData| {
+                        if data.last_hover_pos != pos {
+                            data.last_hover_pos = pos;
+                            data.model.cell_hover(pos.0, pos.1);
+                        }
+                    });
+
                     pos
                 } else {
                     (0, 0)

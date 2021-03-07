@@ -392,7 +392,7 @@ impl WindowUI for UI {
 
     fn post_frame(&mut self) {
         if self.needs_redraw {
-            self.needs_redraw = false;
+//            self.needs_redraw = false;
 
             let old_hz = self.hover_zone;
             self.hover_zone = self.get_zone_at(self.mouse_pos);
