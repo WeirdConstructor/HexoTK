@@ -9,20 +9,46 @@ use std::cell::RefCell;
 
 #[derive(Clone)]
 pub struct TextSourceRef {
-    text: Rc<RefCell<(usize, String)>>,
+    text:  Rc<RefCell<(usize, String)>>,
+    width: usize,
 }
 
 impl TextSourceRef {
-    pub fn new() -> Self {
+    pub fn new(line_width: usize) -> Self {
         Self {
-            text: Rc::new(RefCell::new((0, "".to_string()))),
+            text:  Rc::new(RefCell::new((0, "".to_string()))),
+            width: line_width,
         }
     }
 
     pub fn set(&self, s: &str) {
+        let s =
+            if self.width > 0 {
+                let mut text : String = String::new();
+                let mut line : Vec<char> = vec![];
+
+                for c in s.chars() {
+                    line.push(c);
+                    if line.len() >= self.width {
+                        line.iter().for_each(|c| text.push(*c));
+                        text.push('\n');
+                        line.clear();
+                    }
+                }
+
+                if line.len() > 0 {
+                    line.iter().for_each(|c| text.push(*c));
+                    text.push('\n');
+                }
+
+                text
+            } else {
+                s.to_string()
+            };
+
         let mut bor = self.text.borrow_mut();
         bor.0 += 1;
-        bor.1 = s.to_string();
+        bor.1 = s;
     }
 }
 

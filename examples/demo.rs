@@ -59,7 +59,7 @@ fn main() {
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
 
-        let txtsrc = Rc::new(TextSourceRef::new());
+        let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
 
         let mut fourbtns = ContainerData::new();
