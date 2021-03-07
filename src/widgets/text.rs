@@ -27,18 +27,19 @@ impl TextSourceRef {
                 let mut text : String = String::new();
                 let mut line : Vec<char> = vec![];
 
+                let mut line_len = 0;
                 for c in s.chars() {
-                    line.push(c);
-                    if line.len() >= self.width {
-                        line.iter().for_each(|c| text.push(*c));
-                        text.push('\n');
-                        line.clear();
+                    text.push(c);
+                    if c == '\n' {
+                        line_len = 0;
+                    } else {
+                        line_len += 1;
                     }
-                }
 
-                if line.len() > 0 {
-                    line.iter().for_each(|c| text.push(*c));
-                    text.push('\n');
+                    if line_len >= self.width {
+                        text.push('\n');
+                        line_len = 0;
+                    }
                 }
 
                 text
