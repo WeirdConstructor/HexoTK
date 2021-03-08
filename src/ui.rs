@@ -542,7 +542,6 @@ impl WindowUI for UI {
     }
 
     fn draw(&mut self, painter: &mut dyn Painter) {
-        painter.label(20.0, 0, (1.0, 1.0, 0.0), 10.0, 40.0, 100.0, 20.0, "TEST");
         let win_size = self.window_size;
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
             wt.draw(ui, data, painter,

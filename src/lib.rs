@@ -109,6 +109,33 @@ impl Rect {
         Self { x, y, w, h }
     }
 
+    pub fn crop_left(&self, delta: f64) -> Self {
+        Self {
+            x: self.x + delta,
+            y: self.y,
+            w: self.w - delta,
+            h: self.h,
+        }
+    }
+
+    pub fn crop_right(&self, delta: f64) -> Self {
+        Self {
+            x: self.x,
+            y: self.y,
+            w: self.w - delta,
+            h: self.h,
+        }
+    }
+
+    pub fn crop_bottom(&self, delta: f64) -> Self {
+        Self {
+            x: self.x,
+            y: self.y,
+            w: self.w,
+            h: self.h - delta,
+        }
+    }
+
     pub fn crop_top(&self, delta: f64) -> Self {
         Self {
             x: self.x,
