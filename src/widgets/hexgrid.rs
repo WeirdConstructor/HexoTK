@@ -75,24 +75,27 @@ pub struct HexGrid {
     edge_font_size:   f64,
     bg_color:         (f64, f64, f64),
     y_offs:           bool,
+    cell_size:        f64,
 }
 
 impl HexGrid {
-    pub fn new(center_font_size: f64, edge_font_size: f64) -> Self {
+    pub fn new(center_font_size: f64, edge_font_size: f64, cell_size: f64) -> Self {
         Self {
             center_font_size,
             edge_font_size,
-            bg_color: UI_GRID_BG1_CLR,
-            y_offs:   false
+            bg_color:   UI_GRID_BG1_CLR,
+            y_offs:     false,
+            cell_size,
         }
     }
 
-    pub fn new_y_offs(center_font_size: f64, edge_font_size: f64) -> Self {
+    pub fn new_y_offs(center_font_size: f64, edge_font_size: f64, cell_size: f64) -> Self {
         Self {
             center_font_size,
             edge_font_size,
-            bg_color: UI_GRID_BG1_CLR,
-            y_offs:   true
+            bg_color:   UI_GRID_BG1_CLR,
+            y_offs:     true,
+            cell_size,
         }
     }
 
@@ -225,7 +228,7 @@ fn draw_hexagon<F: Fn(&mut dyn Painter, HexDecorPos, (f64, f64, f64))>(p: &mut d
 
 impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let size = 54.0_f64;
+        let size = self.cell_size;
 
         ui.define_active_zone(ActiveZone::new_hex_field(data.id(), pos, self.y_offs, size));
 

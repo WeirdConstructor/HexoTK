@@ -319,9 +319,9 @@ impl NodeMatrixData {
         let menu_model   = model.borrow().menu.clone();
 
         let wt_hexgrid =
-            Rc::new(HexGrid::new(14.0, 10.0));
+            Rc::new(HexGrid::new(14.0, 10.0, 54.0));
         let wt_hexgrid_menu =
-            Rc::new(HexGrid::new_y_offs(14.0, 10.0).bg_color(UI_GRID_BG2_CLR));
+            Rc::new(HexGrid::new_y_offs(14.0, 10.0, 45.0).bg_color(UI_GRID_BG2_CLR));
 
 
         let mut hex_menu = ContainerData::new();
