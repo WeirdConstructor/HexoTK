@@ -1,6 +1,7 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
+#[macro_export]
 pub mod widgets;
 pub mod components;
 pub mod constants;
@@ -416,6 +417,13 @@ impl WidgetType for DummyWidget {
     fn draw(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _p: &mut dyn Painter, _pos: Rect) { }
     fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64) { avail }
     fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) { }
+}
+
+#[macro_export]
+macro_rules! wbox {
+    ($wd: expr, $pid: expr, $pos: ident($v: expr, $h: expr), $data: expr) => {
+        WidgetData::new($wd.clone(), $pid, UIPos::$pos($v, $h), $data)
+    }
 }
 
 pub trait WidgetType: Debug {

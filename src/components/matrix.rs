@@ -3,7 +3,7 @@ use crate::widgets::*;
 use crate::MButton;
 use std::rc::Rc;
 use crate::constants::*;
-use crate::{UIPos, ParamID};
+use crate::{UIPos, ParamID, wbox};
 
 #[derive(Debug)]
 struct DummyNode {
@@ -327,11 +327,11 @@ impl NodeMatrixData {
         let mut hex_menu = ContainerData::new();
         hex_menu.contrast_border().title("Hex Menu")
            .new_row()
-           .add_direct(WidgetData::new(
-                    wt_hexgrid_menu.clone(),
-                    ParamID::new(node_id, 2),
-                    UIPos::center(12, 12),
-                    HexGridData::new(menu_model.clone())));
+           .add(wbox!(
+                wt_hexgrid_menu,
+                ParamID::new(node_id, 2),
+                center(12, 12),
+                HexGridData::new(menu_model.clone())));
 
         WidgetData::new(
             wt_nmatrix,

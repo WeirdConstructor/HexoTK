@@ -52,17 +52,11 @@ impl ContainerData {
         self
     }
 
-    pub fn add_direct(&mut self, widget_data: WidgetData) -> &mut Self {
+    pub fn add(&mut self, widget_data: WidgetData) -> &mut Self {
         if self.rows.len() > 0 {
             let last_idx = self.rows.len() - 1;
             self.rows[last_idx].push(widget_data);
         }
-
-        self
-    }
-
-    pub fn add(&mut self, wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> &mut Self {
-        self.add_direct(WidgetData::new(wtype, id, pos, data));
 
         self
     }

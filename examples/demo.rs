@@ -65,23 +65,23 @@ fn main() {
         let mut fourbtns = ContainerData::new();
         fourbtns.border().title("Test Container 4 Btns")
            .new_row()
-           .add(wt_knob.clone(), 4.into(), UIPos::center(3, 6), KnobData::new())
-           .add(wt_knob.clone(), 5.into(), UIPos::center(3, 6), KnobData::new())
-           .add(wt_knob.clone(), 6.into(), UIPos::center(3, 6), KnobData::new())
-           .add(wt_knob.clone(), 7.into(), UIPos::center(3, 6), KnobData::new());
+           .add(wbox!(wt_knob, 4.into(), center(3, 6), KnobData::new()))
+           .add(wbox!(wt_knob, 5.into(), center(3, 6), KnobData::new()))
+           .add(wbox!(wt_knob, 6.into(), center(3, 6), KnobData::new()))
+           .add(wbox!(wt_knob, 7.into(), center(3, 6), KnobData::new()));
 
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
-           .add(wt_btn,          1.into(), UIPos::right( 6, 6), ButtonData::new_toggle("Test Btn"))
-           .add(wt_text.clone(), 6.into(), UIPos::center(3, 6), TextData::new(txtsrc.clone()))
-           .add(wt_knob.clone(), 2.into(), UIPos::center(3, 6), KnobData::new())
+           .add(wbox!(wt_btn,  1.into(), right( 6, 6), ButtonData::new_toggle("Test Btn")))
+           .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
+           .add(wbox!(wt_knob, 2.into(), center(3, 6), KnobData::new()))
            .new_row()
-           .add(wt_cont.clone(),100.into(),UIPos::center(12,6), fourbtns);
+           .add(wbox!(wt_cont,100.into(),center(12,6), fourbtns));
 
         let mut con = ContainerData::new();
         con.new_row()
-           .add_direct(NodeMatrixData::new(UIPos::center(7, 12), 11))
-           .add(wt_cont.clone(), 0.into(), UIPos::center(5, 12), node_ctrls);
+           .add(NodeMatrixData::new(UIPos::center(7, 12), 11))
+           .add(wbox!(wt_cont, 0.into(), center(5, 12), node_ctrls));
 
         let ui = Box::new(UI::new(
             WidgetData::new_box(
