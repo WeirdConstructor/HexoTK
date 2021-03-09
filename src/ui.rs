@@ -41,24 +41,24 @@ struct ModifierKeys {
 ///
 ///     impl Parameters for SomeParameters {
 ///         fn len(&self) -> usize { self.params.len() }
-///         fn get(&self, id: ParamID) -> f32 { self.params[id.param_id() as usize] }
-///         fn get_denorm(&self, id: ParamID) -> f32 { self.params[id.param_id() as usize] }
-///         fn set(&mut self, id: ParamID, v: f32) { self.params[id.param_id() as usize] = v; }
-///         fn set_default(&mut self, id: ParamID) { self.set(id, 0.0); }
-///         fn change_start(&mut self, id: ParamID) { }
-///         fn change(&mut self, id: ParamID, v: f32, single: bool) {
+///         fn get(&self, id: UIParam) -> f32 { self.params[id.param_id() as usize] }
+///         fn get_denorm(&self, id: UIParam) -> f32 { self.params[id.param_id() as usize] }
+///         fn set(&mut self, id: UIParam, v: f32) { self.params[id.param_id() as usize] = v; }
+///         fn set_default(&mut self, id: UIParam) { self.set(id, 0.0); }
+///         fn change_start(&mut self, id: UIParam) { }
+///         fn change(&mut self, id: UIParam, v: f32, single: bool) {
 ///             self.set(id, v);
 ///         }
-///         fn change_end(&mut self, id: ParamID, v: f32) {
+///         fn change_end(&mut self, id: UIParam, v: f32) {
 ///             self.set(id, v);
 ///         }
-///         fn step_next(&mut self, id: ParamID) {
+///         fn step_next(&mut self, id: UIParam) {
 ///             self.set(id, (self.get(id) + 0.2).fract());
 ///         }
-///         fn step_prev(&mut self, id: ParamID) {
+///         fn step_prev(&mut self, id: UIParam) {
 ///             self.set(id, ((self.get(id) - 0.2) + 1.0).fract());
 ///         }
-///         fn fmt<'a>(&self, id: ParamID, buf: &'a mut [u8]) -> usize {
+///         fn fmt<'a>(&self, id: UIParam, buf: &'a mut [u8]) -> usize {
 ///             use std::io::Write;
 ///             let mut bw = std::io::BufWriter::new(buf);
 ///             match write!(bw, "{:6.3}", self.get_denorm(id)) {
@@ -117,7 +117,7 @@ impl WidgetUI for WidgetUIHolder {
     fn release_focus(&mut self) {
     }
 
-    fn drag_zone_for(&self, az_id: ParamID) -> Option<ActiveZone> {
+    fn drag_zone_for(&self, az_id: UIParam) -> Option<ActiveZone> {
         if let Some(InputMode::HexFieldDrag { zone }) = self.input_mode {
             if zone.id == az_id {
                 return Some(zone);
@@ -127,7 +127,7 @@ impl WidgetUI for WidgetUIHolder {
         None
     }
 
-    fn hover_zone_for(&self, az_id: ParamID) -> Option<ActiveZone> {
+    fn hover_zone_for(&self, az_id: UIParam) -> Option<ActiveZone> {
         if let Some(hz) = self.hover_zone {
             if hz.id == az_id {
                 return Some(hz);
@@ -136,7 +136,7 @@ impl WidgetUI for WidgetUIHolder {
         None
     }
 
-    fn hl_style_for(&self, az_id: ParamID) -> HLStyle {
+    fn hl_style_for(&self, az_id: UIParam) -> HLStyle {
         if let Some(hz) = self.hover_zone_for(az_id) {
             HLStyle::Hover(hz.zone_type)
         } else {
@@ -204,7 +204,7 @@ enum InputMode {
 }
 
 impl InputMode {
-    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(ParamID, f32)> {
+    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(UIParam, f32)> {
         match self {
             InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
                                    fine_key, orig_pos, .. } => {

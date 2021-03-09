@@ -41,28 +41,28 @@ impl UIPos {
 }
 
 pub struct WidgetData {
-    id:    ParamID,
+    id:    UIParam,
     wtype: Rc<dyn WidgetType>,
     pos:   UIPos,
     data:  Box<dyn std::any::Any>,
 }
 
 impl WidgetData {
-    pub fn new_box(wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
+    pub fn new_box(wtype: Rc<dyn WidgetType>, id: UIParam, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
         Box::new(Self { wtype, id, data, pos })
     }
 
-    pub fn new_tl_box(wtype: Rc<dyn WidgetType>, id: ParamID, data: Box<dyn std::any::Any>) -> Box<Self> {
+    pub fn new_tl_box(wtype: Rc<dyn WidgetType>, id: UIParam, data: Box<dyn std::any::Any>) -> Box<Self> {
         Box::new(Self { wtype, id, data, pos: UIPos::center(12, 12) })
     }
 
-    pub fn new(wtype: Rc<dyn WidgetType>, id: ParamID, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
+    pub fn new(wtype: Rc<dyn WidgetType>, id: UIParam, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
         Self { wtype, id, data, pos }
     }
 
     pub fn pos(&self) -> UIPos { self.pos }
 
-    pub fn id(&self) -> ParamID { self.id }
+    pub fn id(&self) -> UIParam { self.id }
 
     pub fn widget_type(&self) -> Rc<dyn WidgetType> { self.wtype.clone() }
 
@@ -205,13 +205,13 @@ pub enum MButton {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ActiveZone {
-    pub id:         ParamID,
+    pub id:         UIParam,
     pub pos:        Rect,
     pub zone_type:  ZoneType,
 }
 
 impl ActiveZone {
-    pub fn new_drag_zone(id: ParamID, pos: Rect, coarse: bool) -> Self {
+    pub fn new_drag_zone(id: UIParam, pos: Rect, coarse: bool) -> Self {
         if coarse {
             Self { id, pos, zone_type: ZoneType::ValueDragCoarse }
         } else {
@@ -219,15 +219,15 @@ impl ActiveZone {
         }
     }
 
-    pub fn new_hex_field(id: ParamID, pos: Rect, y_offs: bool, tile_size: f64) -> Self {
+    pub fn new_hex_field(id: UIParam, pos: Rect, y_offs: bool, tile_size: f64) -> Self {
         Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, y_offs, pos: (0, 0) } }
     }
 
-    pub fn new_input_zone(id: ParamID, pos: Rect) -> Self {
+    pub fn new_input_zone(id: UIParam, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::ValueInput }
     }
 
-    pub fn new_click_zone(id: ParamID, pos: Rect) -> Self {
+    pub fn new_click_zone(id: UIParam, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::Click }
     }
 }
@@ -246,7 +246,7 @@ pub enum ZoneType {
 }
 
 impl ActiveZone {
-    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<ParamID> {
+    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<UIParam> {
         if self.pos.is_inside(pos.0, pos.1) {
             Some(self.id)
         } else {
@@ -260,12 +260,12 @@ impl ActiveZone {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct ParamID {
+pub struct UIParam {
     node_id: u32,
     param_id: u32,
 }
 
-impl ParamID {
+impl UIParam {
     pub fn new(node_id: u32, param_id: u32) -> Self {
         Self { node_id, param_id }
     }
@@ -274,13 +274,13 @@ impl ParamID {
     pub fn param_id(&self) -> u32 { self.param_id }
 }
 
-impl std::fmt::Display for ParamID {
+impl std::fmt::Display for UIParam {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ParamID(n={}, p={})", self.node_id, self.param_id)
+        write!(f, "UIParam(n={}, p={})", self.node_id, self.param_id)
     }
 }
 
-impl From<usize> for ParamID {
+impl From<usize> for UIParam {
     fn from(p: usize) -> Self {
         Self {
             node_id: 0,
@@ -289,7 +289,7 @@ impl From<usize> for ParamID {
     }
 }
 
-impl From<(u32, u32)> for ParamID {
+impl From<(u32, u32)> for UIParam {
     fn from(p: (u32, u32)) -> Self {
         Self {
             node_id: p.0,
@@ -298,7 +298,7 @@ impl From<(u32, u32)> for ParamID {
     }
 }
 
-impl From<(usize, usize)> for ParamID {
+impl From<(usize, usize)> for UIParam {
     fn from(p: (usize, usize)) -> Self {
         Self {
             node_id: p.0 as u32,
@@ -309,16 +309,16 @@ impl From<(usize, usize)> for ParamID {
 
 pub trait Parameters {
     fn len(&self) -> usize;
-    fn get(&self, id: ParamID) -> f32;
-    fn get_denorm(&self, id: ParamID) -> f32;
-    fn set(&mut self, id: ParamID, v: f32);
-    fn fmt<'a>(&self, id: ParamID, buf: &'a mut [u8]) -> usize;
-    fn step_next(&mut self, id: ParamID);
-    fn step_prev(&mut self, id: ParamID);
-    fn set_default(&mut self, id: ParamID);
-    fn change_start(&mut self, id: ParamID);
-    fn change(&mut self, id: ParamID, v: f32, single: bool);
-    fn change_end(&mut self, id: ParamID, v: f32);
+    fn get(&self, id: UIParam) -> f32;
+    fn get_denorm(&self, id: UIParam) -> f32;
+    fn set(&mut self, id: UIParam, v: f32);
+    fn fmt<'a>(&self, id: UIParam, buf: &'a mut [u8]) -> usize;
+    fn step_next(&mut self, id: UIParam);
+    fn step_prev(&mut self, id: UIParam);
+    fn set_default(&mut self, id: UIParam);
+    fn change_start(&mut self, id: UIParam);
+    fn change(&mut self, id: UIParam, v: f32, single: bool);
+    fn change_end(&mut self, id: UIParam, v: f32);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -395,14 +395,14 @@ pub trait WidgetUI {
     ///
     /// ui.define_active_zone(
     ///     ActiveZone::new_click_zone(
-    ///         ParamID::new(0, 10),
+    ///         UIParam::new(0, 10),
     ///         Rect::from_tpl((0.0, 0.0, 40.0, 40.0))
     ///             .offs(10.0, 10.0)));
     /// ```
     fn define_active_zone(&mut self, az: ActiveZone);
-    fn hl_style_for(&self, id: ParamID) -> HLStyle;
-    fn hover_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
-    fn drag_zone_for(&self, id: ParamID) -> Option<ActiveZone>;
+    fn hl_style_for(&self, id: UIParam) -> HLStyle;
+    fn hover_zone_for(&self, id: UIParam) -> Option<ActiveZone>;
+    fn drag_zone_for(&self, id: UIParam) -> Option<ActiveZone>;
     fn queue_redraw(&mut self);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
@@ -412,16 +412,16 @@ pub trait WidgetUI {
 
 #[derive(Debug, Clone)]
 pub enum UIEvent {
-    ValueDragStart { id: ParamID, },
-    ValueDrag      { id: ParamID, steps: f64 },
-    ValueDragEnd   { id: ParamID, },
-    EnteredValue   { id: ParamID, val: String },
-    Click          { id: ParamID, button: MButton, x: f64, y: f64 },
-    FieldDrag      { id: ParamID, button: MButton, src: (usize, usize), dst: (usize, usize) },
+    ValueDragStart { id: UIParam, },
+    ValueDrag      { id: UIParam, steps: f64 },
+    ValueDragEnd   { id: UIParam, },
+    EnteredValue   { id: UIParam, val: String },
+    Click          { id: UIParam, button: MButton, x: f64, y: f64 },
+    FieldDrag      { id: UIParam, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
 
 impl UIEvent {
-    pub fn id(&self) -> ParamID {
+    pub fn id(&self) -> UIParam {
         match self {
             UIEvent::ValueDragStart { id, .. } => *id,
             UIEvent::ValueDrag      { id, .. } => *id,

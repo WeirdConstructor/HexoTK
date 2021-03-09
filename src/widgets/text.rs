@@ -25,7 +25,6 @@ impl TextSourceRef {
         let s =
             if self.width > 0 {
                 let mut text : String = String::new();
-                let mut line : Vec<char> = vec![];
 
                 let mut line_len = 0;
                 for c in s.chars() {
