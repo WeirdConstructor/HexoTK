@@ -5,44 +5,44 @@ const WINDOW_W : i32 = 1150;
 const WINDOW_H : i32 = 720;
 
 struct SomeParameters {
-    params: [f32; 100],
+    atoms: Vec<Atom>,
 }
 
-impl Parameters for SomeParameters {
-    fn len(&self) -> usize { self.params.len() }
-    fn get(&self, id: UIParam) -> f32 { self.params[id.param_id() as usize] }
-    fn get_denorm(&self, id: UIParam) -> f32 { self.params[id.param_id() as usize] }
-    fn set(&mut self, id: UIParam, v: f32) { self.params[id.param_id() as usize] = v; }
-    fn set_default(&mut self, id: UIParam) {
-        self.set(id, 0.0);
+impl AtomDataModel for SomeParameters {
+    fn len(&self) -> usize { self.atoms.len() }
+    fn get(&self, id: AtomId) -> Atom { self.atoms[id.atom_id() as usize].clone() }
+    fn get_denorm(&self, id: AtomId) -> Atom { self.atoms[id.atom_id() as usize].clone() }
+    fn set(&mut self, id: AtomId, v: Atom) { self.atoms[id.atom_id() as usize] = v; }
+    fn set_default(&mut self, id: AtomId) {
+        self.set(id, self.get(id).default_of());
     }
 
-    fn change_start(&mut self, _id: UIParam) {
+    fn change_start(&mut self, _id: AtomId) {
 //        println!("CHANGE START: {}", id);
     }
 
-    fn change(&mut self, id: UIParam, v: f32, _single: bool) {
+    fn change(&mut self, id: AtomId, v: f32, _single: bool) {
 //        println!("CHANGE: {},{} ({})", id, v, single);
-        self.set(id, v);
+        self.set(id, Atom::param(v));
     }
 
-    fn change_end(&mut self, id: UIParam, v: f32) {
+    fn change_end(&mut self, id: AtomId, v: f32) {
 //        println!("CHANGE END: {},{}", id, v);
-        self.set(id, v);
+        self.set(id, Atom::param(v));
     }
 
-    fn step_next(&mut self, id: UIParam) {
-        self.set(id, (self.get(id) + 0.2).fract());
+    fn step_next(&mut self, id: AtomId) {
+        self.set(id, Atom::setting(self.get(id).i() + 1));
     }
 
-    fn step_prev(&mut self, id: UIParam) {
-        self.set(id, ((self.get(id) - 0.2) + 1.0).fract());
+    fn step_prev(&mut self, id: AtomId) {
+        self.set(id, Atom::setting(self.get(id).i() - 1));
     }
 
-    fn fmt<'a>(&self, id: UIParam, buf: &'a mut [u8]) -> usize {
+    fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
-        match write!(bw, "{:6.3}", self.get_denorm(id)) {
+        match write!(bw, "{:6.3}", self.get_denorm(id).f()) {
             Ok(_)  => bw.buffer().len(),
             Err(_) => 0,
         }
@@ -83,10 +83,13 @@ fn main() {
            .add(NodeMatrixData::new(UIPos::center(7, 12), 11))
            .add(wbox!(wt_cont, 0.into(), center(5, 12), node_ctrls));
 
+        let mut atoms = vec![];
+        atoms.resize_with(100, || Atom::default());
+
         let ui = Box::new(UI::new(
             WidgetData::new_box(
                 wt_cont, 0.into(), UIPos::center(12, 12), con),
-            Box::new(SomeParameters { params: [0.0; 100] }),
+            Box::new(SomeParameters { atoms }),
             (WINDOW_W as f64, WINDOW_H as f64),
         ));
 

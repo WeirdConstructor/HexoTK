@@ -269,7 +269,7 @@ impl WidgetType for Knob {
 
         let id = data.id();
         let highlight = ui.hl_style_for(id);
-        let value     = ui.params().get(id) as f64;
+        let value     = ui.atoms().get(id).f() as f64;
 
         match highlight {
             HLStyle::ModTarget => {
@@ -328,7 +328,7 @@ impl WidgetType for Knob {
         }
 
         data.with(|data: &mut KnobData| {
-            let len = ui.params().fmt(id, &mut data.value_buf[..]);
+            let len = ui.atoms().fmt(id, &mut data.value_buf[..]);
             let val_s = std::str::from_utf8(&data.value_buf[0..len]).unwrap();
             self.draw_value_label(p, xo, yo, highlight, val_s);
 

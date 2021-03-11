@@ -41,28 +41,28 @@ impl UIPos {
 }
 
 pub struct WidgetData {
-    id:    UIParam,
+    id:    AtomId,
     wtype: Rc<dyn WidgetType>,
     pos:   UIPos,
     data:  Box<dyn std::any::Any>,
 }
 
 impl WidgetData {
-    pub fn new_box(wtype: Rc<dyn WidgetType>, id: UIParam, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
+    pub fn new_box(wtype: Rc<dyn WidgetType>, id: AtomId, pos: UIPos, data: Box<dyn std::any::Any>) -> Box<Self> {
         Box::new(Self { wtype, id, data, pos })
     }
 
-    pub fn new_tl_box(wtype: Rc<dyn WidgetType>, id: UIParam, data: Box<dyn std::any::Any>) -> Box<Self> {
+    pub fn new_tl_box(wtype: Rc<dyn WidgetType>, id: AtomId, data: Box<dyn std::any::Any>) -> Box<Self> {
         Box::new(Self { wtype, id, data, pos: UIPos::center(12, 12) })
     }
 
-    pub fn new(wtype: Rc<dyn WidgetType>, id: UIParam, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
+    pub fn new(wtype: Rc<dyn WidgetType>, id: AtomId, pos: UIPos, data: Box<dyn std::any::Any>) -> Self {
         Self { wtype, id, data, pos }
     }
 
     pub fn pos(&self) -> UIPos { self.pos }
 
-    pub fn id(&self) -> UIParam { self.id }
+    pub fn id(&self) -> AtomId { self.id }
 
     pub fn widget_type(&self) -> Rc<dyn WidgetType> { self.wtype.clone() }
 
@@ -205,13 +205,13 @@ pub enum MButton {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ActiveZone {
-    pub id:         UIParam,
+    pub id:         AtomId,
     pub pos:        Rect,
     pub zone_type:  ZoneType,
 }
 
 impl ActiveZone {
-    pub fn new_drag_zone(id: UIParam, pos: Rect, coarse: bool) -> Self {
+    pub fn new_drag_zone(id: AtomId, pos: Rect, coarse: bool) -> Self {
         if coarse {
             Self { id, pos, zone_type: ZoneType::ValueDragCoarse }
         } else {
@@ -219,15 +219,15 @@ impl ActiveZone {
         }
     }
 
-    pub fn new_hex_field(id: UIParam, pos: Rect, y_offs: bool, tile_size: f64) -> Self {
+    pub fn new_hex_field(id: AtomId, pos: Rect, y_offs: bool, tile_size: f64) -> Self {
         Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, y_offs, pos: (0, 0) } }
     }
 
-    pub fn new_input_zone(id: UIParam, pos: Rect) -> Self {
+    pub fn new_input_zone(id: AtomId, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::ValueInput }
     }
 
-    pub fn new_click_zone(id: UIParam, pos: Rect) -> Self {
+    pub fn new_click_zone(id: AtomId, pos: Rect) -> Self {
         Self { id, pos, zone_type: ZoneType::Click }
     }
 }
@@ -246,7 +246,7 @@ pub enum ZoneType {
 }
 
 impl ActiveZone {
-    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<UIParam> {
+    pub fn id_if_inside(&self, pos: (f64, f64)) -> Option<AtomId> {
         if self.pos.is_inside(pos.0, pos.1) {
             Some(self.id)
         } else {
@@ -259,66 +259,121 @@ impl ActiveZone {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct UIParam {
-    node_id: u32,
-    param_id: u32,
+#[derive(Debug, Clone)]
+pub enum Atom {
+    Str(String),
+    MicroSample([f32; 8]),
+    AudioSample((String, std::sync::Arc<Vec<f32>>)),
+    Setting(i64),
+    Param(f32),
 }
 
-impl UIParam {
-    pub fn new(node_id: u32, param_id: u32) -> Self {
-        Self { node_id, param_id }
+impl Atom {
+    pub fn str(s: &str)         -> Self { Atom::Str(s.to_string()) }
+    pub fn setting(s: i64)      -> Self { Atom::Setting(s) }
+    pub fn param(p: f32)        -> Self { Atom::Param(p) }
+    pub fn micro(m: &[f32; 8])  -> Self { Atom::MicroSample(*m) }
+    pub fn audio(s: &str, m: std::sync::Arc<Vec<f32>>) -> Self {
+        Atom::AudioSample((s.to_string(), m))
+    }
+
+    pub fn default_of(&self) -> Self {
+        match self {
+            Atom::Str(_)         => Atom::Str("".to_string()),
+            Atom::MicroSample(_) => Atom::MicroSample([0.0; 8]),
+            Atom::AudioSample(_) => Atom::AudioSample(("".to_string(), std::sync::Arc::new(vec![]))),
+            Atom::Setting(_)     => Atom::Setting(0),
+            Atom::Param(_)       => Atom::Param(0.0),
+        }
+    }
+
+    pub fn is_continous(&self) -> bool {
+        if let Atom::Param(_) = self { true }
+        else { false }
+    }
+
+    pub fn i(&self) -> i64 {
+        match self {
+            Atom::Setting(i) => *i,
+            Atom::Param(i)   => *i as i64,
+            _                => 0,
+        }
+    }
+
+    pub fn f(&self) -> f32 {
+        match self {
+            Atom::Setting(i) => *i as f32,
+            Atom::Param(i)   => *i,
+            _                => 0.0,
+        }
+    }
+}
+
+impl std::default::Default for Atom {
+    fn default() -> Self { Atom::Param(0.0) }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+pub struct AtomId {
+    node_id:  u32,
+    atom_id: u32,
+}
+
+impl AtomId {
+    pub fn new(node_id: u32, atom_id: u32) -> Self {
+        Self { node_id, atom_id }
     }
 
     pub fn node_id(&self) -> u32 { self.node_id }
-    pub fn param_id(&self) -> u32 { self.param_id }
+    pub fn atom_id(&self) -> u32 { self.atom_id }
 }
 
-impl std::fmt::Display for UIParam {
+impl std::fmt::Display for AtomId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UIParam(n={}, p={})", self.node_id, self.param_id)
+        write!(f, "AtomId(n={}, a={})", self.node_id, self.atom_id)
     }
 }
 
-impl From<usize> for UIParam {
-    fn from(p: usize) -> Self {
+impl From<usize> for AtomId {
+    fn from(a: usize) -> Self {
         Self {
             node_id: 0,
-            param_id: p as u32,
+            atom_id: a as u32,
         }
     }
 }
 
-impl From<(u32, u32)> for UIParam {
-    fn from(p: (u32, u32)) -> Self {
+impl From<(u32, u32)> for AtomId {
+    fn from(a: (u32, u32)) -> Self {
         Self {
-            node_id: p.0,
-            param_id: p.1,
+            node_id: a.0,
+            atom_id: a.1,
         }
     }
 }
 
-impl From<(usize, usize)> for UIParam {
-    fn from(p: (usize, usize)) -> Self {
+impl From<(usize, usize)> for AtomId {
+    fn from(a: (usize, usize)) -> Self {
         Self {
-            node_id: p.0 as u32,
-            param_id: p.1 as u32,
+            node_id: a.0 as u32,
+            atom_id: a.1 as u32,
         }
     }
 }
 
-pub trait Parameters {
+pub trait AtomDataModel {
     fn len(&self) -> usize;
-    fn get(&self, id: UIParam) -> f32;
-    fn get_denorm(&self, id: UIParam) -> f32;
-    fn set(&mut self, id: UIParam, v: f32);
-    fn fmt<'a>(&self, id: UIParam, buf: &'a mut [u8]) -> usize;
-    fn step_next(&mut self, id: UIParam);
-    fn step_prev(&mut self, id: UIParam);
-    fn set_default(&mut self, id: UIParam);
-    fn change_start(&mut self, id: UIParam);
-    fn change(&mut self, id: UIParam, v: f32, single: bool);
-    fn change_end(&mut self, id: UIParam, v: f32);
+    fn get(&self, id: AtomId) -> Atom;
+    fn get_denorm(&self, id: AtomId) -> Atom;
+    fn set(&mut self, id: AtomId, v: Atom);
+    fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
+    fn step_next(&mut self, id: AtomId);
+    fn step_prev(&mut self, id: AtomId);
+    fn set_default(&mut self, id: AtomId);
+    fn change_start(&mut self, id: AtomId);
+    fn change(&mut self, id: AtomId, v: f32, single: bool);
+    fn change_end(&mut self, id: AtomId, v: f32);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -395,33 +450,33 @@ pub trait WidgetUI {
     ///
     /// ui.define_active_zone(
     ///     ActiveZone::new_click_zone(
-    ///         UIParam::new(0, 10),
+    ///         AtomId::new(0, 10),
     ///         Rect::from_tpl((0.0, 0.0, 40.0, 40.0))
     ///             .offs(10.0, 10.0)));
     /// ```
     fn define_active_zone(&mut self, az: ActiveZone);
-    fn hl_style_for(&self, id: UIParam) -> HLStyle;
-    fn hover_zone_for(&self, id: UIParam) -> Option<ActiveZone>;
-    fn drag_zone_for(&self, id: UIParam) -> Option<ActiveZone>;
+    fn hl_style_for(&self, id: AtomId) -> HLStyle;
+    fn hover_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
+    fn drag_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
     fn queue_redraw(&mut self);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
-    fn params(&self) -> &dyn Parameters;
-    fn params_mut(&mut self) -> &mut dyn Parameters;
+    fn atoms(&self) -> &dyn AtomDataModel;
+    fn atoms_mut(&mut self) -> &mut dyn AtomDataModel;
 }
 
 #[derive(Debug, Clone)]
 pub enum UIEvent {
-    ValueDragStart { id: UIParam, },
-    ValueDrag      { id: UIParam, steps: f64 },
-    ValueDragEnd   { id: UIParam, },
-    EnteredValue   { id: UIParam, val: String },
-    Click          { id: UIParam, button: MButton, x: f64, y: f64 },
-    FieldDrag      { id: UIParam, button: MButton, src: (usize, usize), dst: (usize, usize) },
+    ValueDragStart { id: AtomId, },
+    ValueDrag      { id: AtomId, steps: f64 },
+    ValueDragEnd   { id: AtomId, },
+    EnteredValue   { id: AtomId, val: String },
+    Click          { id: AtomId, button: MButton, x: f64, y: f64 },
+    FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
 
 impl UIEvent {
-    pub fn id(&self) -> UIParam {
+    pub fn id(&self) -> AtomId {
         match self {
             UIEvent::ValueDragStart { id, .. } => *id,
             UIEvent::ValueDrag      { id, .. } => *id,

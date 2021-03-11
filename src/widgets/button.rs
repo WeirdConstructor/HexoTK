@@ -153,7 +153,7 @@ impl WidgetType for Button {
         self.draw_divider(p, UI_BTN_BORDER2_WIDTH, UI_BTN_BORDER2_CLR, x, y);
 
         data.with(|data: &mut ButtonData| {
-            let len = ui.params().fmt(id, &mut data.value_buf[..]);
+            let len = ui.atoms().fmt(id, &mut data.value_buf[..]);
             let val_s = std::str::from_utf8(&data.value_buf[0..len]).unwrap();
             p.label(self.font_size, 0, color,
                 xo, yo, w, (h / 2.0).round(), val_s);
@@ -193,9 +193,9 @@ impl WidgetType for Button {
             UIEvent::Click { id, button, .. } => {
                 if *id == data.id() {
                     match button {
-                        MButton::Left   => { ui.params_mut().step_next(*id); },
-                        MButton::Right  => { ui.params_mut().step_prev(*id); },
-                        MButton::Middle => { ui.params_mut().set_default(*id); },
+                        MButton::Left   => { ui.atoms_mut().step_next(*id); },
+                        MButton::Right  => { ui.atoms_mut().step_prev(*id); },
+                        MButton::Middle => { ui.atoms_mut().set_default(*id); },
                     }
 
                     ui.queue_redraw();

@@ -25,7 +25,7 @@ struct ModifierKeys {
 ///     let window_h = 600;
 ///
 ///     struct SomeParameters {
-///         params: [f32; 100],
+///         atoms: [f32; 100],
 ///     }
 ///
 ///     let wt_btn = Rc::new(Button::new(80.0, 10.0));
@@ -34,31 +34,31 @@ struct ModifierKeys {
 ///         WidgetData::new_box(
 ///             wt_btn, 0.into(), UIPos::center(12, 12),
 ///             ButtonData::new_toggle("Test Btn")),
-///         Box::new(SomeParameters { params: [0.0; 100] }),
+///         Box::new(SomeParameters { atoms: [0.0; 100] }),
 ///         (window_w as f64, window_h as f64),
 ///     ));
 ///
 ///
-///     impl Parameters for SomeParameters {
-///         fn len(&self) -> usize { self.params.len() }
-///         fn get(&self, id: UIParam) -> f32 { self.params[id.param_id() as usize] }
-///         fn get_denorm(&self, id: UIParam) -> f32 { self.params[id.param_id() as usize] }
-///         fn set(&mut self, id: UIParam, v: f32) { self.params[id.param_id() as usize] = v; }
-///         fn set_default(&mut self, id: UIParam) { self.set(id, 0.0); }
-///         fn change_start(&mut self, id: UIParam) { }
-///         fn change(&mut self, id: UIParam, v: f32, single: bool) {
+///     impl AtomDataModel for SomeParameters {
+///         fn len(&self) -> usize { self.atoms.len() }
+///         fn get(&self, id: AtomId) -> Atom { self.atoms[id.param_id() as usize] }
+///         fn get_denorm(&self, id: AtomId) -> Atom { self.atoms[id.param_id() as usize] }
+///         fn set(&mut self, id: AtomId, v: Atom) { self.atoms[id.param_id() as usize] = v; }
+///         fn set_default(&mut self, id: AtomId) { self.set(id, 0.0); }
+///         fn change_start(&mut self, id: AtomId) { }
+///         fn change(&mut self, id: AtomId, v: f32, single: bool) {
 ///             self.set(id, v);
 ///         }
-///         fn change_end(&mut self, id: UIParam, v: f32) {
+///         fn change_end(&mut self, id: AtomId, v: f32) {
 ///             self.set(id, v);
 ///         }
-///         fn step_next(&mut self, id: UIParam) {
+///         fn step_next(&mut self, id: AtomId) {
 ///             self.set(id, (self.get(id) + 0.2).fract());
 ///         }
-///         fn step_prev(&mut self, id: UIParam) {
+///         fn step_prev(&mut self, id: AtomId) {
 ///             self.set(id, ((self.get(id) - 0.2) + 1.0).fract());
 ///         }
-///         fn fmt<'a>(&self, id: UIParam, buf: &'a mut [u8]) -> usize {
+///         fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
 ///             use std::io::Write;
 ///             let mut bw = std::io::BufWriter::new(buf);
 ///             match write!(bw, "{:6.3}", self.get_denorm(id)) {
@@ -79,7 +79,7 @@ pub struct UI {
     /// The current mouse position.
     mouse_pos:      (f64, f64),
     /// A pointer to the parameters that are modified by the UI.
-    params:         Option<Box<dyn Parameters>>,
+    atoms:          Option<Box<dyn AtomDataModel>>,
     /// The current input mode.
     input_mode:     Option<InputMode>,
     /// Holds the pressed modifier keys.
@@ -97,7 +97,7 @@ pub struct UI {
 struct WidgetUIHolder {
     zones:          Vec<ActiveZone>,
     hover_zone:     Option<ActiveZone>,
-    params:         Box<dyn Parameters>,
+    atoms:          Box<dyn AtomDataModel>,
     input_mode:     Option<InputMode>,
     needs_redraw:   bool,
 }
@@ -117,7 +117,7 @@ impl WidgetUI for WidgetUIHolder {
     fn release_focus(&mut self) {
     }
 
-    fn drag_zone_for(&self, az_id: UIParam) -> Option<ActiveZone> {
+    fn drag_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
         if let Some(InputMode::HexFieldDrag { zone }) = self.input_mode {
             if zone.id == az_id {
                 return Some(zone);
@@ -127,7 +127,7 @@ impl WidgetUI for WidgetUIHolder {
         None
     }
 
-    fn hover_zone_for(&self, az_id: UIParam) -> Option<ActiveZone> {
+    fn hover_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
         if let Some(hz) = self.hover_zone {
             if hz.id == az_id {
                 return Some(hz);
@@ -136,7 +136,7 @@ impl WidgetUI for WidgetUIHolder {
         None
     }
 
-    fn hl_style_for(&self, az_id: UIParam) -> HLStyle {
+    fn hl_style_for(&self, az_id: AtomId) -> HLStyle {
         if let Some(hz) = self.hover_zone_for(az_id) {
             HLStyle::Hover(hz.zone_type)
         } else {
@@ -144,12 +144,12 @@ impl WidgetUI for WidgetUIHolder {
         }
     }
 
-    fn params_mut(&mut self) -> &mut dyn Parameters {
-        &mut *self.params
+    fn atoms_mut(&mut self) -> &mut dyn AtomDataModel {
+        &mut *self.atoms
     }
 
-    fn params(&self) -> &dyn Parameters {
-        &*self.params
+    fn atoms(&self) -> &dyn AtomDataModel {
+        &*self.atoms
     }
 //    fn emit_event(&self, event: UIEvent) {
 //    }
@@ -204,7 +204,7 @@ enum InputMode {
 }
 
 impl InputMode {
-    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(UIParam, f32)> {
+    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(AtomId, f32)> {
         match self {
             InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
                                    fine_key, orig_pos, .. } => {
@@ -267,10 +267,10 @@ impl UI {
     /// about a comprehensive example.
     ///
     /// The window size is only the initial window size.
-    pub fn new(main: Box<WidgetData>, params: Box<dyn Parameters>, window_size: (f64, f64)) -> Self {
+    pub fn new(main: Box<WidgetData>, atoms: Box<dyn AtomDataModel>, window_size: (f64, f64)) -> Self {
         Self {
             main:           Some(main),
-            params:         Some(params),
+            atoms:         Some(atoms),
             zones:          Some(vec![]),
             mouse_pos:      (0.0, 0.0),
             hover_zone:     None,
@@ -355,18 +355,18 @@ impl UI {
 
         let data        = self.main.take();
         let zones       = self.zones.take();
-        let params      = self.params.take();
+        let atoms       = self.atoms.take();
         let input_mode  = self.input_mode.take();
 
         if let Some(mut data) = data {
             let mut zones = zones.unwrap();
-            let params    = params.unwrap();
+            let atoms     = atoms.unwrap();
             zones.clear();
 
             let mut wui   =
                 WidgetUIHolder {
                     hover_zone: self.hover_zone,
-                    params,
+                    atoms,
                     zones,
                     input_mode,
                     needs_redraw: false,
@@ -380,7 +380,7 @@ impl UI {
             }
             self.zones      = Some(wui.zones);
             self.main       = Some(data);
-            self.params     = Some(wui.params);
+            self.atoms      = Some(wui.atoms);
             self.input_mode = wui.input_mode;
         }
     }
@@ -436,7 +436,7 @@ impl WindowUI for UI {
                 }
 
                 if let Some((id, val)) = param_change {
-                    self.params.as_mut().unwrap().change(id, val, false);
+                    self.atoms.as_mut().unwrap().change(id, val, false);
                     self.queue_redraw();
                 }
 
@@ -451,7 +451,7 @@ impl WindowUI for UI {
                     if let Some((id, val)) =
                         input_mode.get_param_change_when_drag(self.mouse_pos) {
 
-                        self.params.as_mut().unwrap().change_end(id, val);
+                        self.atoms.as_mut().unwrap().change_end(id, val);
                         self.queue_redraw();
                     } else {
                         if let Some(az) = self.get_zone_at(self.mouse_pos) {
@@ -500,7 +500,7 @@ impl WindowUI for UI {
                                         DEFAULT_FINE_STEP
                                     };
 
-                                let v = self.params.as_mut().unwrap().get(az.id);
+                                let v = self.atoms.as_mut().unwrap().get(az.id).f();
 
                                 self.input_mode =
                                     Some(InputMode::ValueDrag {
@@ -512,7 +512,7 @@ impl WindowUI for UI {
                                         pre_fine_delta: 0.0,
                                     });
 
-                                self.params.as_mut().unwrap().change_start(az.id);
+                                self.atoms.as_mut().unwrap().change_start(az.id);
                                 self.queue_redraw();
                             }
                         },
