@@ -309,6 +309,10 @@ impl Atom {
     }
 }
 
+impl From<f32> for Atom {
+    fn from(n: f32) -> Self { Atom::Param(n) }
+}
+
 impl std::default::Default for Atom {
     fn default() -> Self { Atom::Param(0.0) }
 }
@@ -316,7 +320,7 @@ impl std::default::Default for Atom {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
 pub struct AtomId {
-    node_id:  u32,
+    node_id: u32,
     atom_id: u32,
 }
 
