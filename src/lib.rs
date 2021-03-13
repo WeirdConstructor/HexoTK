@@ -1,7 +1,6 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
-#[macro_export]
 pub mod widgets;
 pub mod components;
 pub mod constants;
