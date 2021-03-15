@@ -108,6 +108,15 @@ impl Rect {
         Self { x, y, w, h }
     }
 
+    pub fn resize(&self, w: f64, h: f64) -> Self {
+        Self {
+            x: self.x,
+            y: self.y,
+            w,
+            h,
+        }
+    }
+
     pub fn crop_left(&self, delta: f64) -> Self {
         Self {
             x: self.x + delta,
@@ -262,7 +271,7 @@ impl ActiveZone {
 pub enum Atom {
     Str(String),
     MicroSample([f32; 8]),
-    AudioSample((String, std::sync::Arc<Vec<f32>>)),
+    AudioSample((String, Option<std::sync::Arc<Vec<f32>>>)),
     Setting(i64),
     Param(f32),
 }
@@ -273,14 +282,18 @@ impl Atom {
     pub fn param(p: f32)        -> Self { Atom::Param(p) }
     pub fn micro(m: &[f32; 8])  -> Self { Atom::MicroSample(*m) }
     pub fn audio(s: &str, m: std::sync::Arc<Vec<f32>>) -> Self {
-        Atom::AudioSample((s.to_string(), m))
+        Atom::AudioSample((s.to_string(), Some(m)))
+    }
+
+    pub fn audio_unloaded(s: &str) -> Self {
+        Atom::AudioSample((s.to_string(), None))
     }
 
     pub fn default_of(&self) -> Self {
         match self {
             Atom::Str(_)         => Atom::Str("".to_string()),
             Atom::MicroSample(_) => Atom::MicroSample([0.0; 8]),
-            Atom::AudioSample(_) => Atom::AudioSample(("".to_string(), std::sync::Arc::new(vec![]))),
+            Atom::AudioSample(_) => Atom::AudioSample(("".to_string(), None)),
             Atom::Setting(_)     => Atom::Setting(0),
             Atom::Param(_)       => Atom::Param(0.0),
         }
