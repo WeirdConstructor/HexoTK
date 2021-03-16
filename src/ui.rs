@@ -217,7 +217,6 @@ impl InputMode {
                 Some((
                     zone.id,
                     (value + steps * step_dt + pre_fine_delta)
-                    .max(0.0).min(1.0)
                 ))
             },
             _ => None,
@@ -495,35 +494,44 @@ impl WindowUI for UI {
                 if let Some(az) = az {
                     match az.zone_type {
                         ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
-                            if let MButton::Left = btn {
-                                let step_dt =
-                                    if let ZoneType::ValueDragCoarse = az.zone_type {
-                                        DEFAULT_COARSE_STEP
-                                    } else {
-                                        DEFAULT_FINE_STEP
-                                    };
+                            match btn {
+                                MButton::Left => {
+                                    let step_dt =
+                                        if let ZoneType::ValueDragCoarse = az.zone_type {
+                                            DEFAULT_COARSE_STEP
+                                        } else {
+                                            DEFAULT_FINE_STEP
+                                        };
 
-                                let v =
-                                    if let Some(v) =
-                                        self.atoms.as_ref().unwrap().get(az.id)
-                                    {
-                                        v.f()
-                                    } else {
-                                        0.0
-                                    };
+                                    let v =
+                                        if let Some(v) =
+                                            self.atoms.as_ref().unwrap().get(az.id)
+                                        {
+                                            v.f()
+                                        } else {
+                                            0.0
+                                        };
 
-                                self.input_mode =
-                                    Some(InputMode::ValueDrag {
-                                        step_dt,
-                                        value:          v,
-                                        orig_pos:       self.mouse_pos,
-                                        zone:           az,
-                                        fine_key:       self.mod_keys.fine_drag_key,
-                                        pre_fine_delta: 0.0,
-                                    });
+                                    self.input_mode =
+                                        Some(InputMode::ValueDrag {
+                                            step_dt,
+                                            value:          v,
+                                            orig_pos:       self.mouse_pos,
+                                            zone:           az,
+                                            fine_key:       self.mod_keys.fine_drag_key,
+                                            pre_fine_delta: 0.0,
+                                        });
 
-                                self.atoms.as_mut().unwrap().change_start(az.id);
-                                self.queue_redraw();
+                                    self.atoms.as_mut().unwrap().change_start(az.id);
+                                    self.queue_redraw();
+                                },
+                                MButton::Middle => {
+                                    self.atoms.as_mut().unwrap().set_default(az.id);
+                                    self.queue_redraw();
+                                },
+                                MButton::Right => {
+                                    // TODO: Enter value input mode!
+                                }
                             }
                         },
                         ZoneType::HexFieldClick { .. } => {

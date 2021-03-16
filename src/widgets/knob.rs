@@ -15,6 +15,7 @@ pub struct Knob {
     radius:         f64,
     font_size_lbl:  f64,
     font_size_data: f64,
+    range_signed:   bool,
 }
 
 impl Knob {
@@ -59,7 +60,13 @@ impl Knob {
             radius,
             font_size_lbl,
             font_size_data,
+            range_signed: false,
         }
+    }
+
+    pub fn range_signed(mut self) -> Self {
+        self.range_signed = true;
+        self
     }
 
     pub fn get_center_offset(&self, line_width: f64) -> (f64, f64) {
@@ -211,15 +218,15 @@ fn circle_point(r: f64, angle: f64) -> (f64, f64) {
 
 #[derive(Debug, Clone)]
 pub struct KnobData {
-    value_buf:  [u8; 10],
+    lbl_buf:    [u8; 10],
     name:       String,
 }
 
 impl KnobData {
-	pub fn new() -> Box<dyn std::any::Any> {
+	pub fn new(name: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
-            value_buf:  [0; 10],
-            name:       String::from("?"),
+            lbl_buf:    [0; 10],
+            name:       name.to_string(),
         })
     }
 }
@@ -273,6 +280,10 @@ impl WidgetType for Knob {
             if let Some(v) = ui.atoms().get(id) { v.f() as f64 }
             else { 0.0 };
 
+        let ranged_value =
+            if self.range_signed { (value.clamp(-1.0, 1.0) + 1.0) * 0.5 }
+            else                 { value.clamp(0.0, 1.0) };
+
         match highlight {
             HLStyle::ModTarget => {
                 self.draw_oct_arc(
@@ -303,7 +314,7 @@ impl WidgetType for Knob {
                     UI_MG_KNOB_STROKE,
                     UI_FG_KNOB_STROKE_CLR,
                     true,
-                    value);
+                    ranged_value);
             },
             HLStyle::Inactive => {
                 self.draw_oct_arc(
@@ -317,7 +328,7 @@ impl WidgetType for Knob {
                     UI_MG_KNOB_STROKE,
                     UI_INACTIVE2_CLR,
                     true,
-                    value);
+                    ranged_value);
             },
             HLStyle::None => {
                 self.draw_oct_arc(
@@ -325,13 +336,13 @@ impl WidgetType for Knob {
                     UI_MG_KNOB_STROKE,
                     UI_FG_KNOB_STROKE_CLR,
                     true,
-                    value);
+                    ranged_value);
             }
         }
 
         data.with(|data: &mut KnobData| {
-            let len = ui.atoms().fmt(id, &mut data.value_buf[..]);
-            let val_s = std::str::from_utf8(&data.value_buf[0..len]).unwrap();
+            let len = ui.atoms().fmt(id, &mut data.lbl_buf[..]);
+            let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
             self.draw_value_label(p, xo, yo, highlight, val_s);
 
             self.draw_name(p, xo, yo, &data.name);
