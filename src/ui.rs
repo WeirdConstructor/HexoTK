@@ -270,7 +270,7 @@ impl UI {
     pub fn new(main: Box<WidgetData>, atoms: Box<dyn AtomDataModel>, window_size: (f64, f64)) -> Self {
         Self {
             main:           Some(main),
-            atoms:         Some(atoms),
+            atoms:          Some(atoms),
             zones:          Some(vec![]),
             mouse_pos:      (0.0, 0.0),
             hover_zone:     None,
@@ -388,6 +388,9 @@ impl UI {
 
 impl WindowUI for UI {
     fn pre_frame(&mut self) {
+        if let Some(atoms) = self.atoms.as_mut() {
+            atoms.check_sync();
+        }
     }
 
     fn post_frame(&mut self) {
@@ -500,7 +503,14 @@ impl WindowUI for UI {
                                         DEFAULT_FINE_STEP
                                     };
 
-                                let v = self.atoms.as_mut().unwrap().get(az.id).f();
+                                let v =
+                                    if let Some(v) =
+                                        self.atoms.as_ref().unwrap().get(az.id)
+                                    {
+                                        v.f()
+                                    } else {
+                                        0.0
+                                    };
 
                                 self.input_mode =
                                     Some(InputMode::ValueDrag {

@@ -330,7 +330,7 @@ impl std::default::Default for Atom {
 }
 
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AtomId {
     node_id: u32,
     atom_id: u32,
@@ -379,9 +379,10 @@ impl From<(usize, usize)> for AtomId {
 }
 
 pub trait AtomDataModel {
+    fn check_sync(&mut self);
     fn len(&self) -> usize;
-    fn get(&self, id: AtomId) -> Atom;
-    fn get_denorm(&self, id: AtomId) -> Atom;
+    fn get(&self, id: AtomId) -> Option<&Atom>;
+    fn get_denorm(&self, id: AtomId) -> Option<f32>;
     fn set(&mut self, id: AtomId, v: Atom);
     fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
     fn step_next(&mut self, id: AtomId);

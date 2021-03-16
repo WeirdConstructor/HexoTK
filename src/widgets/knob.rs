@@ -269,7 +269,9 @@ impl WidgetType for Knob {
 
         let id = data.id();
         let highlight = ui.hl_style_for(id);
-        let value     = ui.atoms().get(id).f() as f64;
+        let value =
+            if let Some(v) = ui.atoms().get(id) { v.f() as f64 }
+            else { 0.0 };
 
         match highlight {
             HLStyle::ModTarget => {
