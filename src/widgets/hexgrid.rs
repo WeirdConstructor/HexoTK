@@ -319,12 +319,12 @@ impl WidgetType for HexGrid {
                         match pos {
                             HexDecorPos::Center(x, y) => {
                                 if let Some((s, hc)) = data.model.cell_label(xi, yi, &mut label_buf) {
-                                    let txt_clr =
+                                    let (txt_clr, clr) =
                                         match hc {
-                                            HexCell::Normal => UI_GRID_TXT_CENTER_CLR,
-                                            HexCell::Plain  => UI_GRID_TXT_CENTER_CLR,
-                                            HexCell::HLight => UI_GRID_TXT_CENTER_HL_CLR,
-                                            HexCell::Select => UI_GRID_TXT_CENTER_SL_CLR,
+                                            HexCell::Normal => (UI_GRID_TXT_CENTER_CLR, clr),
+                                            HexCell::Plain  => (UI_GRID_TXT_CENTER_CLR, clr),
+                                            HexCell::HLight => (UI_GRID_TXT_CENTER_HL_CLR, UI_GRID_TXT_CENTER_HL_CLR),
+                                            HexCell::Select => (UI_GRID_TXT_CENTER_SL_CLR, UI_GRID_TXT_CENTER_SL_CLR),
                                         };
 
                                     let fs =
