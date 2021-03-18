@@ -4,6 +4,45 @@ use std::rc::Rc;
 const WINDOW_W : i32 = 1150;
 const WINDOW_H : i32 = 720;
 
+// Following functions taken from fastapprox-rs
+// https://github.com/loony-bean/fastapprox-rs
+// Under MIT License
+// Copyright 2018 - Alexey Suslov <alexey.suslov@gmail.com>
+mod fastapprox {
+    #[inline]
+    pub fn to_bits(x: f32) -> u32 {
+        unsafe { ::std::mem::transmute::<f32, u32>(x) }
+    }
+
+    #[inline]
+    pub fn from_bits(x: u32) -> f32 {
+        unsafe { ::std::mem::transmute::<u32, f32>(x) }
+    }
+
+    /// Base 2 logarithm.
+    #[inline]
+    pub fn log2(x: f32) -> f32 {
+        let mut y = to_bits(x) as f32;
+        y *= 1.1920928955078125e-7_f32;
+        y - 126.94269504_f32
+    }
+
+
+    /// Raises 2 to a floating point power.
+    #[inline]
+    pub fn pow2(p: f32) -> f32 {
+        let clipp = if p < -126.0 { -126.0_f32 } else { p };
+        let v = ((1 << 23) as f32 * (clipp + 126.94269504_f32)) as u32;
+        from_bits(v)
+    }
+
+    /// Raises a number to a floating point power.
+    #[inline]
+    pub fn pow(x: f32, p: f32) -> f32 {
+        pow2(p * log2(x))
+    }
+}
+
 struct SomeParameters {
     atoms: Vec<Atom>,
 }
@@ -56,6 +95,32 @@ impl AtomDataModel for SomeParameters {
     }
 }
 
+#[inline]
+pub fn myfun1(x: f32, v: f32) -> f32 {
+    if v > 0.75 {
+        let xsq1 = x.sqrt();
+        let xsq = xsq1.sqrt();
+        let v = (v - 0.75) * 4.0;
+        xsq1 * (1.0 - v) + xsq * v
+
+    } else if v > 0.5 {
+        let xsq = x.sqrt();
+        let v = (v - 0.5) * 4.0;
+        x * (1.0 - v) + xsq * v
+
+    } else if v > 0.25 {
+        let xx = x * x;
+        let v = (v - 0.25) * 4.0;
+        x * v + xx * (1.0 - v)
+
+    } else {
+        let xx = x * x;
+        let xxxx = xx * xx;
+        let v = v * 4.0;
+        xx * v + xxxx * (1.0 - v)
+    }
+}
+
 fn main() {
     use hexotk::widgets::*;
     use hexotk::components::matrix::NodeMatrixData;
@@ -96,7 +161,17 @@ fn main() {
 //                let x = 1.0 - x;
 //                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
 //                let fact = v * 10.0;
-                x * v + (1.0 - v) * x * x * x
+//                if v > 0.5 {
+//                    let xsq = x.sqrt().sqrt();
+//                    let v = (v - 0.5) * 2.0;
+//                    x * (1.0 - v) + xsq * v
+//                } else {
+//                    let xxxx = x * x * x * x;
+//                    let v = v * 2.0;
+//                    x * v + xxxx * (1.0 - v)
+                myfun1(x as f32, v as f32) as f64
+//                }
+//                let xsq = x.sqrt().sqrt();
 //                x * v + (1.0 - v) * (x).powf(10.0)
 //                }
             });
@@ -114,7 +189,10 @@ fn main() {
 //                let x = 1.0 - x;
 //                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
 //                let fact = v * 10.0;
-                x * v + (1.0 - v) * (x * 10.0 - 10.0).exp()
+//                x * v + (1.0 - v) * (x * 10.0 - 10.0).exp()
+//                let xxxx = x * x * x * x;
+//                x * v + (1.0 - v) * xxxx
+                fastapprox::pow(x as f32, 0.25 + (1.0 - v as f32) * 3.75) as f64
 //                x * v + (1.0 - v) * (x).powf(10.0)
 //                }
             });
@@ -148,9 +226,9 @@ fn main() {
         cont.new_row().border()
              .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun0)))
              .new_row()
-             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun)))
+             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun2)))
              .new_row()
-             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun2)));
+             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun)));
 
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
