@@ -79,23 +79,82 @@ fn main() {
            .add(wbox!(wt_knob, 6.into(), center(3, 6), KnobData::new("C")))
            .add(wbox!(wt_knob, 7.into(), center(3, 6), KnobData::new("D")));
 
-        let wt_graph = Rc::new(Graph::new(60.0, 40.0));
+        let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 
         let mut xd = 0.0;
 
+        let fun0 =
+            Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
+                let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
+                let v = v.clamp(0.0, 1.0);
+//                if v > 0.5 {
+//                    let v = (v - 0.5) * 2.0;
+//                    ((v * x).exp() - 1.0) / ((x).exp() - 1.0)
+////                    (1.0 - x).powf((v - 0.5) * 2.0)
+//                } else {
+
+//                let x = 1.0 - x;
+//                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
+//                let fact = v * 10.0;
+                x * v + (1.0 - v) * x * x * x
+//                x * v + (1.0 - v) * (x).powf(10.0)
+//                }
+            });
+
         let fun =
             Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
-                if init {
-                    xd = 1.0;
-                } else {
-                    xd *= (ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64);
-                }
-                xd
+                let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
+                let v = v.clamp(0.0, 1.0);
+//                if v > 0.5 {
+//                    let v = (v - 0.5) * 2.0;
+//                    ((v * x).exp() - 1.0) / ((x).exp() - 1.0)
+////                    (1.0 - x).powf((v - 0.5) * 2.0)
+//                } else {
+
+//                let x = 1.0 - x;
+//                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
+//                let fact = v * 10.0;
+                x * v + (1.0 - v) * (x * 10.0 - 10.0).exp()
+//                x * v + (1.0 - v) * (x).powf(10.0)
+//                }
             });
+
+        let fun2 =
+            Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
+                let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
+                let v = v.clamp(0.0, 1.0);
+//                if v > 0.5 {
+//                    let v = (v - 0.5) * 2.0;
+//                    ((v * x).exp() - 1.0) / ((x).exp() - 1.0)
+////                    (1.0 - x).powf((v - 0.5) * 2.0)
+//                } else {
+
+//                let x = 1.0 - x;
+//                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
+//                let fact = v * 10.0;
+//                (x * v * 10.0 - v * 10.0).exp()
+//                x * v + (1.0 - v) * (x).powf(v)
+//                if v > 0.5 {
+//                    let v = (v - 0.5) * 2.0;
+//                    1.0 - (1.0 - x).powf(1.0 + v * 4.0)
+//                } else {
+//                    let v = v * 2.0;
+                    (x).powf(0.25 * v + (1.0 - v) * 4.0)
+//                }
+//                }
+            });
+
+        let mut cont = ContainerData::new();
+        cont.new_row().border()
+             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun0)))
+             .new_row()
+             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun)))
+             .new_row()
+             .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun2)));
 
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
-           .add(wbox!(wt_graph,99.into(), right( 3, 6), GraphData::new(30, fun)))
+           .add(wbox!(wt_cont,99.into(), center(3, 6), cont))
            .add(wbox!(wt_btn,  1.into(), right( 3, 6), ButtonData::new_toggle("Test Btn")))
            .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
            .add(wbox!(wt_knob_11, 2.into(), center(3, 6), KnobData::new("A")))
