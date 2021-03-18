@@ -6,6 +6,7 @@ mod knob;
 mod button;
 mod container;
 mod text;
+mod graph;
 
 use super::*;
 
@@ -29,3 +30,6 @@ pub use text::Text;
 pub use text::TextData;
 pub use text::TextSource;
 pub use text::TextSourceRef;
+
+pub use graph::Graph;
+pub use graph::GraphData;

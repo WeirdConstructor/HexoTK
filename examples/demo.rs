@@ -79,9 +79,24 @@ fn main() {
            .add(wbox!(wt_knob, 6.into(), center(3, 6), KnobData::new("C")))
            .add(wbox!(wt_knob, 7.into(), center(3, 6), KnobData::new("D")));
 
+        let wt_graph = Rc::new(Graph::new(60.0, 40.0));
+
+        let mut xd = 0.0;
+
+        let fun =
+            Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
+                if init {
+                    xd = 1.0;
+                } else {
+                    xd *= (ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64);
+                }
+                xd
+            });
+
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
-           .add(wbox!(wt_btn,  1.into(), right( 6, 6), ButtonData::new_toggle("Test Btn")))
+           .add(wbox!(wt_graph,99.into(), right( 3, 6), GraphData::new(30, fun)))
+           .add(wbox!(wt_btn,  1.into(), right( 3, 6), ButtonData::new_toggle("Test Btn")))
            .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
            .add(wbox!(wt_knob_11, 2.into(), center(3, 6), KnobData::new("A")))
            .new_row()
