@@ -72,6 +72,7 @@ fn main() {
 
         let mut fourbtns = ContainerData::new();
         fourbtns.border().title("Test Container 4 Btns")
+           .level(1).contrast_border().shrink(40.0, 10.0)
            .new_row()
            .add(wbox!(wt_knob, 4.into(), center(3, 6), KnobData::new("A")))
            .add(wbox!(wt_knob, 5.into(), center(3, 6), KnobData::new("B")))

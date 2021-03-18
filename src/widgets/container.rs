@@ -16,10 +16,12 @@ impl Container {
 }
 
 pub struct ContainerData {
-    rows:   Vec<Vec<WidgetData>>,
-    border: bool,
+    rows:            Vec<Vec<WidgetData>>,
+    border:          bool,
     contrast_border: bool,
-    title:  Option<String>,
+    level:           usize,
+    shrink:          (f64, f64),
+    title:           Option<String>,
 }
 
 impl ContainerData {
@@ -28,8 +30,20 @@ impl ContainerData {
             rows:               vec![],
             border:             false,
             contrast_border:    false,
+            level:              0,
+            shrink:             (0.0, 0.0),
             title:              None,
         })
+    }
+
+    pub fn level(&mut self, level: usize) -> &mut Self {
+        self.level = level;
+        self
+    }
+
+    pub fn shrink(&mut self, w: f64, h: f64) -> &mut Self {
+        self.shrink = (w, h);
+        self
     }
 
     pub fn new_row(&mut self) -> &mut Self {
@@ -66,11 +80,21 @@ impl WidgetType for Container {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
 
         data.with(|data: &mut ContainerData| {
+            let bg_clr =
+                match data.level {
+                    0 => UI_BG_CLR,
+                    1 => UI_BG2_CLR,
+                    2 => UI_BG3_CLR,
+                    _ => UI_BG3_CLR,
+                };
+
+            let pos = pos.shrink(data.shrink.0, data.shrink.1);
+
             let inner_pos =
                 if data.border {
                     let pos =
                         if data.contrast_border {
-                            p.rect_fill(UI_BG_CLR, pos.x, pos.y, pos.w, pos.h);
+                            p.rect_fill(bg_clr, pos.x, pos.y, pos.w, pos.h);
                             pos.shrink(UI_BORDER_WIDTH, UI_BORDER_WIDTH)
                         } else { pos };
 
@@ -79,7 +103,7 @@ impl WidgetType for Container {
 
                     p.rect_fill(UI_BORDER_CLR, pos.x, pos.y, pos.w, pos.h);
                     p.rect_fill(
-                        UI_BG_CLR,
+                        bg_clr,
                         new_inner.x, new_inner.y, new_inner.w, new_inner.h);
 
                     new_inner
