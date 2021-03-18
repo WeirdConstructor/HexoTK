@@ -120,7 +120,7 @@ impl WidgetType for Container {
                         inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H,
                         title);
                     new_inner
-                } else { pos };
+                } else { inner_pos };
 
             let mut row_offs = 0;
             for cols in data.rows.iter_mut() {
