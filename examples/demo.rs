@@ -149,77 +149,24 @@ fn main() {
         let mut xd = 0.0;
 
         let fun0 =
-            Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
+            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64| -> f64 {
                 let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
                 let v = v.clamp(0.0, 1.0);
-//                if v > 0.5 {
-//                    let v = (v - 0.5) * 2.0;
-//                    ((v * x).exp() - 1.0) / ((x).exp() - 1.0)
-////                    (1.0 - x).powf((v - 0.5) * 2.0)
-//                } else {
-
-//                let x = 1.0 - x;
-//                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
-//                let fact = v * 10.0;
-//                if v > 0.5 {
-//                    let xsq = x.sqrt().sqrt();
-//                    let v = (v - 0.5) * 2.0;
-//                    x * (1.0 - v) + xsq * v
-//                } else {
-//                    let xxxx = x * x * x * x;
-//                    let v = v * 2.0;
-//                    x * v + xxxx * (1.0 - v)
                 myfun1(x as f32, v as f32) as f64
-//                }
-//                let xsq = x.sqrt().sqrt();
-//                x * v + (1.0 - v) * (x).powf(10.0)
-//                }
             });
 
         let fun =
-            Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
+            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64| -> f64 {
                 let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
                 let v = v.clamp(0.0, 1.0);
-//                if v > 0.5 {
-//                    let v = (v - 0.5) * 2.0;
-//                    ((v * x).exp() - 1.0) / ((x).exp() - 1.0)
-////                    (1.0 - x).powf((v - 0.5) * 2.0)
-//                } else {
-
-//                let x = 1.0 - x;
-//                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
-//                let fact = v * 10.0;
-//                x * v + (1.0 - v) * (x * 10.0 - 10.0).exp()
-//                let xxxx = x * x * x * x;
-//                x * v + (1.0 - v) * xxxx
                 fastapprox::pow(x as f32, 0.25 + (1.0 - v as f32) * 3.75) as f64
-//                x * v + (1.0 - v) * (x).powf(10.0)
-//                }
             });
 
         let fun2 =
-            Box::new(move |ui: &mut dyn WidgetUI, init: bool, x: f64| -> f64 {
+            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64| -> f64 {
                 let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
                 let v = v.clamp(0.0, 1.0);
-//                if v > 0.5 {
-//                    let v = (v - 0.5) * 2.0;
-//                    ((v * x).exp() - 1.0) / ((x).exp() - 1.0)
-////                    (1.0 - x).powf((v - 0.5) * 2.0)
-//                } else {
-
-//                let x = 1.0 - x;
-//                (x * v + ((x * 10.0 - 10.0) + 0.999).exp() * (1.0 - v))
-//                let fact = v * 10.0;
-//                (x * v * 10.0 - v * 10.0).exp()
-//                x * v + (1.0 - v) * (x).powf(v)
-//                if v > 0.5 {
-//                    let v = (v - 0.5) * 2.0;
-//                    1.0 - (1.0 - x).powf(1.0 + v * 4.0)
-//                } else {
-//                    let v = v * 2.0;
                     (x).powf(0.25 * v + (1.0 - v) * 4.0)
-//                }
-//                }
             });
 
         let mut cont = ContainerData::new();

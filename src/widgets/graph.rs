@@ -12,12 +12,12 @@ pub struct Graph {
 
 pub struct GraphData {
     samples:   usize,
-    func:      Box<dyn FnMut(&mut dyn WidgetUI, bool, f64) -> f64>,
+    func:      Box<dyn FnMut(&dyn WidgetUI, bool, f64) -> f64>,
     buf:       Vec<(f64, f64)>,
 }
 
 impl GraphData {
-    pub fn new(samples: usize, func: Box<dyn FnMut(&mut dyn WidgetUI, bool, f64) -> f64>) -> Box<dyn std::any::Any> {
+    pub fn new(samples: usize, func: Box<dyn FnMut(&dyn WidgetUI, bool, f64) -> f64>) -> Box<dyn std::any::Any> {
         let mut buf = vec![];
         buf.resize(samples, (0.0, 0.0));
 
