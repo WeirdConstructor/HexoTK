@@ -127,6 +127,14 @@ impl WidgetUI for WidgetUIHolder {
         None
     }
 
+    fn hover_atom_id(&self) -> Option<AtomId> {
+        if let Some(hz) = self.hover_zone {
+            Some(hz.id)
+        } else {
+            None
+        }
+    }
+
     fn hover_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
         if let Some(hz) = self.hover_zone {
             if hz.id == az_id {

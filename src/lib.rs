@@ -474,6 +474,7 @@ pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
     fn hl_style_for(&self, id: AtomId) -> HLStyle;
     fn hover_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
+    fn hover_atom_id(&self) -> Option<AtomId>;
     fn drag_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
     fn queue_redraw(&mut self);
     fn grab_focus(&mut self);
