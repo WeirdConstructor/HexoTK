@@ -106,8 +106,6 @@ impl WidgetType for Text {
             let xo     = pos.x;
             let mut yo = pos.y;
 
-            p.rect_fill(UI_BG_CLR, pos.x, pos.y, pos.w, pos.h);
-
             let y_increment =
                 p.font_height(self.font_size as f32, true) as f64;
 
