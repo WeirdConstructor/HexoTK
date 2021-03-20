@@ -142,7 +142,7 @@ fn main() {
            .add(wbox!(wt_knob, 4.into(), center(3, 6), KnobData::new("A")))
            .add(wbox!(wt_knob, 5.into(), center(3, 6), KnobData::new("B")))
            .add(wbox!(wt_knob, 6.into(), center(3, 6), KnobData::new("C")))
-           .add(wbox!(wt_knob, 7.into(), center(3, 6), KnobData::new("D")));
+           .add(wbox!(wt_knob_11, 7.into(), center(3, 6), KnobData::new("D")));
 
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 
@@ -177,14 +177,22 @@ fn main() {
              .new_row()
              .add(wbox!(wt_graph,99.into(), right( 12, 4), GraphData::new(30, fun)));
 
+        let wt_graph_mm = Rc::new(GraphMinMax::new(120.0, 90.0));
+
+        let funmm =
+            Box::new(move |ui: &dyn WidgetUI, idx: usize| -> (f64, f64) {
+                (-1.0, 1.0)
+            });
+
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
            .add(wbox!(wt_cont,99.into(), center(3, 6), cont))
            .add(wbox!(wt_btn,  1.into(), right( 3, 6), ButtonData::new_toggle("Test Btn")))
            .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
-           .add(wbox!(wt_knob_11, 2.into(), center(3, 6), KnobData::new("A")))
+           .add(wbox!(wt_graph_mm, 2.into(), center(3, 6), GraphMinMaxData::new(50, funmm)))
            .new_row()
            .add(wbox!(wt_cont,100.into(),center(12,6), fourbtns));
+
 
         let mut con = ContainerData::new();
         con.new_row()

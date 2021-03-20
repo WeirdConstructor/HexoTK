@@ -7,6 +7,7 @@ mod button;
 mod container;
 mod text;
 mod graph;
+mod graph_minmax;
 
 use super::*;
 
@@ -33,3 +34,6 @@ pub use text::TextSourceRef;
 
 pub use graph::Graph;
 pub use graph::GraphData;
+
+pub use graph_minmax::GraphMinMax;
+pub use graph_minmax::GraphMinMaxData;
