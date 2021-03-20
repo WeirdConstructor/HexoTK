@@ -70,6 +70,7 @@ impl TextSource for TextSourceRef {
 #[derive(Debug)]
 pub struct Text {
     font_size:  f64,
+    no_padding: bool,
 }
 
 pub struct TextData {
@@ -89,13 +90,23 @@ impl Text {
     pub fn new(font_size: f64) -> Self {
         Self {
             font_size,
+            no_padding: false,
+        }
+    }
+
+    pub fn new_no_padding(font_size: f64) -> Self {
+        Self {
+            font_size,
+            no_padding: true
         }
     }
 }
 
 impl WidgetType for Text {
     fn draw(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let pos = pos.shrink(UI_PADDING, UI_PADDING);
+        let pos =
+            if self.no_padding { pos }
+            else               { pos.shrink(UI_PADDING, UI_PADDING) };
 
         data.with(|data: &mut TextData| {
             if let Some((id, s)) = data.source.get(data.last_id) {

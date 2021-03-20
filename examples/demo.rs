@@ -184,12 +184,15 @@ fn main() {
                 (-1.0, 1.0)
             });
 
+        let txtsrc2 = Rc::new(TextSourceRef::new(100));
+        txtsrc2.set("sig");
+
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
            .add(wbox!(wt_cont,99.into(), center(3, 6), cont))
            .add(wbox!(wt_btn,  1.into(), right( 3, 6), ButtonData::new_toggle("Test Btn")))
            .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
-           .add(wbox!(wt_graph_mm, 2.into(), center(3, 6), GraphMinMaxData::new(50, funmm)))
+           .add(wbox!(wt_graph_mm, 2.into(), center(3, 6), GraphMinMaxData::new(8.0, txtsrc2, 10, funmm)))
            .new_row()
            .add(wbox!(wt_cont,100.into(),center(12,6), fourbtns));
 

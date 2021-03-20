@@ -14,17 +14,29 @@ pub struct GraphMinMaxData {
     func:                 Box<dyn FnMut(&dyn WidgetUI, usize) -> (f64, f64)>,
     buf:                  Vec<(f64, f64)>,
     minmax_sample_count:  usize,
+    txt_wd:               WidgetData,
+    font_size:            f64,
 }
 
 impl GraphMinMaxData {
-    pub fn new(minmax_sample_count: usize, func: Box<dyn FnMut(&dyn WidgetUI, usize) -> (f64, f64)>) -> Box<dyn std::any::Any> {
+    pub fn new(font_size: f64, txt_src: Rc<TextSourceRef>, minmax_sample_count: usize, func: Box<dyn FnMut(&dyn WidgetUI, usize) -> (f64, f64)>) -> Box<dyn std::any::Any> {
         let mut buf = vec![];
         buf.resize(2 * minmax_sample_count, (0.0, 0.0));
+
+        let wt_text = Rc::new(Text::new_no_padding(font_size));
+
+        let txt_wd =
+            WidgetData::new(
+                  wt_text, AtomId::new(999, 999),
+                  UIPos::center(12, 12),
+                  TextData::new(txt_src));
 
         Box::new(Self {
             func,
             buf,
             minmax_sample_count,
+            txt_wd,
+            font_size,
         })
     }
 }
@@ -47,6 +59,10 @@ impl WidgetType for GraphMinMax {
         p.rect_fill(UI_GRPH_BG,         in_pos.x,  in_pos.y,  in_pos.w,  in_pos.h);
 
         data.with(|data: &mut GraphMinMaxData| {
+            let txt_h = p.font_height(data.font_size as f32, true) as f64;
+            let txt_h = txt_h * 1.5;
+            let grph_pos = in_pos.crop_bottom(txt_h);
+
             let xd = 1.0 / (data.minmax_sample_count - 1) as f64;
             let mut x = 0.0;
 
@@ -56,35 +72,48 @@ impl WidgetType for GraphMinMax {
                 let min = (min.clamp(-1.0, 1.0) + 1.0) * 0.5;
                 let max = (max.clamp(-1.0, 1.0) + 1.0) * 0.5;
 
-                let gx = x * in_pos.w;
-                let gy1 = (1.0 - min) * in_pos.h;
-                let gy2 = (1.0 - max) * in_pos.h;
+                let gx = x * grph_pos.w;
+                let gy1 = (1.0 - min) * grph_pos.h;
+                let gy2 = (1.0 - max) * grph_pos.h;
 
                 data.buf[i * 2] = (
-                    (in_pos.x + gx),
-                    (in_pos.y + gy1)
+                    (grph_pos.x + gx),
+                    (grph_pos.y + gy1)
                 );
                 data.buf[i * 2 + 1] = (
-                    (in_pos.x + gx),
-                    (in_pos.y + gy2)
+                    (grph_pos.x + gx),
+                    (grph_pos.y + gy2)
                 );
 
                 x += xd;
             }
 
             p.path_stroke(
-                0.75,
+                1.0,
                 UI_GRPH_LINE_CLR,
-                &mut data.buf.iter().copied(),
+                &mut data.buf.iter().copied()
+                    .map(|p| (
+                        p.0.floor() - 0.5,
+                        p.1.floor() - 0.5
+                    )),
                 false);
 
             p.path_stroke(
-                0.5,
+                1.0,
                 UI_GRPH_BORDER_CLR,
                 &mut ([
-                    (in_pos.x           , in_pos.y + in_pos.h * 0.5),
-                    (in_pos.x + in_pos.w, in_pos.y + in_pos.h * 0.5),
-                ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), false);
+                    (grph_pos.x             , grph_pos.y + grph_pos.h * 0.5),
+                    (grph_pos.x + grph_pos.w, grph_pos.y + grph_pos.h * 0.5),
+                ].iter().copied().map(|p| (p.0.floor(), p.1.floor() + 0.5))), false);
+
+            let txt_pos = Rect {
+                x: grph_pos.x,
+                y: grph_pos.y + grph_pos.h,
+                w: grph_pos.w,
+                h: txt_h,
+            };
+            p.rect_fill(UI_GRPH_BG, txt_pos.x, txt_pos.y, txt_pos.w, txt_pos.h);
+            data.txt_wd.draw(ui, p, txt_pos.offs(0.0, 0.0));
         });
     }
 
