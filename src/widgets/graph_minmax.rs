@@ -94,7 +94,7 @@ impl WidgetType for GraphMinMax {
                 let gy1 = (1.0 - min) * grph_pos.h;
                 let gy2 = (1.0 - max) * grph_pos.h;
 
-                if last_minmax.1 < max {
+                if (last_minmax.1 - 0.00001) <= max {
                     // (probably) Rising edge
                     data.buf[i * 2] = (
                         (grph_pos.x + gx),

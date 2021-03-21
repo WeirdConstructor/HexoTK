@@ -121,16 +121,25 @@ pub fn myfun1(x: f32, v: f32) -> f32 {
     }
 }
 
-struct MinMaxSrc();
+struct MinMaxSrc(usize);
 
 impl hexotk::widgets::GraphMinMaxSource for MinMaxSrc {
     fn read(&mut self, buf: &mut [(f64, f64)]) {
-        buf[0] = (-1.0,  -0.8);
-        buf[1] = (-0.85, -0.5);
-        buf[2] = (-0.6,   0.0);
-        buf[3] = (0.0,    1.0);
-        buf[4] = (0.6,    0.9);
-        buf[5] = (0.3,    0.5);
+        if self.0 == 1 {
+            buf[0] = (-1.0,  -0.8);
+            buf[1] = (-0.85, -0.5);
+            buf[2] = (-0.6,   0.0);
+            buf[3] = (0.0,    1.0);
+            buf[4] = (0.6,    0.9);
+            buf[5] = (0.3,    0.5);
+        } else {
+            buf[0] = (0.5111111, 0.5111111);
+            buf[1] = (0.5111111, 0.5111111);
+            buf[2] = (0.5111111, 0.5111111);
+            buf[3] = (0.5111111, 0.5111111);
+            buf[4] = (0.5111111, 0.5111111);
+            buf[5] = (0.5111111, 0.5111111);
+        }
     }
 }
 
@@ -193,12 +202,22 @@ fn main() {
         let txtsrc2 = Rc::new(TextSourceRef::new(100));
         txtsrc2.set("sig");
 
+        let mut cont2 = ContainerData::new();
+        cont2.new_row().border()
+           .add(wbox!(wt_graph_mm, 2.into(), center(12, 6),
+                      GraphMinMaxData::new(
+                        8.0, txtsrc2.clone(), 6, Box::new(MinMaxSrc(1)))))
+           .new_row()
+           .add(wbox!(wt_graph_mm, 3.into(), center(12, 6),
+                      GraphMinMaxData::new(
+                        8.0, txtsrc2, 6, Box::new(MinMaxSrc(2))))) ;
+
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
-           .add(wbox!(wt_cont,99.into(), center(3, 6), cont))
+           .add(wbox!(wt_cont,99.into(), center(2, 6), cont))
            .add(wbox!(wt_btn,  1.into(), right( 3, 6), ButtonData::new_toggle("Test Btn")))
            .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
-           .add(wbox!(wt_graph_mm, 2.into(), center(3, 6), GraphMinMaxData::new(8.0, txtsrc2, 6, Box::new(MinMaxSrc()))))
+           .add(wbox!(wt_cont,101.into(),center(4, 6), cont2))
            .new_row()
            .add(wbox!(wt_cont,100.into(),center(12,6), fourbtns));
 
