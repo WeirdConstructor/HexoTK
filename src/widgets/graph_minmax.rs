@@ -97,7 +97,7 @@ impl WidgetType for GraphMinMax {
                     (grph_pos.y + gy1)
                 );
                 data.buf[i * 2 + 1] = (
-                    (grph_pos.x + gx),
+                    (grph_pos.x + gx + 0.5),
                     (grph_pos.y + gy2)
                 );
 
