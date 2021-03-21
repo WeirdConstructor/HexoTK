@@ -50,6 +50,8 @@ impl GraphMinMax {
     }
 }
 
+const WAVEFORM_SCALE_FACTOR : f64 = 0.9;
+
 impl WidgetType for GraphMinMax {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let out_pos = Rect::from(pos.x, pos.y, self.width, self.height);
@@ -69,8 +71,11 @@ impl WidgetType for GraphMinMax {
             for i in 0..data.minmax_sample_count {
 
                 let (min, max) = (*data.func)(ui, i);
-                let min = (min.clamp(-1.0, 1.0) + 1.0) * 0.5;
-                let max = (max.clamp(-1.0, 1.0) + 1.0) * 0.5;
+
+                let min = min.clamp(-1.0, 1.0) * WAVEFORM_SCALE_FACTOR;
+                let max = max.clamp(-1.0, 1.0) * WAVEFORM_SCALE_FACTOR;
+                let min = (min + 1.0) * 0.5;
+                let max = (max + 1.0) * 0.5;
 
                 let gx = x * grph_pos.w;
                 let gy1 = (1.0 - min) * grph_pos.h;
