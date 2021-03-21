@@ -79,6 +79,8 @@ impl WidgetType for GraphMinMax {
             let xd = 1.0 / (data.minmax_sample_count - 1) as f64;
             let mut x = 0.0;
 
+            let mut last_minmax = (-1.0, 1.0);
+
             for i in 0..data.minmax_sample_count {
                 let (min, max) = data.minmax_buf[i];
 
@@ -92,14 +94,29 @@ impl WidgetType for GraphMinMax {
                 let gy1 = (1.0 - min) * grph_pos.h;
                 let gy2 = (1.0 - max) * grph_pos.h;
 
-                data.buf[i * 2] = (
-                    (grph_pos.x + gx),
-                    (grph_pos.y + gy1)
-                );
-                data.buf[i * 2 + 1] = (
-                    (grph_pos.x + gx + 0.5),
-                    (grph_pos.y + gy2)
-                );
+                if last_minmax.1 < max {
+                    // (probably) Rising edge
+                    data.buf[i * 2] = (
+                        (grph_pos.x + gx),
+                        (grph_pos.y + gy1)
+                    );
+                    data.buf[i * 2 + 1] = (
+                        (grph_pos.x + gx + 0.5),
+                        (grph_pos.y + gy2)
+                    );
+                } else {
+                    // (probably) Falling edge
+                    data.buf[i * 2] = (
+                        (grph_pos.x + gx),
+                        (grph_pos.y + gy1)
+                    );
+                    data.buf[i * 2 + 1] = (
+                        (grph_pos.x + gx - 0.5),
+                        (grph_pos.y + gy2)
+                    );
+                }
+
+                last_minmax = (min, max);
 
                 x += xd;
             }
