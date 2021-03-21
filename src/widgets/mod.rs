@@ -37,3 +37,4 @@ pub use graph::GraphData;
 
 pub use graph_minmax::GraphMinMax;
 pub use graph_minmax::GraphMinMaxData;
+pub use graph_minmax::GraphMinMaxSource;

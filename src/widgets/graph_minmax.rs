@@ -4,6 +4,10 @@
 use crate::constants::*;
 use super::*;
 
+pub trait GraphMinMaxSource {
+    fn read(&mut self, dst: &mut [(f64, f64)]);
+}
+
 #[derive(Debug)]
 pub struct GraphMinMax {
     width:      f64,
@@ -11,17 +15,21 @@ pub struct GraphMinMax {
 }
 
 pub struct GraphMinMaxData {
-    func:                 Box<dyn FnMut(&dyn WidgetUI, usize) -> (f64, f64)>,
+    source:               Box<dyn GraphMinMaxSource>,
     buf:                  Vec<(f64, f64)>,
+    minmax_buf:           Vec<(f64, f64)>,
     minmax_sample_count:  usize,
     txt_wd:               WidgetData,
     font_size:            f64,
 }
 
 impl GraphMinMaxData {
-    pub fn new(font_size: f64, txt_src: Rc<TextSourceRef>, minmax_sample_count: usize, func: Box<dyn FnMut(&dyn WidgetUI, usize) -> (f64, f64)>) -> Box<dyn std::any::Any> {
+    pub fn new(font_size: f64, txt_src: Rc<TextSourceRef>, minmax_sample_count: usize, source: Box<dyn GraphMinMaxSource>) -> Box<dyn std::any::Any> {
         let mut buf = vec![];
         buf.resize(2 * minmax_sample_count, (0.0, 0.0));
+
+        let mut minmax_buf = vec![];
+        minmax_buf.resize(minmax_sample_count, (0.0, 0.0));
 
         let wt_text = Rc::new(Text::new_no_padding(font_size));
 
@@ -32,8 +40,9 @@ impl GraphMinMaxData {
                   TextData::new(txt_src));
 
         Box::new(Self {
-            func,
+            source,
             buf,
+            minmax_buf,
             minmax_sample_count,
             txt_wd,
             font_size,
@@ -65,12 +74,13 @@ impl WidgetType for GraphMinMax {
             let txt_h = txt_h * 1.5;
             let grph_pos = in_pos.crop_bottom(txt_h);
 
+            data.source.read(&mut data.minmax_buf[..]);
+
             let xd = 1.0 / (data.minmax_sample_count - 1) as f64;
             let mut x = 0.0;
 
             for i in 0..data.minmax_sample_count {
-
-                let (min, max) = (*data.func)(ui, i);
+                let (min, max) = data.minmax_buf[i];
 
                 let min = min.clamp(-1.0, 1.0) * WAVEFORM_SCALE_FACTOR;
                 let max = max.clamp(-1.0, 1.0) * WAVEFORM_SCALE_FACTOR;
