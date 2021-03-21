@@ -77,8 +77,8 @@ impl WidgetType for GraphMinMax {
                 let min = (min + 1.0) * 0.5;
                 let max = (max + 1.0) * 0.5;
 
-                // - 0.5 for preventing bleeding into the border.
-                let gx = x * grph_pos.w - 0.5;
+                // - 1.0 for preventing bleeding into the border.
+                let gx = x * (grph_pos.w - 1.0) + 0.5;
                 let gy1 = (1.0 - min) * grph_pos.h;
                 let gy2 = (1.0 - max) * grph_pos.h;
 
