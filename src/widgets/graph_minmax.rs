@@ -89,7 +89,7 @@ impl WidgetType for GraphMinMax {
             }
 
             p.path_stroke(
-                0.75,
+                1.0,
                 UI_GRPH_LINE_CLR,
                 &mut data.buf.iter().copied(),
                 false);
