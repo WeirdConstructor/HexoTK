@@ -2,6 +2,9 @@ use crate::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io::BufWriter;
+use std::collections::HashMap;
+
+use keyboard_types::{Key};
 
 const DEFAULT_COARSE_STEP : f32 = 0.05;
 const DEFAULT_FINE_STEP   : f32 = 0.01;
@@ -84,6 +87,8 @@ pub struct UI {
     input_mode:     Option<InputMode>,
     /// Holds the pressed modifier keys.
     mod_keys:       ModifierKeys,
+    /// Holds the currently pressed keys for the widgets to query:
+    pressed_keys:   Option<Box<HashMap<UIKey, bool>>>,
     /// Is set, when a widget requires a redraw after some event.
     /// See also `queue_redraw`.
     needs_redraw:   bool,
@@ -100,6 +105,7 @@ struct WidgetUIHolder {
     atoms:          Box<dyn AtomDataModel>,
     input_mode:     Option<InputMode>,
     needs_redraw:   bool,
+    pressed_keys:   Box<HashMap<UIKey, bool>>,
 }
 
 impl WidgetUI for WidgetUIHolder {
@@ -115,6 +121,14 @@ impl WidgetUI for WidgetUIHolder {
     }
 
     fn release_focus(&mut self) {
+    }
+
+    fn is_key_pressed(&self, key: UIKey) -> bool {
+        if let Some(flag) = self.pressed_keys.get(&key) {
+            *flag
+        } else {
+            false
+        }
     }
 
     fn drag_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
@@ -284,6 +298,7 @@ impl UI {
             input_mode:     None,
             needs_redraw:   true,
             window_size,
+            pressed_keys:   Some(Box::new(HashMap::new())),
             mod_keys: ModifierKeys {
                 fine_drag_key: false
             },
@@ -360,14 +375,16 @@ impl UI {
     fn dispatch<F>(&mut self, f: F)
         where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
 
-        let data        = self.main.take();
-        let zones       = self.zones.take();
-        let atoms       = self.atoms.take();
-        let input_mode  = self.input_mode.take();
+        let data         = self.main.take();
+        let zones        = self.zones.take();
+        let atoms        = self.atoms.take();
+        let input_mode   = self.input_mode.take();
+        let pressed_keys = self.pressed_keys.take();
 
         if let Some(mut data) = data {
-            let mut zones = zones.unwrap();
-            let atoms     = atoms.unwrap();
+            let mut zones    = zones.unwrap();
+            let atoms        = atoms.unwrap();
+            let pressed_keys = pressed_keys.unwrap();
             zones.clear();
 
             let mut wui   =
@@ -376,6 +393,7 @@ impl UI {
                     atoms,
                     zones,
                     input_mode,
+                    pressed_keys,
                     needs_redraw: false,
                 };
 
@@ -385,10 +403,12 @@ impl UI {
             if wui.needs_redraw {
                 self.queue_redraw();
             }
-            self.zones      = Some(wui.zones);
-            self.main       = Some(data);
-            self.atoms      = Some(wui.atoms);
-            self.input_mode = wui.input_mode;
+
+            self.zones        = Some(wui.zones);
+            self.main         = Some(data);
+            self.atoms        = Some(wui.atoms);
+            self.input_mode   = wui.input_mode;
+            self.pressed_keys = Some(wui.pressed_keys);
         }
     }
 }
@@ -552,6 +572,23 @@ impl WindowUI for UI {
                     }
                 }
 
+            },
+            InputEvent::KeyPressed(key) => {
+                match key.key {
+                    Key::Shift => {
+                        self.pressed_keys.as_mut().unwrap().insert(UIKey::Shift, true);
+                    },
+                    _ => {},
+                }
+                // TODO: Handle built in functionality like ValueDrag!
+            },
+            InputEvent::KeyReleased(key) => {
+                match key.key {
+                    Key::Shift => {
+                        self.pressed_keys.as_mut().unwrap().remove(&UIKey::Shift);
+                    },
+                    _ => {},
+                }
             },
             _ => {
                 println!("UNKNOWN INPUT EVENT: {:?}", event);

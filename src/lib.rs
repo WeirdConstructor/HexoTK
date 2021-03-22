@@ -459,6 +459,11 @@ pub trait WindowUI {
     fn set_window_size(&mut self, w: f64, h: f64);
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+pub enum UIKey {
+    Shift,
+}
+
 pub trait WidgetUI {
     /// Defines the active zone that is currently drawn by the widget.
     ///
@@ -479,6 +484,7 @@ pub trait WidgetUI {
     fn queue_redraw(&mut self);
     fn grab_focus(&mut self);
     fn release_focus(&mut self);
+    fn is_key_pressed(&self, key: UIKey) -> bool;
     fn atoms(&self) -> &dyn AtomDataModel;
     fn atoms_mut(&mut self) -> &mut dyn AtomDataModel;
 }
