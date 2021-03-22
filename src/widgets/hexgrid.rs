@@ -65,7 +65,7 @@ pub trait HexGridModel {
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<(&'a str, HexCell)>;
     /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)>;
-    fn cell_click(&self, x: usize, y: usize, btn: MButton);
+    fn cell_click(&self, x: usize, y: usize, btn: MButton, shift: bool);
     fn cell_hover(&self, _x: usize, _y: usize) { }
 }
 
@@ -439,7 +439,9 @@ impl WidgetType for HexGrid {
                 if az.id == data.id() && *id == data.id() {
                     if let ZoneType::HexFieldClick { pos, .. } = az.zone_type {
                         data.with(|data: &mut HexGridData| {
-                            data.model.cell_click(pos.0, pos.1, *button);
+                            data.model.cell_click(
+                                pos.0, pos.1, *button,
+                                ui.is_key_pressed(UIKey::Shift));
                         });
                     }
                 }
