@@ -8,6 +8,7 @@ mod container;
 mod text;
 mod graph;
 mod graph_minmax;
+mod entry;
 
 use super::*;
 
@@ -38,3 +39,7 @@ pub use graph::GraphData;
 pub use graph_minmax::GraphMinMax;
 pub use graph_minmax::GraphMinMaxData;
 pub use graph_minmax::GraphMinMaxSource;
+
+pub use entry::Entry;
+pub use entry::EntryData;
+pub use entry::TextEntryRef;

@@ -232,7 +232,7 @@ impl ActiveZone {
     }
 
     pub fn new_input_zone(id: AtomId, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::ValueInput }
+        Self { id, pos, zone_type: ZoneType::TextInput }
     }
 
     pub fn new_click_zone(id: AtomId, pos: Rect) -> Self {
@@ -244,7 +244,7 @@ impl ActiveZone {
 pub enum ZoneType {
     ValueDragFine,
     ValueDragCoarse,
-    ValueInput,
+    TextInput,
     HexFieldClick {
         tile_size: f64,
         y_offs:    bool,
@@ -494,7 +494,7 @@ pub enum UIEvent {
     ValueDragStart { id: AtomId, },
     ValueDrag      { id: AtomId, steps: f64 },
     ValueDragEnd   { id: AtomId, },
-    EnteredValue   { id: AtomId, val: String },
+    TextChanged    { id: AtomId, val: String },
     Click          { id: AtomId, button: MButton, x: f64, y: f64 },
     FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
@@ -505,7 +505,7 @@ impl UIEvent {
             UIEvent::ValueDragStart { id, .. } => *id,
             UIEvent::ValueDrag      { id, .. } => *id,
             UIEvent::ValueDragEnd   { id, .. } => *id,
-            UIEvent::EnteredValue   { id, .. } => *id,
+            UIEvent::TextChanged    { id, .. } => *id,
             UIEvent::Click          { id, .. } => *id,
             UIEvent::FieldDrag      { id, .. } => *id,
         }
