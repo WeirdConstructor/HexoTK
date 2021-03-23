@@ -167,11 +167,12 @@ impl HexGridModel for UIMatrixModel {
             match write!(cur, "{} {}", node.0.name(), node.1 + 1) {
                 Ok(_)  => {
                     let len = cur.position() as usize;
+                    let v = (node.1 as f32 / 2.0) * 2.0 - 1.0;
                     Some((
                         std::str::from_utf8(&(cur.into_inner())[0..len])
                         .unwrap(),
                         hc,
-                        Some((node.1 as f32 / 3.0) * 2.0 - 1.0),
+                        Some(v),
                     ))
                 },
                 Err(_) => None,
