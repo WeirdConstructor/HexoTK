@@ -62,7 +62,7 @@ pub trait HexGridModel {
     fn height(&self) -> usize;
     fn cell_visible(&self, x: usize, y: usize) -> bool;
     fn cell_empty(&self, x: usize, y: usize) -> bool;
-    fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<(&'a str, HexCell)>;
+    fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<(&'a str, HexCell, Option<f32>)>;
     /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)>;
     fn cell_click(&self, x: usize, y: usize, btn: MButton, shift: bool);
@@ -226,6 +226,44 @@ fn draw_hexagon<F: Fn(&mut dyn Painter, HexDecorPos, (f64, f64, f64))>(p: &mut d
         ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 }
 
+fn draw_led(p: &mut dyn Painter, x: f64, y: f64, led_value: f32) {
+    let r = UI_GRID_LED_R;
+    /*
+          ____
+         /    \
+        /      \
+        |  *   |
+        |  xy  |
+        \      /
+         \____/
+    */
+    let path = &[
+        (x - r,                  y - (r * 0.5)),
+        (x - (r * 0.5),          y - r),
+        (x + (r * 0.5),          y - r),
+        (x + r,                  y - (r * 0.5)),
+
+        (x + r,                  y + (r * 0.5)),
+        (x + (r * 0.5),          y + r),
+        (x - (r * 0.5),          y + r),
+        (x - r,                  y + (r * 0.5)),
+    ];
+
+    let led_clr_border = (
+        UI_GRID_LED_VALUE_CLR.0 * 0.3,
+        UI_GRID_LED_VALUE_CLR.1 * 0.3,
+        UI_GRID_LED_VALUE_CLR.2 * 0.3,
+    );
+    let led_value = led_value.powf(UI_GRID_LED_POW_FACTOR);
+    let led_clr = (
+        UI_GRID_LED_VALUE_CLR.0 * (led_value as f64),
+        UI_GRID_LED_VALUE_CLR.1 * (led_value as f64),
+        UI_GRID_LED_VALUE_CLR.2 * (led_value as f64),
+    );
+    p.path_fill(led_clr, &mut path.iter().copied(), true);
+    p.path_stroke(1.0, led_clr_border, &mut path.iter().copied(), true);
+}
+
 impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let size = self.cell_size;
@@ -318,7 +356,7 @@ impl WidgetType for HexGrid {
 
                         match pos {
                             HexDecorPos::Center(x, y) => {
-                                if let Some((s, hc)) = data.model.cell_label(xi, yi, &mut label_buf) {
+                                if let Some((s, hc, led)) = data.model.cell_label(xi, yi, &mut label_buf) {
                                     let (txt_clr, clr) =
                                         match hc {
                                             HexCell::Normal => (UI_GRID_TXT_CENTER_CLR, clr),
@@ -349,6 +387,10 @@ impl WidgetType for HexGrid {
                                             x - 0.5 * sz.0,
                                             y - 0.5 * th + y_inc,
                                             sz.0, th, num_lbl);
+                                    }
+
+                                    if let Some(led) = led {
+                                        draw_led(p, x, y - th, led);
                                     }
 
                                     if hc != HexCell::Plain {
