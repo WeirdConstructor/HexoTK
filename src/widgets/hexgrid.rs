@@ -255,8 +255,8 @@ fn draw_led(p: &mut dyn Painter, x: f64, y: f64, led_value: f32) {
         UI_GRID_LED_CLR.2 * 0.3,
     );
     let led_clr = (
-        if led_value < 0.0 { led_value.abs().powf(UI_GRID_LED_POW_FACTOR) as f64 } else { 0.0 },
-        if led_value >= 0.0 { led_value.abs().powf(UI_GRID_LED_POW_FACTOR) as f64 } else { 0.0 },
+        if led_value < 0.0 { led_value.abs() as f64 } else { 0.0 },
+        if led_value >= 0.0 { led_value.abs() as f64 } else { 0.0 },
         0.4,
     );
     p.path_fill(led_clr, &mut path.iter().copied(), true);
