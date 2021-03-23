@@ -250,15 +250,15 @@ fn draw_led(p: &mut dyn Painter, x: f64, y: f64, led_value: f32) {
     ];
 
     let led_clr_border = (
-        UI_GRID_LED_VALUE_CLR.0 * 0.3,
-        UI_GRID_LED_VALUE_CLR.1 * 0.3,
-        UI_GRID_LED_VALUE_CLR.2 * 0.3,
+        UI_GRID_LED_CLR.0 * 0.3,
+        UI_GRID_LED_CLR.1 * 0.3,
+        UI_GRID_LED_CLR.2 * 0.3,
     );
-    let led_value = led_value.powf(UI_GRID_LED_POW_FACTOR);
+//    let led_pow = led_value.powf(UI_GRID_LED_POW_FACTOR);
     let led_clr = (
-        UI_GRID_LED_VALUE_CLR.0 * (led_value as f64),
-        UI_GRID_LED_VALUE_CLR.1 * (led_value as f64),
-        UI_GRID_LED_VALUE_CLR.2 * (led_value as f64),
+        if led_value < 0.0 { -led_value as f64 } else { 0.0 },
+        if led_value >= 0.0 { led_value as f64 } else { 0.0 },
+        0.4,
     );
     p.path_fill(led_clr, &mut path.iter().copied(), true);
     p.path_stroke(1.0, led_clr_border, &mut path.iter().copied(), true);

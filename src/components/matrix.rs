@@ -171,7 +171,7 @@ impl HexGridModel for UIMatrixModel {
                         std::str::from_utf8(&(cur.into_inner())[0..len])
                         .unwrap(),
                         hc,
-                        Some(node.1 as f32 / 3.0),
+                        Some((node.1 as f32 / 3.0) * 2.0 - 1.0),
                     ))
                 },
                 Err(_) => None,

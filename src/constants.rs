@@ -108,7 +108,7 @@ pub const UI_GRID_BG1_CLR           : (f64, f64, f64) = (32.0 / 255.0, 14.0 / 25
 pub const UI_GRID_BG2_CLR           : (f64, f64, f64) = (44.0 / 255.0, 19.0 / 255.0, 42.0 / 255.0);
 pub const UI_GRID_SIGNAL_OUT_CLR    : (f64, f64, f64) = UI_PRIM2_CLR;
 pub const UI_GRID_SIGNAL_IN_CLR     : (f64, f64, f64) = UI_HLIGHT_CLR;
-pub const UI_GRID_LED_VALUE_CLR     : (f64, f64, f64) = UI_PRIM_CLR;
+pub const UI_GRID_LED_CLR           : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRID_LED_POW_FACTOR    : f32             = 0.4;
 pub const UI_GRID_LED_R             : f64             = 5.0;
 
