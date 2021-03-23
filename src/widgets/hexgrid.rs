@@ -308,6 +308,9 @@ impl WidgetType for HexGrid {
                 pos.x, pos.y,
                 pos.w, pos.h);
 
+//            let pp = pos.shrink(40.0, 40.0);
+//            p.clip_region(pp.x, pp.y, pp.w, pp.h);
+
             //// Calculate the number of hexagons fitting into the pos Rect:
             //let nx = ((pos.w - (0.5 * w)) / (0.75 * w)).floor() as usize;
             //let ny = ((pos.h - (0.5 * h)) / h).floor() as usize;
@@ -471,6 +474,8 @@ impl WidgetType for HexGrid {
                     });
                 }
             }
+
+//            p.reset_clip_region();
         });
     }
 

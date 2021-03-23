@@ -98,6 +98,16 @@ impl<'a> FemtovgPainter<'a> {
 }
 
 impl<'a> Painter for FemtovgPainter<'a> {
+    fn clip_region(&mut self, x: f64, y: f64, w: f64, h: f64) {
+        self.canvas.save();
+        self.canvas.scissor(x as f32, y as f32, w as f32, h as f32);
+    }
+
+    fn reset_clip_region(&mut self) {
+        self.canvas.reset_scissor();
+        self.canvas.restore();
+    }
+
     fn path_fill_rot(&mut self, color: (f64, f64, f64),
                      rot: f64, x: f64, y: f64, xo: f64, yo: f64,
                      segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
