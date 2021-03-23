@@ -42,4 +42,3 @@ pub use graph_minmax::GraphMinMaxSource;
 
 pub use entry::Entry;
 pub use entry::EntryData;
-pub use entry::TextEntryRef;

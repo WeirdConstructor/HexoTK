@@ -278,6 +278,7 @@ pub enum Atom {
 
 impl Atom {
     pub fn str(s: &str)         -> Self { Atom::Str(s.to_string()) }
+    pub fn str_mv(s: String)    -> Self { Atom::Str(s) }
     pub fn setting(s: i64)      -> Self { Atom::Setting(s) }
     pub fn param(p: f32)        -> Self { Atom::Param(p) }
     pub fn micro(m: &[f32; 8])  -> Self { Atom::MicroSample(*m) }
@@ -302,6 +303,13 @@ impl Atom {
     pub fn is_continous(&self) -> bool {
         if let Atom::Param(_) = self { true }
         else { false }
+    }
+
+    pub fn str_ref(&self) -> Option<&str> {
+        match self {
+            Atom::Str(s) => Some(&s),
+            _            => None,
+        }
     }
 
     pub fn i(&self) -> i64 {
@@ -479,6 +487,7 @@ pub trait WidgetUI {
     fn define_active_zone(&mut self, az: ActiveZone);
     fn hl_style_for(&self, id: AtomId) -> HLStyle;
     fn hover_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
+    fn is_input_value_for(&self, az_id: AtomId) -> bool;
     fn hover_atom_id(&self) -> Option<AtomId>;
     fn drag_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
     fn queue_redraw(&mut self);
@@ -494,7 +503,6 @@ pub enum UIEvent {
     ValueDragStart { id: AtomId, },
     ValueDrag      { id: AtomId, steps: f64 },
     ValueDragEnd   { id: AtomId, },
-    TextChanged    { id: AtomId, val: String },
     Click          { id: AtomId, button: MButton, x: f64, y: f64 },
     FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
@@ -505,7 +513,6 @@ impl UIEvent {
             UIEvent::ValueDragStart { id, .. } => *id,
             UIEvent::ValueDrag      { id, .. } => *id,
             UIEvent::ValueDragEnd   { id, .. } => *id,
-            UIEvent::TextChanged    { id, .. } => *id,
             UIEvent::Click          { id, .. } => *id,
             UIEvent::FieldDrag      { id, .. } => *id,
         }

@@ -1,7 +1,4 @@
 use crate::*;
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::io::BufWriter;
 use std::collections::HashMap;
 
 use keyboard_types::{Key};
@@ -131,6 +128,14 @@ impl WidgetUI for WidgetUIHolder {
         }
     }
 
+    fn is_input_value_for(&self, az_id: AtomId) -> bool {
+        if let Some(InputMode::InputValue { zone }) = self.input_mode {
+            return zone.id == az_id;
+        }
+
+        false
+    }
+
     fn drag_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
         if let Some(InputMode::HexFieldDrag { zone }) = self.input_mode {
             if zone.id == az_id {
@@ -218,10 +223,6 @@ enum InputMode {
     InputValue {
         /// The zone for which the value is entered.
         zone:   ActiveZone,
-        /// The original input string.
-        value:  String,
-        /// The currently edited text.
-        input:  Rc<RefCell<BufWriter<Vec<u8>>>>
     },
 }
 
@@ -485,10 +486,15 @@ impl WindowUI for UI {
                         self.queue_redraw();
                     } else {
                         if let Some(az) = self.get_zone_at(self.mouse_pos) {
-                            dispatch_event =
-                                input_mode.check_hex_field_click(
-                                    az, btn, self.mouse_pos);
-                            self.queue_redraw();
+                            match az.zone_type {
+                                ZoneType::HexFieldClick { .. } => {
+                                    dispatch_event =
+                                        input_mode.check_hex_field_click(
+                                            az, btn, self.mouse_pos);
+                                    self.queue_redraw();
+                                },
+                                _ => {}
+                            }
                         }
                     }
 
@@ -506,6 +512,14 @@ impl WindowUI for UI {
                                         y:      self.mouse_pos.1,
                                     });
                                 self.queue_redraw();
+                            },
+                            ZoneType::TextInput => {
+                                self.input_mode =
+                                    Some(InputMode::InputValue {
+                                        zone: az,
+                                    });
+                                self.queue_redraw();
+                                return;
                             },
                             _ => {},
                         }
@@ -574,9 +588,41 @@ impl WindowUI for UI {
 
             },
             InputEvent::KeyPressed(key) => {
+                println!("KEY PRESSED {:?}", key);
                 match key.key {
                     Key::Shift => {
                         self.pressed_keys.as_mut().unwrap().insert(UIKey::Shift, true);
+                    },
+                    Key::Backspace => {
+                        if let Some(InputMode::InputValue { zone }) = self.input_mode {
+                            if let Some(atoms) = self.atoms.as_mut() {
+                                let new_str =
+                                    if let Some(at) = atoms.get(zone.id) {
+                                        let s = at.str_ref().unwrap_or("");
+                                        let len = s.chars().count();
+                                        let s : String =
+                                            s.chars().take(len - 1).collect();
+                                        s
+                                    } else {
+                                        String::from("")
+                                    };
+                                atoms.set(zone.id, Atom::str_mv(new_str));
+                            }
+                        }
+                    },
+                    Key::Character(c) => {
+                        if let Some(InputMode::InputValue { zone }) = self.input_mode {
+                            if let Some(atoms) = self.atoms.as_mut() {
+                                let new_str =
+                                    if let Some(at) = atoms.get(zone.id) {
+                                        let s = at.str_ref().unwrap_or("");
+                                        format!("{}{}", s, c)
+                                    } else {
+                                        format!("{}", c)
+                                    };
+                                atoms.set(zone.id, Atom::str_mv(new_str));
+                            }
+                        }
                     },
                     _ => {},
                 }
@@ -587,7 +633,8 @@ impl WindowUI for UI {
                     Key::Shift => {
                         self.pressed_keys.as_mut().unwrap().remove(&UIKey::Shift);
                     },
-                    _ => {},
+                    _ => {
+                    },
                 }
             },
             _ => {

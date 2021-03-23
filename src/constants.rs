@@ -112,3 +112,4 @@ pub const UI_GRID_LED_CLR           : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRID_LED_R             : f64             = 5.0;
 
 pub const UI_ENTRY_BORDER_WIDTH     : f64 = UI_BTN_BORDER2_WIDTH;
+pub const UI_ENTRY_BORDER_CLR       : (f64, f64, f64) = UI_ACCENT_CLR;

@@ -153,6 +153,7 @@ fn main() {
         let wt_knob_11  = Rc::new(Knob::new(30.0, 10.0, 10.0).range_signed());
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
+        let wt_entry    = Rc::new(Entry::new(80.0, 10.0));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -161,10 +162,18 @@ fn main() {
         fourbtns.contrast_border().title("Test Container 4 Btns")
            .level(1).shrink(0.0, 10.0)
            .new_row()
-           .add(wbox!(wt_knob, 4.into(), center(3, 6), KnobData::new("A")))
-           .add(wbox!(wt_knob, 5.into(), center(3, 6), KnobData::new("B")))
-           .add(wbox!(wt_knob, 6.into(), center(3, 6), KnobData::new("C")))
-           .add(wbox!(wt_knob_11, 7.into(), center(3, 6), KnobData::new("D")));
+           .add(wbox!(wt_knob,    4.into(), center(3, 12), KnobData::new("A")))
+           .add(wbox!(wt_knob,    5.into(), center(3, 12), KnobData::new("B")))
+           .add(wbox!(wt_knob,    6.into(), center(3, 12), KnobData::new("C")))
+           .add(wbox!(wt_knob_11, 7.into(), center(3, 12), KnobData::new("D")));
+
+        let mut other = ContainerData::new();
+        other
+           .level(1)
+           .new_row()
+           .add(wbox!(
+                wt_entry, 23.into(), center(3, 12),
+                EntryData::new("Preset Name:", 10)));
 
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 
@@ -219,7 +228,9 @@ fn main() {
            .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
            .add(wbox!(wt_cont,101.into(),center(4, 6), cont2))
            .new_row()
-           .add(wbox!(wt_cont,100.into(),center(12,6), fourbtns));
+           .add(wbox!(wt_cont,100.into(),center(12,3), fourbtns))
+           .new_row()
+           .add(wbox!(wt_cont,100.into(),center(12,3), other));
 
 
         let mut con = ContainerData::new();
@@ -229,6 +240,8 @@ fn main() {
 
         let mut atoms = vec![];
         atoms.resize_with(100, || Atom::default());
+
+        atoms[23] = Atom::str("Test");
 
         let ui = Box::new(UI::new(
             WidgetData::new_box(
