@@ -153,7 +153,7 @@ fn main() {
         let wt_knob_11  = Rc::new(Knob::new(30.0, 10.0, 10.0).range_signed());
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
-        let wt_entry    = Rc::new(Entry::new(80.0, 10.0));
+        let wt_entry    = Rc::new(Entry::new(100.0, 12.0, 13));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -173,7 +173,7 @@ fn main() {
            .new_row()
            .add(wbox!(
                 wt_entry, 23.into(), center(3, 12),
-                EntryData::new("Preset Name:", 10)));
+                EntryData::new("Preset Name:")));
 
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 

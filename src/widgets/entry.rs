@@ -4,31 +4,37 @@
 use crate::constants::*;
 use super::*;
 
+const BLINK_COUNT : usize = 30;
+
 #[derive(Debug)]
 pub struct Entry {
     font_size:  f64,
     rect:       Rect,
+    txt_width:  usize,
 }
 
 #[derive(Debug)]
 pub struct EntryData {
     label:     String,
-    txt_width: usize,
+    count:     usize,
+    curs_vis:  bool,
 }
 
 impl EntryData {
-    pub fn new(label: &str, txt_width: usize) -> Box<dyn std::any::Any> {
+    pub fn new(label: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
             label: label.to_string(),
-            txt_width,
+            count: 0,
+            curs_vis: true,
         })
     }
 }
 
 impl Entry {
-    pub fn new(width: f64, font_size: f64) -> Self {
+    pub fn new(width: f64, font_size: f64, txt_width: usize) -> Self {
         Self {
             font_size,
+            txt_width,
             rect: Rect::from(
                 0.0, 0.0,
                 width         + 2.0 * UI_PADDING,
@@ -88,8 +94,8 @@ impl WidgetType for Entry {
 
         let border_color =
             match highlight {
-                HLStyle::Hover(_) => { UI_BTN_TXT_HOVER_CLR },
-                _ => UI_ENTRY_BORDER_CLR,
+                HLStyle::Hover(_) => UI_BTN_TXT_HOVER_CLR,
+                _                 => UI_ENTRY_BORDER_CLR,
             };
 
         p.rect_fill(border_color, pos.x, pos.y, pos.w, pos.h);
@@ -102,20 +108,36 @@ impl WidgetType for Entry {
             p.label(self.font_size, -1, UI_LBL_TXT_CLR,
                 pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label);
 
+            data.count += 1;
+            if data.count > BLINK_COUNT {
+                data.count = 0;
+                data.curs_vis = !data.curs_vis;
+            };
+
+            let txt_width = self.txt_width;
+
             if let Some(atom) = ui.atoms().get(id) {
                 if let Some(s) = atom.str_ref() {
                     use std::io::Write;
                     let pos = pos.offs(0.0, UI_ELEM_TXT_H);
                     let mut buf : [u8; 128] = [0_u8; 128];
                     let mut bw = std::io::BufWriter::new(&mut buf[..]);
-                    if ui.is_input_value_for(id) {
-                        write!(bw, "{}|", s).expect("write ok");
-                    } else {
-                        write!(bw, "{}", s).expect("write ok");
+
+                    let len = s.chars().count();
+                    let skip =
+                        if len > txt_width { len - txt_width }
+                        else { 0 };
+
+                    for c in s.chars().skip(skip) {
+                        write!(bw, "{}", c).expect("write ok");
                     }
 
-                    p.label(self.font_size, -1, UI_LBL_TXT_CLR,
-                        pos.x, pos.y, pos.w, UI_ELEM_TXT_H,
+                    if ui.is_input_value_for(id) && data.curs_vis {
+                        write!(bw, "|").expect("write ok");
+                    }
+
+                    p.label_mono(self.font_size, -1, UI_LBL_TXT_CLR,
+                        pos.x, pos.y + pos.h - 2.0 * UI_ELEM_TXT_H, pos.w, UI_ELEM_TXT_H,
                         &std::str::from_utf8(bw.buffer()).unwrap());
                 }
             }
