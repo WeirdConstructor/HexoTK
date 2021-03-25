@@ -117,6 +117,15 @@ impl Rect {
         }
     }
 
+    pub fn center(&self) -> Self {
+        Self {
+            x: self.x + self.w * 0.5,
+            y: self.y + self.h * 0.5,
+            w: 1.0,
+            h: 1.0,
+        }
+    }
+
     pub fn crop_left(&self, delta: f64) -> Self {
         Self {
             x: self.x + delta,

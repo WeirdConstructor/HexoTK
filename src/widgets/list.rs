@@ -165,6 +165,12 @@ impl WidgetType for List {
                     UI_LBL_TXT_CLR,
                     UI_TAB_BG_CLR,
                     btn_up_pos);
+            draw_pointer(
+                p,
+                UI_LIST_BTN_POINTER_SIZE,
+                UI_LBL_TXT_CLR,
+                btn_up_pos.center());
+
             let btn_down_pos =
                 rect_border(p,
                     UI_LIST_BTN_BORDER_WIDTH,
