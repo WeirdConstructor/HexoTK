@@ -11,13 +11,24 @@ pub fn rect_border(p: &mut dyn Painter,
 }
 
 
-pub fn draw_pointer(p: &mut dyn Painter, size: f64, clr: (f64, f64, f64), pos: Rect) {
-    p.path_fill(
-        clr,
-        &mut [
-            (pos.x - size,  pos.y - size * 0.5),
-            (pos.x + size,  pos.y - size * 0.5),
-            (pos.x,         pos.y + size * 0.5),
-        ].iter().copied(),
-        true);
+pub fn draw_pointer(p: &mut dyn Painter, up: bool, size: f64, clr: (f64, f64, f64), pos: Rect) {
+    if up {
+        p.path_fill(
+            clr,
+            &mut [
+                (pos.x - size,  pos.y + size),
+                (pos.x + size,  pos.y + size),
+                (pos.x,         pos.y - size),
+            ].iter().copied(),
+            true);
+    } else {
+        p.path_fill(
+            clr,
+            &mut [
+                (pos.x - size,  pos.y - size),
+                (pos.x + size,  pos.y - size),
+                (pos.x,         pos.y + size),
+            ].iter().copied(),
+            true);
+    }
 }

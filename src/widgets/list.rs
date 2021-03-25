@@ -150,6 +150,21 @@ impl WidgetType for List {
                 yo += UI_ELEM_TXT_H;
             }
 
+            let highlight_up   = ui.hl_style_for(id, Some(0));
+            let highlight_down = ui.hl_style_for(id, Some(1));
+            let txt_color_up =
+                match highlight_up {
+                    HLStyle::Hover(_) => UI_LIST_TXT_HOVER_CLR,
+                    _                 => UI_LIST_SEP_CLR,
+                };
+            let txt_color_down =
+                match highlight_down {
+                    HLStyle::Hover(_) => UI_LIST_TXT_HOVER_CLR,
+                    _                 => UI_LIST_SEP_CLR,
+                };
+
+            let pos = pos.offs(0.0, 1.0);
+
             let btn_up_pos =
                 pos.crop_left(pos.w - UI_LIST_BTN_WIDTH)
                    .crop_bottom(pos.h * 0.5)
@@ -162,21 +177,34 @@ impl WidgetType for List {
             let btn_up_pos =
                 rect_border(p,
                     UI_LIST_BTN_BORDER_WIDTH,
-                    UI_LBL_TXT_CLR,
+                    UI_LIST_SEP_CLR,
                     UI_TAB_BG_CLR,
                     btn_up_pos);
-            draw_pointer(
-                p,
-                UI_LIST_BTN_POINTER_SIZE,
-                UI_LBL_TXT_CLR,
-                btn_up_pos.center());
+            if data.offs > 0 {
+                ui.define_active_zone(
+                    ActiveZone::new_indexed_click_zone(id, btn_up_pos, 0));
+                draw_pointer(
+                    p,
+                    true,
+                    UI_LIST_BTN_POINTER_SIZE,
+                    txt_color_up,
+                    btn_up_pos.center());
+            }
 
             let btn_down_pos =
                 rect_border(p,
                     UI_LIST_BTN_BORDER_WIDTH,
-                    UI_LBL_TXT_CLR,
+                    UI_LIST_SEP_CLR,
                     UI_TAB_BG_CLR,
                     btn_down_pos);
+            ui.define_active_zone(
+                ActiveZone::new_indexed_click_zone(id, btn_down_pos, 1));
+            draw_pointer(
+                p,
+                false,
+                UI_LIST_BTN_POINTER_SIZE,
+                txt_color_down,
+                btn_down_pos.center());
         });
     }
 
@@ -184,8 +212,13 @@ impl WidgetType for List {
         (self.rect.w, self.rect.h)
     }
 
-    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, ev: &UIEvent) {
+    fn event(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
+            UIEvent::Click { id, index, .. } => {
+                if data.id() == *id {
+                    println!("CLICK LIST: {:?}", ev);
+                }
+            },
             _ => {},
         }
     }

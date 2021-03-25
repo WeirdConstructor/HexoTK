@@ -11,7 +11,7 @@ mod graph_minmax;
 mod entry;
 mod list;
 
-mod util;
+pub mod util;
 
 use super::*;
 
