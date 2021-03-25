@@ -37,57 +37,17 @@ impl Entry {
             txt_width,
             rect: Rect::from(
                 0.0, 0.0,
-                width         + 2.0 * UI_PADDING,
-                UI_ELEM_TXT_H + 2.0 * UI_PADDING + UI_ELEM_TXT_H)
+                width         + 2.0 * UI_PADDING + 2.0 * UI_BORDER_WIDTH,
+                UI_ELEM_TXT_H + 2.0 * UI_PADDING + 2.0 * UI_BORDER_WIDTH + UI_ELEM_TXT_H)
         }
     }
-
-//    fn draw_border(&self, p: &mut dyn Painter, width: f64, clr: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, fill: bool) {
-//        let path = &[
-//            (x,                      y + UI_BTN_BEVEL),
-//            (x + UI_BTN_BEVEL,       y),
-//            (x + (w - UI_BTN_BEVEL), y),
-//            (x + w,                  y + UI_BTN_BEVEL),
-//            (x + w,                  y + (h - UI_BTN_BEVEL)),
-//            (x + (w - UI_BTN_BEVEL), y + h),
-//            (x + UI_BTN_BEVEL,       y + h),
-//            (x,                      y + (h - UI_BTN_BEVEL)),
-//        ];
-//
-//        if fill {
-//            p.path_fill(clr, &mut path.iter().copied(), true);
-//        } else {
-//            p.path_stroke(width, clr, &mut path.iter().copied(), true);
-//        }
-//    }
-//
-//    fn draw_divider(&self, p: &mut dyn Painter, _width: f64, color: (f64, f64, f64), x: f64, y: f64) {
-//        let (x, y) = (
-//            x + (UI_BTN_BORDER_WIDTH / 2.0).round(),
-//            y + (UI_BTN_BORDER_WIDTH / 2.0).round(),
-//        );
-//
-//        let w = self.width;
-//        let h = UI_ELEM_TXT_H * 2.0 + UI_BTN_BORDER_WIDTH;
-//
-//        // divider
-//        p.path_stroke(
-//            UI_BTN_BORDER2_WIDTH,
-//            color,
-//            &mut [
-//                (x,     y + (h / 2.0).round()),
-//                (x + w, y + (h / 2.0).round()),
-//            ].iter().copied(),
-//            false);
-//    }
-
 }
 
 impl WidgetType for Entry {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let pos       = self.rect.offs(pos.x, pos.y);
         let id        = data.id();
-        let highlight = ui.hl_style_for(id);
+        let highlight = ui.hl_style_for(id, None);
 
         ui.define_active_zone(
             ActiveZone::new_input_zone(id, pos));
@@ -95,7 +55,7 @@ impl WidgetType for Entry {
         let border_color =
             match highlight {
                 HLStyle::Hover(_) => UI_BTN_TXT_HOVER_CLR,
-                _                 => UI_ENTRY_BORDER_CLR,
+                _                 => UI_LIST_BORDER_CLR,
             };
 
         p.rect_fill(border_color, pos.x, pos.y, pos.w, pos.h);
@@ -107,6 +67,15 @@ impl WidgetType for Entry {
         data.with(|data: &mut EntryData| {
             p.label(self.font_size, -1, UI_LBL_TXT_CLR,
                 pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label);
+
+            p.path_stroke(
+                1.0,
+                UI_LBL_TXT_CLR,
+                &mut [
+                    (pos.x         - UI_SAFETY_PAD, pos.y + UI_ELEM_TXT_H + 0.5),
+                    (pos.x + pos.w + UI_SAFETY_PAD, pos.y + UI_ELEM_TXT_H + 0.5),
+                ].iter().copied(),
+                false);
 
             data.count += 1;
             if data.count > BLINK_COUNT {
@@ -136,13 +105,11 @@ impl WidgetType for Entry {
                         write!(bw, "|").expect("write ok");
                     }
 
-                    p.label_mono(self.font_size, -1, UI_LBL_TXT_CLR,
+                    p.label_mono(self.font_size, -1, UI_LIST_TXT_CLR,
                         pos.x, pos.y + pos.h - 2.0 * UI_ELEM_TXT_H, pos.w, UI_ELEM_TXT_H,
                         &std::str::from_utf8(bw.buffer()).unwrap());
                 }
             }
-            // TODO:
-            // - make sure to draw a hover highlight border!
         });
     }
 

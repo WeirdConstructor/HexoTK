@@ -275,7 +275,7 @@ impl WidgetType for Knob {
             1.0);
 
         let id = data.id();
-        let highlight = ui.hl_style_for(id);
+        let highlight = ui.hl_style_for(id, None);
         let value =
             if let Some(v) = ui.atoms().get(id) { v.f() as f64 }
             else { 0.0 };

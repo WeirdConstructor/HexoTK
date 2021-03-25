@@ -236,7 +236,11 @@ impl ActiveZone {
     }
 
     pub fn new_click_zone(id: AtomId, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::Click }
+        Self { id, pos, zone_type: ZoneType::Click { index: 0 } }
+    }
+
+    pub fn new_indexed_click_zone(id: AtomId, pos: Rect, index: usize) -> Self {
+        Self { id, pos, zone_type: ZoneType::Click { index } }
     }
 }
 
@@ -250,7 +254,9 @@ pub enum ZoneType {
         y_offs:    bool,
         pos:       (usize, usize),
     },
-    Click,
+    Click {
+        index: usize,
+    },
 }
 
 impl ActiveZone {
@@ -487,7 +493,7 @@ pub trait WidgetUI {
     ///             .offs(10.0, 10.0)));
     /// ```
     fn define_active_zone(&mut self, az: ActiveZone);
-    fn hl_style_for(&self, id: AtomId) -> HLStyle;
+    fn hl_style_for(&self, id: AtomId, idx: Option<usize>) -> HLStyle;
     fn hover_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
     fn is_input_value_for(&self, az_id: AtomId) -> bool;
     fn hover_atom_id(&self) -> Option<AtomId>;
@@ -505,7 +511,7 @@ pub enum UIEvent {
     ValueDragStart { id: AtomId, },
     ValueDrag      { id: AtomId, steps: f64 },
     ValueDragEnd   { id: AtomId, },
-    Click          { id: AtomId, button: MButton, x: f64, y: f64 },
+    Click          { id: AtomId, button: MButton, index: usize, x: f64, y: f64 },
     FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
 

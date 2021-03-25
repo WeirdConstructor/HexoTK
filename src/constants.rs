@@ -113,3 +113,12 @@ pub const UI_GRID_LED_R             : f64             = 5.0;
 
 pub const UI_ENTRY_BORDER_WIDTH     : f64 = UI_BTN_BORDER2_WIDTH;
 pub const UI_ENTRY_BORDER_CLR       : (f64, f64, f64) = UI_ACCENT_CLR;
+pub const UI_ENTRY_TXT_CLR          : (f64, f64, f64) = UI_PRIM_CLR;
+
+pub const UI_LIST_BORDER_WIDTH     : f64 = UI_ENTRY_BORDER_WIDTH;
+pub const UI_LIST_BTN_WIDTH        : f64 = 20.0;
+pub const UI_LIST_BTN_BORDER_WIDTH : f64 = 1.0;
+pub const UI_LIST_BORDER_CLR       : (f64, f64, f64) = UI_ENTRY_BORDER_CLR;
+pub const UI_LIST_SEP_CLR          : (f64, f64, f64) = (100.0 / 255.0,  100.0 / 255.0,  110.0 / 255.0);
+pub const UI_LIST_TXT_CLR          : (f64, f64, f64) = UI_ENTRY_TXT_CLR;
+pub const UI_LIST_TXT_HOVER_CLR    : (f64, f64, f64) = UI_BTN_TXT_HOVER_CLR;

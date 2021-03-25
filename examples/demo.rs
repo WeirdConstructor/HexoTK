@@ -154,6 +154,7 @@ fn main() {
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
         let wt_entry    = Rc::new(Entry::new(100.0, 12.0, 13));
+        let wt_list     = Rc::new(List::new(100.0, 12.0, 8));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -167,13 +168,33 @@ fn main() {
            .add(wbox!(wt_knob,    6.into(), center(3, 12), KnobData::new("C")))
            .add(wbox!(wt_knob_11, 7.into(), center(3, 12), KnobData::new("D")));
 
+
+        let li = ListItems::new(10);
+        li.push(-1, String::from("Main"));
+        li.push(2,  String::from("Super loud"));
+        li.push(3,  String::from("Awesome!"));
+        li.push(4,  String::from("Ambient bling"));
+        li.push(5,  String::from("Wurstkuchen"));
+        li.push(6,  String::from("MakMukLol"));
+        li.push(7,  String::from("ROFLROFLROFLROFL"));
+        li.push(8,  String::from("Megalol"));
+        li.push(9,  String::from("1."));
+        li.push(10, String::from("2."));
+        li.push(11, String::from("3."));
+        li.push(12, String::from("4."));
+        li.push(13, String::from("5."));
+        li.push(14, String::from("6.XXXXXXXXXXXX"));
+
         let mut other = ContainerData::new();
         other
            .level(1)
            .new_row()
            .add(wbox!(
                 wt_entry, 23.into(), center(3, 12),
-                EntryData::new("Preset Name:")));
+                EntryData::new("Preset Name:")))
+           .add(wbox!(
+                wt_list, 24.into(), center(3, 12),
+                ListData::new("Preset:", ListOutput::ByString, li)));
 
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 

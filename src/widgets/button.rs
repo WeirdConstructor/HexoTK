@@ -104,7 +104,7 @@ impl WidgetType for Button {
         let h = UI_ELEM_TXT_H * 2.0 + UI_BTN_BORDER_WIDTH;
 
         let id = data.id();
-        let highlight = ui.hl_style_for(id);
+        let highlight = ui.hl_style_for(id, None);
 
         let color =
             match highlight {

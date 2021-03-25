@@ -163,9 +163,19 @@ impl WidgetUI for WidgetUIHolder {
         None
     }
 
-    fn hl_style_for(&self, az_id: AtomId) -> HLStyle {
+    fn hl_style_for(&self, az_id: AtomId, idx: Option<usize>) -> HLStyle {
         if let Some(hz) = self.hover_zone_for(az_id) {
-            HLStyle::Hover(hz.zone_type)
+            if let Some(idx) = idx {
+                match hz.zone_type {
+                    ZoneType::Click { index } => {
+                        if idx == index { HLStyle::Hover(hz.zone_type) }
+                        else            { HLStyle::None }
+                    },
+                    _ => HLStyle::None,
+                }
+            } else {
+                HLStyle::Hover(hz.zone_type)
+            }
         } else {
             HLStyle::None
         }
@@ -271,6 +281,7 @@ impl InputMode {
                             Some(UIEvent::Click {
                                 id:     release_az.id,
                                 button: btn,
+                                index:  0,
                                 x:      mouse_pos.0,
                                 y:      mouse_pos.1,
                             });
@@ -503,13 +514,14 @@ impl WindowUI for UI {
 
                     if let Some(az) = az {
                         match az.zone_type {
-                            ZoneType::Click => {
+                            ZoneType::Click { index } => {
                                 dispatch_event =
                                     Some(UIEvent::Click {
                                         id:     az.id,
                                         button: btn,
                                         x:      self.mouse_pos.0,
                                         y:      self.mouse_pos.1,
+                                        index,
                                     });
                                 self.queue_redraw();
                             },
