@@ -488,6 +488,20 @@ impl WindowUI for UI {
                     self.queue_redraw();
                 }
             },
+            InputEvent::MouseWheel(amt) => {
+                let az = self.get_zone_at(self.mouse_pos);
+
+                if let Some(az) = az {
+                    dispatch_event =
+                        Some(UIEvent::Scroll {
+                            id:     az.id,
+                            amt,
+                            x:      self.mouse_pos.0,
+                            y:      self.mouse_pos.1,
+                        });
+                    self.queue_redraw();
+                }
+            },
             InputEvent::MouseButtonReleased(btn) => {
                 if let Some(input_mode) = self.input_mode.take() {
                     if let Some((id, val)) =

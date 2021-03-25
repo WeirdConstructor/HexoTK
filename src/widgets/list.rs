@@ -65,6 +65,27 @@ impl ListData {
             offs: 0,
         })
     }
+
+    pub fn with_visible_item<R, F>(
+        &self, idx: usize, mut f: F) -> R
+        where F: FnMut(usize, Option<&(i64, String, String)>) -> R
+    {
+        let idx = idx + self.offs;
+        if idx > self.items.items.borrow().len() {
+            return f(idx, None);
+        }
+
+        let items = self.items.items.borrow();
+        let item = items.get(idx);
+        f(idx, item)
+    }
+
+    pub fn is_last_item_visible(&self, lines: usize) -> bool {
+        let items = self.items.items.borrow();
+        let item_count = items.len();
+        let remaining_after = item_count - (self.offs + lines);
+        remaining_after == 0
+    }
 }
 
 impl List {
@@ -115,39 +136,40 @@ impl WidgetType for List {
             let pos = pos.crop_top(UI_ELEM_TXT_H);
 
             let mut yo = 0.0;
-            for (idx, item) in
-                data.items.items.borrow()
-                    .iter()
-                    .skip(data.offs)
-                    .take(self.lines)
-                    .enumerate()
-            {
-                let highlight = ui.hl_style_for(id, Some(idx + 2));
-                let txt_color =
-                    match highlight {
-                        HLStyle::Hover(_) => UI_LIST_TXT_HOVER_CLR,
-                        _                 => UI_LIST_TXT_CLR,
-                    };
+            for i in 0..self.lines {
+                data.with_visible_item(i, |idx, item| {
+                    if item.is_none() {
+                        return;
+                    }
+                    let item = item.unwrap();
 
-                let lpos =
-                    Rect::from(pos.x, pos.y + yo, pos.w, UI_ELEM_TXT_H)
-                    .crop_right(UI_LIST_BTN_WIDTH);
-                p.label_mono(self.font_size, -1, txt_color,
-                    lpos.x, lpos.y, lpos.w, lpos.h, &item.2);
+                    let highlight = ui.hl_style_for(id, Some(idx + 2));
+                    let txt_color =
+                        match highlight {
+                            HLStyle::Hover(_) => UI_LIST_TXT_HOVER_CLR,
+                            _                 => UI_LIST_TXT_CLR,
+                        };
 
-                ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(id, lpos, 2 + idx));
+                    let lpos =
+                        Rect::from(pos.x, pos.y + yo, pos.w, UI_ELEM_TXT_H)
+                        .crop_right(UI_LIST_BTN_WIDTH);
+                    p.label_mono(self.font_size, -1, txt_color,
+                        lpos.x, lpos.y, lpos.w, lpos.h, &item.2);
 
-                p.path_stroke(
-                    1.0,
-                    UI_LIST_SEP_CLR,
-                    &mut [
-                        (lpos.x         - UI_SAFETY_PAD, lpos.y + lpos.h + 0.5),
-                        (lpos.x + pos.w + UI_SAFETY_PAD, lpos.y + lpos.h + 0.5),
-                    ].iter().copied(),
-                    false);
+                    ui.define_active_zone(
+                        ActiveZone::new_indexed_click_zone(id, lpos, 2 + idx));
 
-                yo += UI_ELEM_TXT_H;
+                    p.path_stroke(
+                        1.0,
+                        UI_LIST_SEP_CLR,
+                        &mut [
+                            (lpos.x         - UI_SAFETY_PAD, lpos.y + lpos.h + 0.5),
+                            (lpos.x + pos.w + UI_SAFETY_PAD, lpos.y + lpos.h + 0.5),
+                        ].iter().copied(),
+                        false);
+
+                    yo += UI_ELEM_TXT_H;
+                });
             }
 
             let highlight_up   = ui.hl_style_for(id, Some(0));
@@ -197,14 +219,16 @@ impl WidgetType for List {
                     UI_LIST_SEP_CLR,
                     UI_TAB_BG_CLR,
                     btn_down_pos);
-            ui.define_active_zone(
-                ActiveZone::new_indexed_click_zone(id, btn_down_pos, 1));
-            draw_pointer(
-                p,
-                false,
-                UI_LIST_BTN_POINTER_SIZE,
-                txt_color_down,
-                btn_down_pos.center());
+            if !data.is_last_item_visible(self.lines) {
+                ui.define_active_zone(
+                    ActiveZone::new_indexed_click_zone(id, btn_down_pos, 1));
+                draw_pointer(
+                    p,
+                    false,
+                    UI_LIST_BTN_POINTER_SIZE,
+                    txt_color_down,
+                    btn_down_pos.center());
+            }
         });
     }
 
@@ -216,7 +240,42 @@ impl WidgetType for List {
         match ev {
             UIEvent::Click { id, index, .. } => {
                 if data.id() == *id {
-                    println!("CLICK LIST: {:?}", ev);
+                    data.with(|data: &mut ListData| {
+                        if *index == 0 {
+                            if data.offs > 0 {
+                                data.offs -= data.offs.min(self.lines / 2);
+                            }
+                        } else if *index == 1 {
+                            let item_count = data.items.items.borrow().len();
+                            if item_count >= data.offs {
+                                let remaining_after =
+                                    item_count - (data.offs + self.lines);
+                                data.offs += remaining_after.min(self.lines / 2);
+                            }
+                        }
+                    });
+                }
+            },
+            UIEvent::Scroll { id, amt, .. } => {
+                if data.id() == *id {
+                    data.with(|data: &mut ListData| {
+                        let lines = (self.lines / 2) as f64 * amt;
+
+                        if lines > 0.0 {
+                            if data.offs > 0 {
+                                data.offs -= data.offs.min(lines.abs() as usize);
+                            }
+                        } else {
+                            let lines = lines.abs() as usize;
+
+                            let item_count = data.items.items.borrow().len();
+                            if item_count >= data.offs {
+                                let remaining_after =
+                                    item_count - (data.offs + self.lines);
+                                data.offs += remaining_after.min(lines);
+                            }
+                        }
+                    });
                 }
             },
             _ => {},

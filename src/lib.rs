@@ -521,6 +521,7 @@ pub enum UIEvent {
     ValueDrag      { id: AtomId, steps: f64 },
     ValueDragEnd   { id: AtomId, },
     Click          { id: AtomId, button: MButton, index: usize, x: f64, y: f64 },
+    Scroll         { id: AtomId, amt: f64, x: f64, y: f64 },
     FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
 
@@ -531,6 +532,7 @@ impl UIEvent {
             UIEvent::ValueDrag      { id, .. } => *id,
             UIEvent::ValueDragEnd   { id, .. } => *id,
             UIEvent::Click          { id, .. } => *id,
+            UIEvent::Scroll         { id, .. } => *id,
             UIEvent::FieldDrag      { id, .. } => *id,
         }
     }
