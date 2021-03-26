@@ -362,6 +362,7 @@ impl NodeMatrixData {
 impl WidgetType for NodeMatrix {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         data.with(|data: &mut NodeMatrixData| {
+//            let pos = pos.offs(50.0, 50.0).crop_right(50.0).crop_bottom(50.0);
             (*data.hex_grid).draw(ui, p, pos);
 
             if let Some(mouse_pos) = data.display_menu {

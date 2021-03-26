@@ -363,17 +363,28 @@ impl UI {
             for z in zones.iter().rev() {
                 match z.zone_type {
                     ZoneType::HexFieldClick { tile_size, y_offs, hex_trans, .. } => {
-                        println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
+                        //d// println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
                         if let Some(_id) = z.id_if_inside(pos) {
                             let scale = hex_trans.scale();
 
                             let rel_mouse_x = pos.0 - z.pos.x as f64;
                             let rel_mouse_y = pos.1 - z.pos.y as f64;
 
-                            let x = rel_mouse_x * scale - hex_trans.x_offs();// * scale;
-                            let y = rel_mouse_y * scale - hex_trans.y_offs();// * scale;
+                            let x = rel_mouse_x + z.pos.w * 0.5 - hex_trans.x_offs();// * scale;
+                            let y = rel_mouse_y + z.pos.h * 0.5 - hex_trans.y_offs();// * scale;
 
-                            let tile_size = tile_size * scale;
+                            let x = x / scale;
+                            let y = y / scale;
+
+                            let x = x - z.pos.w * 0.5; // / scale;
+                            let y = y - z.pos.h * 0.5; // / scale;
+                            println!("HEXTRNS rx={:6.3},ry={:6.3}", rel_mouse_x, rel_mouse_y);
+
+                            // Tiles are assumed to have 1.0 scale
+                            // This means, we have to inversely scale the mouse position
+                            // to simulate bigger tiles!
+
+                            let tile_size = tile_size;
 
                             // https://web.archive.org/web/20161024224848/http://gdreflections.com/2011/02/hexagonal-grid-math.html
                             let side   = ((tile_size * 3.0) / 2.0).floor();

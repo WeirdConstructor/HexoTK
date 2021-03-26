@@ -300,8 +300,8 @@ impl HexGridTransform {
     pub fn add_offs(&self, xo: f64, yo: f64) -> Self {
         Self {
             offs: (
-                self.offs.0 + xo / self.scale,
-                self.offs.1 + yo / self.scale
+                self.offs.0 + xo,
+                self.offs.1 + yo
             ),
             scale:     self.scale,
             scale_mid: self.scale_mid,

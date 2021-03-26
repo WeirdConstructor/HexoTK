@@ -261,8 +261,8 @@ fn main() {
 
         let mut con = ContainerData::new();
         con.new_row()
-           .add(NodeMatrixData::new(UIPos::center(7, 12), 11))
-           .add(wbox!(wt_cont, 0.into(), center(5, 12), node_ctrls));
+           .add(wbox!(wt_cont, 0.into(), center(5, 12), node_ctrls))
+           .add(NodeMatrixData::new(UIPos::center(7, 12), 11));
 
         let mut atoms = vec![];
         atoms.resize_with(100, || Atom::default());
