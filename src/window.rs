@@ -209,6 +209,7 @@ impl WindowHandler for GUIWindowHandler {
 //                images:     vec![],
                 font_mono:  self.font_mono,
                 scale:      self.scale,
+                cur_scale:  1.0,
             });
             self.canvas.restore();
             self.ftm_redraw.end_measure();

@@ -75,6 +75,7 @@ pub struct HexGrid {
     edge_font_size:   f64,
     bg_color:         (f64, f64, f64),
     y_offs:           bool,
+    transformable:    bool,
     cell_size:        f64,
 }
 
@@ -85,16 +86,18 @@ impl HexGrid {
             edge_font_size,
             bg_color:   UI_GRID_BG1_CLR,
             y_offs:     false,
+            transformable: true,
             cell_size,
         }
     }
 
-    pub fn new_y_offs(center_font_size: f64, edge_font_size: f64, cell_size: f64) -> Self {
+    pub fn new_y_offs_pinned(center_font_size: f64, edge_font_size: f64, cell_size: f64) -> Self {
         Self {
             center_font_size,
             edge_font_size,
-            bg_color:   UI_GRID_BG1_CLR,
-            y_offs:     true,
+            bg_color:       UI_GRID_BG1_CLR,
+            y_offs:         true,
+            transformable:  false,
             cell_size,
         }
     }
@@ -109,12 +112,12 @@ impl HexGrid {
 pub struct HexGridData {
     model:          Rc<dyn HexGridModel>,
     last_hover_pos: (usize, usize),
-    scroll_offs:    (f64, f64),
+    hex_trans:      HexGridTransform,
 }
 
 impl HexGridData {
     pub fn new(model: Rc<dyn HexGridModel>) -> Box<Self> {
-        Box::new(Self { model, last_hover_pos: (0, 0), scroll_offs: (0.0, 0.0) })
+        Box::new(Self { model, last_hover_pos: (0, 0), hex_trans: HexGridTransform::new() })
     }
 }
 
@@ -323,8 +326,11 @@ impl WidgetType for HexGrid {
             let nx = data.model.width();
             let ny = data.model.height();
 
-            if let Some(so) = ui.get_scroll_offs(id) {
-                data.scroll_offs = so;
+            if let Some(ht) = ui.get_hex_transform(id) {
+                if self.transformable {
+                    let scale = ht.scale().clamp(0.5, 2.0);
+                    data.hex_trans = ht.set_scale(scale);
+                }
             }
 
             ui.define_active_zone(
@@ -332,16 +338,31 @@ impl WidgetType for HexGrid {
                     id,
                     pos,
                     self.y_offs,
-                    data.scroll_offs,
+                    data.hex_trans,
                     size));
 
-            let (scroll_x, scroll_y) = data.scroll_offs;
+            let (scroll_x, scroll_y) = (
+                data.hex_trans.x_offs(),
+                data.hex_trans.y_offs()
+            );
+            println!("scroll_x={}, scroll_y={}", scroll_x, scroll_y);
+            let scale = data.hex_trans.scale();
 
             p.clip_region(pos.x, pos.y, pos.w, pos.h);
+            p.move_and_scale(
+                pos.w * 0.5 + scroll_x * scale,
+                pos.h * 0.5 + scroll_y * scale,
+                pos.x,
+                pos.y,
+                scale);
+            let pos = Rect {
+                x: - pos.w * 0.5,
+                y: - pos.h * 0.5,
+                w: pos.w,
+                h: pos.h,
+            };
 
-            //// Calculate the number of hexagons fitting into the pos Rect:
-            //let nx = ((pos.w - (0.5 * w)) / (0.75 * w)).floor() as usize;
-            //let ny = ((pos.h - (0.5 * h)) / h).floor() as usize;
+//            println!("RECT: {:?} SO {},{} (sf={})", pos, scroll_x, scroll_y, scale);
 
             for xi in 0..nx {
                 let x = xi as f64;
@@ -351,14 +372,14 @@ impl WidgetType for HexGrid {
                         if xi % 2 == 0 { yi as f64 - 0.5 }
                         else           { yi as f64 };
 
-                    let xo = pos.x + x * 0.75 * w + size + scroll_x;
-                    let yo = pos.y + (1.00 + y) * h      + scroll_y;
+                    let xo = pos.x + x * 0.75 * w + size;
+                    let yo = pos.y + (1.00 + y) * h;
 
                     let yo = if self.y_offs { yo - 0.5 * h } else { yo };
 
-                    if !hex_at_is_inside(xo, yo, w, h, pos) {
-                        continue;
-                    }
+//                    if !hex_at_is_inside(xo, yo, w, h, pos.scale(1.0 / scale)) {
+//                        continue;
+//                    }
 
                     if !data.model.cell_visible(xi, yi) {
                         continue;
@@ -505,7 +526,8 @@ impl WidgetType for HexGrid {
                 }
             }
 
-            p.reset_clip_region();
+            p.reset_scale();
+//            p.reset_clip_region();
         });
     }
 

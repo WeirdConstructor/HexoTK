@@ -17,6 +17,7 @@ pub struct FemtovgPainter<'a> {
     pub font_mono:  FontId,
 //    pub images:     Vec<Option<ImageId>>,
     pub scale:      f32,
+    pub cur_scale:  f32,
 }
 
 fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
@@ -101,6 +102,23 @@ impl<'a> Painter for FemtovgPainter<'a> {
     fn clip_region(&mut self, x: f64, y: f64, w: f64, h: f64) {
         self.canvas.save();
         self.canvas.scissor(x as f32, y as f32, w as f32, h as f32);
+    }
+
+    fn move_and_scale(&mut self, x: f64, y: f64, x2: f64, y2: f64, factor: f64) {
+        self.canvas.save();
+        self.cur_scale = factor as f32;
+        let factor = self.scale * self.cur_scale;
+//        self.canvas.translate(x as f32, y as f32);
+        self.canvas.translate(x as f32, y as f32);
+        self.canvas.scale(factor, factor);
+        self.canvas.translate(x2 as f32, y2 as f32);
+//        self.canvas.translate(-x as f32 / factor, -y as f32 / factor);
+    }
+
+    fn reset_scale(&mut self) {
+        self.cur_scale = 1.0;
+        let factor = self.scale * self.cur_scale;
+        self.canvas.restore();
     }
 
     fn reset_clip_region(&mut self) {
@@ -228,7 +246,7 @@ impl<'a> Painter for FemtovgPainter<'a> {
         }
         paint.set_font_size(size);
         if let Ok(metr) = self.canvas.measure_font(paint) {
-            metr.height() / self.scale
+            metr.height() / (self.scale * self.cur_scale)
         } else {
             UI_ELEM_TXT_H as f32
         }

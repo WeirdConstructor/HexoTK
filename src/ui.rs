@@ -93,7 +93,7 @@ pub struct UI {
     window_size:    (f64, f64),
     /// The currently adjusted scroll offset, can be queried
     /// by any widget.
-    cur_scroll_offs: Option<(AtomId, f64, f64)>,
+    cur_hex_trans:  Option<(AtomId, HexGridTransform)>,
 }
 
 /// A temporary holder of the UI state.
@@ -106,7 +106,7 @@ struct WidgetUIHolder {
     input_mode:      Option<InputMode>,
     needs_redraw:    bool,
     pressed_keys:    Box<HashMap<UIKey, bool>>,
-    cur_scroll_offs: Option<(AtomId, f64, f64)>,
+    cur_hex_trans:   Option<(AtomId, HexGridTransform)>,
 }
 
 impl WidgetUI for WidgetUIHolder {
@@ -114,10 +114,10 @@ impl WidgetUI for WidgetUIHolder {
         self.zones.push(az);
     }
 
-    fn get_scroll_offs(&self, at_id: AtomId) -> Option<(f64, f64)> {
-        if let Some((id, x, y)) = &self.cur_scroll_offs {
+    fn get_hex_transform(&self, at_id: AtomId) -> Option<HexGridTransform> {
+        if let Some((id, ht)) = &self.cur_hex_trans {
             if *id == at_id {
-                return Some((*x, *y));
+                return Some(*ht);
             }
         }
 
@@ -233,9 +233,14 @@ enum InputMode {
         /// Whether the Shift key was pressed.
         fine_key:       bool
     },
+    HexFieldZoom {
+        zone:        ActiveZone,
+        hex_trans:   HexGridTransform,
+        orig_pos:    (f64, f64),
+    },
     HexFieldScroll {
         zone:        ActiveZone,
-        orig_offs:   (f64, f64),
+        hex_trans:   HexGridTransform,
         orig_pos:    (f64, f64),
     },
     /// If a hexfield is dragged, this input mode stores the
@@ -330,7 +335,7 @@ impl UI {
             needs_redraw:       true,
             window_size,
             pressed_keys:       Some(Box::new(HashMap::new())),
-            cur_scroll_offs:    None,
+            cur_hex_trans:      None,
             mod_keys: ModifierKeys {
                 fine_drag_key: false
             },
@@ -357,11 +362,18 @@ impl UI {
 
             for z in zones.iter().rev() {
                 match z.zone_type {
-                    ZoneType::HexFieldClick { tile_size, y_offs, scroll_offs, .. } => {
-                        //d// println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
+                    ZoneType::HexFieldClick { tile_size, y_offs, hex_trans, .. } => {
+                        println!("HEXFIELD! {:?} (mouse@ {:?})", z, pos);
                         if let Some(_id) = z.id_if_inside(pos) {
-                            let x = pos.0 - z.pos.x as f64 - scroll_offs.0;
-                            let y = pos.1 - z.pos.y as f64 - scroll_offs.1;
+                            let scale = hex_trans.scale();
+
+                            let rel_mouse_x = pos.0 - z.pos.x as f64;
+                            let rel_mouse_y = pos.1 - z.pos.y as f64;
+
+                            let x = rel_mouse_x * scale - hex_trans.x_offs();// * scale;
+                            let y = rel_mouse_y * scale - hex_trans.y_offs();// * scale;
+
+                            let tile_size = tile_size * scale;
 
                             // https://web.archive.org/web/20161024224848/http://gdreflections.com/2011/02/hexagonal-grid-math.html
                             let side   = ((tile_size * 3.0) / 2.0).floor();
@@ -393,7 +405,7 @@ impl UI {
                             new_az.zone_type = ZoneType::HexFieldClick {
                                 tile_size,
                                 y_offs,
-                                scroll_offs,
+                                hex_trans,
                                 pos: (i as usize, j as usize),
                             };
                             zone = Some(new_az);
@@ -437,7 +449,7 @@ impl UI {
                     zones,
                     input_mode,
                     pressed_keys,
-                    cur_scroll_offs: self.cur_scroll_offs,
+                    cur_hex_trans: self.cur_hex_trans,
                     needs_redraw: false,
                 };
 
@@ -504,12 +516,23 @@ impl WindowUI for UI {
                         param_change = Some(pc);
                     } else {
                         match input_mode {
-                            InputMode::HexFieldScroll { orig_pos, orig_offs, zone } => {
-                                self.cur_scroll_offs =
+                            InputMode::HexFieldZoom { orig_pos, hex_trans, zone } => {
+                                self.cur_hex_trans =
                                     Some((
                                         zone.id,
-                                        orig_offs.0 + self.mouse_pos.0 - orig_pos.0,
-                                        orig_offs.1 + self.mouse_pos.1 - orig_pos.1));
+                                        hex_trans.set_scale(
+                                            hex_trans.scale()
+                                            + (self.mouse_pos.1 - orig_pos.1)
+                                              / 100.0)));
+                                new_hz = self.get_zone_at(self.mouse_pos);
+                            },
+                            InputMode::HexFieldScroll { orig_pos, hex_trans, zone } => {
+                                self.cur_hex_trans =
+                                    Some((
+                                        zone.id,
+                                        hex_trans.add_offs(
+                                            self.mouse_pos.0 - orig_pos.0,
+                                            self.mouse_pos.1 - orig_pos.1)));
                                 new_hz = self.get_zone_at(self.mouse_pos);
                             },
                             _ => {
@@ -646,14 +669,27 @@ impl WindowUI for UI {
                                 }
                             }
                         },
-                        ZoneType::HexFieldClick { scroll_offs, .. } => {
+                        ZoneType::HexFieldClick { hex_trans, .. } => {
                             if self.is_key_pressed(UIKey::Shift) {
-                                self.input_mode =
-                                    Some(InputMode::HexFieldScroll {
-                                        orig_pos:    self.mouse_pos,
-                                        orig_offs:   scroll_offs,
-                                        zone:        az,
-                                    });
+                                match btn {
+                                    MButton::Left => {
+                                        self.input_mode =
+                                            Some(InputMode::HexFieldScroll {
+                                                orig_pos:    self.mouse_pos,
+                                                zone:        az,
+                                                hex_trans,
+                                            });
+                                    },
+                                    MButton::Right => {
+                                        self.input_mode =
+                                            Some(InputMode::HexFieldZoom {
+                                                orig_pos:    self.mouse_pos,
+                                                zone:        az,
+                                                hex_trans,
+                                            });
+                                    },
+                                    _ => {}
+                                }
 
                             } else {
                                 self.input_mode =

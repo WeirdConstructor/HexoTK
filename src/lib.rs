@@ -118,6 +118,15 @@ impl Rect {
         }
     }
 
+    pub fn scale(&self, factor: f64) -> Self {
+        Self {
+            x: self.x,
+            y: self.y,
+            w: self.w * factor,
+            h: self.h * factor,
+        }
+    }
+
     pub fn center(&self) -> Self {
         Self {
             x: self.x + self.w * 0.5,
@@ -246,14 +255,14 @@ impl ActiveZone {
     }
 
     pub fn new_hex_field(id: AtomId, pos: Rect, y_offs: bool,
-        scroll_offs: (f64, f64), tile_size: f64) -> Self
+        hex_trans: HexGridTransform, tile_size: f64) -> Self
     {
         Self {
             id, pos,
             zone_type: ZoneType::HexFieldClick {
                 tile_size,
                 y_offs,
-                scroll_offs,
+                hex_trans,
                 pos: (0, 0),
             },
         }
@@ -273,6 +282,55 @@ impl ActiveZone {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+pub struct HexGridTransform {
+    offs:       (f64, f64),
+    scale:      f64,
+    scale_mid:  (f64, f64),
+}
+
+impl HexGridTransform {
+    pub fn new() -> Self {
+        Self {
+            offs:      (0.0, 0.0),
+            scale:     1.0,
+            scale_mid: (0.0, 0.0),
+        }
+    }
+
+    pub fn add_offs(&self, xo: f64, yo: f64) -> Self {
+        Self {
+            offs: (
+                self.offs.0 + xo / self.scale,
+                self.offs.1 + yo / self.scale
+            ),
+            scale:     self.scale,
+            scale_mid: self.scale_mid,
+        }
+    }
+
+    pub fn set_offs(&self, offs: (f64, f64)) -> Self {
+        Self {
+            offs,
+            scale:     self.scale,
+            scale_mid: self.scale_mid,
+        }
+    }
+
+    pub fn set_scale(&self, scale: f64) -> Self {
+        Self {
+            offs:      self.offs,
+            scale:     scale,
+            scale_mid: self.scale_mid,
+        }
+    }
+
+    pub fn scale(&self) -> f64 { self.scale }
+
+    pub fn x_offs(&self) -> f64 { self.offs.0 }
+    pub fn y_offs(&self) -> f64 { self.offs.1 }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ZoneType {
     ValueDragFine,
     ValueDragCoarse,
@@ -281,7 +339,7 @@ pub enum ZoneType {
         tile_size:   f64,
         y_offs:      bool,
         pos:         (usize, usize),
-        scroll_offs: (f64, f64),
+        hex_trans:   HexGridTransform,
     },
     Click {
         index: usize,
@@ -492,6 +550,8 @@ pub trait Painter {
     fn font_height(&mut self, size: f32, mono: bool) -> f32;
     fn clip_region(&mut self, x: f64, y: f64, w: f64, h: f64);
     fn reset_clip_region(&mut self);
+    fn move_and_scale(&mut self, x: f64, y: f64, x2: f64, y2: f64, factor: f64);
+    fn reset_scale(&mut self);
 }
 
 pub trait WindowUI {
@@ -523,7 +583,7 @@ pub trait WidgetUI {
     ///             .offs(10.0, 10.0)));
     /// ```
     fn define_active_zone(&mut self, az: ActiveZone);
-    fn get_scroll_offs(&self, at_id: AtomId) -> Option<(f64, f64)>;
+    fn get_hex_transform(&self, at_id: AtomId) -> Option<HexGridTransform>;
     fn hl_style_for(&self, id: AtomId, idx: Option<usize>) -> HLStyle;
     fn hover_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
     fn is_input_value_for(&self, az_id: AtomId) -> bool;
