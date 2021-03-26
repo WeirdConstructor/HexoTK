@@ -65,7 +65,7 @@ pub trait HexGridModel {
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<(&'a str, HexCell, Option<(f32, f32)>)>;
     /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)>;
-    fn cell_click(&self, x: usize, y: usize, btn: MButton, shift: bool);
+    fn cell_click(&self, x: usize, y: usize, btn: MButton, modkey: bool);
     fn cell_hover(&self, _x: usize, _y: usize) { }
 }
 
@@ -109,16 +109,28 @@ impl HexGrid {
 pub struct HexGridData {
     model:          Rc<dyn HexGridModel>,
     last_hover_pos: (usize, usize),
+    scroll_offs:    (f64, f64),
 }
 
 impl HexGridData {
     pub fn new(model: Rc<dyn HexGridModel>) -> Box<Self> {
-        Box::new(Self { model, last_hover_pos: (0, 0) })
+        Box::new(Self { model, last_hover_pos: (0, 0), scroll_offs: (0.0, 0.0) })
     }
 }
 
 fn hex_size2wh(size: f64) -> (f64, f64) {
     (2.0_f64 * size, (3.0_f64).sqrt() * size)
+}
+
+fn hex_at_is_inside(x: f64, y: f64, w: f64, h: f64, pos: Rect) -> bool {
+    let aabb = Rect {
+        x: x - 0.5 * w,
+        y: y - 0.5 * h,
+        w: w,
+        h: h,
+    };
+
+    pos.aabb_is_inside(aabb)
 }
 
 enum HexDecorPos {
@@ -267,8 +279,6 @@ impl WidgetType for HexGrid {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let size = self.cell_size;
 
-        ui.define_active_zone(ActiveZone::new_hex_field(data.id(), pos, self.y_offs, size));
-
         let pad     = 10.0;
         let size_in = size - pad;
         let (w, h)  = hex_size2wh(size);
@@ -302,20 +312,36 @@ impl WidgetType for HexGrid {
                 (0, 0)
             };
 
+        let id = data.id();
+
         data.with(|data: &mut HexGridData| {
             p.rect_fill(
                 self.bg_color,
                 pos.x, pos.y,
                 pos.w, pos.h);
 
-//            let pp = pos.shrink(40.0, 40.0);
-//            p.clip_region(pp.x, pp.y, pp.w, pp.h);
+            let nx = data.model.width();
+            let ny = data.model.height();
+
+            if let Some(so) = ui.get_scroll_offs(id) {
+                data.scroll_offs = so;
+            }
+
+            ui.define_active_zone(
+                ActiveZone::new_hex_field(
+                    id,
+                    pos,
+                    self.y_offs,
+                    data.scroll_offs,
+                    size));
+
+            let (scroll_x, scroll_y) = data.scroll_offs;
+
+            p.clip_region(pos.x, pos.y, pos.w, pos.h);
 
             //// Calculate the number of hexagons fitting into the pos Rect:
             //let nx = ((pos.w - (0.5 * w)) / (0.75 * w)).floor() as usize;
             //let ny = ((pos.h - (0.5 * h)) / h).floor() as usize;
-            let nx = data.model.width();
-            let ny = data.model.height();
 
             for xi in 0..nx {
                 let x = xi as f64;
@@ -325,9 +351,23 @@ impl WidgetType for HexGrid {
                         if xi % 2 == 0 { yi as f64 - 0.5 }
                         else           { yi as f64 };
 
+                    let xo = pos.x + x * 0.75 * w + size + scroll_x;
+                    let yo = pos.y + (1.00 + y) * h      + scroll_y;
+
+                    let yo = if self.y_offs { yo - 0.5 * h } else { yo };
+
+                    if !hex_at_is_inside(xo, yo, w, h, pos) {
+                        continue;
+                    }
+
                     if !data.model.cell_visible(xi, yi) {
                         continue;
                     }
+
+                    let th  = p.font_height(self.center_font_size as f32, false) as f64;
+                    let fs  = self.center_font_size;
+                    let th2 = p.font_height(self.edge_font_size as f32, false) as f64;
+                    let fs2 = self.edge_font_size;
 
                     let (line, clr) =
                         if marked.0 == xi && marked.1 == yi {
@@ -341,16 +381,6 @@ impl WidgetType for HexGrid {
                                 (3.0, UI_GRID_CELL_BORDER_CLR)
                             }
                         };
-
-                    let xo = pos.x + x * 0.75 * w + size;
-                    let yo = pos.y + (1.00 + y) * h;
-
-                    let yo = if self.y_offs { yo - 0.5 * h } else { yo };
-
-                    let th  = p.font_height(self.center_font_size as f32, false) as f64;
-                    let fs  = self.center_font_size;
-                    let th2 = p.font_height(self.edge_font_size as f32, false) as f64;
-                    let fs2 = self.edge_font_size;
 
                     // padded outer hex
                     draw_hexagon(p, size_in, line, xo, yo, clr, |p, pos, sz| {
@@ -475,7 +505,7 @@ impl WidgetType for HexGrid {
                 }
             }
 
-//            p.reset_clip_region();
+            p.reset_clip_region();
         });
     }
 
@@ -487,7 +517,7 @@ impl WidgetType for HexGrid {
                         data.with(|data: &mut HexGridData| {
                             data.model.cell_click(
                                 pos.0, pos.1, *button,
-                                ui.is_key_pressed(UIKey::Shift));
+                                ui.is_key_pressed(UIKey::Ctrl));
                         });
                     }
                 }

@@ -57,6 +57,12 @@ impl AtomDataModel for SomeParameters {
         Some(self.atoms[id.atom_id() as usize].f())
     }
     fn set(&mut self, id: AtomId, v: Atom) {
+        println!("SET ATOM: {}: {:?}", id, v);
+        let atid = id.atom_id() as usize;
+        if atid == 24 {
+            self.set(AtomId::new(id.node_id(), 23), v.clone());
+
+        }
         self.atoms[id.atom_id() as usize] = v;
     }
     fn set_default(&mut self, id: AtomId) {
@@ -168,13 +174,12 @@ fn main() {
            .add(wbox!(wt_knob,    6.into(), center(3, 12), KnobData::new("C")))
            .add(wbox!(wt_knob_11, 7.into(), center(3, 12), KnobData::new("D")));
 
-
-        let li = ListItems::new(10);
+        let li = ListItems::new(12);
         li.push(-1, String::from("Main"));
         li.push(2,  String::from("Super loud"));
         li.push(3,  String::from("Awesome!"));
         li.push(4,  String::from("Ambient bling"));
-        li.push(5,  String::from("Wurstkuchen"));
+        li.push(5,  String::from("Spacebloop"));
         li.push(6,  String::from("MakMukLol"));
         li.push(7,  String::from("ROFLROFLROFLROFL"));
         li.push(8,  String::from("Megalol"));

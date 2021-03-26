@@ -134,7 +134,7 @@ impl HexGridModel for UIMatrixModel {
     fn width(&self) -> usize { self.w }
     fn height(&self) -> usize { self.h }
 
-    fn cell_click(&self, _x: usize, _y: usize, _btn: MButton, _shift: bool) {
+    fn cell_click(&self, _x: usize, _y: usize, _btn: MButton, _modkey: bool) {
     }
 
     fn cell_empty(&self, x: usize, y: usize) -> bool {
@@ -254,7 +254,7 @@ pub struct NodeMatrixModel {
 impl NodeMatrixModel {
     pub fn new() -> Self {
         Self {
-            matrix: Rc::new(UIMatrixModel::new(8, 7)),
+            matrix: Rc::new(UIMatrixModel::new(16, 16)),
             menu:   Rc::new(UINodeMenuModel::new()),
         }
     }
@@ -267,8 +267,8 @@ impl HexGridModel for UINodeMenuModel {
     fn width(&self) -> usize { 3 }
     fn height(&self) -> usize { 3 }
 
-    fn cell_click(&self, x: usize, y: usize, btn: MButton, shift: bool) {
-        println!("MENU CLICK CELL: {},{}: {:?} / {}", x, y, btn, shift);
+    fn cell_click(&self, x: usize, y: usize, btn: MButton, modkey: bool) {
+        println!("MENU CLICK CELL: {},{}: {:?} / {}", x, y, btn, modkey);
     }
 
     fn cell_hover(&self, x: usize, y: usize) {

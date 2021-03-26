@@ -10,6 +10,7 @@ mod window;
 mod femtovg_painter;
 
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use keyboard_types::KeyboardEvent;
 
@@ -195,6 +196,14 @@ impl Rect {
         self
     }
 
+    pub fn aabb_is_inside(&self, aabb: Rect) -> bool {
+        if self.is_inside(aabb.x,          aabb.y)          { return true; }
+        if self.is_inside(aabb.x + aabb.w, aabb.y)          { return true; }
+        if self.is_inside(aabb.x,          aabb.y + aabb.h) { return true; }
+        if self.is_inside(aabb.x + aabb.w, aabb.y + aabb.h) { return true; }
+        false
+    }
+
     pub fn is_inside(&self, x: f64, y: f64) -> bool {
            x >= self.x && x <= (self.x + self.w)
         && y >= self.y && y <= (self.y + self.h)
@@ -236,8 +245,18 @@ impl ActiveZone {
         }
     }
 
-    pub fn new_hex_field(id: AtomId, pos: Rect, y_offs: bool, tile_size: f64) -> Self {
-        Self { id, pos, zone_type: ZoneType::HexFieldClick { tile_size, y_offs, pos: (0, 0) } }
+    pub fn new_hex_field(id: AtomId, pos: Rect, y_offs: bool,
+        scroll_offs: (f64, f64), tile_size: f64) -> Self
+    {
+        Self {
+            id, pos,
+            zone_type: ZoneType::HexFieldClick {
+                tile_size,
+                y_offs,
+                scroll_offs,
+                pos: (0, 0),
+            },
+        }
     }
 
     pub fn new_input_zone(id: AtomId, pos: Rect) -> Self {
@@ -259,9 +278,10 @@ pub enum ZoneType {
     ValueDragCoarse,
     TextInput,
     HexFieldClick {
-        tile_size: f64,
-        y_offs:    bool,
-        pos:       (usize, usize),
+        tile_size:   f64,
+        y_offs:      bool,
+        pos:         (usize, usize),
+        scroll_offs: (f64, f64),
     },
     Click {
         index: usize,
@@ -487,6 +507,7 @@ pub trait WindowUI {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum UIKey {
     Shift,
+    Ctrl,
 }
 
 pub trait WidgetUI {
@@ -502,6 +523,7 @@ pub trait WidgetUI {
     ///             .offs(10.0, 10.0)));
     /// ```
     fn define_active_zone(&mut self, az: ActiveZone);
+    fn get_scroll_offs(&self, at_id: AtomId) -> Option<(f64, f64)>;
     fn hl_style_for(&self, id: AtomId, idx: Option<usize>) -> HLStyle;
     fn hover_zone_for(&self, id: AtomId) -> Option<ActiveZone>;
     fn is_input_value_for(&self, az_id: AtomId) -> bool;

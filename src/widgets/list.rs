@@ -137,13 +137,15 @@ impl WidgetType for List {
 
             let mut yo = 0.0;
             for i in 0..self.lines {
-                data.with_visible_item(i, |idx, item| {
+                let vis_item_idx = i + 2;
+
+                data.with_visible_item(i, |_idx, item| {
                     if item.is_none() {
                         return;
                     }
                     let item = item.unwrap();
 
-                    let highlight = ui.hl_style_for(id, Some(idx + 2));
+                    let highlight = ui.hl_style_for(id, Some(vis_item_idx));
                     let txt_color =
                         match highlight {
                             HLStyle::Hover(_) => UI_LIST_TXT_HOVER_CLR,
@@ -157,7 +159,8 @@ impl WidgetType for List {
                         lpos.x, lpos.y, lpos.w, lpos.h, &item.2);
 
                     ui.define_active_zone(
-                        ActiveZone::new_indexed_click_zone(id, lpos, 2 + idx));
+                        ActiveZone::new_indexed_click_zone(
+                            id, lpos, vis_item_idx));
 
                     p.path_stroke(
                         1.0,
@@ -236,7 +239,7 @@ impl WidgetType for List {
         (self.rect.w, self.rect.h)
     }
 
-    fn event(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
+    fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
             UIEvent::Click { id, index, .. } => {
                 if data.id() == *id {
@@ -252,6 +255,23 @@ impl WidgetType for List {
                                     item_count - (data.offs + self.lines);
                                 data.offs += remaining_after.min(self.lines / 2);
                             }
+                        } else {
+                            let mode = data.out_mode;
+
+                            data.with_visible_item(*index - 2, |_idx, item| {
+                                if let Some(item) = item {
+                                    match mode {
+                                        ListOutput::ByString => {
+                                            ui.atoms_mut().set(
+                                                *id, Atom::str(&item.1))
+                                        },
+                                        ListOutput::BySetting => {
+                                            ui.atoms_mut().set(
+                                                *id, Atom::setting(item.0))
+                                        },
+                                    }
+                                }
+                            });
                         }
                     });
                 }
