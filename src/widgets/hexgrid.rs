@@ -459,7 +459,7 @@ impl WidgetType for HexGrid {
                                     p.label(
                                         fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                         x - 0.5 * sz.0,
-                                        y - 2.0,
+                                        y - 1.0,
                                         sz.0, th, s);
                                 }
                             },
@@ -468,7 +468,7 @@ impl WidgetType for HexGrid {
                                     p.label(
                                         fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                         x - 0.5 * sz.0,
-                                        y - th + 1.0,
+                                        y - th,
                                         sz.0, th, s);
 
                                     et.draw(p, x, y, 90.0);
@@ -481,7 +481,7 @@ impl WidgetType for HexGrid {
                                         (x - 0.5 * sz.0).floor(),
                                         (y - 0.5 * th2).floor(),
                                         0.0,
-                                        (0.5 * th2).floor() + 1.0,
+                                        (0.5 * th2).floor() + 2.0,
                                         sz.0, th2, s);
                                 }
                             },
@@ -492,7 +492,7 @@ impl WidgetType for HexGrid {
                                         (x - 0.5 * sz.0).floor(),
                                         (y - 0.5 * th2).floor(),
                                         0.0,
-                                        (0.5 * th2).floor() + 1.0,
+                                        (0.5 * th2).floor() + 2.0,
                                         sz.0, th2, s);
 
                                     et.draw(p, x, y, -30.0);
@@ -505,7 +505,7 @@ impl WidgetType for HexGrid {
                                         (x - 0.5 * sz.0).floor(),
                                         (y - 0.5 * th2).floor(),
                                         0.0,
-                                        -(0.5 * th2).floor() + 1.0,
+                                        -(0.5 * th2).floor() - 2.0,
                                         sz.0, th2, s);
                                 }
                             },
@@ -516,7 +516,7 @@ impl WidgetType for HexGrid {
                                         (x - 0.5 * sz.0).floor(),
                                         (y - 0.5 * th2).floor(),
                                         0.0,
-                                        -(0.5 * th2).floor(),
+                                        -(0.5 * th2).floor() - 2.0,
                                         sz.0, th2, s);
 
                                     et.draw(p, x, y, 30.0);

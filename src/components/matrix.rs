@@ -23,9 +23,11 @@ impl NodeType for DummyNode {
         match param {
             0 => Some("Gain"),
             1 => Some("Sig"),
-            2 => Some("Cut"),
+            2 => Some("Cutg"),
             3 => Some("Freq"),
             4 => Some("Res"),
+            5 => Some("XgX"),
+            6 => Some("Gmg"),
             _ => None,
         }
     }
@@ -106,8 +108,8 @@ impl UIMatrixModel {
         let dmy = Rc::new(DummyNode { name: String::from("Dmy") });
         let x   = Rc::new(DummyNode { name: String::from("*") });
 
-        cells[18] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), None).input(Some(2), Some(0), None);
-        cells[19] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), None).input(Some(1), Some(3), None);
+        cells[18] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), Some(1)).input(Some(2), Some(0), Some(2));
+        cells[19] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), Some(1)).input(Some(1), Some(3), Some(2));
         cells[11] = MatrixCell::new(x.clone(),   2).out(Some(1), Some(1), Some(2));
 
         Self {
