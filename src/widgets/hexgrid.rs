@@ -345,13 +345,13 @@ impl WidgetType for HexGrid {
                 data.hex_trans.x_offs(),
                 data.hex_trans.y_offs()
             );
-            //d// println!("scroll_x={}, scroll_y={}", scroll_x, scroll_y);
+            println!("scroll_x={}, scroll_y={}", scroll_x, scroll_y);
             let scale = data.hex_trans.scale();
 
             p.clip_region(pos.x, pos.y, pos.w, pos.h);
             p.move_and_scale(
-                pos.x + pos.w * 0.5 + scroll_x,
-                pos.y + pos.h * 0.5 + scroll_y,
+                pos.x + pos.w * 0.5 + scroll_x * scale,
+                pos.y + pos.h * 0.5 + scroll_y * scale,
                 0.0,
                 0.0,
                 scale);

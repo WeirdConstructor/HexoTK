@@ -367,18 +367,48 @@ impl UI {
                         if let Some(_id) = z.id_if_inside(pos) {
                             let scale = hex_trans.scale();
 
+                            // move mouse relative to widget rectangle
                             let rel_mouse_x = pos.0 - z.pos.x as f64;
                             let rel_mouse_y = pos.1 - z.pos.y as f64;
 
-                            let x = rel_mouse_x + z.pos.w * 0.5 - hex_trans.x_offs();// * scale;
-                            let y = rel_mouse_y + z.pos.h * 0.5 - hex_trans.y_offs();// * scale;
+                            // move mouse to center
+                            let x = rel_mouse_x - z.pos.w * 0.5 - hex_trans.x_offs() * scale;
+                            let y = rel_mouse_y - z.pos.h * 0.5 - hex_trans.y_offs() * scale;
 
-                            let x = x / scale;
-                            let y = y / scale;
+                            // scale mouse position
+                            // and move the grid top/left by half the window width
+                            let x2 = (x / scale) + z.pos.w * 0.5;
+                            let y2 = (y / scale) + z.pos.h * 0.5;
 
-                            let x = x - z.pos.w * 0.5; // / scale;
-                            let y = y - z.pos.h * 0.5; // / scale;
-                            println!("HEXTRNS rx={:6.3},ry={:6.3}", rel_mouse_x, rel_mouse_y);
+//                            println!("HEXTRNS rx={:6.1},ry={:6.1} => x={:6.1},y={:6.1} => x2={:6.1},y2={:6.1}",
+//                                     rel_mouse_x, rel_mouse_y, x, y, x2, y2);
+
+                            let x = x2;
+                            let y = y2;
+
+
+//                            let x = rel_mouse_x + z.pos.w * 0.5;
+//                            let y = rel_mouse_y + z.pos.h * 0.5;
+//
+//                            let x = x / scale;
+//                            let y = y / scale;
+//
+//                            let x = x - z.pos.w * 0.5 - hex_trans.x_offs();
+//                            let y = y - z.pos.h * 0.5 - hex_trans.y_offs();
+
+//                pos.x + pos.w * 0.5 + scroll_x,
+//                pos.y + pos.h * 0.5 + scroll_y,
+
+//                            let x = rel_mouse_x + z.pos.w * 0.5 - hex_trans.x_offs();// * scale;
+//                            let y = rel_mouse_y + z.pos.h * 0.5 - hex_trans.y_offs();// * scale;
+//
+//                            let x = x / scale;
+//                            let y = y / scale;
+//
+//                            let x = x - z.pos.w * 0.5; // / scale;
+//                            let y = y - z.pos.h * 0.5; // / scale;
+
+//                            println!("HEXTRNS rx={:6.3},ry={:6.3}", rel_mouse_x, rel_mouse_y);
 
                             // Tiles are assumed to have 1.0 scale
                             // This means, we have to inversely scale the mouse position
