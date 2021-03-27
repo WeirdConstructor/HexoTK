@@ -345,7 +345,7 @@ impl WidgetType for HexGrid {
                 data.hex_trans.x_offs(),
                 data.hex_trans.y_offs()
             );
-            println!("scroll_x={}, scroll_y={}", scroll_x, scroll_y);
+            //d// println!("scroll_x={}, scroll_y={}", scroll_x, scroll_y);
             let scale = data.hex_trans.scale();
 
             p.clip_region(pos.x, pos.y, pos.w, pos.h);
@@ -355,6 +355,7 @@ impl WidgetType for HexGrid {
                 0.0,
                 0.0,
                 scale);
+
             let pos = Rect {
                 x: - pos.w * 0.5,
                 y: - pos.h * 0.5,

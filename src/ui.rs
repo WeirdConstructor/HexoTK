@@ -371,7 +371,7 @@ impl UI {
                             let rel_mouse_x = pos.0 - z.pos.x as f64;
                             let rel_mouse_y = pos.1 - z.pos.y as f64;
 
-                            // move mouse to center
+                            // move mouse to center and apply the offset
                             let x = rel_mouse_x - z.pos.w * 0.5 - hex_trans.x_offs() * scale;
                             let y = rel_mouse_y - z.pos.h * 0.5 - hex_trans.y_offs() * scale;
 
