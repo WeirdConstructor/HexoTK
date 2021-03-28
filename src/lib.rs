@@ -10,7 +10,6 @@ mod window;
 mod femtovg_painter;
 
 use std::rc::Rc;
-use std::cell::RefCell;
 
 use keyboard_types::KeyboardEvent;
 
@@ -276,8 +275,34 @@ impl ActiveZone {
         Self { id, pos, zone_type: ZoneType::Click { index: 0 } }
     }
 
+    pub fn new_toggle_zone(id: AtomId, pos: Rect) -> Self {
+        Self { id, pos, zone_type: ZoneType::Click { index: 0 } }
+    }
+
     pub fn new_indexed_click_zone(id: AtomId, pos: Rect, index: usize) -> Self {
         Self { id, pos, zone_type: ZoneType::Click { index } }
+    }
+
+    pub fn new_atom_toggle(id: AtomId, pos: Rect, atom_type_setting: bool, momentary: bool) -> Self {
+        Self {
+            id, pos,
+            zone_type: ZoneType::AtomClick {
+                atom_type_setting,
+                increment: false,
+                momentary,
+            }
+        }
+    }
+
+    pub fn new_atom_inc(id: AtomId, pos: Rect, momentary: bool) -> Self {
+        Self {
+            id, pos,
+            zone_type: ZoneType::AtomClick {
+                atom_type_setting: true,
+                increment: true,
+                momentary,
+            }
+        }
     }
 }
 
@@ -343,6 +368,15 @@ pub enum ZoneType {
     },
     Click {
         index: usize,
+    },
+    AtomClick {
+        /// Whether this is an [Atom::Setting] (`true`) or [Atom::Param] (`false`).
+        atom_type_setting: bool,
+        /// Whether to increment the value or toggle between 1 and 0.
+        increment:         bool,
+        /// Whether the toggling/increment is only while the mouse button
+        /// is held down.
+        momentary:         bool,
     },
 }
 
@@ -499,6 +533,7 @@ pub enum HLStyle {
     None,
     Inactive,
     Hover(ZoneType),
+    AtomClick,
     ModTarget,
     HoverModTarget,
 }

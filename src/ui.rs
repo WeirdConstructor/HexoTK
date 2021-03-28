@@ -179,6 +179,15 @@ impl WidgetUI for WidgetUIHolder {
 
     fn hl_style_for(&self, az_id: AtomId, idx: Option<usize>) -> HLStyle {
         if let Some(hz) = self.hover_zone_for(az_id) {
+            if let Some(input_mode) = &self.input_mode {
+                match input_mode {
+                    InputMode::AtomClick { .. } => {
+                        return HLStyle::AtomClick;
+                    },
+                    _ => {},
+                }
+            }
+
             if let Some(idx) = idx {
                 match hz.zone_type {
                     ZoneType::Click { index } => {
@@ -256,7 +265,12 @@ enum InputMode {
     /// Direct value input via keyboard.
     InputValue {
         /// The zone for which the value is entered.
-        zone:   ActiveZone,
+        zone: ActiveZone,
+    },
+    /// Directly clicked [Atom] values.
+    AtomClick {
+        zone:       ActiveZone,
+        prev_value: f64,
     },
 }
 
@@ -438,6 +452,77 @@ impl UI {
         }
     }
 
+    fn handle_atom_mouse_released(&mut self, az: ActiveZone, prev_value: f64) {
+        if let ZoneType::AtomClick {
+                atom_type_setting,
+                momentary,
+                ..
+            } = az.zone_type
+        {
+            if momentary {
+                if atom_type_setting {
+                    self.atoms.as_mut().unwrap().set(
+                        az.id,
+                        Atom::setting(prev_value.round() as i64));
+                } else {
+                    self.atoms.as_mut().unwrap().set(
+                        az.id, Atom::param(prev_value as f32));
+                }
+            }
+        }
+    }
+
+    fn handle_atom_mouse_pressed(&mut self, az: ActiveZone) {
+        if let ZoneType::AtomClick {
+                atom_type_setting,
+                increment,
+                momentary
+            } = az.zone_type
+        {
+            let atom =
+                self.atoms.as_ref().unwrap().get(az.id);
+            let val =
+                if let Some(atom) = atom { atom.f() }
+                else                     { 0.0 };
+
+            self.input_mode =
+                Some(InputMode::AtomClick {
+                    zone:       az,
+                    prev_value: val as f64,
+                });
+
+            if atom_type_setting {
+                if increment {
+                    self.atoms.as_mut().unwrap().set(
+                        az.id,
+                        Atom::setting(
+                            (val + 1.0).round() as i64));
+                } else {
+                    self.atoms.as_mut().unwrap().set(
+                        az.id,
+                        Atom::setting(
+                            if val > 0.5 { 0 }
+                            else         { 1 }));
+                }
+
+            } else {
+                if increment {
+                    self.atoms.as_mut().unwrap().set(
+                        az.id,
+                        Atom::param((val + 0.1) % 1.0));
+                } else {
+                    self.atoms.as_mut().unwrap().set(
+                        az.id,
+                        Atom::param(
+                            if val > 0.5 { 0.0 }
+                            else         { 1.0 }));
+                }
+            }
+        }
+    }
+
+
+
     fn dispatch<F>(&mut self, f: F)
         where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
 
@@ -507,7 +592,7 @@ impl WindowUI for UI {
         true
     }
 
-    fn handle_input_event(&mut self, event: InputEvent) {
+        fn handle_input_event(&mut self, event: InputEvent) {
         let mut dispatch_event = None;
 
         match event {
@@ -588,15 +673,26 @@ impl WindowUI for UI {
                         self.atoms.as_mut().unwrap().change_end(id, val);
                         self.queue_redraw();
                     } else {
-                        if let Some(az) = self.get_zone_at(self.mouse_pos) {
-                            match az.zone_type {
-                                ZoneType::HexFieldClick { .. } => {
-                                    dispatch_event =
-                                        input_mode.check_hex_field_click(
-                                            az, btn, self.mouse_pos);
-                                    self.queue_redraw();
-                                },
-                                _ => {}
+                        match input_mode {
+                            InputMode::AtomClick { zone, prev_value } => {
+                                self.handle_atom_mouse_released(
+                                    zone, prev_value);
+                                self.queue_redraw();
+                            },
+                            _ => {
+                                if let Some(az) =
+                                    self.get_zone_at(self.mouse_pos)
+                                {
+                                    match az.zone_type {
+                                        ZoneType::HexFieldClick { .. } => {
+                                            dispatch_event =
+                                                input_mode.check_hex_field_click(
+                                                    az, btn, self.mouse_pos);
+                                            self.queue_redraw();
+                                        },
+                                        _ => {}
+                                    }
+                                }
                             }
                         }
                     }
@@ -708,6 +804,14 @@ impl WindowUI for UI {
                                         zone: az
                                     });
                             }
+                        },
+                        ZoneType::AtomClick {
+                            atom_type_setting,
+                            increment,
+                            momentary
+                        } => {
+                            self.handle_atom_mouse_pressed(az);
+                            self.queue_redraw();
                         },
                         _ => {},
                     }

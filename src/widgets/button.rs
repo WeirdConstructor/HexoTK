@@ -13,7 +13,12 @@ pub struct Button {
 #[derive(Debug, Clone, Copy)]
 pub enum ButtonMode {
     Toggle,
-    ValueDrag
+    ValueDrag,
+    SignalSettingInc,
+    SignalSettingClick,
+    SignalSettingToggle,
+    SignalParamClick,
+    SignalParamToggle,
 }
 
 #[derive(Debug)]
@@ -36,6 +41,46 @@ impl ButtonData {
         Box::new(Self {
             value_buf:  [0; 20],
             mode:       ButtonMode::Toggle,
+            name:       String::from(name),
+        })
+    }
+
+    pub fn new_setting_inc(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
+            value_buf:  [0; 20],
+            mode:       ButtonMode::SignalSettingInc,
+            name:       String::from(name),
+        })
+    }
+
+    pub fn new_setting_click(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
+            value_buf:  [0; 20],
+            mode:       ButtonMode::SignalSettingClick,
+            name:       String::from(name),
+        })
+    }
+
+    pub fn new_setting_toggle(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
+            value_buf:  [0; 20],
+            mode:       ButtonMode::SignalSettingToggle,
+            name:       String::from(name),
+        })
+    }
+
+    pub fn new_param_click(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
+            value_buf:  [0; 20],
+            mode:       ButtonMode::SignalParamClick,
+            name:       String::from(name),
+        })
+    }
+
+    pub fn new_param_toggle(name: &str) -> Box<dyn std::any::Any> {
+        Box::new(Self {
+            value_buf:  [0; 20],
+            mode:       ButtonMode::SignalParamToggle,
             name:       String::from(name),
         })
     }
@@ -104,78 +149,124 @@ impl WidgetType for Button {
         let h = UI_ELEM_TXT_H * 2.0 + UI_BTN_BORDER_WIDTH;
 
         let id = data.id();
-        let highlight = ui.hl_style_for(id, None);
+        let mut highlight = ui.hl_style_for(id, None);
 
-        let color =
+        let (view_value, value_set) =
+            data.with(|data: &mut ButtonData| {
+                match data.mode {
+                    | ButtonMode::SignalSettingToggle
+                    | ButtonMode::SignalParamToggle => {
+                        let val_set =
+                            if let Some(at) = ui.atoms().get(id) {
+                                at.f() > 0.5
+                            } else { false };
+
+                        (false, val_set)
+                    },
+                      ButtonMode::SignalSettingInc
+                    | ButtonMode::SignalSettingClick
+                    | ButtonMode::SignalParamClick => {
+                        (false, false)
+                    },
+                    _ => (true, false),
+                }
+            }).unwrap_or((true, false));
+
+        let mut label_color = UI_BTN_TXT_CLR;
+
+        let (mut color, mut border_color, mut bg_color) =
             match highlight {
                 HLStyle::Hover(_) => {
-                    self.draw_border(
-                        p, UI_BTN_BORDER2_WIDTH, UI_BTN_TXT_HOVER_CLR,
-                        xo - (UI_BTN_BORDER2_WIDTH * 0.5).round(),
-                        yo - (UI_BTN_BORDER2_WIDTH * 0.5).round(),
-                        w + UI_BTN_BORDER2_WIDTH,
-                        h + UI_BTN_BORDER2_WIDTH, false);
-                    UI_BTN_TXT_HOVER_CLR
+                    (UI_BTN_TXT_HOVER_CLR, UI_BTN_TXT_HOVER_CLR, UI_BTN_BG_CLR)
                 },
                 HLStyle::HoverModTarget => {
-                    self.draw_border(
-                        p, UI_BTN_BORDER_WIDTH, UI_BTN_TXT_HLHOVR_CLR,
-                        xo, yo, w, h, false);
-                    UI_BTN_TXT_HLHOVR_CLR
+                    (UI_BTN_TXT_HLHOVR_CLR, UI_BTN_TXT_HLHOVR_CLR, UI_BTN_BG_CLR)
+                },
+                HLStyle::AtomClick => {
+                    label_color = UI_BTN_BG_CLR;
+                    (UI_BTN_BG_CLR, UI_BTN_BORDER2_CLR, UI_BTN_TXT_CLR)
                 },
                 HLStyle::ModTarget => {
-                    self.draw_border(
-                        p, UI_BTN_BORDER2_WIDTH, UI_BTN_TXT_HLIGHT_CLR,
-                        xo, yo, w, h, false);
-                    UI_BTN_TXT_HLIGHT_CLR
+                    (UI_BTN_TXT_HLIGHT_CLR, UI_BTN_TXT_HLIGHT_CLR, UI_BTN_BG_CLR)
                 },
                 HLStyle::Inactive => {
-                    self.draw_border(
-                        p, UI_BTN_BORDER2_WIDTH, UI_INACTIVE_CLR,
-                        xo, yo, w, h, false);
-                    self.draw_divider(
-                        p, UI_BTN_BORDER2_WIDTH * 1.2, UI_INACTIVE_CLR, x, y);
-                    UI_INACTIVE2_CLR
+                    (UI_INACTIVE2_CLR, UI_INACTIVE2_CLR, UI_BTN_BG_CLR)
                 },
-                _ => UI_BTN_TXT_CLR,
+                _ => (UI_BTN_TXT_CLR, UI_BTN_BORDER2_CLR, UI_BTN_BG_CLR)
             };
+
+        if value_set {
+            bg_color    = UI_BTN_TXT_CLR;
+            color       = UI_BTN_BG_CLR;
+            label_color = UI_BTN_BG_CLR;
+        }
 
         // border
         self.draw_border(
             p, UI_BTN_BORDER_WIDTH, UI_BTN_BORDER_CLR, xo, yo, w, h, false);
 
         self.draw_border(
-            p, UI_BTN_BORDER2_WIDTH, UI_BTN_BORDER2_CLR, xo, yo, w, h, false);
+            p, UI_BTN_BORDER2_WIDTH, border_color, xo, yo, w, h, false);
 
         self.draw_border(
-            p, 0.0, UI_BTN_BG_CLR, xo, yo, w, h, true);
+            p, 0.0, bg_color, xo, yo, w, h, true);
 
-        self.draw_divider(p, UI_BTN_BORDER2_WIDTH, UI_BTN_BORDER2_CLR, x, y);
+        if view_value {
+            self.draw_divider(p, UI_BTN_BORDER2_WIDTH, UI_BTN_BORDER2_CLR, x, y);
+        }
 
         data.with(|data: &mut ButtonData| {
-            let len = ui.atoms().fmt(id, &mut data.value_buf[..]);
-            let val_s = std::str::from_utf8(&data.value_buf[0..len]).unwrap();
-            p.label(self.font_size, 0, color,
-                xo, yo, w, (h / 2.0).round(), val_s);
+            if view_value {
+                let len = ui.atoms().fmt(id, &mut data.value_buf[..]);
+                let val_s = std::str::from_utf8(&data.value_buf[0..len]).unwrap();
+                p.label(self.font_size, 0, color,
+                    xo, yo, w, (h / 2.0).round(), val_s);
 
-            p.label(self.font_size, 0, UI_BTN_TXT_CLR,
-                xo,
-                yo + UI_ELEM_TXT_H + UI_BTN_BORDER2_WIDTH,
-                w, (h / 2.0).round(), &data.name);
+                p.label(self.font_size, 0, label_color,
+                    xo,
+                    yo + UI_ELEM_TXT_H + UI_BTN_BORDER2_WIDTH,
+                    w, (h / 2.0).round(), &data.name);
+
+            } else {
+                p.label(self.font_size, 0, label_color,
+                    xo,
+                    (yo
+                     + 0.5 * UI_ELEM_TXT_H
+                     + UI_BTN_BORDER2_WIDTH)
+                    .round(),
+                    w, UI_ELEM_TXT_H, &data.name);
+            }
+
+            let zone_rect = Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo);
 
             match data.mode {
+                ButtonMode::SignalSettingInc => {
+                    ui.define_active_zone(
+                        ActiveZone::new_atom_inc(id, zone_rect, false));
+                },
+                ButtonMode::SignalSettingToggle => {
+                    ui.define_active_zone(
+                        ActiveZone::new_atom_toggle(id, zone_rect, true, false));
+                },
+                ButtonMode::SignalSettingClick => {
+                    ui.define_active_zone(
+                        ActiveZone::new_atom_toggle(id, zone_rect, true, true));
+                },
+                ButtonMode::SignalParamToggle => {
+                    ui.define_active_zone(
+                        ActiveZone::new_atom_toggle(id, zone_rect, false, false));
+                },
+                ButtonMode::SignalParamClick => {
+                    ui.define_active_zone(
+                        ActiveZone::new_atom_toggle(id, zone_rect, false, true));
+                },
                 ButtonMode::Toggle => {
                     ui.define_active_zone(
-                        ActiveZone::new_click_zone(
-                            id,
-                            Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo)));
+                        ActiveZone::new_click_zone(id, zone_rect));
                 },
                 ButtonMode::ValueDrag => {
                     ui.define_active_zone(
-                        ActiveZone::new_drag_zone(
-                            id,
-                            Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo),
-                            true));
+                        ActiveZone::new_drag_zone(id, zone_rect, true));
                 },
             }
         });
@@ -192,11 +283,27 @@ impl WidgetType for Button {
         match ev {
             UIEvent::Click { id, button, .. } => {
                 if *id == data.id() {
-                    match button {
-                        MButton::Left   => { ui.atoms_mut().step_next(*id); },
-                        MButton::Right  => { ui.atoms_mut().step_prev(*id); },
-                        MButton::Middle => { ui.atoms_mut().set_default(*id); },
-                    }
+                    data.with(|data: &mut ButtonData| {
+                        match button {
+                            MButton::Left   => {
+                                match data.mode {
+                                    ButtonMode::Toggle => {
+                                        ui.atoms_mut().step_next(*id);
+                                    },
+                                    _ => {},
+                                }
+                            },
+                            MButton::Right  => {
+                                match data.mode {
+                                    ButtonMode::Toggle => {
+                                        ui.atoms_mut().step_prev(*id);
+                                    },
+                                    _ => {},
+                                }
+                            },
+                            MButton::Middle => { ui.atoms_mut().set_default(*id); },
+                        }
+                    });
 
                     ui.queue_redraw();
                 }

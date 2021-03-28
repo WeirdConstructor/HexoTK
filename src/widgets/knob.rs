@@ -330,7 +330,9 @@ impl WidgetType for Knob {
                     true,
                     ranged_value);
             },
-            HLStyle::None => {
+              HLStyle::None
+            | HLStyle::AtomClick
+            => {
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,

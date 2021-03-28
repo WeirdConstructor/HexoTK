@@ -155,6 +155,7 @@ fn main() {
 
     open_window("HexoTK Demo", WINDOW_W, WINDOW_H, None, Box::new(|| {
         let wt_btn      = Rc::new(Button::new(80.0, 10.0));
+        let wt_btn_spc  = Rc::new(Button::new(80.0, 12.0));
         let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
         let wt_knob_11  = Rc::new(Knob::new(30.0, 10.0, 10.0).range_signed());
         let wt_cont     = Rc::new(Container::new());
@@ -190,6 +191,25 @@ fn main() {
         li.push(13, String::from("5."));
         li.push(14, String::from("6.XXXXXXXXXXXX"));
 
+        let mut special_buttons = ContainerData::new();
+        special_buttons.level(2)
+            .new_row()
+            .add(wbox!(
+                wt_btn_spc, 25.into(), center(12, 3),
+                ButtonData::new_setting_inc("Set Inc")))
+            .new_row()
+            .add(wbox!(
+                wt_btn_spc, 25.into(), center(12, 3),
+                ButtonData::new_setting_toggle("Set Tog")))
+            .new_row()
+            .add(wbox!(
+                wt_btn_spc, 25.into(), center(12, 3),
+                ButtonData::new_param_toggle("Param Tog")))
+            .new_row()
+            .add(wbox!(
+                wt_btn_spc, 25.into(), center(12, 3),
+                ButtonData::new_param_click("Param Clk")));
+
         let mut other = ContainerData::new();
         other
            .level(1)
@@ -199,7 +219,10 @@ fn main() {
                 EntryData::new("Preset Name:")))
            .add(wbox!(
                 wt_list, 24.into(), center(3, 12),
-                ListData::new("Preset:", ListOutput::ByString, li)));
+                ListData::new("Preset:", ListOutput::ByString, li)))
+            .add(wbox!(
+                wt_cont, 103.into(), center(3, 12),
+                special_buttons));
 
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 
