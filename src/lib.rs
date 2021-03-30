@@ -515,7 +515,8 @@ impl From<(usize, usize)> for AtomId {
 
 pub trait AtomDataModel {
     fn check_sync(&mut self);
-    fn len(&self) -> usize;
+    fn get_phase_value(&self, id: AtomId) -> Option<f32>;
+    fn get_led_value(&self, id: AtomId) -> Option<f32>;
     fn get(&self, id: AtomId) -> Option<&Atom>;
     fn get_denorm(&self, id: AtomId) -> Option<f32>;
     fn set(&mut self, id: AtomId, v: Atom);

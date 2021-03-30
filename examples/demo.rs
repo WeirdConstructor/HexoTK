@@ -48,8 +48,13 @@ struct SomeParameters {
 }
 
 impl AtomDataModel for SomeParameters {
-    fn len(&self) -> usize { self.atoms.len() }
     fn check_sync(&mut self) { }
+    fn get_phase_value(&self, id: AtomId) -> Option<f32> {
+        Some(0.0)
+    }
+    fn get_led_value(&self, id: AtomId) -> Option<f32> {
+        Some(0.0)
+    }
     fn get(&self, id: AtomId) -> Option<&Atom> {
         Some(&self.atoms[id.atom_id() as usize])
     }
