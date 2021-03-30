@@ -117,7 +117,6 @@ impl<'a> Painter for FemtovgPainter<'a> {
 
     fn reset_scale(&mut self) {
         self.cur_scale = 1.0;
-        let factor = self.scale * self.cur_scale;
         self.canvas.restore();
     }
 

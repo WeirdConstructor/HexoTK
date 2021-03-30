@@ -349,12 +349,12 @@ impl WidgetType for HexGrid {
             let scale = data.hex_trans.scale();
 
             p.clip_region(pos.x, pos.y, pos.w, pos.h);
-            p.move_and_scale(
-                pos.x + pos.w * 0.5 + scroll_x * scale,
-                pos.y + pos.h * 0.5 + scroll_y * scale,
-                0.0,
-                0.0,
-                scale);
+            let (mv_x, mv_y) = (
+                pos.w * 0.5 + scroll_x * scale,
+                pos.h * 0.5 + scroll_y * scale
+            );
+
+            p.move_and_scale(pos.x + mv_x, pos.y + mv_y, 0.0, 0.0, scale);
 
             let pos = Rect {
                 x: - pos.w * 0.5,
@@ -362,8 +362,6 @@ impl WidgetType for HexGrid {
                 w: pos.w,
                 h: pos.h,
             };
-
-//            println!("RECT: {:?} SO {},{} (sf={})", pos, scroll_x, scroll_y, scale);
 
             for xi in 0..nx {
                 let x = xi as f64;
@@ -378,9 +376,26 @@ impl WidgetType for HexGrid {
 
                     let yo = if self.y_offs { yo - 0.5 * h } else { yo };
 
-//                    if !hex_at_is_inside(xo, yo, w, h, pos.scale(1.0 / scale)) {
-//                        continue;
-//                    }
+                    let spos = Rect {
+                        x: 0.0,
+                        y: 0.0,
+                        w: pos.w,
+                        h: pos.h,
+                    };
+
+                    // Assume the tiles are bigger than they are, so we don't miss:
+                    let tile_size_check_factor = 0.1;
+                    let w_check_pad = w * tile_size_check_factor;
+                    let h_check_pad = w * tile_size_check_factor;
+                    if !hex_at_is_inside(
+                            xo * scale + mv_x - w_check_pad * scale,
+                            yo * scale + mv_y - h_check_pad * scale,
+                            (w + w_check_pad) * scale,
+                            (h + h_check_pad) * scale,
+                            spos)
+                    {
+                        continue;
+                    }
 
                     if !data.model.cell_visible(xi, yi) {
                         continue;

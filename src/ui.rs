@@ -476,7 +476,7 @@ impl UI {
         if let ZoneType::AtomClick {
                 atom_type_setting,
                 increment,
-                momentary
+                ..
             } = az.zone_type
         {
             let atom =
@@ -805,11 +805,7 @@ impl WindowUI for UI {
                                     });
                             }
                         },
-                        ZoneType::AtomClick {
-                            atom_type_setting,
-                            increment,
-                            momentary
-                        } => {
+                        ZoneType::AtomClick { ..  } => {
                             self.handle_atom_mouse_pressed(az);
                             self.queue_redraw();
                         },

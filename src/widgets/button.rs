@@ -149,7 +149,7 @@ impl WidgetType for Button {
         let h = UI_ELEM_TXT_H * 2.0 + UI_BTN_BORDER_WIDTH;
 
         let id = data.id();
-        let mut highlight = ui.hl_style_for(id, None);
+        let highlight = ui.hl_style_for(id, None);
 
         let (view_value, value_set) =
             data.with(|data: &mut ButtonData| {
@@ -174,7 +174,7 @@ impl WidgetType for Button {
 
         let mut label_color = UI_BTN_TXT_CLR;
 
-        let (mut color, mut border_color, mut bg_color) =
+        let (mut color, border_color, mut bg_color) =
             match highlight {
                 HLStyle::Hover(_) => {
                     (UI_BTN_TXT_HOVER_CLR, UI_BTN_TXT_HOVER_CLR, UI_BTN_BG_CLR)

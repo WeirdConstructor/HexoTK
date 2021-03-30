@@ -48,11 +48,12 @@ struct SomeParameters {
 }
 
 impl AtomDataModel for SomeParameters {
-    fn check_sync(&mut self) { }
-    fn get_phase_value(&self, id: AtomId) -> Option<f32> {
+    fn check_sync(&mut self) {
+    }
+    fn get_phase_value(&self, _id: AtomId) -> Option<f32> {
         Some(0.0)
     }
-    fn get_led_value(&self, id: AtomId) -> Option<f32> {
+    fn get_led_value(&self, _id: AtomId) -> Option<f32> {
         Some(0.0)
     }
     fn get(&self, id: AtomId) -> Option<&Atom> {

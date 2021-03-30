@@ -397,7 +397,7 @@ impl ActiveZone {
 #[derive(Debug, Clone)]
 pub enum Atom {
     Str(String),
-    MicroSample([f32; 8]),
+    MicroSample(Vec<f32>),
     AudioSample((String, Option<std::sync::Arc<Vec<f32>>>)),
     Setting(i64),
     Param(f32),
@@ -408,7 +408,7 @@ impl Atom {
     pub fn str_mv(s: String)    -> Self { Atom::Str(s) }
     pub fn setting(s: i64)      -> Self { Atom::Setting(s) }
     pub fn param(p: f32)        -> Self { Atom::Param(p) }
-    pub fn micro(m: &[f32; 8])  -> Self { Atom::MicroSample(*m) }
+    pub fn micro(m: &[f32])  -> Self { Atom::MicroSample(m.to_vec()) }
     pub fn audio(s: &str, m: std::sync::Arc<Vec<f32>>) -> Self {
         Atom::AudioSample((s.to_string(), Some(m)))
     }
@@ -420,7 +420,7 @@ impl Atom {
     pub fn default_of(&self) -> Self {
         match self {
             Atom::Str(_)         => Atom::Str("".to_string()),
-            Atom::MicroSample(_) => Atom::MicroSample([0.0; 8]),
+            Atom::MicroSample(_) => Atom::MicroSample(vec![]),
             Atom::AudioSample(_) => Atom::AudioSample(("".to_string(), None)),
             Atom::Setting(_)     => Atom::Setting(0),
             Atom::Param(_)       => Atom::Param(0.0),
