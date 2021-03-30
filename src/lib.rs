@@ -461,6 +461,14 @@ impl Atom {
             _                => 0.0,
         }
     }
+
+    pub fn v_ref(&self) -> Option<&[f32]> {
+        match self {
+            Atom::MicroSample(v)            => Some(&v[..]),
+            Atom::AudioSample((_, Some(v))) => Some(&v[..]),
+            _                               => None,
+        }
+    }
 }
 
 impl From<f32> for Atom {
