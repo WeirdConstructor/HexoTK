@@ -3,6 +3,7 @@
 
 use crate::constants::*;
 use super::*;
+use super::util::*;
 
 #[derive(Debug)]
 pub struct CvArray {
@@ -10,6 +11,7 @@ pub struct CvArray {
     height:     f64,
     font_size:  f64,
     samples:    usize,
+    null_v:     Vec<f32>,
 }
 
 #[derive(Debug)]
@@ -29,6 +31,7 @@ impl CvArrayData {
 impl CvArray {
     pub fn new(samples: usize, width: f64, height: f64, font_size: f64) -> Self {
         Self {
+            null_v: vec![0.0; samples],
             width,
             height,
             font_size,
@@ -39,41 +42,48 @@ impl CvArray {
 
 impl WidgetType for CvArray {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let (x, y) = (pos.x, pos.y);
+        let id = data.id();
+        let highlight = ui.hl_style_for(id, None);
+
+        let border_color =
+            match highlight {
+                HLStyle::Hover(_) => UI_GRPH_BORDER_HOVER_CLR,
+                _                 => UI_GRPH_BORDER_CLR,
+            };
+
+        let pos =
+            rect_border(p, UI_GRPH_BORDER, border_color, UI_GRPH_BG, pos);
 
         let w = self.width;
         let h = self.height;
-
-        let id = data.id();
-        let highlight = ui.hl_style_for(id, None);
 
         ui.define_active_zone(ActiveZone::new_indexed_drag_zone(id, pos, 4));
 
         let mut label_color = UI_BTN_TXT_CLR;
 
-        let (mut color, border_color, mut bg_color) =
-            match highlight {
-                HLStyle::Hover(_) => {
-                    (UI_BTN_TXT_HOVER_CLR, UI_BTN_TXT_HOVER_CLR, UI_BTN_BG_CLR)
-                },
-                HLStyle::HoverModTarget => {
-                    (UI_BTN_TXT_HLHOVR_CLR, UI_BTN_TXT_HLHOVR_CLR, UI_BTN_BG_CLR)
-                },
-                HLStyle::AtomClick => {
-                    label_color = UI_BTN_BG_CLR;
-                    (UI_BTN_BG_CLR, UI_BTN_BORDER2_CLR, UI_BTN_TXT_CLR)
-                },
-                HLStyle::ModTarget => {
-                    (UI_BTN_TXT_HLIGHT_CLR, UI_BTN_TXT_HLIGHT_CLR, UI_BTN_BG_CLR)
-                },
-                HLStyle::Inactive => {
-                    (UI_INACTIVE2_CLR, UI_INACTIVE2_CLR, UI_BTN_BG_CLR)
-                },
-                _ => (UI_BTN_TXT_CLR, UI_BTN_BORDER2_CLR, UI_BTN_BG_CLR)
-            };
-
         data.with(|data: &mut CvArrayData| {
             let zone_rect = Rect::from_tpl((0.0, 0.0, w, h));
+
+            let xd = pos.w / (self.samples as f64);
+
+            for i in 0..self.samples {
+            }
+
+            if let Some(data) = ui.atoms().get(id).unwrap().v_ref() {
+                for i in 0..self.samples {
+                    let v = (data[i] as f64).clamp(0.0, 1.0);
+                    let h = pos.h * v;
+                    println!("[{:2}] V={:8.5} H={:8.5}", i, v, h);
+                    if h > 0.0 {
+                        p.rect_fill(
+                            UI_GRPH_LINE_CLR,
+                            pos.x + i as f64 * xd,
+                            pos.y + pos.h * (1.0 - v),
+                            xd,
+                            h);
+                    }
+                }
+            }
         });
     }
 

@@ -301,6 +301,10 @@ fn main() {
         atoms.resize_with(100, || Atom::default());
 
         atoms[23] = Atom::str("Test");
+        atoms[28] = Atom::micro(&[
+            0.1, 0.5, 0.0, 0.75,
+            0.9, 1.0, 0.99, 0.01
+        ]);
 
         let ui = Box::new(UI::new(
             WidgetData::new_box(
