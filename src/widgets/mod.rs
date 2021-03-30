@@ -10,6 +10,7 @@ mod graph;
 mod graph_minmax;
 mod entry;
 mod list;
+mod cv_array;
 
 pub mod util;
 
@@ -50,3 +51,6 @@ pub use list::List;
 pub use list::ListData;
 pub use list::ListOutput;
 pub use list::ListItems;
+
+pub use cv_array::CvArray;
+pub use cv_array::CvArrayData;

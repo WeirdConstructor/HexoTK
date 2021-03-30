@@ -168,6 +168,7 @@ fn main() {
         let wt_text     = Rc::new(Text::new(15.0));
         let wt_entry    = Rc::new(Entry::new(100.0, 12.0, 13));
         let wt_list     = Rc::new(List::new(100.0, 12.0, 8));
+        let wt_cva      = Rc::new(CvArray::new(8, 80.0, 40.0, 10.0));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -226,7 +227,10 @@ fn main() {
            .add(wbox!(
                 wt_list, 24.into(), center(3, 12),
                 ListData::new("Preset:", ListOutput::ByString, li)))
-            .add(wbox!(
+           .add(wbox!(
+                wt_cva, 28.into(), center(3, 12),
+                CvArrayData::new("TestCv")))
+           .add(wbox!(
                 wt_cont, 103.into(), center(3, 12),
                 special_buttons));
 

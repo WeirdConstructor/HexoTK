@@ -272,6 +272,11 @@ enum InputMode {
         zone:       ActiveZone,
         prev_value: f64,
     },
+    /// Dragging the mouse while a button is pressed.
+    Drag {
+        button: MButton,
+        zone:   ActiveZone,
+    }
 }
 
 impl InputMode {
@@ -631,6 +636,18 @@ impl WindowUI for UI {
                                             self.mouse_pos.1 - orig_pos.1)));
                                 new_hz = self.get_zone_at(self.mouse_pos);
                             },
+                            InputMode::Drag { button, zone } => {
+                                if let ZoneType::Drag { index } = zone.zone_type {
+                                    dispatch_event =
+                                        Some(UIEvent::Drag {
+                                            id: zone.id,
+                                            button: *button,
+                                            index,
+                                            x: self.mouse_pos.0 - zone.pos.x,
+                                            y: self.mouse_pos.1 - zone.pos.y,
+                                        });
+                                }
+                            },
                             _ => {
                                 new_hz = self.get_zone_at(self.mouse_pos);
                             },
@@ -707,8 +724,8 @@ impl WindowUI for UI {
                                     Some(UIEvent::Click {
                                         id:     az.id,
                                         button: btn,
-                                        x:      self.mouse_pos.0,
-                                        y:      self.mouse_pos.1,
+                                        x:      self.mouse_pos.0 - az.pos.x,
+                                        y:      self.mouse_pos.1 - az.pos.y,
                                         index,
                                     });
                                 self.queue_redraw();
@@ -727,8 +744,6 @@ impl WindowUI for UI {
                 }
 
                 self.input_mode = None;
-//                println!("UPDATE HOVER ZONE AFTER RELEASE!");
-//                self.hover_zone = self.get_zone_at(self.mouse_pos);
             },
             InputEvent::MouseButtonPressed(btn) => {
                 let az = self.get_zone_at(self.mouse_pos);
@@ -808,6 +823,13 @@ impl WindowUI for UI {
                         ZoneType::AtomClick { ..  } => {
                             self.handle_atom_mouse_pressed(az);
                             self.queue_redraw();
+                        },
+                        ZoneType::Drag { .. } => {
+                            self.input_mode =
+                                Some(InputMode::Drag {
+                                    button: btn,
+                                    zone:   az,
+                                });
                         },
                         _ => {},
                     }

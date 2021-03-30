@@ -283,6 +283,10 @@ impl ActiveZone {
         Self { id, pos, zone_type: ZoneType::Click { index } }
     }
 
+    pub fn new_indexed_drag_zone(id: AtomId, pos: Rect, index: usize) -> Self {
+        Self { id, pos, zone_type: ZoneType::Drag { index } }
+    }
+
     pub fn new_atom_toggle(id: AtomId, pos: Rect, atom_type_setting: bool, momentary: bool) -> Self {
         Self {
             id, pos,
@@ -367,6 +371,9 @@ pub enum ZoneType {
         hex_trans:   HexGridTransform,
     },
     Click {
+        index: usize,
+    },
+    Drag {
         index: usize,
     },
     AtomClick {
@@ -639,6 +646,7 @@ pub enum UIEvent {
     ValueDrag      { id: AtomId, steps: f64 },
     ValueDragEnd   { id: AtomId, },
     Click          { id: AtomId, button: MButton, index: usize, x: f64, y: f64 },
+    Drag           { id: AtomId, button: MButton, index: usize, x: f64, y: f64 },
     Scroll         { id: AtomId, amt: f64, x: f64, y: f64 },
     FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
 }
@@ -650,6 +658,7 @@ impl UIEvent {
             UIEvent::ValueDrag      { id, .. } => *id,
             UIEvent::ValueDragEnd   { id, .. } => *id,
             UIEvent::Click          { id, .. } => *id,
+            UIEvent::Drag           { id, .. } => *id,
             UIEvent::Scroll         { id, .. } => *id,
             UIEvent::FieldDrag      { id, .. } => *id,
         }
