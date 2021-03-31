@@ -597,7 +597,7 @@ impl WindowUI for UI {
         true
     }
 
-        fn handle_input_event(&mut self, event: InputEvent) {
+    fn handle_input_event(&mut self, event: InputEvent) {
         let mut dispatch_event = None;
 
         match event {

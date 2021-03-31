@@ -168,7 +168,7 @@ fn main() {
         let wt_text     = Rc::new(Text::new(15.0));
         let wt_entry    = Rc::new(Entry::new(100.0, 12.0, 13));
         let wt_list     = Rc::new(List::new(100.0, 12.0, 8));
-        let wt_cva      = Rc::new(CvArray::new(8, 80.0, 40.0, 10.0));
+        let wt_cva      = Rc::new(CvArray::new(8, 80.0, 40.0, 12.0));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -302,8 +302,8 @@ fn main() {
 
         atoms[23] = Atom::str("Test");
         atoms[28] = Atom::micro(&[
-            0.1, 0.5, 0.0, 0.75,
-            0.9, 1.0, 0.99, 0.01
+            0.1, 0.5, 0.01, 0.75,
+            0.9, 1.0, 0.99, 1.00
         ]);
 
         let ui = Box::new(UI::new(

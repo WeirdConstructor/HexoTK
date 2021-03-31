@@ -462,6 +462,19 @@ impl Atom {
         }
     }
 
+    pub fn set_v_idx_micro(&self, idx: usize, v: f32) -> Option<Self> {
+        let data = self.v_ref()?;
+
+        if idx >= data.len() {
+            return None;
+        }
+
+        let mut new_vec = data.to_vec();
+        new_vec[idx] = v;
+
+        Some(Atom::MicroSample(new_vec))
+    }
+
     pub fn v_ref(&self) -> Option<&[f32]> {
         match self {
             Atom::MicroSample(v)            => Some(&v[..]),

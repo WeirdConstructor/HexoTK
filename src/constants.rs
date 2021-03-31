@@ -71,6 +71,7 @@ pub const UI_BTN_BEVEL            : f64 = UI_ELEM_TXT_H / 4.0;
 pub const UI_GRPH_BORDER          : f64 = 2.0;
 pub const UI_GRPH_BORDER_CLR      : (f64, f64, f64) = UI_ACCENT_CLR;
 pub const UI_GRPH_BORDER_HOVER_CLR: (f64, f64, f64) = UI_HLIGHT_CLR;
+pub const UI_GRPH_TEXT_CLR        : (f64, f64, f64) = UI_TXT_KNOB_CLR;
 pub const UI_GRPH_LINE_CLR        : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRPH_BG              : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_GRPH_FONT_SIZE       : f64 = UI_KNOB_FONT_SIZE;

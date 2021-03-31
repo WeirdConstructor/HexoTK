@@ -387,8 +387,9 @@ impl WidgetType for NodeMatrix {
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
             UIEvent::Click { id, .. } => {
-                println!("EV: {:?} id={}, data.id={}", ev, *id, data.id());
                 if id.node_id() == data.id().node_id() {
+                    println!("EV: {:?} id={}, data.id={}", ev, *id, data.id());
+
                     data.with(|data: &mut NodeMatrixData| {
                         if let Some(_) = data.display_menu {
                             data.hex_menu.event(ui, ev);
@@ -405,9 +406,7 @@ impl WidgetType for NodeMatrix {
                     ui.queue_redraw();
                 }
             },
-            _ => {
-                println!("EV: {:?}", ev);
-            },
+            _ => (),
         }
     }
 }
