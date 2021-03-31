@@ -29,6 +29,21 @@ impl CvArrayData {
             active_area: Rect::from(0.0, 0.0, 10.0, 10.0),
         })
     }
+
+    pub fn set_cv(&self, ui: &mut dyn WidgetUI, id: AtomId, x: f64, y: f64, samples: usize) {
+        let delta = (self.active_area.h - y) / self.active_area.h;
+        let xoffs = (x / self.x_delta).max(0.0);
+        let idx   = xoffs.floor().min(samples as f64 - 1.0) as usize;
+
+        if let Some(new) =
+            ui.atoms()
+              .get(id)
+              .unwrap()
+              .set_v_idx_micro(idx, delta.clamp(0.0, 1.0) as f32)
+        {
+            ui.atoms_mut().set(id, new);
+        }
+    }
 }
 
 
@@ -95,14 +110,14 @@ impl WidgetType for CvArray {
                     let v = (data[i] as f64).clamp(0.0, 1.0);
                     let h = pos.h * (1.0 - v);
 
-                    println!("h={:6.2} pos.h={:6.2}", h, pos.h);
+                    //d// println!("h={:6.2} pos.h={:6.2}", h, pos.h);
 
                     // draw the last a little bit wider to prevent the gap
                     let w =
                         if i == (self.samples - 1) {
-                            (xd + 0.5).floor()
+                            xd + 0.5
                         } else {
-                            xd.ceil()
+                            xd
                         };
 
                     if pos.h - h > 0.5 {
@@ -134,7 +149,7 @@ impl WidgetType for CvArray {
                     1.0,
                     UI_GRPH_LINE_CLR,
                     &mut [
-                        ((pos.x + x).floor() - 0.5, pos.y),
+                        ((pos.x + x).floor() - 0.5, pos.y.floor()),
                         ((pos.x + x).floor() - 0.5, pos.y + pos.h),
                     ].iter().copied(),
                     false);
@@ -153,30 +168,10 @@ impl WidgetType for CvArray {
         match ev {
             UIEvent::Drag { id, index, x, y, start_x, start_y, .. } => {
                 if *id == data.id() {
-                    // TODO: Set position!
                     data.with(|data: &mut CvArrayData| {
-                        let delta = (data.active_area.h - y) / data.active_area.h;
-                        let xoffs = (x / data.x_delta).max(0.0);
-                        let idx   = xoffs.floor().min(self.samples as f64 - 1.0) as usize;
-
-                        if let Some(new) =
-                            ui.atoms()
-                              .get(*id)
-                              .unwrap()
-                              .set_v_idx_micro(idx, delta.clamp(0.0, 1.0) as f32)
-                        {
-                            ui.atoms_mut().set(*id, new);
-                        }
+                        data.set_cv(ui, *id, *x, *y, self.samples);
+                        ui.queue_redraw();
                     });
-                }
-            },
-            UIEvent::Click { id, button, index, x, y, .. } => {
-                if *id == data.id() {
-                    data.with(|data: &mut CvArrayData| {
-                        // TODO: Set position!
-                    });
-
-                    ui.queue_redraw();
                 }
             },
             _ => {},

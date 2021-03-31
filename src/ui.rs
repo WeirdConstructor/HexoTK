@@ -832,6 +832,19 @@ impl WindowUI for UI {
                                         self.mouse_pos.1 - az.pos.y,
                                     ),
                                 });
+
+                            if let ZoneType::Drag { index } = az.zone_type {
+                                dispatch_event =
+                                    Some(UIEvent::Drag {
+                                        id: az.id,
+                                        button: btn,
+                                        index,
+                                        x: self.mouse_pos.0 - az.pos.x,
+                                        y: self.mouse_pos.1 - az.pos.y,
+                                        start_x: self.mouse_pos.0 - az.pos.x,
+                                        start_y: self.mouse_pos.1 - az.pos.y,
+                                    });
+                            }
                         },
                         _ => {},
                     }
