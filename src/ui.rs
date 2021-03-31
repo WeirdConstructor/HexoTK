@@ -274,8 +274,9 @@ enum InputMode {
     },
     /// Dragging the mouse while a button is pressed.
     Drag {
-        button: MButton,
-        zone:   ActiveZone,
+        button:     MButton,
+        zone:       ActiveZone,
+        start_pos:  (f64, f64),
     }
 }
 
@@ -541,7 +542,6 @@ impl UI {
             let mut zones    = zones.unwrap();
             let atoms        = atoms.unwrap();
             let pressed_keys = pressed_keys.unwrap();
-            zones.clear();
 
             let mut wui   =
                 WidgetUIHolder {
@@ -611,6 +611,8 @@ impl WindowUI for UI {
                 let mut new_hz = None;
                 let mut param_change = None;
 
+                new_hz = self.get_zone_at(self.mouse_pos);
+
                 if let Some(input_mode) = &self.input_mode {
                     if let Some(pc) = input_mode.get_param_change_when_drag(self.mouse_pos) {
 
@@ -625,7 +627,6 @@ impl WindowUI for UI {
                                             hex_trans.scale()
                                             + (self.mouse_pos.1 - orig_pos.1)
                                               / 100.0)));
-                                new_hz = self.get_zone_at(self.mouse_pos);
                             },
                             InputMode::HexFieldScroll { orig_pos, hex_trans, zone } => {
                                 self.cur_hex_trans =
@@ -634,9 +635,8 @@ impl WindowUI for UI {
                                         hex_trans.add_offs(
                                             self.mouse_pos.0 - orig_pos.0,
                                             self.mouse_pos.1 - orig_pos.1)));
-                                new_hz = self.get_zone_at(self.mouse_pos);
                             },
-                            InputMode::Drag { button, zone } => {
+                            InputMode::Drag { button, zone, start_pos } => {
                                 if let ZoneType::Drag { index } = zone.zone_type {
                                     dispatch_event =
                                         Some(UIEvent::Drag {
@@ -645,16 +645,14 @@ impl WindowUI for UI {
                                             index,
                                             x: self.mouse_pos.0 - zone.pos.x,
                                             y: self.mouse_pos.1 - zone.pos.y,
+                                            start_x: start_pos.0,
+                                            start_y: start_pos.1,
                                         });
                                 }
                             },
-                            _ => {
-                                new_hz = self.get_zone_at(self.mouse_pos);
-                            },
+                            _ => { },
                         }
                     };
-                } else {
-                    new_hz = self.get_zone_at(self.mouse_pos);
                 }
 
                 if let Some((id, val)) = param_change {
@@ -827,8 +825,12 @@ impl WindowUI for UI {
                         ZoneType::Drag { .. } => {
                             self.input_mode =
                                 Some(InputMode::Drag {
-                                    button: btn,
-                                    zone:   az,
+                                    button:     btn,
+                                    zone:       az,
+                                    start_pos:  (
+                                        self.mouse_pos.0 - az.pos.x,
+                                        self.mouse_pos.1 - az.pos.y,
+                                    ),
                                 });
                         },
                         _ => {},
@@ -908,6 +910,9 @@ impl WindowUI for UI {
 
     fn draw(&mut self, painter: &mut dyn Painter) {
         let win_size = self.window_size;
+
+        self.zones.as_mut().map(|zones| zones.clear());
+
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
             wt.draw(ui, data, painter,
                 Rect::from(0.0, 0.0, win_size.0, win_size.1));

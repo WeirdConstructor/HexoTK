@@ -16,13 +16,17 @@ pub struct CvArray {
 
 #[derive(Debug)]
 pub struct CvArrayData {
-    name:    String,
+    name:           String,
+    x_delta:        f64,
+    active_area:    Rect,
 }
 
 impl CvArrayData {
     pub fn new(name: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
-            name: String::from(name),
+            name:       String::from(name),
+            x_delta:    10.0,
+            active_area: Rect::from(0.0, 0.0, 10.0, 10.0),
         })
     }
 }
@@ -66,6 +70,9 @@ impl WidgetType for CvArray {
 
             let xd = pos.w / (self.samples as f64);
 
+            data.active_area = pos;
+            data.x_delta     = xd.max(1.0);
+
             for i in 0..self.samples {
             }
 
@@ -73,7 +80,7 @@ impl WidgetType for CvArray {
                 for i in 0..self.samples {
                     let v = (data[i] as f64).clamp(0.0, 1.0);
                     let h = pos.h * v;
-                    println!("[{:2}] V={:8.5} H={:8.5}", i, v, h);
+                    //d// println!("[{:2}] V={:8.5} H={:8.5}", i, v, h);
                     if h > 0.0 {
                         p.rect_fill(
                             UI_GRPH_LINE_CLR,
@@ -94,9 +101,14 @@ impl WidgetType for CvArray {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
-            UIEvent::Drag { id, index, x, y, .. } => {
+            UIEvent::Drag { id, index, x, y, start_x, start_y, .. } => {
                 if *id == data.id() {
                     // TODO: Set position!
+                    let delta = y - start_y;
+                    data.with(|data: &mut CvArrayData| {
+                        let xoffs = x / data.x_delta;
+                        println!("**** XOFFS={:6.2}", xoffs);
+                    });
                     println!("DRAG! {:?}", ev);
                 }
             },
