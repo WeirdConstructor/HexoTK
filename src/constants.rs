@@ -73,6 +73,8 @@ pub const UI_GRPH_BORDER_CLR      : (f64, f64, f64) = UI_ACCENT_CLR;
 pub const UI_GRPH_BORDER_HOVER_CLR: (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_GRPH_TEXT_CLR        : (f64, f64, f64) = UI_TXT_KNOB_CLR;
 pub const UI_GRPH_LINE_CLR        : (f64, f64, f64) = UI_PRIM_CLR;
+pub const UI_GRPH_PHASE_CLR       : (f64, f64, f64) = UI_HLIGHT_CLR;
+pub const UI_GRPH_PHASE_BG_CLR    : (f64, f64, f64) = UI_HLIGHT2_CLR;
 pub const UI_GRPH_BG              : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_GRPH_FONT_SIZE       : f64 = UI_KNOB_FONT_SIZE;
 

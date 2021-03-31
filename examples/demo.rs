@@ -45,13 +45,15 @@ mod fastapprox {
 
 struct SomeParameters {
     atoms: Vec<Atom>,
+    phase: f32,
 }
 
 impl AtomDataModel for SomeParameters {
     fn check_sync(&mut self) {
+        self.phase = (self.phase + (1.0 / 120.0)).fract();
     }
     fn get_phase_value(&self, _id: AtomId) -> Option<f32> {
-        Some(0.0)
+        Some(self.phase)
     }
     fn get_led_value(&self, _id: AtomId) -> Option<f32> {
         Some(0.0)
@@ -168,7 +170,8 @@ fn main() {
         let wt_text     = Rc::new(Text::new(15.0));
         let wt_entry    = Rc::new(Entry::new(100.0, 12.0, 13));
         let wt_list     = Rc::new(List::new(100.0, 12.0, 8));
-        let wt_cva      = Rc::new(CvArray::new(8, 80.0, 40.0, 12.0));
+        let wt_cva      = Rc::new(CvArray::new(8, 80.0, 40.0, 12.0, false));
+        let wt_cvab     = Rc::new(CvArray::new(8, 80.0, 40.0, 12.0, true));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -217,6 +220,17 @@ fn main() {
                 wt_btn_spc, 25.into(), center(12, 3),
                 ButtonData::new_param_click("Param Clk")));
 
+        let mut graphs = ContainerData::new();
+        graphs.level(2)
+            .new_row()
+            .add(wbox!(
+                wt_cvab, 29.into(), center(12, 6),
+                CvArrayData::new("TestCv")))
+            .new_row()
+            .add(wbox!(
+                wt_cva, 28.into(), center(12, 6),
+                CvArrayData::new("TestCv")));
+
         let mut other = ContainerData::new();
         other
            .level(1)
@@ -228,8 +242,8 @@ fn main() {
                 wt_list, 24.into(), center(3, 12),
                 ListData::new("Preset:", ListOutput::ByString, li)))
            .add(wbox!(
-                wt_cva, 28.into(), center(3, 12),
-                CvArrayData::new("TestCv")))
+                wt_cont, 104.into(), center(3, 12),
+                graphs))
            .add(wbox!(
                 wt_cont, 103.into(), center(3, 12),
                 special_buttons));
@@ -309,7 +323,7 @@ fn main() {
         let ui = Box::new(UI::new(
             WidgetData::new_box(
                 wt_cont, 0.into(), UIPos::center(12, 12), con),
-            Box::new(SomeParameters { atoms }),
+            Box::new(SomeParameters { atoms, phase: 0.0 }),
             (WINDOW_W as f64, WINDOW_H as f64),
         ));
 
