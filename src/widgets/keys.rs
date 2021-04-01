@@ -67,41 +67,75 @@ impl WidgetType for Keys {
             let pos = pos.crop_bottom(UI_ELEM_TXT_H);
 
             let xd = (pos.w / 7.0).floor();
+            let xd_pad_for_center = ((pos.w - xd * 7.0) * 0.5).floor();
+            let pos = pos.shrink(xd_pad_for_center, 0.0);
 
-            let xoffs = [
+            let xoffs_w = [
                 0.0 * xd,   // white C
-                0.5 * xd,   // black C#
                 1.0 * xd,   // white D
-                1.5 * xd,   // black D#
                 2.0 * xd,   // white E
                 3.0 * xd,   // white F
-                3.5 * xd,   // black F#
                 4.0 * xd,   // white G
-                4.5 * xd,   // black G#
                 5.0 * xd,   // white A
-                5.5 * xd,   // black A#
                 6.0 * xd,   // white B
             ];
 
-            for i in 0..12 {
+            let xoffs_b = [
+                1.0 * xd,   // black C#
+                2.0 * xd,   // black D#
+                4.0 * xd,   // black F#
+                5.0 * xd,   // black G#
+                6.0 * xd,   // black A#
+            ];
+
+            let phase =
+                if let Some(phase) = ui.atoms().get_phase_value(id) {
+                    phase as f64
+                } else { 0.0 };
+
+            fn draw_key(p: &mut dyn Painter, ui: &mut dyn WidgetUI,
+                        id: AtomId, key: Rect, index: usize)
+            {
+                ui.define_active_zone(
+                    ActiveZone::new_indexed_click_zone(
+                        id, key, index));
+
+                let (bg_color, line_color) =
+                    if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
+                        (UI_GRPH_BG, UI_GRPH_LINE_CLR)
+                    } else {
+                        (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
+                    };
+
+                p.rect_fill(line_color, key.x, key.y, key.w, key.h);
+                let k2 = key.shrink(1.0, 1.0);
+                p.rect_fill(bg_color, k2.x, k2.y, k2.w, k2.h);
+            }
+
+            for i in 0..xoffs_w.len() {
                 let key =
                     Rect {
-                        x: pos.x + xoffs[i],
+                        x: pos.x + xoffs_w[i],
                         y: pos.y,
                         w: xd,
                         h: pos.h,
                     };
 
-                ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(
-                        id, key, i));
+                draw_key(p, ui, id, key, i);
+            }
 
-                let hover_key =
-                    if let HLStyle::None = ui.hl_style_for(id, Some(i)) {
-                        false
-                    } else { true }
+            let black_width = xd * 0.75;
 
-                p.rect_fill(color, key.x, key.y, key.w, key.h);
+            for i in 0..xoffs_b.len() {
+                let key =
+                    Rect {
+                        x: pos.x + xoffs_b[i] - black_width * 0.5,
+                        y: pos.y,
+                        w: black_width,
+                        h: pos.h * 0.5,
+                    };
+
+                draw_key(p, ui, id, key, i + 7);
             }
         });
     }
@@ -116,7 +150,7 @@ impl WidgetType for Keys {
             UIEvent::Click { id, x, y, index, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut KeysData| {
-                        data.set_cv_binary(ui, *id, *index, *x, *y, self.samples);
+                        println!("CLICK IDX={}", index);
                         ui.queue_redraw();
                     });
                 }

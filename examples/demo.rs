@@ -168,10 +168,11 @@ fn main() {
         let wt_knob_11  = Rc::new(Knob::new(30.0, 10.0, 10.0).range_signed());
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
-        let wt_entry    = Rc::new(Entry::new(100.0, 12.0, 13));
-        let wt_list     = Rc::new(List::new(100.0, 12.0, 8));
-        let wt_cva      = Rc::new(CvArray::new(8, 80.0, 40.0, 12.0, false));
-        let wt_cvab     = Rc::new(CvArray::new(8, 80.0, 40.0, 12.0, true));
+        let wt_entry    = Rc::new(Entry::new(60.0, 12.0, 8));
+        let wt_list     = Rc::new(List::new(60.0, 12.0, 4));
+        let wt_cva      = Rc::new(CvArray::new(8, 120.0, 30.0, 12.0, false));
+        let wt_cvab     = Rc::new(CvArray::new(8, 120.0, 20.0, 12.0, true));
+        let wt_keys     = Rc::new(Keys::new(220.0, 50.0, 12.0));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -185,7 +186,7 @@ fn main() {
            .add(wbox!(wt_knob,    6.into(), center(3, 12), KnobData::new("C")))
            .add(wbox!(wt_knob_11, 7.into(), center(3, 12), KnobData::new("D")));
 
-        let li = ListItems::new(12);
+        let li = ListItems::new(6);
         li.push(-1, String::from("Main"));
         li.push(2,  String::from("Super loud"));
         li.push(3,  String::from("Awesome!"));
@@ -224,25 +225,38 @@ fn main() {
         graphs.level(2)
             .new_row()
             .add(wbox!(
-                wt_cvab, 29.into(), center(12, 6),
+                wt_keys, 30.into(), center(12, 4),
+                KeysData::new("TestKeys")))
+            .new_row()
+            .add(wbox!(
+                wt_cvab, 29.into(), center(12, 4),
                 CvArrayData::new("TestCv")))
             .new_row()
             .add(wbox!(
-                wt_cva, 28.into(), center(12, 6),
+                wt_cva, 28.into(), center(12, 4),
                 CvArrayData::new("TestCv")));
+
+
+        let mut pres = ContainerData::new();
+        pres.level(2)
+            .new_row()
+            .add(wbox!(
+                 wt_entry, 23.into(), center(12, 4),
+                 EntryData::new("Preset:")))
+            .new_row()
+            .add(wbox!(
+                 wt_list, 24.into(), center(12, 8),
+                 ListData::new("Preset:", ListOutput::ByString, li)));
 
         let mut other = ContainerData::new();
         other
            .level(1)
            .new_row()
            .add(wbox!(
-                wt_entry, 23.into(), center(3, 12),
-                EntryData::new("Preset Name:")))
+                wt_cont, 104.into(), center(4, 12),
+                pres))
            .add(wbox!(
-                wt_list, 24.into(), center(3, 12),
-                ListData::new("Preset:", ListOutput::ByString, li)))
-           .add(wbox!(
-                wt_cont, 104.into(), center(3, 12),
+                wt_cont, 104.into(), center(5, 12),
                 graphs))
            .add(wbox!(
                 wt_cont, 103.into(), center(3, 12),

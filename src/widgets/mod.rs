@@ -11,7 +11,7 @@ mod graph_minmax;
 mod entry;
 mod list;
 mod cv_array;
-//mod keys;
+mod keys;
 
 pub mod util;
 
@@ -56,5 +56,5 @@ pub use list::ListItems;
 pub use cv_array::CvArray;
 pub use cv_array::CvArrayData;
 
-//pub use keys::Keys;
-//pub use keys::KeysData;
+pub use keys::Keys;
+pub use keys::KeysData;
