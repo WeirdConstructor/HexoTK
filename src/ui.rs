@@ -539,7 +539,7 @@ impl UI {
         let pressed_keys = self.pressed_keys.take();
 
         if let Some(mut data) = data {
-            let mut zones    = zones.unwrap();
+            let zones        = zones.unwrap();
             let atoms        = atoms.unwrap();
             let pressed_keys = pressed_keys.unwrap();
 
@@ -608,10 +608,9 @@ impl WindowUI for UI {
 
                 self.hover_zone = None;
 
-                let mut new_hz = None;
                 let mut param_change = None;
 
-                new_hz = self.get_zone_at(self.mouse_pos);
+                let new_hz = self.get_zone_at(self.mouse_pos);
 
                 if let Some(input_mode) = &self.input_mode {
                     if let Some(pc) = input_mode.get_param_change_when_drag(self.mouse_pos) {

@@ -31,9 +31,12 @@ impl CvArrayData {
         })
     }
 
-    pub fn set_cv_binary(&self, ui: &mut dyn WidgetUI, id: AtomId, index: usize,
-                  x: f64, y: f64, samples: usize)
+    pub fn set_cv_binary(
+        &self, ui: &mut dyn WidgetUI, id: AtomId, index: usize,
+        _x: f64, _y: f64, _samples: usize)
     {
+        if index >= 64 { return; }
+
         let mask : i64 =
             ui.atoms().get(id).map(|atom| {
                 let mut i = atom.i();
@@ -98,8 +101,6 @@ impl WidgetType for CvArray {
         if !self.binary {
             ui.define_active_zone(ActiveZone::new_indexed_drag_zone(id, pos, 4));
         }
-
-        let mut label_color = UI_BTN_TXT_CLR;
 
         data.with(|data: &mut CvArrayData| {
             let lbl_y = pos.y + pos.h - UI_ELEM_TXT_H;
@@ -222,7 +223,7 @@ impl WidgetType for CvArray {
                 false);
 
             let mut x = xd;
-            for i in 0..(self.samples - 1) {
+            for _i in 0..(self.samples - 1) {
                 p.path_stroke(
                     1.0,
                     UI_GRPH_LINE_CLR,
@@ -244,7 +245,7 @@ impl WidgetType for CvArray {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
-            UIEvent::Drag { id, index, x, y, start_x, start_y, .. } => {
+            UIEvent::Drag { id, x, y, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut CvArrayData| {
                         data.set_cv(ui, *id, *x, *y, self.samples);
