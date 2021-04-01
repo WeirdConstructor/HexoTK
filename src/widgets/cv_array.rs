@@ -32,8 +32,7 @@ impl CvArrayData {
     }
 
     pub fn set_cv_binary(
-        &self, ui: &mut dyn WidgetUI, id: AtomId, index: usize,
-        _x: f64, _y: f64, _samples: usize)
+        &self, ui: &mut dyn WidgetUI, id: AtomId, index: usize)
     {
         if index >= 64 { return; }
 
@@ -256,7 +255,7 @@ impl WidgetType for CvArray {
             UIEvent::Click { id, x, y, index, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut CvArrayData| {
-                        data.set_cv_binary(ui, *id, *index, *x, *y, self.samples);
+                        data.set_cv_binary(ui, *id, *index);
                         ui.queue_redraw();
                     });
                 }

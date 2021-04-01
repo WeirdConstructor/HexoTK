@@ -23,6 +23,20 @@ impl KeysData {
             name:       String::from(name),
         })
     }
+
+    pub fn set_cv_binary(
+        &self, ui: &mut dyn WidgetUI, id: AtomId, index: usize)
+    {
+        if index >= 64 { return; }
+
+        let mask : i64 =
+            ui.atoms().get(id).map(|atom| {
+                let mut i = atom.i();
+                i ^= 0x1 << index;
+                i
+            }).unwrap_or_else(|| 0x1 << index);
+        ui.atoms_mut().set(id, Atom::setting(mask));
+    }
 }
 
 
@@ -71,21 +85,21 @@ impl WidgetType for Keys {
             let pos = pos.shrink(xd_pad_for_center, 0.0);
 
             let xoffs_w = [
-                0.0 * xd,   // white C
-                1.0 * xd,   // white D
-                2.0 * xd,   // white E
-                3.0 * xd,   // white F
-                4.0 * xd,   // white G
-                5.0 * xd,   // white A
-                6.0 * xd,   // white B
+                (0, 0.0 * xd),   // white C
+                (2, 1.0 * xd),   // white D
+                (4, 2.0 * xd),   // white E
+                (5, 3.0 * xd),   // white F
+                (7, 4.0 * xd),   // white G
+                (9, 5.0 * xd),   // white A
+                (11, 6.0 * xd),  // white B
             ];
 
             let xoffs_b = [
-                1.0 * xd,   // black C#
-                2.0 * xd,   // black D#
-                4.0 * xd,   // black F#
-                5.0 * xd,   // black G#
-                6.0 * xd,   // black A#
+                (1, 1.0 * xd),   // black C#
+                (3, 2.0 * xd),   // black D#
+                (6, 4.0 * xd),   // black F#
+                (8, 5.0 * xd),   // black G#
+                (10, 6.0 * xd),  // black A#
             ];
 
             let phase =
@@ -93,18 +107,49 @@ impl WidgetType for Keys {
                     phase as f64
                 } else { 0.0 };
 
+            let phase_index = (phase * 12.0).floor() as usize;
+
             fn draw_key(p: &mut dyn Painter, ui: &mut dyn WidgetUI,
-                        id: AtomId, key: Rect, index: usize)
+                        id: AtomId, key: Rect, index: usize, phase_index: usize)
             {
                 ui.define_active_zone(
                     ActiveZone::new_indexed_click_zone(
                         id, key, index));
 
+                let data = ui.atoms().get(id);
+                let key_is_set =
+                    data.map(|atom| atom.i() & (0x1 << index) > 0)
+                        .unwrap_or(false);
+
                 let (bg_color, line_color) =
-                    if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
-                        (UI_GRPH_BG, UI_GRPH_LINE_CLR)
+                    if key_is_set {
+                        if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
+                            if phase_index == index {
+                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
+                            } else {
+                                (UI_GRPH_LINE_CLR, UI_GRPH_BG)
+                            }
+                        } else {
+                            if phase_index == index {
+                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
+                            } else {
+                                (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
+                            }
+                        }
                     } else {
-                        (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
+                        if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
+                            if phase_index == index {
+                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
+                            } else {
+                                (UI_GRPH_BG, UI_GRPH_LINE_CLR)
+                            }
+                        } else {
+                            if phase_index == index {
+                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
+                            } else {
+                                (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
+                            }
+                        }
                     };
 
                 p.rect_fill(line_color, key.x, key.y, key.w, key.h);
@@ -115,13 +160,13 @@ impl WidgetType for Keys {
             for i in 0..xoffs_w.len() {
                 let key =
                     Rect {
-                        x: pos.x + xoffs_w[i],
+                        x: pos.x + xoffs_w[i].1,
                         y: pos.y,
                         w: xd,
                         h: pos.h,
                     };
 
-                draw_key(p, ui, id, key, i);
+                draw_key(p, ui, id, key, xoffs_w[i].0, phase_index);
             }
 
             let black_width = xd * 0.75;
@@ -129,13 +174,13 @@ impl WidgetType for Keys {
             for i in 0..xoffs_b.len() {
                 let key =
                     Rect {
-                        x: pos.x + xoffs_b[i] - black_width * 0.5,
+                        x: pos.x + xoffs_b[i].1 - black_width * 0.5,
                         y: pos.y,
                         w: black_width,
                         h: pos.h * 0.5,
                     };
 
-                draw_key(p, ui, id, key, i + 7);
+                draw_key(p, ui, id, key, xoffs_b[i].0, phase_index);
             }
         });
     }
@@ -150,7 +195,7 @@ impl WidgetType for Keys {
             UIEvent::Click { id, x, y, index, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut KeysData| {
-                        println!("CLICK IDX={}", index);
+                        data.set_cv_binary(ui, *id, *index);
                         ui.queue_redraw();
                     });
                 }
