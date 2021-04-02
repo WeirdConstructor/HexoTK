@@ -252,7 +252,7 @@ impl WidgetType for CvArray {
                     });
                 }
             },
-            UIEvent::Click { id, x, y, index, .. } => {
+            UIEvent::Click { id, index, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut CvArrayData| {
                         data.set_cv_binary(ui, *id, *index);

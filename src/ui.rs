@@ -72,6 +72,8 @@ struct ModifierKeys {
 pub struct UI {
     /// The root widget.
     main:           Option<Box<WidgetData>>,
+    /// The dialog widget.
+    dialog:         Option<Box<WidgetData>>,
     /// The active zones that were defined by the last draw call.
     zones:          Option<Vec<ActiveZone>>,
     /// The current active zone that is hovered.
@@ -344,9 +346,14 @@ impl UI {
     /// about a comprehensive example.
     ///
     /// The window size is only the initial window size.
-    pub fn new(main: Box<WidgetData>, atoms: Box<dyn AtomDataModel>, window_size: (f64, f64)) -> Self {
+    pub fn new(main: Box<WidgetData>, dialog: Box<WidgetData>,
+               atoms: Box<dyn AtomDataModel>,
+               window_size: (f64, f64))
+        -> Self
+    {
         Self {
             main:               Some(main),
+            dialog:             Some(dialog),
             atoms:              Some(atoms),
             zones:              Some(vec![]),
             mouse_pos:          (0.0, 0.0),
@@ -912,11 +919,20 @@ impl WindowUI for UI {
         }
 
         if let Some(event) = dispatch_event {
+            let mut dialog = self.dialog.take();
+
             self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData,
                            wt: &dyn WidgetType| {
 
                 wt.event(ui, data, &event);
+
+                if let Some(dialog) = &mut dialog {
+                    let wt = dialog.widget_type();
+                    wt.event(ui, dialog, &event);
+                }
             });
+
+            self.dialog = dialog;
         }
     }
 
@@ -924,11 +940,23 @@ impl WindowUI for UI {
         let win_size = self.window_size;
 
         self.zones.as_mut().map(|zones| zones.clear());
+        let mut dialog = self.dialog.take();
 
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
-            wt.draw(ui, data, painter,
-                Rect::from(0.0, 0.0, win_size.0, win_size.1));
+            let main_pos = Rect::from(0.0, 0.0, win_size.0, win_size.1);
+            wt.draw(ui, data, painter, main_pos);
+
+            if let Some(dialog) = &mut dialog {
+                let dialog_pos =
+                    main_pos.shrink(main_pos.w * 0.25, main_pos.h * 0.25);
+
+                let wt = dialog.widget_type();
+
+                wt.draw(ui, dialog, painter, dialog_pos);
+            }
         });
+
+        self.dialog = dialog;
     }
 
     fn set_window_size(&mut self, _w: f64, _h: f64) {

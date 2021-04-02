@@ -12,6 +12,7 @@ mod entry;
 mod list;
 mod cv_array;
 mod keys;
+mod dialog;
 
 pub mod util;
 
@@ -58,3 +59,7 @@ pub use cv_array::CvArrayData;
 
 pub use keys::Keys;
 pub use keys::KeysData;
+
+pub use dialog::DialogModel;
+pub use dialog::Dialog;
+pub use dialog::DialogData;

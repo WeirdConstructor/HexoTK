@@ -1,5 +1,8 @@
 use hexotk::*;
 use std::rc::Rc;
+use std::cell::RefCell;
+
+use hexotk::widgets::DialogModel;
 
 const WINDOW_W : i32 = 1150;
 const WINDOW_H : i32 = 720;
@@ -44,8 +47,9 @@ mod fastapprox {
 }
 
 struct SomeParameters {
-    atoms: Vec<Atom>,
-    phase: f32,
+    dialog_model:   Rc<RefCell<DialogModel>>,
+    atoms:          Vec<Atom>,
+    phase:          f32,
 }
 
 impl AtomDataModel for SomeParameters {
@@ -70,6 +74,12 @@ impl AtomDataModel for SomeParameters {
         if atid == 24 {
             self.set(AtomId::new(id.node_id(), 23), v.clone());
 
+        } else if atid == 25 {
+            self.dialog_model.borrow_mut().open(
+                "Test\nFofeo woei jfweo\nfewiofewiofewfoweifewfewfoiwe jfweofi jewf ijwefo we",
+                Box::new(|atoms: &mut dyn AtomDataModel| {
+                    println!("ATOMS CLICK!!!!");
+                }));
         }
         self.atoms[id.atom_id() as usize] = v;
     }
@@ -162,6 +172,8 @@ fn main() {
     use hexotk::components::matrix::NodeMatrixData;
 
     open_window("HexoTK Demo", WINDOW_W, WINDOW_H, None, Box::new(|| {
+        let dialog_model = Rc::new(RefCell::new(DialogModel::new()));
+
         let wt_btn      = Rc::new(Button::new(80.0, 10.0));
         let wt_btn_spc  = Rc::new(Button::new(80.0, 12.0));
         let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
@@ -173,6 +185,7 @@ fn main() {
         let wt_cva      = Rc::new(CvArray::new(8, 120.0, 30.0, 12.0, false));
         let wt_cvab     = Rc::new(CvArray::new(8, 120.0, 20.0, 12.0, true));
         let wt_keys     = Rc::new(Keys::new(220.0, 50.0, 12.0));
+        let wt_diag     = Rc::new(Dialog::new());
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -337,7 +350,14 @@ fn main() {
         let ui = Box::new(UI::new(
             WidgetData::new_box(
                 wt_cont, 0.into(), UIPos::center(12, 12), con),
-            Box::new(SomeParameters { atoms, phase: 0.0 }),
+            Box::new(wbox!(
+                wt_diag, 90000.into(), center(12, 12),
+                DialogData::new(90001, 45.into(), dialog_model.clone()))),
+            Box::new(SomeParameters {
+                atoms,
+                phase: 0.0,
+                dialog_model: dialog_model.clone()
+            }),
             (WINDOW_W as f64, WINDOW_H as f64),
         ));
 

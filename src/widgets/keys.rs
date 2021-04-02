@@ -192,7 +192,7 @@ impl WidgetType for Keys {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
-            UIEvent::Click { id, x, y, index, .. } => {
+            UIEvent::Click { id, index, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut KeysData| {
                         data.set_cv_binary(ui, *id, *index);
