@@ -80,13 +80,19 @@ impl DialogData {
 impl WidgetType for Dialog {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         data.with(|data: &mut DialogData| {
-            if let Some(at) = ui.atoms().get(data.ok_btn_id) {
-                if data.last_click_seq != at.i() {
-                    data.model.borrow_mut().visible = false;
-                }
+            let btn_seq =
+                if let Some(at) = ui.atoms().get(data.ok_btn_id) {
+                    at.i()
+                } else { 0 };
 
-                data.last_click_seq = at.i();
+            if data.last_click_seq != btn_seq {
+                data.model.borrow_mut().visible = false;
+                if let Some(on_ok) = &mut data.model.borrow_mut().on_ok {
+                    (on_ok)(ui.atoms_mut());
+                }
             }
+
+            data.last_click_seq = btn_seq;
 
             if data.model.borrow_mut().visible {
                 data.cont.draw(ui, p, pos);

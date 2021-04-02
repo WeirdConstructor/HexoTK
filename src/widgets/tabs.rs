@@ -3,6 +3,7 @@
 
 use crate::constants::*;
 use super::*;
+use super::util::*;
 
 #[derive(Debug)]
 pub struct Tabs {
@@ -16,6 +17,7 @@ impl Tabs {
 
 pub struct TabsData {
     tabs:            Vec<WidgetData>,
+    labels:          Vec<String>,
     level:           usize,
     shrink:          (f64, f64),
 }
@@ -24,8 +26,9 @@ impl TabsData {
     pub fn new() -> Box<Self> {
         Box::new(Self {
             tabs:               vec![],
+            labels:             vec![],
             level:              0,
-            shrink:             (0.0, 0.0),
+            shrink:             (2.0, 2.0),
         })
     }
 
@@ -39,11 +42,9 @@ impl TabsData {
         self
     }
 
-    pub fn add(&mut self, widget_data: WidgetData) -> &mut Self {
-        if self.tabs.len() > 0 {
-            let last_idx = self.tabs.len() - 1;
-            self.tabs[last_idx].push(widget_data);
-        }
+    pub fn add(&mut self, label: &str, widget_data: WidgetData) -> &mut Self {
+        self.tabs.push(widget_data);
+        self.labels.push(label.to_string());
 
         self
     }
@@ -55,7 +56,8 @@ impl WidgetType for Tabs {
         let id = data.id();
 
         data.with(|data: &mut TabsData| {
-            let index = ui.atoms().get(id).map(|at| at.i()).unwrap_or(0);
+            let index =
+                ui.atoms().get(id).map(|at| at.i()).unwrap_or(0) as usize;
 
             let bg_clr =
                 match data.level {
@@ -67,16 +69,65 @@ impl WidgetType for Tabs {
 
             let pos = pos.shrink(data.shrink.0, data.shrink.1);
 
-            // 0. draw outer border so that it is under the underlined
-            //    tab.
-            // 1. dark BG tab titles
-            // 2. text color and underline the active tab
-            // 3a. define active zones for each tab Click with index
-            // 3b. detect hovered tab
-            // 3c. hover highlight the hovered tab
-            // 3d. Handle the click in the event callback and set the
-            //     atom setting to the index.
-            // 4. draw the selected child widget
+            let mut indexed_tab_pos = None;
+
+            for (i, label) in data.labels.iter().enumerate() {
+                let x = i as f64 * (UI_TAB_WIDTH + UI_TAB_PAD_WIDTH);
+                let tab_pos = Rect {
+                    x: pos.x + x,
+                    y: pos.y,
+                    w: UI_TAB_WIDTH,
+                    h: UI_TAB_HEIGHT,
+                };
+
+                if index == i {
+                    indexed_tab_pos = Some(tab_pos);
+                }
+
+                ui.define_active_zone(
+                    ActiveZone::new_indexed_click_zone(id, tab_pos, i));
+
+                let highlight = ui.hl_style_for(id, Some(i));
+
+                let (text_color, border_color) =
+                    match highlight {
+                        HLStyle::Hover(_) =>
+                            (UI_TAB_TXT_HOVER_CLR, UI_TAB_TXT_HOVER_CLR),
+                        _ =>
+                            (if i == index { UI_TAB_TXT_CLR }
+                             else          { UI_TAB_TXT2_CLR },
+                             UI_TAB_BORDER_CLR),
+                    };
+
+                let tab_pos =
+                    rect_border(
+                        p, UI_TAB_BORDER_WIDTH, border_color,
+                        UI_TAB_BG_CLR, tab_pos);
+
+                p.rect_fill(
+                    UI_TAB_BG_CLR, tab_pos.x, tab_pos.y, tab_pos.w, tab_pos.h);
+                p.label(UI_TAB_FONT_SIZE, 0, text_color,
+                    tab_pos.x, tab_pos.y, tab_pos.w, tab_pos.h,
+                    &label);
+            }
+
+            let pos = pos.crop_top(UI_TAB_HEIGHT - UI_TAB_BORDER_WIDTH);
+
+            let pos =
+                rect_border(p, UI_BORDER_WIDTH, UI_BORDER_CLR, bg_clr, pos);
+
+            if let Some(tab_pos) = indexed_tab_pos {
+                p.path_stroke(
+                    UI_BORDER_WIDTH,
+                    UI_TAB_DIV_CLR,
+                    &mut [
+                        (tab_pos.x + UI_TAB_BORDER_WIDTH,
+                         tab_pos.y + tab_pos.h),
+                        (tab_pos.x + tab_pos.w - UI_TAB_BORDER_WIDTH * 2.0,
+                         tab_pos.y + tab_pos.h),
+                    ].iter().copied(),
+                    false);
+            }
 
             if let Some(tab) = data.tabs.get_mut(index as usize) {
                 tab.draw(ui, p, pos);
@@ -85,8 +136,20 @@ impl WidgetType for Tabs {
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
+        let my_id = data.id();
+
         data.with(|data: &mut TabsData| {
-            let index = ui.atoms().get(id).map(|at| at.i()).unwrap_or(0);
+            match ev {
+                UIEvent::Click { id, index, .. } => {
+                    if my_id == *id {
+                        ui.atoms_mut().set(
+                            my_id, Atom::setting(*index as i64));
+                    }
+                },
+                _ => {}
+            }
+
+            let index = ui.atoms().get(my_id).map(|at| at.i()).unwrap_or(0);
 
             if let Some(tab) = data.tabs.get_mut(index as usize) {
                 tab.event(ui, ev);

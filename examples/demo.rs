@@ -186,6 +186,7 @@ fn main() {
         let wt_cvab     = Rc::new(CvArray::new(8, 120.0, 20.0, 12.0, true));
         let wt_keys     = Rc::new(Keys::new(220.0, 50.0, 12.0));
         let wt_diag     = Rc::new(Dialog::new());
+        let wt_tabs     = Rc::new(Tabs::new());
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -219,20 +220,25 @@ fn main() {
         special_buttons.level(2)
             .new_row()
             .add(wbox!(
-                wt_btn_spc, 25.into(), center(12, 3),
+                wt_btn_spc, 25.into(), center(3, 12),
                 ButtonData::new_setting_inc("Set Inc")))
-            .new_row()
             .add(wbox!(
-                wt_btn_spc, 25.into(), center(12, 3),
+                wt_btn_spc, 25.into(), center(3, 12),
                 ButtonData::new_setting_toggle("Set Tog")))
-            .new_row()
             .add(wbox!(
-                wt_btn_spc, 25.into(), center(12, 3),
+                wt_btn_spc, 25.into(), center(3, 12),
                 ButtonData::new_param_toggle("Param Tog")))
-            .new_row()
             .add(wbox!(
-                wt_btn_spc, 25.into(), center(12, 3),
+                wt_btn_spc, 25.into(), center(3, 12),
                 ButtonData::new_param_click("Param Clk")));
+
+        let mut tabs = TabsData::new();
+        tabs.add(
+            "4 Btns",
+            wbox!(wt_cont, 100.into(), center(12,12), fourbtns));
+        tabs.add(
+            "Specials",
+            wbox!(wt_cont, 103.into(), center(12,12), special_buttons));
 
         let mut graphs = ContainerData::new();
         graphs.level(2)
@@ -249,7 +255,6 @@ fn main() {
                 wt_cva, 28.into(), center(12, 4),
                 CvArrayData::new("TestCv")));
 
-
         let mut pres = ContainerData::new();
         pres.level(2)
             .new_row()
@@ -265,15 +270,8 @@ fn main() {
         other
            .level(1)
            .new_row()
-           .add(wbox!(
-                wt_cont, 104.into(), center(4, 12),
-                pres))
-           .add(wbox!(
-                wt_cont, 104.into(), center(5, 12),
-                graphs))
-           .add(wbox!(
-                wt_cont, 103.into(), center(3, 12),
-                special_buttons));
+           .add(wbox!(wt_cont, 104.into(), center(6, 12), pres))
+           .add(wbox!(wt_cont, 104.into(), center(6, 12), graphs));
 
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 
@@ -323,14 +321,14 @@ fn main() {
 
         let mut node_ctrls = ContainerData::new();
         node_ctrls.new_row()
-           .add(wbox!(wt_cont,99.into(), center(2, 6), cont))
-           .add(wbox!(wt_btn,  1.into(), right( 3, 6), ButtonData::new_toggle("Test Btn")))
-           .add(wbox!(wt_text, 6.into(), center(3, 6), TextData::new(txtsrc.clone())))
-           .add(wbox!(wt_cont,101.into(),center(4, 6), cont2))
+           .add(wbox!(wt_cont,99.into(), center(2, 4), cont))
+           .add(wbox!(wt_btn,  1.into(), right( 3, 4), ButtonData::new_toggle("Test Btn")))
+           .add(wbox!(wt_text, 6.into(), center(3, 4), TextData::new(txtsrc.clone())))
+           .add(wbox!(wt_cont,101.into(),center(4, 4), cont2))
            .new_row()
-           .add(wbox!(wt_cont,100.into(),center(12,3), fourbtns))
+           .add(wbox!(wt_tabs, 46.into(),center(12,4), tabs))
            .new_row()
-           .add(wbox!(wt_cont,100.into(),center(12,3), other));
+           .add(wbox!(wt_cont,100.into(),center(12,4), other));
 
 
         let mut con = ContainerData::new();

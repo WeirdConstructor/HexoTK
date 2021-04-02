@@ -13,6 +13,7 @@ mod list;
 mod cv_array;
 mod keys;
 mod dialog;
+mod tabs;
 
 pub mod util;
 
@@ -63,3 +64,6 @@ pub use keys::KeysData;
 pub use dialog::DialogModel;
 pub use dialog::Dialog;
 pub use dialog::DialogData;
+
+pub use tabs::Tabs;
+pub use tabs::TabsData;

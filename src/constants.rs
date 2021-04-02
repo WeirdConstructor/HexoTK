@@ -79,9 +79,12 @@ pub const UI_GRPH_BG              : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_GRPH_FONT_SIZE       : f64 = UI_KNOB_FONT_SIZE;
 
 pub const UI_TAB_WIDTH            : f64 = 90.0;
-pub const UI_TAB_FONT_SIZE        : f64 = UI_KNOB_FONT_SIZE;
+pub const UI_TAB_HEIGHT           : f64 = 26.0;
+pub const UI_TAB_FONT_SIZE        : f64 = 12.0;
 pub const UI_TAB_BG_CLR           : (f64, f64, f64) = UI_LBL_BG_CLR;
-pub const UI_TAB_DIV_WIDTH        : f64 = 2.0;
+pub const UI_TAB_BORDER_WIDTH     : f64 = 1.0;
+pub const UI_TAB_BORDER_CLR       : (f64, f64, f64) = UI_BORDER_CLR;
+pub const UI_TAB_PAD_WIDTH        : f64 = 2.0;
 pub const UI_TAB_DIV_CLR          : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_TAB_TXT_CLR          : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_TAB_TXT2_CLR         : (f64, f64, f64) = UI_PRIM2_CLR;
