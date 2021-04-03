@@ -1,7 +1,6 @@
 // Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
-use crate::constants::*;
 use super::*;
 
 use std::rc::Rc;

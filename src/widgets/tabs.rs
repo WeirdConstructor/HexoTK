@@ -5,13 +5,15 @@ use crate::constants::*;
 use super::*;
 use super::util::*;
 
+use std::rc::Rc;
+
 #[derive(Debug)]
 pub struct Tabs {
 }
 
 impl Tabs {
-    pub fn new() -> Self {
-        Self { }
+    pub fn new_ref() -> Rc<Self> {
+        Rc::new(Self { })
     }
 }
 

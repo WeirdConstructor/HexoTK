@@ -4,14 +4,18 @@
 use crate::constants::*;
 use super::*;
 
+use std::rc::Rc;
+
 #[derive(Debug)]
-pub struct Container {
-    debug: bool,
-}
+pub struct Container { }
 
 impl Container {
     pub fn new() -> Self {
-        Self { debug: false }
+        Self { }
+    }
+
+    pub fn new_ref() -> Rc<Self> {
+        Rc::new(Self { })
     }
 }
 
@@ -22,6 +26,7 @@ pub struct ContainerData {
     level:           usize,
     shrink:          (f64, f64),
     title:           Option<String>,
+    debug:           bool,
 }
 
 impl ContainerData {
@@ -33,6 +38,7 @@ impl ContainerData {
             level:              0,
             shrink:             (0.0, 0.0),
             title:              None,
+            debug:              false,
         })
     }
 
@@ -80,6 +86,8 @@ impl WidgetType for Container {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
 
         data.with(|data: &mut ContainerData| {
+            let debug = data.debug;
+
             let bg_clr =
                 match data.level {
                     0 => UI_BG_CLR,
@@ -161,7 +169,7 @@ impl WidgetType for Container {
 
                     data.draw(ui, p, Rect { x: xe, y: ye, w: size.0, h: size.1 });
 
-                    if self.debug {
+                    if debug {
                         p.rect_stroke(1.0, (0.0, 1.0, 0.0),
                             xe - 0.5, ye - 0.5,
                             size.0 - 1.0, size.1 - 1.0);

@@ -77,7 +77,7 @@ impl AtomDataModel for SomeParameters {
         } else if atid == 25 {
             self.dialog_model.borrow_mut().open(
                 "Test\nFofeo woei jfweo\nfewiofewiofewfoweifewfewfoiwe jfweofi jewf ijwefo we",
-                Box::new(|atoms: &mut dyn AtomDataModel| {
+                Box::new(|_atoms: &mut dyn AtomDataModel| {
                     println!("ATOMS CLICK!!!!");
                 }));
         }
@@ -186,7 +186,7 @@ fn main() {
         let wt_cvab     = Rc::new(CvArray::new(8, 120.0, 20.0, 12.0, true));
         let wt_keys     = Rc::new(Keys::new(220.0, 50.0, 12.0));
         let wt_diag     = Rc::new(Dialog::new());
-        let wt_tabs     = Rc::new(Tabs::new());
+        let wt_tabs     = Tabs::new_ref();
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");

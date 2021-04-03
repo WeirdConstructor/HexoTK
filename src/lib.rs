@@ -711,3 +711,33 @@ pub trait WidgetType: Debug {
     fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64) { avail }
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent);
 }
+
+#[macro_export]
+macro_rules! define_containing_widget {
+    ($type: ident, $data_type: ident) => {
+        #[derive(Debug)]
+        pub struct $type;
+
+        impl $type {
+            pub fn new_ref() -> Rc<$type> { Rc::new(Self) }
+        }
+
+        impl WidgetType for $type {
+            fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData,
+                    p: &mut dyn Painter, pos: Rect)
+            {
+                data.with(|data: &mut $data_type| {
+                    data.cont.draw(ui, p, pos);
+                });
+            }
+
+            fn event(&self, ui: &mut dyn WidgetUI,
+                     data: &mut WidgetData, ev: &UIEvent)
+            {
+                data.with(|data: &mut $data_type| {
+                    data.cont.event(ui, ev);
+                });
+            }
+        }
+    }
+}
