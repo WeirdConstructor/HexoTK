@@ -336,7 +336,7 @@ fn main() {
            .add(wbox!(wt_cont, 0.into(), center(4, 12), node_ctrls))
            .add(NodeMatrixData::new(UIPos::center(5, 12), 11))
            .add(wbox!(
-                PatternEditor::new_ref(4, 32),
+                PatternEditor::new_ref(8, 32),
                 102.into(),
                 center(3, 12),
                 PatternEditorData::new()));

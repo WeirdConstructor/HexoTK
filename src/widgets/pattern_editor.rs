@@ -5,8 +5,15 @@ use crate::constants::*;
 use super::*;
 use super::util::*;
 
+enum ColumnType {
+    Note,
+    StepValue,
+    LinValue,
+}
+
 //pub struct PatternData {
 //    rows:   
+//    column_types: 
 //}
 //
 //pub struct TrackerBackend {
@@ -28,6 +35,7 @@ use super::util::*;
             - InitPattern   { pat_idx, data, columns, rows }
             - SetCell       { pat_idx, offs, value }
             - SetLength     { pat_idx, rows }
+            - SetColumnInterpolation { pat_idx, interp }
     - TrackSequencer nodes are specialcased on reception in GraphMessage::NewNode
       and they are assigned an Rc<PatternData>.
 - Selection of the displayed Tracker in the util panel is done by
@@ -72,8 +80,7 @@ TrackerData
     - Length in Lines is predefined.
 
 DSP:
-    - Clock/Phase input (each pulse advances a line)
-        - switchable by a mode setting
+    - Phase input
     - Play mode: Loop / PingPong / Oneshot
     - Reset input
     - Reverse setting
@@ -103,12 +110,16 @@ impl PatternEditor {
 #[derive(Debug)]
 pub struct PatternEditorData {
     pattern_index: usize,
+    cursor:        (usize, usize),
+    edit_step:     usize,
 }
 
 impl PatternEditorData {
     pub fn new() -> Box<dyn std::any::Any> {
         Box::new(Self {
             pattern_index: 0,
+            cursor: (1, 2),
+            edit_step: 4,
         })
     }
 }
@@ -130,15 +141,81 @@ impl WidgetType for PatternEditor {
             rect_border(p, UI_TRK_BORDER, border_color, UI_TRK_BG_CLR, pos);
 
         data.with(|data: &mut PatternEditorData| {
+
+            for ic in 0..self.columns {
+                let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
+                let y = 2        as f64 * UI_TRK_ROW_HEIGHT;
+
+                p.label_mono(
+                    UI_TRK_FONT_SIZE,
+                    -1,
+                    UI_TRK_TEXT_CLR,
+                    pos.x + x,
+                    pos.y + y,
+                    UI_TRK_COL_WIDTH,
+                    UI_TRK_ROW_HEIGHT,
+                    if ic > 5 {
+                        "Value"
+                    } else if ic > 2 {
+                        "Gate"
+                    } else {
+                        "Note"
+                    });
+            }
+
+            p.path_stroke(
+                1.0,
+                UI_TRK_COL_DIV_CLR,
+                &mut [
+                    (pos.x,         pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
+                    (pos.x + pos.w, pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
+                ].iter().copied(),
+                false);
+
+            let pos = pos.crop_top(2.0 * UI_TRK_ROW_HEIGHT);
+
             for ir in 0..self.rows {
+                let y = (ir + 1) as f64 * UI_TRK_ROW_HEIGHT;
+                if ir % data.edit_step == 0 {
+                    p.rect_fill(
+                        UI_TRK_BG_ALT_CLR,
+                        pos.x,
+                        pos.y + y,
+                        pos.w,
+                        UI_TRK_ROW_HEIGHT);
+                }
+
+                p.label_mono(
+                    UI_TRK_FONT_SIZE,
+                    1,
+                    UI_TRK_TEXT_CLR,
+                    pos.x - UI_TRK_COL_DIV_PAD,
+                    pos.y + y,
+                    UI_TRK_COL_WIDTH,
+                    UI_TRK_ROW_HEIGHT,
+                    &format!("{:-02}", ir));
+
                 for ic in 0..self.columns {
-                    let x = ic as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
-                    let y = ir as f64 * UI_TRK_ROW_HEIGHT;
+                    let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
+
+                    let txt_clr =
+                        if (ir, ic) == data.cursor {
+                            p.rect_fill(
+                                UI_TRK_CURSOR_BG_CLR,
+                                pos.x + x - UI_TRK_COL_DIV_PAD,
+                                pos.y + y,
+                                UI_TRK_COL_WIDTH,
+                                UI_TRK_ROW_HEIGHT);
+
+                            UI_TRK_CURSOR_FG_CLR
+                        } else {
+                            UI_TRK_TEXT_CLR
+                        };
 
                     p.label_mono(
                         UI_TRK_FONT_SIZE,
                         -1,
-                        UI_TRK_TEXT_CLR,
+                        txt_clr,
                         pos.x + x,
                         pos.y + y,
                         UI_TRK_COL_WIDTH,
@@ -147,8 +224,8 @@ impl WidgetType for PatternEditor {
                 }
             }
 
-            for ic in 1..self.columns {
-                let x = ic as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
+            for ic in 0..self.columns {
+                let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
                 let x = x - UI_TRK_COL_DIV_PAD;
 
                 p.path_stroke(
@@ -169,8 +246,8 @@ impl WidgetType for PatternEditor {
     }
 
     fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
-        (self.columns as f64 * UI_TRK_COL_WIDTH  + UI_TRK_BORDER * 2.0,
-         self.rows    as f64 * UI_TRK_ROW_HEIGHT + UI_TRK_BORDER * 2.0)
+        ((self.columns + 1) as f64 * UI_TRK_COL_WIDTH  + UI_TRK_BORDER * 2.0,
+         (self.rows + 3)    as f64 * UI_TRK_ROW_HEIGHT + UI_TRK_BORDER * 2.0)
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
