@@ -14,6 +14,7 @@ mod cv_array;
 mod keys;
 mod dialog;
 mod tabs;
+mod pattern_editor;
 
 pub mod util;
 
@@ -67,3 +68,6 @@ pub use dialog::DialogData;
 
 pub use tabs::Tabs;
 pub use tabs::TabsData;
+
+pub use pattern_editor::PatternEditor;
+pub use pattern_editor::PatternEditorData;

@@ -4,7 +4,7 @@ use std::cell::RefCell;
 
 use hexotk::widgets::DialogModel;
 
-const WINDOW_W : i32 = 1150;
+const WINDOW_W : i32 = 1150 + 360;
 const WINDOW_H : i32 = 720;
 
 // Following functions taken from fastapprox-rs
@@ -333,8 +333,13 @@ fn main() {
 
         let mut con = ContainerData::new();
         con.new_row()
-           .add(wbox!(wt_cont, 0.into(), center(5, 12), node_ctrls))
-           .add(NodeMatrixData::new(UIPos::center(7, 12), 11));
+           .add(wbox!(wt_cont, 0.into(), center(4, 12), node_ctrls))
+           .add(NodeMatrixData::new(UIPos::center(5, 12), 11))
+           .add(wbox!(
+                PatternEditor::new_ref(4, 32),
+                102.into(),
+                center(3, 12),
+                PatternEditorData::new()));
 
         let mut atoms = vec![];
         atoms.resize_with(100, || Atom::default());

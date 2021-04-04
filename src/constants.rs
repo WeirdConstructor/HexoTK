@@ -130,3 +130,15 @@ pub const UI_LIST_BORDER_CLR       : (f64, f64, f64) = UI_ENTRY_BORDER_CLR;
 pub const UI_LIST_SEP_CLR          : (f64, f64, f64) = (100.0 / 255.0,  100.0 / 255.0,  110.0 / 255.0);
 pub const UI_LIST_TXT_CLR          : (f64, f64, f64) = UI_ENTRY_TXT_CLR;
 pub const UI_LIST_TXT_HOVER_CLR    : (f64, f64, f64) = UI_BTN_TXT_HOVER_CLR;
+
+pub const UI_TRK_ROW_HEIGHT        : f64 = 14.0;
+pub const UI_TRK_COL_WIDTH         : f64 = 40.0;
+pub const UI_TRK_FONT_SIZE         : f64 = 12.0;
+pub const UI_TRK_BORDER            : f64 = 1.0;
+pub const UI_TRK_COL_DIV_PAD       : f64 = 3.0;
+pub const UI_TRK_BG_CLR            : (f64, f64, f64) = UI_LBL_BG_CLR;
+pub const UI_TRK_COL_DIV_CLR       : (f64, f64, f64) = UI_LIST_SEP_CLR;
+pub const UI_TRK_BORDER_CLR        : (f64, f64, f64) = UI_GRPH_BORDER_CLR;
+pub const UI_TRK_BORDER_HOVER_CLR  : (f64, f64, f64) = UI_GRPH_BORDER_HOVER_CLR;
+pub const UI_TRK_TEXT_CLR          : (f64, f64, f64) = UI_TXT_CLR;
+
