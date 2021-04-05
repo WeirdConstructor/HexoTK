@@ -71,3 +71,4 @@ pub use tabs::TabsData;
 
 pub use pattern_editor::PatternEditor;
 pub use pattern_editor::PatternEditorData;
+pub use pattern_editor::UIPatternModel;

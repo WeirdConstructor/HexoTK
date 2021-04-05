@@ -3,6 +3,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use hexotk::widgets::DialogModel;
+use hexotk::widgets::UIPatternModel;
 
 const WINDOW_W : i32 = 1150 + 360;
 const WINDOW_H : i32 = 720;
@@ -44,6 +45,115 @@ mod fastapprox {
     pub fn pow(x: f32, p: f32) -> f32 {
         pow2(p * log2(x))
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum PatternColType {
+    Note,
+    Gate,
+    Value,
+}
+
+#[derive(Debug)]
+struct PatternData {
+    col_types:  [PatternColType; 6],
+    data:       Vec<Vec<Option<f32>>>,
+    strings:    Vec<Vec<Option<String>>>,
+    cursor:     (usize, usize),
+    edit_step:  usize,
+}
+
+impl PatternData {
+    pub fn new(len: usize) -> Self {
+        Self {
+            col_types:  [PatternColType::Value; 6],
+            data:       vec![vec![None; 6]; len],
+            strings:    vec![vec![None; 6]; len],
+            cursor:     (2, 2),
+            edit_step:  4,
+        }
+    }
+}
+
+impl UIPatternModel for PatternData {
+    fn get_cell(&mut self, row: usize, col: usize) -> Option<&str> {
+        if row >= self.data.len()    { return None; }
+        if col >= self.data[0].len() { return None; }
+
+        if self.strings[row][col].is_none() {
+            if let Some(v) = self.data[row][col] {
+                self.strings[row][col] = Some(format!("{:4.2}", v));
+            } else {
+                return None;
+            }
+        }
+
+        Some(self.strings[row][col].as_ref().unwrap())
+    }
+
+    fn clear_cell(&mut self, row: usize, col: usize) {
+        if row >= self.data.len()    { return; }
+        if col >= self.data[0].len() { return; }
+
+        self.data[row][col]    = None;
+        self.strings[row][col] = None;
+    }
+
+    fn set_cell_note(&mut self, row: usize, col: usize, _note: &str) {
+        if row >= self.data.len()    { return; }
+        if col >= self.data[0].len() { return; }
+
+        self.data[row][col]    = Some(0.0);
+        self.strings[row][col] = None;
+    }
+
+    fn set_cell_value(&mut self, row: usize, col: usize, val: f32) {
+        if row >= self.data.len()    { return; }
+        if col >= self.data[0].len() { return; }
+
+        self.data[row][col]    = Some(val);
+        self.strings[row][col] = None;
+    }
+
+    fn is_col_note(&self, col: usize) -> bool {
+        if let Some(ct) = self.col_types.get(col) {
+            *ct == PatternColType::Note
+        } else {
+            false
+        }
+    }
+
+    fn is_col_gate(&self, col: usize) -> bool {
+        if let Some(ct) = self.col_types.get(col) {
+            *ct == PatternColType::Gate
+        } else {
+            false
+        }
+    }
+
+    fn rows(&self) -> usize { self.data.len() }
+
+    fn set_col_note_type(&mut self, col: usize) {
+        if col >= self.col_types.len() { return; }
+        self.col_types[col] = PatternColType::Note;
+    }
+
+    fn set_col_gate_type(&mut self, col: usize) {
+        if col >= self.col_types.len() { return; }
+        self.col_types[col] = PatternColType::Gate;
+    }
+
+    fn set_col_value_type(&mut self, col: usize) {
+        if col >= self.col_types.len() { return; }
+        self.col_types[col] = PatternColType::Value;
+    }
+
+    fn set_cursor(&mut self, row: usize, col: usize) {
+        self.cursor = (row, col);
+    }
+    fn get_cursor(&self) -> (usize, usize) { self.cursor }
+    fn set_edit_step(&mut self, es: usize) { self.edit_step = es; }
+    fn get_edit_step(&mut self) -> usize { self.edit_step }
 }
 
 struct SomeParameters {
@@ -330,16 +440,17 @@ fn main() {
            .new_row()
            .add(wbox!(wt_cont,100.into(),center(12,4), other));
 
+        let pattern_data = Rc::new(RefCell::new(PatternData::new(64)));
 
         let mut con = ContainerData::new();
         con.new_row()
            .add(wbox!(wt_cont, 0.into(), center(4, 12), node_ctrls))
            .add(NodeMatrixData::new(UIPos::center(5, 12), 11))
            .add(wbox!(
-                PatternEditor::new_ref(8, 32),
+                PatternEditor::new_ref(6, 32),
                 102.into(),
                 center(3, 12),
-                PatternEditorData::new()));
+                PatternEditorData::new(pattern_data)));
 
         let mut atoms = vec![];
         atoms.resize_with(100, || Atom::default());

@@ -5,10 +5,28 @@ use crate::constants::*;
 use super::*;
 use super::util::*;
 
-enum ColumnType {
-    Note,
-    StepValue,
-    LinValue,
+use std::rc::Rc;
+use std::cell::RefCell;
+
+pub trait UIPatternModel: Debug {
+    fn get_cell(&mut self, row: usize, col: usize) -> Option<&str>;
+    fn is_col_note(&self, col: usize) -> bool;
+    fn is_col_gate(&self, col: usize) -> bool;
+
+    fn rows(&self) -> usize;
+
+    fn clear_cell(&mut self, row: usize, col: usize);
+    fn set_col_note_type(&mut self, col: usize);
+    fn set_col_gate_type(&mut self, col: usize);
+    fn set_col_value_type(&mut self, col: usize);
+
+    fn set_cell_note(&mut self, row: usize, col: usize, note: &str);
+    fn set_cell_value(&mut self, row: usize, col: usize, val: f32);
+
+    fn set_cursor(&mut self, row: usize, col: usize);
+    fn get_cursor(&self) -> (usize, usize);
+    fn set_edit_step(&mut self, es: usize);
+    fn get_edit_step(&mut self) -> usize;
 }
 
 //pub struct PatternData {
@@ -109,15 +127,15 @@ impl PatternEditor {
 
 #[derive(Debug)]
 pub struct PatternEditorData {
-    pattern_index: usize,
+    pattern:       Rc<RefCell<dyn UIPatternModel>>,
     cursor:        (usize, usize),
     edit_step:     usize,
 }
 
 impl PatternEditorData {
-    pub fn new() -> Box<dyn std::any::Any> {
+    pub fn new(pattern: Rc<RefCell<dyn UIPatternModel>>) -> Box<dyn std::any::Any> {
         Box::new(Self {
-            pattern_index: 0,
+            pattern,
             cursor: (1, 2),
             edit_step: 4,
         })
@@ -238,7 +256,7 @@ impl WidgetType for PatternEditor {
                     false);
             }
 
-            let phase =
+            let _phase =
                 if let Some(phase) = ui.atoms().get_phase_value(id) {
                     phase as f64
                 } else { 0.0 };
@@ -254,8 +272,9 @@ impl WidgetType for PatternEditor {
         match ev {
             UIEvent::Click { id, index, .. } => {
                 if *id == data.id() {
-                    data.with(|data: &mut PatternEditorData| {
+                    data.with(|_data: &mut PatternEditorData| {
                         // TODO => find cell!
+                        println!("INDEX: {}", index);
                         ui.queue_redraw();
                     });
                 }
