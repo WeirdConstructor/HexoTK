@@ -21,7 +21,7 @@ pub trait UIPatternModel: Debug {
     fn set_col_value_type(&mut self, col: usize);
 
     fn set_cell_note(&mut self, row: usize, col: usize, note: &str);
-    fn set_cell_value(&mut self, row: usize, col: usize, val: f32);
+    fn set_cell_value(&mut self, row: usize, col: usize, val: u16);
 
     fn set_cursor(&mut self, row: usize, col: usize);
     fn get_cursor(&self) -> (usize, usize);
@@ -159,14 +159,15 @@ impl WidgetType for PatternEditor {
             rect_border(p, UI_TRK_BORDER, border_color, UI_TRK_BG_CLR, pos);
 
         data.with(|data: &mut PatternEditorData| {
+            let mut pat = data.pattern.borrow_mut();
 
             for ic in 0..self.columns {
-                let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
+                let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
                 let y = 2        as f64 * UI_TRK_ROW_HEIGHT;
 
                 p.label_mono(
                     UI_TRK_FONT_SIZE,
-                    -1,
+                    0,
                     UI_TRK_TEXT_CLR,
                     pos.x + x,
                     pos.y + y,
@@ -214,13 +215,13 @@ impl WidgetType for PatternEditor {
                     &format!("{:-02}", ir));
 
                 for ic in 0..self.columns {
-                    let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
+                    let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
 
                     let txt_clr =
                         if (ir, ic) == data.cursor {
                             p.rect_fill(
                                 UI_TRK_CURSOR_BG_CLR,
-                                pos.x + x - UI_TRK_COL_DIV_PAD,
+                                pos.x + x,
                                 pos.y + y,
                                 UI_TRK_COL_WIDTH,
                                 UI_TRK_ROW_HEIGHT);
@@ -230,21 +231,32 @@ impl WidgetType for PatternEditor {
                             UI_TRK_TEXT_CLR
                         };
 
-                    p.label_mono(
-                        UI_TRK_FONT_SIZE,
-                        -1,
-                        txt_clr,
-                        pos.x + x,
-                        pos.y + y,
-                        UI_TRK_COL_WIDTH,
-                        UI_TRK_ROW_HEIGHT,
-                        "0.12");
+                    if let Some(s) = pat.get_cell(ir, ic) {
+                        p.label_mono(
+                            UI_TRK_FONT_SIZE,
+                            0,
+                            txt_clr,
+                            pos.x + x,
+                            pos.y + y,
+                            UI_TRK_COL_WIDTH,
+                            UI_TRK_ROW_HEIGHT,
+                            s);
+                    } else {
+                        p.label_mono(
+                            UI_TRK_FONT_SIZE,
+                            0,
+                            txt_clr,
+                            pos.x + x,
+                            pos.y + y,
+                            UI_TRK_COL_WIDTH,
+                            UI_TRK_ROW_HEIGHT,
+                            "---");
+                    }
                 }
             }
 
             for ic in 0..self.columns {
-                let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH + UI_TRK_COL_DIV_PAD;
-                let x = x - UI_TRK_COL_DIV_PAD;
+                let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
 
                 p.path_stroke(
                     1.0,

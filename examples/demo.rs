@@ -57,7 +57,7 @@ enum PatternColType {
 #[derive(Debug)]
 struct PatternData {
     col_types:  [PatternColType; 6],
-    data:       Vec<Vec<Option<f32>>>,
+    data:       Vec<Vec<Option<u16>>>,
     strings:    Vec<Vec<Option<String>>>,
     cursor:     (usize, usize),
     edit_step:  usize,
@@ -82,7 +82,7 @@ impl UIPatternModel for PatternData {
 
         if self.strings[row][col].is_none() {
             if let Some(v) = self.data[row][col] {
-                self.strings[row][col] = Some(format!("{:4.2}", v));
+                self.strings[row][col] = Some(format!("{:03x}", v));
             } else {
                 return None;
             }
@@ -103,11 +103,11 @@ impl UIPatternModel for PatternData {
         if row >= self.data.len()    { return; }
         if col >= self.data[0].len() { return; }
 
-        self.data[row][col]    = Some(0.0);
+        self.data[row][col]    = Some(0x0);
         self.strings[row][col] = None;
     }
 
-    fn set_cell_value(&mut self, row: usize, col: usize, val: f32) {
+    fn set_cell_value(&mut self, row: usize, col: usize, val: u16) {
         if row >= self.data.len()    { return; }
         if col >= self.data[0].len() { return; }
 
@@ -441,6 +441,17 @@ fn main() {
            .add(wbox!(wt_cont,100.into(),center(12,4), other));
 
         let pattern_data = Rc::new(RefCell::new(PatternData::new(64)));
+        {
+            let mut p = pattern_data.borrow_mut();
+            p.set_cell_value(0, 0, 0xFFF);
+            p.set_cell_value(0, 1, 0x00F);
+            p.set_cell_value(0, 2, 0xF00);
+            p.set_cell_value(1, 2, 0x011);
+            p.set_cell_value(2, 2, 0x013);
+            p.set_cell_value(3, 2, 0x014);
+            p.set_cell_value(4, 2, 0x016);
+            p.set_cell_value(5, 2, 0x019);
+        }
 
         let mut con = ContainerData::new();
         con.new_row()
