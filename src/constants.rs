@@ -141,6 +141,7 @@ pub const UI_TRK_BG_ALT_CLR        : (f64, f64, f64) = (50.0 / 255.0,  50.0 / 25
 pub const UI_TRK_COL_DIV_CLR       : (f64, f64, f64) = UI_LIST_SEP_CLR;
 pub const UI_TRK_BORDER_CLR        : (f64, f64, f64) = UI_GRPH_BORDER_CLR;
 pub const UI_TRK_BORDER_HOVER_CLR  : (f64, f64, f64) = UI_GRPH_BORDER_HOVER_CLR;
+pub const UI_TRK_BORDER_EDIT_CLR   : (f64, f64, f64) = (200.0 / 255.0,  0.0 / 255.0,  20.0 / 255.0);
 pub const UI_TRK_TEXT_CLR          : (f64, f64, f64) = UI_TXT_CLR;
 pub const UI_TRK_CURSOR_BG_CLR     : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_TRK_CURSOR_FG_CLR     : (f64, f64, f64) = UI_LBL_BG_CLR;

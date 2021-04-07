@@ -202,6 +202,17 @@ impl WidgetUI for WidgetUIHolder {
                 HLStyle::Hover(hz.zone_type)
             }
         } else {
+            if let Some(input_mode) = &self.input_mode {
+                match input_mode {
+                    InputMode::Keyboard { zone } => {
+                        if zone.id == az_id {
+                            return HLStyle::Hover(zone.zone_type);
+                        }
+                    },
+                    _ => ()
+                }
+            }
+
             HLStyle::None
         }
     }
@@ -279,7 +290,11 @@ enum InputMode {
         button:     MButton,
         zone:       ActiveZone,
         start_pos:  (f64, f64),
-    }
+    },
+    /// When inside a keyboard controlled zone.
+    Keyboard {
+        zone:       ActiveZone,
+    },
 }
 
 impl InputMode {
@@ -700,6 +715,10 @@ impl WindowUI for UI {
                                     zone, prev_value);
                                 self.queue_redraw();
                             },
+                            InputMode::Keyboard { .. } => {
+                                self.input_mode = Some(input_mode);
+                                return;
+                            },
                             _ => {
                                 if let Some(az) =
                                     self.get_zone_at(self.mouse_pos)
@@ -751,6 +770,18 @@ impl WindowUI for UI {
             },
             InputEvent::MouseButtonPressed(btn) => {
                 let az = self.get_zone_at(self.mouse_pos);
+
+                if let Some(input_mode) = self.input_mode.take() {
+                    match input_mode {
+                        InputMode::Keyboard { .. } => {
+                            // drop mode.
+                        },
+                        _ => {
+                            // Keep other modes
+                            self.input_mode = Some(input_mode);
+                        },
+                    }
+                };
 
                 if let Some(az) = az {
                     match az.zone_type {
@@ -828,6 +859,11 @@ impl WindowUI for UI {
                             self.handle_atom_mouse_pressed(az);
                             self.queue_redraw();
                         },
+                        ZoneType::Keyboard => {
+                            self.input_mode =
+                                Some(InputMode::Keyboard { zone: az });
+                            self.queue_redraw();
+                        },
                         ZoneType::Drag { .. } => {
                             self.input_mode =
                                 Some(InputMode::Drag {
@@ -859,6 +895,11 @@ impl WindowUI for UI {
             },
             InputEvent::KeyPressed(key) => {
                 println!("KEY PRESSED {:?}", key);
+                if let Some(InputMode::Keyboard { zone }) = self.input_mode {
+                    dispatch_event =
+                        Some(UIEvent::Key { id: zone.id, key: key.key.clone() });
+                }
+
                 match key.key {
                     Key::Shift => {
                         self.pressed_keys.as_mut().unwrap().insert(UIKey::Shift, true);

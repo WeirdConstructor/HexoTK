@@ -131,6 +131,8 @@ impl UIPatternModel for PatternData {
         }
     }
 
+    fn cols(&self) -> usize { self.data[0].len() }
+
     fn rows(&self) -> usize { self.data.len() }
 
     fn set_col_note_type(&mut self, col: usize) {

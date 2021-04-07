@@ -11,7 +11,7 @@ mod femtovg_painter;
 
 use std::rc::Rc;
 
-use keyboard_types::KeyboardEvent;
+use keyboard_types::{KeyboardEvent, Key};
 
 pub use window::open_window;
 pub use ui::*;
@@ -287,6 +287,10 @@ impl ActiveZone {
         Self { id, pos, zone_type: ZoneType::Drag { index } }
     }
 
+    pub fn new_keyboard_zone(id: AtomId, pos: Rect) -> Self {
+        Self { id, pos, zone_type: ZoneType::Keyboard }
+    }
+
     pub fn new_atom_toggle(id: AtomId, pos: Rect, atom_type_setting: bool, momentary: bool) -> Self {
         Self {
             id, pos,
@@ -376,6 +380,7 @@ pub enum ZoneType {
     Drag {
         index: usize,
     },
+    Keyboard,
     AtomClick {
         /// Whether this is an [Atom::Setting] (`true`) or [Atom::Param] (`false`).
         atom_type_setting: bool,
@@ -670,6 +675,7 @@ pub enum UIEvent {
     Drag           { id: AtomId, button: MButton, index: usize, x: f64, y: f64, start_x: f64, start_y: f64 },
     Scroll         { id: AtomId, amt: f64, x: f64, y: f64 },
     FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
+    Key            { id: AtomId, key: Key },
 }
 
 impl UIEvent {
@@ -682,6 +688,7 @@ impl UIEvent {
             UIEvent::Drag           { id, .. } => *id,
             UIEvent::Scroll         { id, .. } => *id,
             UIEvent::FieldDrag      { id, .. } => *id,
+            UIEvent::Key            { id, .. } => *id,
         }
     }
 }

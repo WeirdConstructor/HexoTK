@@ -14,6 +14,7 @@ pub trait UIPatternModel: Debug {
     fn is_col_gate(&self, col: usize) -> bool;
 
     fn rows(&self) -> usize;
+    fn cols(&self) -> usize;
 
     fn clear_cell(&mut self, row: usize, col: usize);
     fn set_col_note_type(&mut self, col: usize);
@@ -125,10 +126,25 @@ impl PatternEditor {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum EnterValue {
+    None,
+    One(u16),
+    Two(u16),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum EnterMode {
+    None,
+    EnterValues(EnterValue),
+    EditStep,
+}
+
 #[derive(Debug)]
 pub struct PatternEditorData {
     pattern:       Rc<RefCell<dyn UIPatternModel>>,
     cursor:        (usize, usize),
+    enter_mode:    EnterMode,
     edit_step:     usize,
 }
 
@@ -137,6 +153,7 @@ impl PatternEditorData {
         Box::new(Self {
             pattern,
             cursor: (1, 2),
+            enter_mode: EnterMode::None,
             edit_step: 4,
         })
     }
@@ -149,17 +166,51 @@ impl WidgetType for PatternEditor {
         let id        = data.id();
         let highlight = ui.hl_style_for(id, None);
 
-        let border_color =
-            match highlight {
-                HLStyle::Hover(_) => UI_TRK_BORDER_HOVER_CLR,
-                _                 => UI_TRK_BORDER_CLR,
-            };
-
-        let pos =
-            rect_border(p, UI_TRK_BORDER, border_color, UI_TRK_BG_CLR, pos);
-
         data.with(|data: &mut PatternEditorData| {
             let mut pat = data.pattern.borrow_mut();
+
+            let border_color =
+                match highlight {
+                    HLStyle::Hover(_) => {
+                        if data.enter_mode != EnterMode::None {
+                            UI_TRK_BORDER_EDIT_CLR
+                        } else {
+                            UI_TRK_BORDER_HOVER_CLR
+                        }
+                    },
+                    _ => {
+                        data.enter_mode = EnterMode::None;
+                        UI_TRK_BORDER_CLR
+                    },
+                };
+
+            let pos =
+                rect_border(p, UI_TRK_BORDER, border_color, UI_TRK_BG_CLR, pos);
+
+            let mode_line =
+                match data.enter_mode {
+                    EnterMode::EnterValues(_) => {
+                        Some("> Mode: [Enter Values]")
+                    },
+                    EnterMode::EditStep => {
+                        Some("> Mode: [Set Edit Step]")
+                    },
+                    _ => None,
+                };
+
+            if let Some(mode_line) = mode_line {
+                p.label_mono(
+                    UI_TRK_FONT_SIZE,
+                    -1,
+                    UI_TRK_TEXT_CLR,
+                    pos.x,
+                    pos.y,
+                    pos.w,
+                    UI_TRK_ROW_HEIGHT,
+                    &mode_line);
+            }
+
+            ui.define_active_zone(ActiveZone::new_keyboard_zone(id, pos));
 
             for ic in 0..self.columns {
                 let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
@@ -291,7 +342,112 @@ impl WidgetType for PatternEditor {
                     });
                 }
             },
-            // UIEvent::Key
+            UIEvent::Key { id, key } => {
+                if *id == data.id() {
+                    data.with(|data: &mut PatternEditorData| {
+                        let mut pat = data.pattern.borrow_mut();
+
+                        match key {
+                            Key::ArrowUp => {
+                                if data.cursor.0 > 0 {
+                                    data.cursor.0 -= 1;
+                                }
+                            },
+                            Key::ArrowDown => {
+                                if (data.cursor.0 + 1) < pat.rows() {
+                                    data.cursor.0 += 1;
+                                }
+                            },
+                            Key::ArrowLeft => {
+                                if data.cursor.1 > 0 {
+                                    data.cursor.1 -= 1;
+                                }
+                            },
+                            Key::ArrowRight => {
+                                if (data.cursor.1 + 1) < pat.cols() {
+                                    data.cursor.1 += 1;
+                                }
+                            },
+                            Key::Character(c) => {
+                                match data.enter_mode {
+                                    EnterMode::EnterValues(v) => {
+                                        let value =
+                                            match &c[..] {
+                                                "0" => Some(0),
+                                                "1" => Some(1),
+                                                "2" => Some(2),
+                                                "3" => Some(3),
+                                                "4" => Some(4),
+                                                "5" => Some(5),
+                                                "6" => Some(6),
+                                                "7" => Some(7),
+                                                "8" => Some(8),
+                                                "9" => Some(9),
+                                                "a" => Some(0xA),
+                                                "b" => Some(0xB),
+                                                "c" => Some(0xC),
+                                                "d" => Some(0xD),
+                                                "e" => Some(0xE),
+                                                "f" => Some(0xF),
+                                                _ => None,
+                                            };
+                                        if let Some(value) = value {
+                                            match v {
+                                                EnterValue::None => {
+                                                    let nv = value << 0x8;
+                                                    data.enter_mode =
+                                                        EnterMode::EnterValues(
+                                                            EnterValue::One(nv));
+                                                    pat.set_cell_value(
+                                                        data.cursor.0,
+                                                        data.cursor.1,
+                                                        nv);
+                                                },
+                                                EnterValue::One(v) => {
+                                                    let nv = v | (value << 0x4);
+                                                    data.enter_mode =
+                                                        EnterMode::EnterValues(
+                                                            EnterValue::Two(nv));
+                                                    pat.set_cell_value(
+                                                        data.cursor.0,
+                                                        data.cursor.1,
+                                                        nv);
+                                                },
+                                                EnterValue::Two(v) => {
+                                                    let nv = v | value;
+                                                    data.enter_mode =
+                                                        EnterMode::EnterValues(
+                                                            EnterValue::None);
+                                                    pat.set_cell_value(
+                                                        data.cursor.0,
+                                                        data.cursor.1,
+                                                        nv);
+                                                },
+                                            }
+                                            println!("VALUE: {}", value);
+                                        }
+                                    },
+                                    _ => {},
+                                }
+                            },
+                            Key::Escape => {
+                                data.enter_mode = EnterMode::None;
+                            },
+                            Key::Enter => {
+                                data.enter_mode =
+                                    match data.enter_mode {
+                                        EnterMode::EnterValues(_)
+                                            => EnterMode::None,
+                                        _   => EnterMode::EnterValues(EnterValue::None),
+                                    }
+                            },
+                            _ => {},
+                        }
+                        ui.queue_redraw();
+                        println!("PATTERN EDIT KEY: {:?}", key);
+                    });
+                }
+            },
             _ => {},
         }
     }
