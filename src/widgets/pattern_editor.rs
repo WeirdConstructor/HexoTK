@@ -146,6 +146,8 @@ pub struct PatternEditorData {
     cursor:        (usize, usize),
     enter_mode:    EnterMode,
     edit_step:     usize,
+
+    cell_zone:     Rect,
 }
 
 impl PatternEditorData {
@@ -155,7 +157,13 @@ impl PatternEditorData {
             cursor: (1, 2),
             enter_mode: EnterMode::None,
             edit_step: 4,
+
+            cell_zone: Rect::from(0.0, 0.0, 0.0, 0.0),
         })
+    }
+
+    pub fn calc_row_offs(&self, rows: usize) -> usize {
+        (self.cursor.0 as i64 - ((rows / 2) as i64)).max(0) as usize
     }
 }
 
@@ -165,6 +173,8 @@ impl WidgetType for PatternEditor {
     {
         let id        = data.id();
         let highlight = ui.hl_style_for(id, None);
+
+        let orig_pos  = pos;
 
         data.with(|data: &mut PatternEditorData| {
             let mut pat = data.pattern.borrow_mut();
@@ -244,8 +254,26 @@ impl WidgetType for PatternEditor {
 
             let pos = pos.crop_top(2.0 * UI_TRK_ROW_HEIGHT);
 
+            data.cell_zone = Rect {
+                x: pos.x - orig_pos.x,
+                y: pos.y - orig_pos.y,
+                w: pos.w,
+                h: pos.h,
+            };
+
+            // center the cursor row
+            // - but lock the start of the pattern to the top
+            // - and lock the end of the pattern to the end
+            let row_scroll_offs = data.calc_row_offs(self.rows);
+
             for ir in 0..self.rows {
                 let y = (ir + 1) as f64 * UI_TRK_ROW_HEIGHT;
+                let ir = row_scroll_offs as usize + ir;
+
+                if ir >= pat.rows() {
+                    break;
+                }
+
                 if ir % data.edit_step == 0 {
                     p.rect_fill(
                         UI_TRK_BG_ALT_CLR,
@@ -333,11 +361,42 @@ impl WidgetType for PatternEditor {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
-            UIEvent::Click { id, index, .. } => {
+            UIEvent::Click { id, index, x, y, .. } => {
                 if *id == data.id() {
-                    data.with(|_data: &mut PatternEditorData| {
+                    data.with(|data: &mut PatternEditorData| {
+                        let mut pat = data.pattern.borrow_mut();
+
                         // TODO => find cell!
-                        println!("INDEX: {}", index);
+                        let xi = (x - data.cell_zone.x) / UI_TRK_COL_WIDTH;
+                        let yi = (y - data.cell_zone.y) / UI_TRK_ROW_HEIGHT;
+
+                        let row_scroll_offs = data.calc_row_offs(self.rows);
+                        let yr = (yi as usize - 1) + row_scroll_offs;
+
+                        println!("INDEX: {} {},{} => {},{}", index, x, y, xi, yi);
+                        data.cursor = (yr, xi as usize - 1);
+
+                        data.cursor.0 = data.cursor.0.min(pat.rows() - 1);
+                        data.cursor.1 = data.cursor.1.min(pat.cols() - 1);
+
+                        ui.queue_redraw();
+                    });
+                }
+            },
+            UIEvent::Scroll { id, amt, .. } => {
+                if *id == data.id() {
+                    data.with(|data: &mut PatternEditorData| {
+                        let mut pat = data.pattern.borrow_mut();
+
+                        if *amt > 0.0 {
+                            if data.cursor.0 > 0 {
+                                data.cursor.0 -= 1;
+                            }
+                        } else {
+                            if (data.cursor.0 + 1) < pat.rows() {
+                                data.cursor.0 += 1;
+                            }
+                        }
                         ui.queue_redraw();
                     });
                 }

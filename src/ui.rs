@@ -702,6 +702,8 @@ impl WindowUI for UI {
                 }
             },
             InputEvent::MouseButtonReleased(btn) => {
+                let mut reset_input_mode = true;
+
                 if let Some(input_mode) = self.input_mode.take() {
                     if let Some((id, val)) =
                         input_mode.get_param_change_when_drag(self.mouse_pos) {
@@ -715,9 +717,18 @@ impl WindowUI for UI {
                                     zone, prev_value);
                                 self.queue_redraw();
                             },
-                            InputMode::Keyboard { .. } => {
+                            InputMode::Keyboard { zone } => {
+                                dispatch_event =
+                                    Some(UIEvent::Click {
+                                        id:     zone.id,
+                                        button: btn,
+                                        x:      self.mouse_pos.0 - zone.pos.x,
+                                        y:      self.mouse_pos.1 - zone.pos.y,
+                                        index:  0,
+                                    });
+
                                 self.input_mode = Some(input_mode);
-                                return;
+                                reset_input_mode = false;
                             },
                             _ => {
                                 if let Some(az) =
@@ -759,14 +770,16 @@ impl WindowUI for UI {
                                         zone: az,
                                     });
                                 self.queue_redraw();
-                                return;
+                                reset_input_mode = false;
                             },
                             _ => {},
                         }
                     }
                 }
 
-                self.input_mode = None;
+                if reset_input_mode {
+                    self.input_mode = None;
+                }
             },
             InputEvent::MouseButtonPressed(btn) => {
                 let az = self.get_zone_at(self.mouse_pos);
