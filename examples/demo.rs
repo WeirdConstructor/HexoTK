@@ -460,6 +460,14 @@ fn main() {
             p.set_cell_value(3, 2, 0x014);
             p.set_cell_value(4, 2, 0x016);
             p.set_cell_value(5, 2, 0x019);
+
+            p.set_col_note_type(0);
+            p.set_col_note_type(1);
+
+            for i in 0..50 {
+                p.set_cell_value(0, i, i + 21);
+                p.set_cell_value(1, i, i + 21);
+            }
         }
 
         let mut con = ContainerData::new();
