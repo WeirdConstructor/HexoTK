@@ -50,7 +50,7 @@ mod fastapprox {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum PatternColType {
     Note,
-    Gate,
+    Step,
     Value,
 }
 
@@ -107,6 +107,13 @@ impl UIPatternModel for PatternData {
         self.strings[row][col] = None;
     }
 
+    fn get_cell_value(&mut self, row: usize, col: usize) -> u16 {
+        if row >= self.data.len()    { return 0; }
+        if col >= self.data[0].len() { return 0; }
+
+        self.data[row][col].unwrap_or(0)
+    }
+
     fn set_cell_value(&mut self, row: usize, col: usize, val: u16) {
         if row >= self.data.len()    { return; }
         if col >= self.data[0].len() { return; }
@@ -123,9 +130,9 @@ impl UIPatternModel for PatternData {
         }
     }
 
-    fn is_col_gate(&self, col: usize) -> bool {
+    fn is_col_step(&self, col: usize) -> bool {
         if let Some(ct) = self.col_types.get(col) {
-            *ct == PatternColType::Gate
+            *ct == PatternColType::Step
         } else {
             false
         }
@@ -140,9 +147,9 @@ impl UIPatternModel for PatternData {
         self.col_types[col] = PatternColType::Note;
     }
 
-    fn set_col_gate_type(&mut self, col: usize) {
+    fn set_col_step_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
-        self.col_types[col] = PatternColType::Gate;
+        self.col_types[col] = PatternColType::Step;
     }
 
     fn set_col_value_type(&mut self, col: usize) {

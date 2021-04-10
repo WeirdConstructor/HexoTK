@@ -8,21 +8,61 @@ use super::util::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+fn value2note_name(val: u16) -> Option<&'static str> {
+    if val < 21 || val > 127 {
+        return None;
+    }
+
+    Some(match val {
+        21 => "A-0",
+        22 => "A#0",
+        23 => "B-0",
+        24 => "C-1", 25 => "C#1", 26 => "D-1", 27 => "D#1", 28 => "E-1", 29 => "F-1",
+        30 => "F#1", 31 => "G-1", 32 => "G#1", 33 => "A-1", 34 => "A#1", 35 => "B-1",
+        36 => "C-2", 37 => "C#2", 38 => "D-2", 39 => "D#2", 40 => "E-2", 41 => "F-2",
+        42 => "F#2", 43 => "G-2", 44 => "G#2", 45 => "A-2", 46 => "A#2", 47 => "B-2",
+        48 => "C-3", 49 => "C#3", 50 => "D-3", 51 => "D#3", 52 => "E-3", 53 => "F-3",
+        54 => "F#3", 55 => "G-3", 56 => "G#3", 57 => "A-3", 58 => "A#3", 59 => "B-3",
+        60 => "C-4", 61 => "C#4", 62 => "D-4", 63 => "D#4", 64 => "E-4", 65 => "F-4",
+        66 => "F#4", 67 => "G-4", 68 => "G#4", 69 => "A-4", 70 => "A#4", 71 => "B-4",
+        72 => "C-5", 73 => "C#5", 74 => "D-5", 75 => "D#5", 76 => "E-5", 77 => "F-5",
+        78 => "F#5", 79 => "G-5", 80 => "G#5", 81 => "A-5", 82 => "A#5", 83 => "B-5",
+        84 => "C-6", 85 => "C#6", 86 => "D-6", 87 => "D#6", 88 => "E-6", 89 => "F-6",
+        90 => "F#6", 91 => "G-6", 92 => "G#6", 93 => "A-6", 94 => "A#6", 95 => "B-6",
+        96 => "C-7", 97 => "C#7", 98 => "D-7", 99 => "D#7", 100 => "E-7", 101 => "F-7",
+        102 => "F#7", 103 => "G-7", 104 => "G#7", 105 => "A-7", 106 => "A#7", 107 => "B-7",
+        108 => "C-8", 109 => "C#8", 110 => "D-8", 111 => "D#8", 112 => "E-8", 113 => "F-8",
+        114 => "F#8", 115 => "G-8", 116 => "G#8", 117 => "A-8", 118 => "A#8", 119 => "B-8",
+        120 => "C-9", 121 => "C#9", 122 => "D-9", 123 => "D#9", 124 => "E-9", 125 => "F-9",
+        126 => "F#9", 127 => "G-9", 128 => "G#9", 129 => "A-9", 130 => "A#9", 131 => "B-9",
+        _ => "???",
+    })
+}
+
+impl dyn UIPatternModel {
+    fn change_value(&mut self, row: usize, col: usize, offs: i16) {
+        let val = self.get_cell_value(row, col) as i16;
+        let val = (val + offs).max(0).min(0xfff);
+        self.set_cell_value(row, col, val as u16);
+    }
+}
+
 pub trait UIPatternModel: Debug {
     fn get_cell(&mut self, row: usize, col: usize) -> Option<&str>;
     fn is_col_note(&self, col: usize) -> bool;
-    fn is_col_gate(&self, col: usize) -> bool;
+    fn is_col_step(&self, col: usize) -> bool;
 
     fn rows(&self) -> usize;
     fn cols(&self) -> usize;
 
     fn clear_cell(&mut self, row: usize, col: usize);
     fn set_col_note_type(&mut self, col: usize);
-    fn set_col_gate_type(&mut self, col: usize);
+    fn set_col_step_type(&mut self, col: usize);
     fn set_col_value_type(&mut self, col: usize);
 
     fn set_cell_note(&mut self, row: usize, col: usize, note: &str);
     fn set_cell_value(&mut self, row: usize, col: usize, val: u16);
+    fn get_cell_value(&mut self, row: usize, col: usize) -> u16;
 
     fn set_cursor(&mut self, row: usize, col: usize);
     fn get_cursor(&self) -> (usize, usize);
@@ -138,6 +178,7 @@ enum EnterMode {
     None,
     EnterValues(EnterValue),
     EditStep,
+    ColType,
 }
 
 #[derive(Debug)]
@@ -145,9 +186,12 @@ pub struct PatternEditorData {
     pattern:       Rc<RefCell<dyn UIPatternModel>>,
     cursor:        (usize, usize),
     enter_mode:    EnterMode,
-    edit_step:     usize,
 
     cell_zone:     Rect,
+
+    edit_step:     usize,
+    info_line:     String,
+    update_info_line: bool,
 }
 
 impl PatternEditorData {
@@ -156,14 +200,367 @@ impl PatternEditorData {
             pattern,
             cursor: (1, 2),
             enter_mode: EnterMode::None,
-            edit_step: 4,
 
             cell_zone: Rect::from(0.0, 0.0, 0.0, 0.0),
+
+            edit_step: 4,
+            update_info_line: true,
+            info_line: String::from(""),
         })
     }
 
     pub fn calc_row_offs(&self, rows: usize) -> usize {
-        (self.cursor.0 as i64 - ((rows / 2) as i64)).max(0) as usize
+        let rows = rows as i64;
+        let mut cur = self.cursor.0 as i64;
+
+        let mut scroll_page = 0;
+
+        while cur > (rows * 5 / 6) {
+            cur -= rows * 2 / 3;
+            scroll_page += 1;
+        }
+
+//        cur.max(0) as usize
+        (scroll_page * rows * 2 / 3) as usize
+
+        // Make a paged scrolling, so that the cursor jumps to the next page
+        // depending on how close it is to the borders?
+//        (self.cursor.0 as i64 - ((rows / 2) as i64)).max(0) as usize
+    }
+
+    fn handle_key_event(&mut self, ui: &mut dyn WidgetUI, key: &Key) {
+        let mut pat = self.pattern.borrow_mut();
+
+        let mut edit_step = self.edit_step as i16;
+
+        if ui.is_key_pressed(UIKey::Ctrl) {
+            edit_step = 1;
+        }
+
+        if edit_step < 1 { edit_step = 1; }
+
+        let mut reset_entered_value = false;
+
+        match key {
+            Key::Home => {
+                self.cursor.0 = 0;
+                reset_entered_value = true;
+            },
+            Key::End => {
+                self.cursor.0 = pat.rows() - self.edit_step;
+                reset_entered_value = true;
+            },
+            Key::PageUp => {
+                if ui.is_key_pressed(UIKey::Shift) {
+                    pat.change_value(
+                        self.cursor.0,
+                        self.cursor.1,
+                        0x100);
+
+                } else {
+                    advance_cursor(
+                        &mut self.cursor,
+                        -2 * edit_step as i16,
+                        0, pat);
+                }
+                reset_entered_value = true;
+            },
+            Key::PageDown => {
+                if ui.is_key_pressed(UIKey::Shift) {
+                    pat.change_value(
+                        self.cursor.0,
+                        self.cursor.1,
+                        -0x100);
+
+                } else {
+                    advance_cursor(
+                        &mut self.cursor,
+                        2 * edit_step as i16,
+                        0, pat);
+                }
+                reset_entered_value = true;
+            },
+            Key::ArrowUp => {
+                if ui.is_key_pressed(UIKey::Shift) {
+                    pat.change_value(
+                        self.cursor.0,
+                        self.cursor.1,
+                        0x10);
+
+                } else {
+                    advance_cursor(
+                        &mut self.cursor,
+                        -1 * edit_step as i16,
+                        0, pat);
+                }
+                reset_entered_value = true;
+            },
+            Key::ArrowDown => {
+                if ui.is_key_pressed(UIKey::Shift) {
+                    pat.change_value(
+                        self.cursor.0,
+                        self.cursor.1,
+                        -0x10);
+
+                } else {
+                    advance_cursor(
+                        &mut self.cursor,
+                        edit_step as i16,
+                        0, pat);
+                }
+                reset_entered_value = true;
+            },
+            Key::ArrowLeft => {
+                if ui.is_key_pressed(UIKey::Shift) {
+                    pat.change_value(
+                        self.cursor.0,
+                        self.cursor.1,
+                        -0x1);
+
+                } else {
+                    advance_cursor(
+                        &mut self.cursor, 0, -1, pat);
+                }
+                reset_entered_value = true;
+            },
+            Key::ArrowRight => {
+                if ui.is_key_pressed(UIKey::Shift) {
+                    pat.change_value(
+                        self.cursor.0,
+                        self.cursor.1,
+                        0x1);
+
+                } else {
+                    advance_cursor(
+                        &mut self.cursor, 0, 1, pat);
+                }
+                reset_entered_value = true;
+            },
+            Key::Delete => {
+                pat.clear_cell(
+                    self.cursor.0,
+                    self.cursor.1);
+                advance_cursor(
+                    &mut self.cursor,
+                    edit_step as i16, 0, pat);
+                reset_entered_value = true;
+            },
+            Key::Character(c) => {
+                match self.enter_mode {
+                    EnterMode::EnterValues(v) => {
+                        if pat.is_col_note(self.cursor.1) {
+                            if let Some(value) = note_from_char(&c[..], 4) {
+                                pat.set_cell_value(
+                                    self.cursor.0,
+                                    self.cursor.1,
+                                    24 + value as u16);
+                                advance_cursor(
+                                    &mut self.cursor,
+                                    edit_step as i16, 0, pat);
+                            }
+                        } else {
+                            if let Some(value) = num_from_char(&c[..]) {
+                                match v {
+                                    EnterValue::None => {
+                                        let nv = value << 0x8;
+                                        self.enter_mode =
+                                            EnterMode::EnterValues(
+                                                EnterValue::One(nv as u16));
+                                        pat.set_cell_value(
+                                            self.cursor.0,
+                                            self.cursor.1,
+                                            nv as u16);
+                                    },
+                                    EnterValue::One(v) => {
+                                        let nv = v | (value << 0x4);
+                                        self.enter_mode =
+                                            EnterMode::EnterValues(
+                                                EnterValue::Two(nv as u16));
+                                        pat.set_cell_value(
+                                            self.cursor.0,
+                                            self.cursor.1,
+                                            nv as u16);
+                                    },
+                                    EnterValue::Two(v) => {
+                                        let nv = v | value;
+                                        self.enter_mode =
+                                            EnterMode::EnterValues(
+                                                EnterValue::None);
+                                        pat.set_cell_value(
+                                            self.cursor.0,
+                                            self.cursor.1,
+                                            nv as u16);
+                                        advance_cursor(
+                                            &mut self.cursor,
+                                            edit_step as i16, 0, pat);
+                                    },
+                                }
+                            }
+                        }
+                    },
+                    EnterMode::EditStep => {
+                        if let Some(value) = num_from_char(&c[..]) {
+                            if ui.is_key_pressed(UIKey::Ctrl) {
+                                self.edit_step = (value + 0x10) as usize;
+                            } else {
+                                self.edit_step = value as usize;
+                            }
+                            self.update_info_line = true;
+                        }
+
+                        self.enter_mode = EnterMode::None;
+                    },
+                    EnterMode::ColType => {
+                        match &c[..] {
+                            "n" => {
+                                pat.set_col_note_type(self.cursor.1);
+                            },
+                            "s" => {
+                                pat.set_col_step_type(self.cursor.1);
+                            },
+                            "v" => {
+                                pat.set_col_value_type(self.cursor.1);
+                            },
+                            _ => {},
+                        }
+                        self.enter_mode = EnterMode::None;
+                    },
+                    EnterMode::None => {
+                        match &c[..] {
+                            "e" => {
+                                self.enter_mode = EnterMode::EditStep;
+                            },
+                            "c" => {
+                                self.enter_mode = EnterMode::ColType;
+                            },
+                            _ => {},
+                        }
+                    },
+                }
+            },
+            Key::Escape => {
+                self.enter_mode = EnterMode::None;
+            },
+            Key::Enter => {
+                self.enter_mode =
+                    match self.enter_mode {
+                        EnterMode::EnterValues(_)
+                            => EnterMode::None,
+                        _   => EnterMode::EnterValues(EnterValue::None),
+                    }
+            },
+            _ => {},
+        }
+
+        if reset_entered_value {
+            if let EnterMode::EnterValues(_) = self.enter_mode {
+                self.enter_mode = EnterMode::EnterValues(EnterValue::None);
+            }
+        }
+
+        ui.queue_redraw();
+        println!("PATTERN EDIT KEY: {:?}", key);
+    }
+}
+
+pub fn advance_cursor(
+    cursor: &mut (usize, usize), row_offs: i16, col_offs: i16,
+    pat: std::cell::RefMut<dyn UIPatternModel>)
+{
+    if row_offs >= 0 {
+        let row_offs = row_offs as usize;
+        if ((*cursor).0 + row_offs) < pat.rows() {
+            (*cursor).0 += row_offs;
+        }
+    } else {
+        let row_offs = row_offs.abs() as usize;
+        if (*cursor).0 >= row_offs {
+            (*cursor).0 -= row_offs;
+        } else {
+            (*cursor).0 = 0;
+        }
+    }
+
+    if col_offs >= 0 {
+        let col_offs = col_offs as usize;
+        if ((*cursor).1 + col_offs) < pat.cols() {
+            (*cursor).1 += col_offs;
+        }
+    } else {
+        let col_offs = col_offs.abs() as usize;
+        if (*cursor).1 >= col_offs {
+            (*cursor).1 -= col_offs;
+        }
+    }
+}
+
+fn note_from_char(c: &str, octave: u16) -> Option<u16> {
+    let octave = octave * 12;
+
+    match c {
+        "z" => Some(octave),
+        "s" => Some(octave + 1),
+        "x" => Some(octave + 2),
+        "d" => Some(octave + 3),
+        "c" => Some(octave + 4),
+        "v" => Some(octave + 5),
+        "g" => Some(octave + 6),
+        "b" => Some(octave + 7),
+        "h" => Some(octave + 8),
+        "n" => Some(octave + 9),
+        "j" => Some(octave + 10),
+        "m" => Some(octave + 11),
+
+        "," => Some(octave + 12),
+        "l" => Some(octave + 13),
+        "." => Some(octave + 14),
+        ";" => Some(octave + 15),
+        "/" => Some(octave + 16),
+
+        "q" => Some(octave + 12),
+        "2" => Some(octave + 13),
+        "w" => Some(octave + 14),
+        "3" => Some(octave + 15),
+        "e" => Some(octave + 16),
+        "r" => Some(octave + 17),
+        "5" => Some(octave + 18),
+        "t" => Some(octave + 19),
+        "6" => Some(octave + 20),
+        "y" => Some(octave + 21),
+        "7" => Some(octave + 22),
+        "u" => Some(octave + 23),
+
+        "i" => Some(octave + 24),
+        "9" => Some(octave + 25),
+        "o" => Some(octave + 26),
+        "0" => Some(octave + 27),
+        "p" => Some(octave + 28),
+        "[" => Some(octave + 29),
+        "=" => Some(octave + 30),
+        "]" => Some(octave + 31),
+        _ => None,
+    }
+}
+
+fn num_from_char(c: &str) -> Option<u16> {
+    match c {
+        "0" => Some(0),
+        "1" => Some(1),
+        "2" => Some(2),
+        "3" => Some(3),
+        "4" => Some(4),
+        "5" => Some(5),
+        "6" => Some(6),
+        "7" => Some(7),
+        "8" => Some(8),
+        "9" => Some(9),
+        "a" => Some(0xA),
+        "b" => Some(0xB),
+        "c" => Some(0xC),
+        "d" => Some(0xD),
+        "e" => Some(0xE),
+        "f" => Some(0xF),
+        _ => None,
     }
 }
 
@@ -200,17 +597,20 @@ impl WidgetType for PatternEditor {
             let mode_line =
                 match data.enter_mode {
                     EnterMode::EnterValues(_) => {
-                        Some("> Mode: [Enter Values]")
+                        Some("> Mode: [Values]")
                     },
                     EnterMode::EditStep => {
-                        Some("> Mode: [Set Edit Step]")
+                        Some("> Mode: [Step] (0-F, Ctrl + 0-F)")
                     },
-                    _ => None,
+                    EnterMode::ColType => {
+                        Some("> Mode: [Column] (n)ote,(s)tep,(v)alue")
+                    },
+                    EnterMode::None => None,
                 };
 
             if let Some(mode_line) = mode_line {
                 p.label_mono(
-                    UI_TRK_FONT_SIZE,
+                    UI_TRK_FONT_SIZE * 0.9,
                     -1,
                     UI_TRK_TEXT_CLR,
                     pos.x,
@@ -219,6 +619,21 @@ impl WidgetType for PatternEditor {
                     UI_TRK_ROW_HEIGHT,
                     &mode_line);
             }
+
+            if data.update_info_line {
+                data.info_line = format!("ES: {:02}", data.edit_step);
+                data.update_info_line = false;
+            }
+
+            p.label_mono(
+                UI_TRK_FONT_SIZE,
+                -1,
+                UI_TRK_TEXT_CLR,
+                pos.x,
+                pos.y + UI_TRK_ROW_HEIGHT,
+                pos.w,
+                UI_TRK_ROW_HEIGHT,
+                &data.info_line);
 
             ui.define_active_zone(ActiveZone::new_keyboard_zone(id, pos));
 
@@ -234,12 +649,12 @@ impl WidgetType for PatternEditor {
                     pos.y + y,
                     UI_TRK_COL_WIDTH,
                     UI_TRK_ROW_HEIGHT,
-                    if ic > 5 {
-                        "Value"
-                    } else if ic > 2 {
-                        "Gate"
-                    } else {
+                    if pat.is_col_note(ic) {
                         "Note"
+                    } else if pat.is_col_step(ic) {
+                        "Step"
+                    } else {
+                        "Value"
                     });
             }
 
@@ -274,7 +689,7 @@ impl WidgetType for PatternEditor {
                     break;
                 }
 
-                if ir % data.edit_step == 0 {
+                if data.edit_step > 0 && ir % data.edit_step == 0 {
                     p.rect_fill(
                         UI_TRK_BG_ALT_CLR,
                         pos.x,
@@ -295,6 +710,7 @@ impl WidgetType for PatternEditor {
 
                 for ic in 0..self.columns {
                     let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
+                    let is_note_col = pat.is_col_note(ic);
 
                     let txt_clr =
                         if (ir, ic) == data.cursor {
@@ -310,16 +726,31 @@ impl WidgetType for PatternEditor {
                             UI_TRK_TEXT_CLR
                         };
 
+                    let cell_value = pat.get_cell_value(ir, ic);
                     if let Some(s) = pat.get_cell(ir, ic) {
-                        p.label_mono(
-                            UI_TRK_FONT_SIZE,
-                            0,
-                            txt_clr,
-                            pos.x + x,
-                            pos.y + y,
-                            UI_TRK_COL_WIDTH,
-                            UI_TRK_ROW_HEIGHT,
-                            s);
+
+                        if is_note_col {
+                            p.label_mono(
+                                UI_TRK_FONT_SIZE,
+                                0,
+                                txt_clr,
+                                pos.x + x,
+                                pos.y + y,
+                                UI_TRK_COL_WIDTH,
+                                UI_TRK_ROW_HEIGHT,
+                                value2note_name(cell_value)
+                                    .unwrap_or(s));
+                        } else {
+                            p.label_mono(
+                                UI_TRK_FONT_SIZE,
+                                0,
+                                txt_clr,
+                                pos.x + x,
+                                pos.y + y,
+                                UI_TRK_COL_WIDTH,
+                                UI_TRK_ROW_HEIGHT,
+                                s);
+                        }
                     } else {
                         p.label_mono(
                             UI_TRK_FONT_SIZE,
@@ -404,106 +835,7 @@ impl WidgetType for PatternEditor {
             UIEvent::Key { id, key } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
-                        let mut pat = data.pattern.borrow_mut();
-
-                        match key {
-                            Key::ArrowUp => {
-                                if data.cursor.0 > 0 {
-                                    data.cursor.0 -= 1;
-                                }
-                            },
-                            Key::ArrowDown => {
-                                if (data.cursor.0 + 1) < pat.rows() {
-                                    data.cursor.0 += 1;
-                                }
-                            },
-                            Key::ArrowLeft => {
-                                if data.cursor.1 > 0 {
-                                    data.cursor.1 -= 1;
-                                }
-                            },
-                            Key::ArrowRight => {
-                                if (data.cursor.1 + 1) < pat.cols() {
-                                    data.cursor.1 += 1;
-                                }
-                            },
-                            Key::Character(c) => {
-                                match data.enter_mode {
-                                    EnterMode::EnterValues(v) => {
-                                        let value =
-                                            match &c[..] {
-                                                "0" => Some(0),
-                                                "1" => Some(1),
-                                                "2" => Some(2),
-                                                "3" => Some(3),
-                                                "4" => Some(4),
-                                                "5" => Some(5),
-                                                "6" => Some(6),
-                                                "7" => Some(7),
-                                                "8" => Some(8),
-                                                "9" => Some(9),
-                                                "a" => Some(0xA),
-                                                "b" => Some(0xB),
-                                                "c" => Some(0xC),
-                                                "d" => Some(0xD),
-                                                "e" => Some(0xE),
-                                                "f" => Some(0xF),
-                                                _ => None,
-                                            };
-                                        if let Some(value) = value {
-                                            match v {
-                                                EnterValue::None => {
-                                                    let nv = value << 0x8;
-                                                    data.enter_mode =
-                                                        EnterMode::EnterValues(
-                                                            EnterValue::One(nv));
-                                                    pat.set_cell_value(
-                                                        data.cursor.0,
-                                                        data.cursor.1,
-                                                        nv);
-                                                },
-                                                EnterValue::One(v) => {
-                                                    let nv = v | (value << 0x4);
-                                                    data.enter_mode =
-                                                        EnterMode::EnterValues(
-                                                            EnterValue::Two(nv));
-                                                    pat.set_cell_value(
-                                                        data.cursor.0,
-                                                        data.cursor.1,
-                                                        nv);
-                                                },
-                                                EnterValue::Two(v) => {
-                                                    let nv = v | value;
-                                                    data.enter_mode =
-                                                        EnterMode::EnterValues(
-                                                            EnterValue::None);
-                                                    pat.set_cell_value(
-                                                        data.cursor.0,
-                                                        data.cursor.1,
-                                                        nv);
-                                                },
-                                            }
-                                            println!("VALUE: {}", value);
-                                        }
-                                    },
-                                    _ => {},
-                                }
-                            },
-                            Key::Escape => {
-                                data.enter_mode = EnterMode::None;
-                            },
-                            Key::Enter => {
-                                data.enter_mode =
-                                    match data.enter_mode {
-                                        EnterMode::EnterValues(_)
-                                            => EnterMode::None,
-                                        _   => EnterMode::EnterValues(EnterValue::None),
-                                    }
-                            },
-                            _ => {},
-                        }
-                        ui.queue_redraw();
-                        println!("PATTERN EDIT KEY: {:?}", key);
+                        data.handle_key_event(ui, key);
                     });
                 }
             },
