@@ -465,8 +465,8 @@ fn main() {
             p.set_col_note_type(1);
 
             for i in 0..50 {
-                p.set_cell_value(0, i, i + 21);
-                p.set_cell_value(1, i, i + 21);
+                p.set_cell_value(i, 0, (i + 21) as u16);
+                p.set_cell_value(i, 1, (i + 21) as u16);
             }
         }
 

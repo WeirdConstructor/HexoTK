@@ -178,7 +178,9 @@ enum EnterMode {
     None,
     EnterValues(EnterValue),
     EditStep,
+    Octave,
     ColType,
+    Delete,
 }
 
 #[derive(Debug)]
@@ -190,6 +192,7 @@ pub struct PatternEditorData {
     cell_zone:     Rect,
 
     edit_step:     usize,
+    octave:        u16,
     info_line:     String,
     update_info_line: bool,
 }
@@ -204,6 +207,7 @@ impl PatternEditorData {
             cell_zone: Rect::from(0.0, 0.0, 0.0, 0.0),
 
             edit_step: 4,
+            octave:    4,
             update_info_line: true,
             info_line: String::from(""),
         })
@@ -238,6 +242,8 @@ impl PatternEditorData {
         }
 
         if edit_step < 1 { edit_step = 1; }
+
+        let octave = self.octave;
 
         let mut reset_entered_value = false;
 
@@ -346,14 +352,39 @@ impl PatternEditorData {
                 reset_entered_value = true;
             },
             Key::Character(c) => {
+                match &c[..] {
+                    "+" => {
+                        self.octave += 1;
+                        self.octave = self.octave.min(9);
+                        self.update_info_line = true;
+                    },
+                    "-" => {
+                        if self.octave > 0 {
+                            self.octave -= 1;
+                            self.update_info_line = true;
+                        }
+                    },
+                    "/" => {
+                        if self.edit_step > 0 {
+                            self.edit_step -= 1;
+                        }
+                        self.update_info_line = true;
+                    },
+                    "*" => {
+                        self.edit_step += 1;
+                        self.update_info_line = true;
+                    },
+                    _ => {},
+                }
+
                 match self.enter_mode {
                     EnterMode::EnterValues(v) => {
                         if pat.is_col_note(self.cursor.1) {
-                            if let Some(value) = note_from_char(&c[..], 4) {
+                            if let Some(value) = note_from_char(&c[..], octave) {
                                 pat.set_cell_value(
                                     self.cursor.0,
                                     self.cursor.1,
-                                    24 + value as u16);
+                                    value as u16);
                                 advance_cursor(
                                     &mut self.cursor,
                                     edit_step as i16, 0, pat);
@@ -410,6 +441,14 @@ impl PatternEditorData {
 
                         self.enter_mode = EnterMode::None;
                     },
+                    EnterMode::Octave => {
+                        if let Some(value) = num_from_char(&c[..]) {
+                            self.octave = value;
+                            self.update_info_line = true;
+                        }
+
+                        self.enter_mode = EnterMode::None;
+                    },
                     EnterMode::ColType => {
                         match &c[..] {
                             "n" => {
@@ -425,13 +464,46 @@ impl PatternEditorData {
                         }
                         self.enter_mode = EnterMode::None;
                     },
+                    EnterMode::Delete => {
+                        match &c[..] {
+                            "r" => {
+                                for i in 0..pat.cols() {
+                                    pat.clear_cell(
+                                        self.cursor.0,
+                                        i);
+                                }
+                            },
+                            "c" => {
+                                for i in 0..pat.rows() {
+                                    pat.clear_cell(
+                                        i,
+                                        self.cursor.1);
+                                }
+                            },
+                            "s" => {
+                                for i in 0..self.edit_step {
+                                    pat.clear_cell(
+                                        self.cursor.0 + i,
+                                        self.cursor.1);
+                                }
+                            },
+                            _ => {},
+                        }
+                        self.enter_mode = EnterMode::None;
+                    },
                     EnterMode::None => {
                         match &c[..] {
                             "e" => {
                                 self.enter_mode = EnterMode::EditStep;
                             },
+                            "o" => {
+                                self.enter_mode = EnterMode::Octave;
+                            },
                             "c" => {
                                 self.enter_mode = EnterMode::ColType;
+                            },
+                            "d" => {
+                                self.enter_mode = EnterMode::Delete;
                             },
                             _ => {},
                         }
@@ -495,7 +567,7 @@ pub fn advance_cursor(
 }
 
 fn note_from_char(c: &str, octave: u16) -> Option<u16> {
-    let octave = octave * 12;
+    let octave = (octave + 1) * 12;
 
     match c {
         "z" => Some(octave),
@@ -602,8 +674,14 @@ impl WidgetType for PatternEditor {
                     EnterMode::EditStep => {
                         Some("> Mode: [Step] (0-F, Ctrl + 0-F)")
                     },
+                    EnterMode::Octave => {
+                        Some("> Mode: [Octave] (0-8)")
+                    },
                     EnterMode::ColType => {
                         Some("> Mode: [Column] (n)ote,(s)tep,(v)alue")
+                    },
+                    EnterMode::Delete => {
+                        Some("> Mode: [delete] (r)ow,(c)olumn,(s)tep")
                     },
                     EnterMode::None => None,
                 };
@@ -621,7 +699,11 @@ impl WidgetType for PatternEditor {
             }
 
             if data.update_info_line {
-                data.info_line = format!("ES: {:02}", data.edit_step);
+                data.info_line =
+                    format!(
+                        "ES: {:02} | Oct: {:02}",
+                        data.edit_step,
+                        data.octave);
                 data.update_info_line = false;
             }
 
