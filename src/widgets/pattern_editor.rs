@@ -193,6 +193,7 @@ pub struct PatternEditorData {
 
     edit_step:     usize,
     octave:        u16,
+    follow_phase:  bool,
     info_line:     String,
     update_info_line: bool,
 }
@@ -208,6 +209,7 @@ impl PatternEditorData {
 
             edit_step: 4,
             octave:    4,
+            follow_phase: false,
             update_info_line: true,
             info_line: String::from(""),
         })
@@ -505,6 +507,10 @@ impl PatternEditorData {
                             "d" => {
                                 self.enter_mode = EnterMode::Delete;
                             },
+                            "f" => {
+                                self.follow_phase = !self.follow_phase;
+                                self.update_info_line = true;
+                            },
                             _ => {},
                         }
                     },
@@ -701,9 +707,11 @@ impl WidgetType for PatternEditor {
             if data.update_info_line {
                 data.info_line =
                     format!(
-                        "ES: {:02} | Oct: {:02}",
+                        "ES: {:02} | Oct: {:02} | Cursor: {}",
                         data.edit_step,
-                        data.octave);
+                        data.octave,
+                        if data.follow_phase { "->" }
+                        else                 { "." });
                 data.update_info_line = false;
             }
 
@@ -790,20 +798,37 @@ impl WidgetType for PatternEditor {
                     UI_TRK_ROW_HEIGHT,
                     &format!("{:-02}", ir));
 
+                let phase =
+                    if let Some(phase) = ui.atoms().get_phase_value(id) {
+                        phase as f64
+                    } else { 0.0 };
+
+                let phase_row = (pat.rows() as f64 * phase).floor() as usize;
+
+                if data.follow_phase {
+                    data.cursor.0 = phase_row;
+                }
+
                 for ic in 0..self.columns {
                     let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
                     let is_note_col = pat.is_col_note(ic);
 
                     let txt_clr =
-                        if (ir, ic) == data.cursor {
+                        if (ir, ic) == data.cursor || ir == phase_row {
                             p.rect_fill(
-                                UI_TRK_CURSOR_BG_CLR,
+                                if (ir, ic) == data.cursor {
+                                    UI_TRK_CURSOR_BG_CLR
+                                } else { UI_TRK_PHASEROW_BG_CLR },
                                 pos.x + x,
                                 pos.y + y,
                                 UI_TRK_COL_WIDTH,
                                 UI_TRK_ROW_HEIGHT);
 
-                            UI_TRK_CURSOR_FG_CLR
+                            if (ir, ic) == data.cursor {
+                                UI_TRK_CURSOR_FG_CLR
+                            } else {
+                                UI_TRK_PHASEROW_FG_CLR
+                            }
                         } else {
                             UI_TRK_TEXT_CLR
                         };
@@ -859,11 +884,6 @@ impl WidgetType for PatternEditor {
                     ].iter().copied(),
                     false);
             }
-
-            let _phase =
-                if let Some(phase) = ui.atoms().get_phase_value(id) {
-                    phase as f64
-                } else { 0.0 };
         });
     }
 

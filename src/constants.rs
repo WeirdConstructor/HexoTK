@@ -145,4 +145,6 @@ pub const UI_TRK_BORDER_EDIT_CLR   : (f64, f64, f64) = (200.0 / 255.0,  0.0 / 25
 pub const UI_TRK_TEXT_CLR          : (f64, f64, f64) = UI_TXT_CLR;
 pub const UI_TRK_CURSOR_BG_CLR     : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_TRK_CURSOR_FG_CLR     : (f64, f64, f64) = UI_LBL_BG_CLR;
+pub const UI_TRK_PHASEROW_BG_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
+pub const UI_TRK_PHASEROW_FG_CLR   : (f64, f64, f64) = UI_LBL_BG_CLR;
 
