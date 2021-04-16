@@ -52,6 +52,7 @@ enum PatternColType {
     Note,
     Step,
     Value,
+    Gate,
 }
 
 #[derive(Debug)]
@@ -138,6 +139,14 @@ impl UIPatternModel for PatternData {
         }
     }
 
+    fn is_col_gate(&self, col: usize) -> bool {
+        if let Some(ct) = self.col_types.get(col) {
+            *ct == PatternColType::Gate
+        } else {
+            false
+        }
+    }
+
     fn cols(&self) -> usize { self.data[0].len() }
 
     fn rows(&self) -> usize { self.data.len() }
@@ -155,6 +164,11 @@ impl UIPatternModel for PatternData {
     fn set_col_value_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
         self.col_types[col] = PatternColType::Value;
+    }
+
+    fn set_col_gate_type(&mut self, col: usize) {
+        if col >= self.col_types.len() { return; }
+        self.col_types[col] = PatternColType::Gate;
     }
 
     fn set_cursor(&mut self, row: usize, col: usize) {

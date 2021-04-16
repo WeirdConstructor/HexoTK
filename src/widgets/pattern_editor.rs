@@ -51,6 +51,7 @@ pub trait UIPatternModel: Debug {
     fn get_cell(&mut self, row: usize, col: usize) -> Option<&str>;
     fn is_col_note(&self, col: usize) -> bool;
     fn is_col_step(&self, col: usize) -> bool;
+    fn is_col_gate(&self, col: usize) -> bool;
 
     fn rows(&self) -> usize;
     fn cols(&self) -> usize;
@@ -59,6 +60,7 @@ pub trait UIPatternModel: Debug {
     fn set_col_note_type(&mut self, col: usize);
     fn set_col_step_type(&mut self, col: usize);
     fn set_col_value_type(&mut self, col: usize);
+    fn set_col_gate_type(&mut self, col: usize);
 
     fn set_cell_note(&mut self, row: usize, col: usize, note: &str);
     fn set_cell_value(&mut self, row: usize, col: usize, val: u16);
@@ -191,6 +193,8 @@ pub struct PatternEditorData {
 
     cell_zone:     Rect,
 
+    last_set_value: u16,
+
     edit_step:     usize,
     octave:        u16,
     follow_phase:  bool,
@@ -206,6 +210,8 @@ impl PatternEditorData {
             enter_mode: EnterMode::None,
 
             cell_zone: Rect::from(0.0, 0.0, 0.0, 0.0),
+
+            last_set_value: 0,
 
             edit_step: 4,
             octave:    4,
@@ -381,54 +387,73 @@ impl PatternEditorData {
 
                 match self.enter_mode {
                     EnterMode::EnterValues(v) => {
-                        if pat.is_col_note(self.cursor.1) {
-                            if let Some(value) = note_from_char(&c[..], octave) {
+                        match &c[..] {
+                            "." => {
                                 pat.set_cell_value(
                                     self.cursor.0,
                                     self.cursor.1,
-                                    value as u16);
+                                    self.last_set_value);
                                 advance_cursor(
                                     &mut self.cursor,
                                     edit_step as i16, 0, pat);
-                            }
-                        } else {
-                            if let Some(value) = num_from_char(&c[..]) {
-                                match v {
-                                    EnterValue::None => {
-                                        let nv = value << 0x8;
-                                        self.enter_mode =
-                                            EnterMode::EnterValues(
-                                                EnterValue::One(nv as u16));
-                                        pat.set_cell_value(
-                                            self.cursor.0,
-                                            self.cursor.1,
-                                            nv as u16);
-                                    },
-                                    EnterValue::One(v) => {
-                                        let nv = v | (value << 0x4);
-                                        self.enter_mode =
-                                            EnterMode::EnterValues(
-                                                EnterValue::Two(nv as u16));
-                                        pat.set_cell_value(
-                                            self.cursor.0,
-                                            self.cursor.1,
-                                            nv as u16);
-                                    },
-                                    EnterValue::Two(v) => {
-                                        let nv = v | value;
-                                        self.enter_mode =
-                                            EnterMode::EnterValues(
-                                                EnterValue::None);
-                                        pat.set_cell_value(
-                                            self.cursor.0,
-                                            self.cursor.1,
-                                            nv as u16);
-                                        advance_cursor(
-                                            &mut self.cursor,
-                                            edit_step as i16, 0, pat);
-                                    },
+                                reset_entered_value = true;
+                            },
+                            _ if pat.is_col_note(self.cursor.1) => {
+                                if let Some(value) =
+                                    note_from_char(&c[..], octave)
+                                {
+                                    pat.set_cell_value(
+                                        self.cursor.0,
+                                        self.cursor.1,
+                                        value as u16);
+                                    advance_cursor(
+                                        &mut self.cursor,
+                                        edit_step as i16, 0, pat);
+                                    self.last_set_value = value as u16;
                                 }
-                            }
+                            },
+                            _ => {
+                                if let Some(value) = num_from_char(&c[..]) {
+                                    match v {
+                                        EnterValue::None => {
+                                            let nv = value << 0x8;
+                                            self.enter_mode =
+                                                EnterMode::EnterValues(
+                                                    EnterValue::One(nv as u16));
+                                            pat.set_cell_value(
+                                                self.cursor.0,
+                                                self.cursor.1,
+                                                nv as u16);
+                                            self.last_set_value = nv as u16;
+                                        },
+                                        EnterValue::One(v) => {
+                                            let nv = v | (value << 0x4);
+                                            self.enter_mode =
+                                                EnterMode::EnterValues(
+                                                    EnterValue::Two(nv as u16));
+                                            pat.set_cell_value(
+                                                self.cursor.0,
+                                                self.cursor.1,
+                                                nv as u16);
+                                            self.last_set_value = nv as u16;
+                                        },
+                                        EnterValue::Two(v) => {
+                                            let nv = v | value;
+                                            self.enter_mode =
+                                                EnterMode::EnterValues(
+                                                    EnterValue::None);
+                                            pat.set_cell_value(
+                                                self.cursor.0,
+                                                self.cursor.1,
+                                                nv as u16);
+                                            self.last_set_value = nv as u16;
+                                            advance_cursor(
+                                                &mut self.cursor,
+                                                edit_step as i16, 0, pat);
+                                        },
+                                    }
+                                }
+                            },
                         }
                     },
                     EnterMode::EditStep => {
@@ -461,6 +486,9 @@ impl PatternEditorData {
                             },
                             "v" => {
                                 pat.set_col_value_type(self.cursor.1);
+                            },
+                            "g" => {
+                                pat.set_col_gate_type(self.cursor.1);
                             },
                             _ => {},
                         }
@@ -675,19 +703,19 @@ impl WidgetType for PatternEditor {
             let mode_line =
                 match data.enter_mode {
                     EnterMode::EnterValues(_) => {
-                        Some("> Mode: [Values]")
+                        Some("> [Values]")
                     },
                     EnterMode::EditStep => {
-                        Some("> Mode: [Step] (0-F, Ctrl + 0-F)")
+                        Some("> [Step] (0-F, Ctrl + 0-F)")
                     },
                     EnterMode::Octave => {
-                        Some("> Mode: [Octave] (0-8)")
+                        Some("> [Octave] (0-8)")
                     },
                     EnterMode::ColType => {
-                        Some("> Mode: [Column] (n)ote,(s)tep,(v)alue")
+                        Some("> [Column] (n)ote,(s)tep,(v)alue,(g)ate")
                     },
                     EnterMode::Delete => {
-                        Some("> Mode: [delete] (r)ow,(c)olumn,(s)tep")
+                        Some("> [Delete] (r)ow,(c)olumn,(s)tep")
                     },
                     EnterMode::None => None,
                 };
@@ -743,6 +771,8 @@ impl WidgetType for PatternEditor {
                         "Note"
                     } else if pat.is_col_step(ic) {
                         "Step"
+                    } else if pat.is_col_gate(ic) {
+                        "Gate"
                     } else {
                         "Value"
                     });
