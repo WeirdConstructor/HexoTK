@@ -62,6 +62,7 @@ struct PatternData {
     strings:    Vec<Vec<Option<String>>>,
     cursor:     (usize, usize),
     edit_step:  usize,
+    rows:       usize,
 }
 
 impl PatternData {
@@ -72,6 +73,7 @@ impl PatternData {
             strings:    vec![vec![None; 6]; len],
             cursor:     (2, 2),
             edit_step:  4,
+            rows:       32,
         }
     }
 }
@@ -149,7 +151,11 @@ impl UIPatternModel for PatternData {
 
     fn cols(&self) -> usize { self.data[0].len() }
 
-    fn rows(&self) -> usize { self.data.len() }
+    fn rows(&self) -> usize { self.rows }
+
+    fn set_rows(&mut self, rows: usize) {
+        self.rows = rows.min(self.data.len());
+    }
 
     fn set_col_note_type(&mut self, col: usize) {
         if col >= self.col_types.len() { return; }
@@ -463,7 +469,7 @@ fn main() {
            .new_row()
            .add(wbox!(wt_cont,100.into(),center(12,4), other));
 
-        let pattern_data = Rc::new(RefCell::new(PatternData::new(64)));
+        let pattern_data = Rc::new(RefCell::new(PatternData::new(256)));
         {
             let mut p = pattern_data.borrow_mut();
             p.set_cell_value(0, 0, 0xFFF);
@@ -481,6 +487,8 @@ fn main() {
             for i in 0..50 {
                 p.set_cell_value(i, 0, (i + 21) as u16);
                 p.set_cell_value(i, 1, (i + 21) as u16);
+                p.set_cell_value(i, 0, (i + 21 + 50) as u16);
+                p.set_cell_value(i, 1, (i + 21 + 50) as u16);
             }
         }
 

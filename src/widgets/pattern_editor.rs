@@ -55,6 +55,7 @@ pub trait UIPatternModel: Debug {
 
     fn rows(&self) -> usize;
     fn cols(&self) -> usize;
+    fn set_rows(&mut self, rows: usize);
 
     fn clear_cell(&mut self, row: usize, col: usize);
     fn set_col_note_type(&mut self, col: usize);
@@ -183,6 +184,7 @@ enum EnterMode {
     Octave,
     ColType,
     Delete,
+    Rows(EnterValue),
 }
 
 #[derive(Debug)]
@@ -296,31 +298,60 @@ impl PatternEditorData {
             },
             Key::ArrowUp => {
                 if ui.is_key_pressed(UIKey::Shift) {
-                    pat.change_value(
-                        self.cursor.0,
-                        self.cursor.1,
-                        0x10);
+                    if ui.is_key_pressed(UIKey::Ctrl) {
+                        pat.change_value(
+                            self.cursor.0,
+                            self.cursor.1,
+                            0x100);
+                    } else {
+                        pat.change_value(
+                            self.cursor.0,
+                            self.cursor.1,
+                            0x10);
+                    }
 
                 } else {
-                    advance_cursor(
-                        &mut self.cursor,
-                        -1 * edit_step as i16,
-                        0, pat);
+                    if let EnterMode::Rows(_) = self.enter_mode {
+                        let rows = pat.rows() + 1;
+                        pat.set_rows(rows);
+                        self.update_info_line = true;
+
+                    } else {
+                        advance_cursor(
+                            &mut self.cursor,
+                            -1 * edit_step as i16,
+                            0, pat);
+                    }
                 }
                 reset_entered_value = true;
             },
             Key::ArrowDown => {
                 if ui.is_key_pressed(UIKey::Shift) {
-                    pat.change_value(
-                        self.cursor.0,
-                        self.cursor.1,
-                        -0x10);
+                    if ui.is_key_pressed(UIKey::Ctrl) {
+                        pat.change_value(
+                            self.cursor.0,
+                            self.cursor.1,
+                            -0x100);
+                    } else {
+                        pat.change_value(
+                            self.cursor.0,
+                            self.cursor.1,
+                            -0x10);
+                    }
 
                 } else {
-                    advance_cursor(
-                        &mut self.cursor,
-                        edit_step as i16,
-                        0, pat);
+                    if let EnterMode::Rows(_) = self.enter_mode {
+                        if pat.rows() > 0 {
+                            let rows = pat.rows() - 1;
+                            pat.set_rows(rows);
+                            self.update_info_line = true;
+                        }
+                    } else {
+                        advance_cursor(
+                            &mut self.cursor,
+                            edit_step as i16,
+                            0, pat);
+                    }
                 }
                 reset_entered_value = true;
             },
@@ -456,6 +487,28 @@ impl PatternEditorData {
                             },
                         }
                     },
+                    EnterMode::Rows(v) => {
+                        match v {
+                            EnterValue::None => {
+                                if let Some(value) = num_from_char(&c[..]) {
+                                    pat.set_rows((value << 4) as usize);
+                                    self.update_info_line = true;
+                                    self.enter_mode =
+                                        EnterMode::Rows(EnterValue::One(value));
+                                }
+                            },
+                            EnterValue::One(v) => {
+                                if let Some(value) = num_from_char(&c[..]) {
+                                    pat.set_rows((v << 4 | value) as usize);
+                                    self.update_info_line = true;
+                                    self.enter_mode = EnterMode::None;
+                                }
+                            },
+                            _ => {
+                                self.enter_mode = EnterMode::None;
+                            },
+                        }
+                    },
                     EnterMode::EditStep => {
                         if let Some(value) = num_from_char(&c[..]) {
                             if ui.is_key_pressed(UIKey::Ctrl) {
@@ -525,6 +578,10 @@ impl PatternEditorData {
                         match &c[..] {
                             "e" => {
                                 self.enter_mode = EnterMode::EditStep;
+                            },
+                            "r" => {
+                                self.enter_mode =
+                                    EnterMode::Rows(EnterValue::None);
                             },
                             "o" => {
                                 self.enter_mode = EnterMode::Octave;
@@ -682,6 +739,10 @@ impl WidgetType for PatternEditor {
         data.with(|data: &mut PatternEditorData| {
             let mut pat = data.pattern.borrow_mut();
 
+            if data.cursor.0 >= pat.rows() {
+                data.cursor.0 = pat.rows() - 1;
+            }
+
             let border_color =
                 match highlight {
                     HLStyle::Hover(_) => {
@@ -717,6 +778,13 @@ impl WidgetType for PatternEditor {
                     EnterMode::Delete => {
                         Some("> [Delete] (r)ow,(c)olumn,(s)tep")
                     },
+                    EnterMode::Rows(EnterValue::None) => {
+                        Some("> [Rows] (0-F 00-F0, Up/Down +1/-1)")
+                    },
+                    EnterMode::Rows(EnterValue::One(_)) => {
+                        Some("> [Rows] (0-F 00-0F)")
+                    },
+                    EnterMode::Rows(EnterValue::Two(_)) => None,
                     EnterMode::None => None,
                 };
 
@@ -735,11 +803,12 @@ impl WidgetType for PatternEditor {
             if data.update_info_line {
                 data.info_line =
                     format!(
-                        "ES: {:02} | Oct: {:02} | Cursor: {}",
+                        "ES: {:02} | Oct: {:02} | Curs: {} | R: {:02}",
                         data.edit_step,
                         data.octave,
                         if data.follow_phase { "->" }
-                        else                 { "." });
+                        else                 { "." },
+                        pat.rows());
                 data.update_info_line = false;
             }
 
@@ -927,7 +996,7 @@ impl WidgetType for PatternEditor {
             UIEvent::Click { id, index, x, y, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
-                        let mut pat = data.pattern.borrow_mut();
+                        let pat = data.pattern.borrow_mut();
 
                         // TODO => find cell!
                         let xi = (x - data.cell_zone.x) / UI_TRK_COL_WIDTH;
@@ -949,7 +1018,7 @@ impl WidgetType for PatternEditor {
             UIEvent::Scroll { id, amt, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
-                        let mut pat = data.pattern.borrow_mut();
+                        let pat = data.pattern.borrow_mut();
 
                         if *amt > 0.0 {
                             if data.cursor.0 > 0 {
