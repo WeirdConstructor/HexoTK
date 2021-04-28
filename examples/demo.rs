@@ -102,14 +102,6 @@ impl UIPatternModel for PatternData {
         self.strings[row][col] = None;
     }
 
-    fn set_cell_note(&mut self, row: usize, col: usize, _note: &str) {
-        if row >= self.data.len()    { return; }
-        if col >= self.data[0].len() { return; }
-
-        self.data[row][col]    = Some(0x0);
-        self.strings[row][col] = None;
-    }
-
     fn get_cell_value(&mut self, row: usize, col: usize) -> u16 {
         if row >= self.data.len()    { return 0; }
         if col >= self.data[0].len() { return 0; }

@@ -63,7 +63,6 @@ pub trait UIPatternModel: Debug {
     fn set_col_value_type(&mut self, col: usize);
     fn set_col_gate_type(&mut self, col: usize);
 
-    fn set_cell_note(&mut self, row: usize, col: usize, note: &str);
     fn set_cell_value(&mut self, row: usize, col: usize, val: u16);
     fn get_cell_value(&mut self, row: usize, col: usize) -> u16;
 
