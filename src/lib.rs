@@ -734,6 +734,7 @@ macro_rules! define_containing_widget {
                     p: &mut dyn Painter, pos: Rect)
             {
                 data.with(|data: &mut $data_type| {
+                    data.check_cont_update(ui);
                     data.cont.draw(ui, p, pos);
                 });
             }
