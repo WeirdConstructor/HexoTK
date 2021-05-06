@@ -637,6 +637,40 @@ pub trait WindowUI {
 pub enum UIKey {
     Shift,
     Ctrl,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+}
+
+impl UIKey {
+    fn from(key: Key) -> Option<Self> {
+        match key {
+            Key::Shift   => Some(UIKey::Shift),
+            Key::Control => Some(UIKey::Ctrl),
+            Key::F1      => Some(UIKey::F1),
+            Key::F2      => Some(UIKey::F2),
+            Key::F3      => Some(UIKey::F3),
+            Key::F4      => Some(UIKey::F4),
+            Key::F5      => Some(UIKey::F5),
+            Key::F6      => Some(UIKey::F6),
+            Key::F7      => Some(UIKey::F7),
+            Key::F8      => Some(UIKey::F8),
+            Key::F9      => Some(UIKey::F9),
+            Key::F10     => Some(UIKey::F10),
+            Key::F11     => Some(UIKey::F11),
+            Key::F12     => Some(UIKey::F12),
+            _ => { None }
+        }
+    }
 }
 
 pub trait WidgetUI {

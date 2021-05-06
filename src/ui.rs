@@ -914,12 +914,6 @@ impl WindowUI for UI {
                 }
 
                 match key.key {
-                    Key::Shift => {
-                        self.pressed_keys.as_mut().unwrap().insert(UIKey::Shift, true);
-                    },
-                    Key::Control => {
-                        self.pressed_keys.as_mut().unwrap().insert(UIKey::Ctrl, true);
-                    },
                     Key::Backspace => {
                         if let Some(InputMode::InputValue { zone }) = self.input_mode {
                             if let Some(atoms) = self.atoms.as_mut() {
@@ -951,20 +945,18 @@ impl WindowUI for UI {
                             }
                         }
                     },
-                    _ => {},
+                    _ => {
+                        if let Some(ui_key) = UIKey::from(key.key) {
+                            self.pressed_keys.as_mut().unwrap()
+                                .insert(ui_key, true);
+                        }
+                    },
                 }
                 // TODO: Handle built in functionality like ValueDrag!
             },
             InputEvent::KeyReleased(key) => {
-                match key.key {
-                    Key::Shift => {
-                        self.pressed_keys.as_mut().unwrap().remove(&UIKey::Shift);
-                    },
-                    Key::Control => {
-                        self.pressed_keys.as_mut().unwrap().remove(&UIKey::Ctrl);
-                    },
-                    _ => {
-                    },
+                if let Some(ui_key) = UIKey::from(key.key) {
+                    self.pressed_keys.as_mut().unwrap().remove(&ui_key);
                 }
             },
             _ => {
