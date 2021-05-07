@@ -406,7 +406,9 @@ impl WidgetType for NodeMatrix {
                     ui.queue_redraw();
                 }
             },
-            _ => (),
+            _ => {
+                println!("Unknown event in matrix: {:?}", ev);
+            }
         }
     }
 }

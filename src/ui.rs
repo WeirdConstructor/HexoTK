@@ -946,13 +946,20 @@ impl WindowUI for UI {
                         }
                     },
                     _ => {
-                        if let Some(ui_key) = UIKey::from(key.key) {
+                        if let Some(ui_key) = UIKey::from(key.key.clone()) {
                             self.pressed_keys.as_mut().unwrap()
                                 .insert(ui_key, true);
+                        } else if dispatch_event.is_none() {
+                            if let Some(main) = &self.main {
+                                dispatch_event =
+                                    Some(UIEvent::Key {
+                                        id:  main.id(),
+                                        key: key.key.clone()
+                                    });
+                            }
                         }
                     },
                 }
-                // TODO: Handle built in functionality like ValueDrag!
             },
             InputEvent::KeyReleased(key) => {
                 if let Some(ui_key) = UIKey::from(key.key) {
