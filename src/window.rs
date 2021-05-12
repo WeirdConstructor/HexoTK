@@ -19,6 +19,7 @@ use raw_window_handle::RawWindowHandle;
 use baseview::{
     Size, Event, WindowEvent, MouseEvent, ScrollDelta, MouseButton, Window,
     WindowHandler, WindowOpenOptions, WindowScalePolicy,
+    EventStatus,
 };
 
 use crate::{InputEvent, MButton, WindowUI};
@@ -84,7 +85,7 @@ pub struct GUIWindowHandler {
 
 impl WindowHandler for GUIWindowHandler {
 
-    fn on_event(&mut self, _: &mut Window, event: Event) {
+    fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
                 self.ui.handle_input_event(
@@ -169,9 +170,11 @@ impl WindowHandler for GUIWindowHandler {
                 println!("UNHANDLED EVENT: {:?}", event);
             },
         }
+
+        EventStatus::Captured
     }
 
-    fn on_frame(&mut self) {
+    fn on_frame(&mut self, win: &mut Window) {
         self.counter += 1;
         if self.counter % 500 == 0 {
 //            println!("REDRAW.....");
