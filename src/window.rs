@@ -174,7 +174,7 @@ impl WindowHandler for GUIWindowHandler {
         EventStatus::Captured
     }
 
-    fn on_frame(&mut self, win: &mut Window) {
+    fn on_frame(&mut self, _win: &mut Window) {
         self.counter += 1;
         if self.counter % 500 == 0 {
 //            println!("REDRAW.....");

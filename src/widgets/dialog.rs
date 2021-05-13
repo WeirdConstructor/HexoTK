@@ -58,6 +58,7 @@ impl DialogData {
 
         let mut cont = ContainerData::new();
         cont.contrast_border()
+            .level(2)
             .new_row()
             .add(wbox!(
                 wt_txt,
