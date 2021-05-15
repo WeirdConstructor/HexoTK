@@ -156,8 +156,8 @@ impl HexEdge {
             HexEdge::ArrowValue { value } => {
                 draw_arrow(p, UI_GRID_SIGNAL_OUT_CLR, x, y, 0.0, 0.0, 10.0, rot);
                 let clr = (
-                    (*value as f64).max(0.0).abs(),
                     (*value as f64).min(0.0).abs(),
+                    (*value as f64).max(0.0).abs(),
                     0.3,
                 );
                 draw_arrow(p, clr, x, y, 1.0, 0.0, 7.5, rot);
