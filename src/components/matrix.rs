@@ -206,7 +206,7 @@ impl HexGridModel for UIMatrixModel {
                 match edge {
                     HexDir::TR => HexEdge::Arrow,
                     HexDir::BR => HexEdge::NoArrow,
-                    HexDir::B  => HexEdge::ArrowValue { value: 0.2 },
+                    HexDir::B  => HexEdge::ArrowValue { value: (0.2, 1.0) },
                     _          => HexEdge::NoArrow,
                 };
 
