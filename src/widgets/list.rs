@@ -35,6 +35,10 @@ impl ListItems {
         }
     }
 
+    pub fn clear(&self) {
+        self.items.borrow_mut().clear();
+    }
+
     pub fn push(&self, setting: i64, s: String) {
         let s_short =
             if s.len() > self.width {

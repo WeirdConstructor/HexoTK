@@ -181,6 +181,7 @@ struct SomeParameters {
     dialog_model:   Rc<RefCell<DialogModel>>,
     atoms:          Vec<Atom>,
     phase:          f32,
+    test_list1_items: crate::widgets::ListItems,
 }
 
 impl AtomDataModel for SomeParameters {
@@ -206,6 +207,8 @@ impl AtomDataModel for SomeParameters {
             self.set(AtomId::new(id.node_id(), 23), v.clone());
 
         } else if atid == 25 {
+            self.test_list1_items.clear();
+
             self.dialog_model.borrow_mut().open(
                 "Test\nFofeo woei jfweo\nfewiofewiofewfoweifewfewfoiwe jfweofi jewf ijwefo we",
                 Box::new(|_atoms: &mut dyn AtomDataModel| {
@@ -395,7 +398,7 @@ fn main() {
             .new_row()
             .add(wbox!(
                  wt_list, 24.into(), center(12, 8),
-                 ListData::new("Preset:", ListOutput::ByString, li)));
+                 ListData::new("Preset:", ListOutput::ByString, li.clone())));
 
         let mut other = ContainerData::new();
         other
@@ -512,7 +515,8 @@ fn main() {
             Box::new(SomeParameters {
                 atoms,
                 phase: 0.0,
-                dialog_model: dialog_model.clone()
+                dialog_model: dialog_model.clone(),
+                test_list1_items: li,
             }),
             (WINDOW_W as f64, WINDOW_H as f64),
         ));
