@@ -8,6 +8,8 @@ use super::util::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+pub use hexodsp::dsp::tracker::UIPatternModel;
+
 fn value2note_name(val: u16) -> Option<&'static str> {
     if val < 21 || val > 127 {
         return None;
@@ -37,39 +39,6 @@ fn value2note_name(val: u16) -> Option<&'static str> {
         126 => "F#9", 127 => "G-9", 128 => "G#9", 129 => "A-9", 130 => "A#9", 131 => "B-9",
         _ => "???",
     })
-}
-
-impl dyn UIPatternModel {
-    fn change_value(&mut self, row: usize, col: usize, offs: i16) {
-        let val = self.get_cell_value(row, col) as i16;
-        let val = (val + offs).max(0).min(0xfff);
-        self.set_cell_value(row, col, val as u16);
-    }
-}
-
-pub trait UIPatternModel: Debug {
-    fn get_cell(&mut self, row: usize, col: usize) -> Option<&str>;
-    fn is_col_note(&self, col: usize) -> bool;
-    fn is_col_step(&self, col: usize) -> bool;
-    fn is_col_gate(&self, col: usize) -> bool;
-
-    fn rows(&self) -> usize;
-    fn cols(&self) -> usize;
-    fn set_rows(&mut self, rows: usize);
-
-    fn clear_cell(&mut self, row: usize, col: usize);
-    fn set_col_note_type(&mut self, col: usize);
-    fn set_col_step_type(&mut self, col: usize);
-    fn set_col_value_type(&mut self, col: usize);
-    fn set_col_gate_type(&mut self, col: usize);
-
-    fn set_cell_value(&mut self, row: usize, col: usize, val: u16);
-    fn get_cell_value(&mut self, row: usize, col: usize) -> u16;
-
-    fn set_cursor(&mut self, row: usize, col: usize);
-    fn get_cursor(&self) -> (usize, usize);
-    fn set_edit_step(&mut self, es: usize);
-    fn get_edit_step(&mut self) -> usize;
 }
 
 //pub struct PatternData {
