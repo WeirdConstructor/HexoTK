@@ -492,6 +492,55 @@ impl Atom {
 impl From<f32> for Atom {
     fn from(n: f32) -> Self { Atom::Param(n) }
 }
+//impl Into<SAtom> for Atom {
+//    fn into(self) -> SAtom {
+//        match self {
+//            Atom::Str(s)         => SAtom::Str(s),
+//            Atom::MicroSample(s) => SAtom::MicroSample(s),
+//            Atom::AudioSample(s) => SAtom::AudioSample(s),
+//            Atom::Setting(s)     => SAtom::Setting(s),
+//            Atom::Param(s)       => SAtom::Param(s),
+//        }
+//    }
+//}
+//
+//impl Into<Atom> for SAtom {
+//    fn into(self) -> Atom {
+//        match self {
+//            SAtom::Str(s)         => Atom::Str(s),
+//            SAtom::MicroSample(s) => Atom::MicroSample(s),
+//            SAtom::AudioSample(s) => Atom::AudioSample(s),
+//            SAtom::Setting(s)     => Atom::Setting(s),
+//            SAtom::Param(s)       => Atom::Param(s),
+//        }
+//    }
+//}
+
+use hexodsp::SAtom;
+
+impl From<Atom> for SAtom {
+    fn from(n: Atom) -> Self {
+        match n {
+            Atom::Str(s)         => SAtom::Str(s),
+            Atom::MicroSample(s) => SAtom::MicroSample(s),
+            Atom::AudioSample(s) => SAtom::AudioSample(s),
+            Atom::Setting(s)     => SAtom::Setting(s),
+            Atom::Param(s)       => SAtom::Param(s),
+        }
+    }
+}
+
+impl From<SAtom> for Atom {
+    fn from(n: SAtom) -> Atom {
+        match n {
+            SAtom::Str(s)         => Atom::Str(s),
+            SAtom::MicroSample(s) => Atom::MicroSample(s),
+            SAtom::AudioSample(s) => Atom::AudioSample(s),
+            SAtom::Setting(s)     => Atom::Setting(s),
+            SAtom::Param(s)       => Atom::Param(s),
+        }
+    }
+}
 
 impl std::default::Default for Atom {
     fn default() -> Self { Atom::Param(0.0) }
