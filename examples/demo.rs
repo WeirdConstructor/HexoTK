@@ -314,7 +314,7 @@ fn main() {
         let wt_knob_11  = Rc::new(Knob::new(30.0, 10.0, 10.0).range_signed());
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
-        let wt_entry    = Rc::new(Entry::new(60.0, 12.0, 8));
+        let wt_entry    = Rc::new(Entry::new_not_editable(60.0, 12.0, 8));
         let wt_list     = Rc::new(List::new(60.0, 12.0, 4));
         let wt_cva      = Rc::new(CvArray::new(8, 120.0, 30.0, 12.0, false));
         let wt_cvab     = Rc::new(CvArray::new(8, 120.0, 20.0, 12.0, true));

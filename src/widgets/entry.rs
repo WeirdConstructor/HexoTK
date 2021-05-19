@@ -11,6 +11,7 @@ pub struct Entry {
     font_size:  f64,
     rect:       Rect,
     txt_width:  usize,
+    editable:   bool,
 }
 
 #[derive(Debug)]
@@ -32,9 +33,18 @@ impl EntryData {
 
 impl Entry {
     pub fn new(width: f64, font_size: f64, txt_width: usize) -> Self {
+        Self::new_ed(width, font_size, txt_width, true)
+    }
+
+    pub fn new_not_editable(width: f64, font_size: f64, txt_width: usize) -> Self {
+        Self::new_ed(width, font_size, txt_width, false)
+    }
+
+    pub fn new_ed(width: f64, font_size: f64, txt_width: usize, editable: bool) -> Self {
         Self {
             font_size,
             txt_width,
+            editable,
             rect: Rect::from(
                 0.0, 0.0,
                 width         + 2.0 * UI_PADDING + 2.0 * UI_BORDER_WIDTH,
@@ -49,8 +59,10 @@ impl WidgetType for Entry {
         let id        = data.id();
         let highlight = ui.hl_style_for(id, None);
 
-        ui.define_active_zone(
-            ActiveZone::new_input_zone(id, pos));
+        if self.editable {
+            ui.define_active_zone(
+                ActiveZone::new_input_zone(id, pos));
+        }
 
         let border_color =
             match highlight {
@@ -82,6 +94,10 @@ impl WidgetType for Entry {
                 data.count = 0;
                 data.curs_vis = !data.curs_vis;
             };
+
+            if !self.editable {
+                data.curs_vis = false;
+            }
 
             let txt_width = self.txt_width;
 
