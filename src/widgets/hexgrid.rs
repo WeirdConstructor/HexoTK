@@ -42,6 +42,20 @@ impl HexDir {
     }
 }
 
+use hexodsp::CellDir;
+
+impl From<HexDir> for CellDir {
+    fn from(h: HexDir) -> Self {
+        CellDir::from(h.to_edge())
+    }
+}
+
+impl From<CellDir> for HexDir {
+    fn from(c: CellDir) -> Self {
+        HexDir::from(c.to_edge())
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum HexEdge {
     NoArrow,
