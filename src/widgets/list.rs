@@ -19,6 +19,7 @@ pub struct List {
 pub enum ListOutput {
     ByString,
     BySetting,
+    ByAudioSample,
 }
 
 #[derive(Debug, Clone)]
@@ -272,6 +273,11 @@ impl WidgetType for List {
                                         ListOutput::BySetting => {
                                             ui.atoms_mut().set(
                                                 *id, Atom::setting(item.0))
+                                        },
+                                        ListOutput::ByAudioSample => {
+                                            ui.atoms_mut().set(
+                                                *id,
+                                                Atom::audio_unloaded(&item.1));
                                         },
                                     }
                                 }
