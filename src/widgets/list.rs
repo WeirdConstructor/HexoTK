@@ -263,25 +263,31 @@ impl WidgetType for List {
                         } else {
                             let mode = data.out_mode;
 
-                            data.with_visible_item(*index - 2, |_idx, item| {
-                                if let Some(item) = item {
-                                    match mode {
-                                        ListOutput::ByString => {
-                                            ui.atoms_mut().set(
-                                                *id, Atom::str(&item.1))
-                                        },
-                                        ListOutput::BySetting => {
-                                            ui.atoms_mut().set(
-                                                *id, Atom::setting(item.0))
-                                        },
-                                        ListOutput::ByAudioSample => {
-                                            ui.atoms_mut().set(
-                                                *id,
-                                                Atom::audio_unloaded(&item.1));
-                                        },
+                            let item =
+                                data.with_visible_item(*index - 2, |_idx, item| {
+                                    if let Some(item) = item {
+                                        Some(item.clone())
+                                    } else {
+                                        None
                                     }
+                                });
+                            if let Some(item) = item  {
+                                match mode {
+                                    ListOutput::ByString => {
+                                        ui.atoms_mut().set(
+                                            *id, Atom::str(&item.1))
+                                    },
+                                    ListOutput::BySetting => {
+                                        ui.atoms_mut().set(
+                                            *id, Atom::setting(item.0))
+                                    },
+                                    ListOutput::ByAudioSample => {
+                                        ui.atoms_mut().set(
+                                            *id,
+                                            Atom::audio_unloaded(&item.1));
+                                    },
                                 }
-                            });
+                            }
                         }
                     });
                 }
