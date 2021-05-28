@@ -15,7 +15,7 @@ pub struct DialogModel {
 impl DialogModel {
     pub fn new() -> Self {
         Self {
-            text:   Rc::new(TextSourceRef::new(80)),
+            text:   Rc::new(TextSourceRef::new(94)),
             on_ok:  None,
             visible: false,
         }
@@ -73,7 +73,7 @@ impl DialogData {
         let cont =
             wbox!(wt_cont, AtomId::new(node_id, 2), center(12, 12), cont);
 
-        Box::new(Self { model, cont, ok_btn_id, last_click_seq: -1 })
+        Box::new(Self { model, cont, ok_btn_id, last_click_seq: 0 })
     }
 }
 
