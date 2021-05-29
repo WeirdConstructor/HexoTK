@@ -450,6 +450,8 @@ impl Atom {
             Atom::AudioSample((s, _))   => {
                 if let Some(idx) = s.rfind("/") {
                     Some(&s[(idx + 1)..])
+                } else if let Some(idx) = s.rfind("\\") {
+                    Some(&s[(idx + 1)..])
                 } else {
                     Some(&s)
                 }
