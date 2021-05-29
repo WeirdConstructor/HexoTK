@@ -446,8 +446,15 @@ impl Atom {
 
     pub fn str_ref(&self) -> Option<&str> {
         match self {
-            Atom::Str(s) => Some(&s),
-            _            => None,
+            Atom::Str(s)                => Some(&s),
+            Atom::AudioSample((s, _))   => {
+                if let Some(idx) = s.rfind("/") {
+                    Some(&s[(idx + 1)..])
+                } else {
+                    Some(&s)
+                }
+            },
+            _                           => None,
         }
     }
 

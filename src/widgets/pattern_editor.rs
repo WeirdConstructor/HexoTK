@@ -842,6 +842,7 @@ impl WidgetType for PatternEditor {
                 let y = (ir + 1) as f64 * UI_TRK_ROW_HEIGHT;
                 let ir = row_scroll_offs as usize + ir;
 
+
                 if ir >= pat.rows() {
                     break;
                 }

@@ -113,8 +113,14 @@ impl WidgetType for Entry {
                         if len > txt_width { len - txt_width }
                         else { 0 };
 
-                    for c in s.chars().skip(skip) {
-                        write!(bw, "{}", c).expect("write ok");
+                    if self.editable {
+                        for c in s.chars().skip(skip) {
+                            write!(bw, "{}", c).expect("write ok");
+                        }
+                    } else {
+                        for c in s.chars().take(txt_width) {
+                            write!(bw, "{}", c).expect("write ok");
+                        }
                     }
 
                     if ui.is_input_value_for(id) && data.curs_vis {
