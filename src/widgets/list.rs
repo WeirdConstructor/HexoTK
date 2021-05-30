@@ -24,20 +24,29 @@ pub enum ListOutput {
 
 #[derive(Debug, Clone)]
 pub struct ListItems {
-    items: Rc<RefCell<Vec<(i64, String, String)>>>,
-    width: usize,
+    items:      Rc<RefCell<(bool, Vec<(i64, String, String)>)>>,
+    width:      usize,
 }
 
 impl ListItems {
     pub fn new(width: usize) -> Self {
         Self {
-            items: Rc::new(RefCell::new(vec![])),
+            items: Rc::new(RefCell::new((true, vec![]))),
             width,
         }
     }
 
-    pub fn clear(&self) {
-        self.items.borrow_mut().clear();
+    pub fn clear(&mut self) {
+        self.items.borrow_mut().0 = true;
+        self.items.borrow_mut().1.clear();
+    }
+
+    pub fn check_reloaded(&mut self) -> bool {
+        let rel = self.items.borrow().0;
+        if rel {
+            self.items.borrow_mut().0 = false;
+        }
+        rel
     }
 
     pub fn push(&self, setting: i64, s: String) {
@@ -49,7 +58,7 @@ impl ListItems {
             } else {
                 s.to_string()
             };
-        self.items.borrow_mut().push((setting, s, s_short));
+        self.items.borrow_mut().1.push((setting, s, s_short));
     }
 }
 
@@ -76,20 +85,26 @@ impl ListData {
         where F: FnMut(usize, Option<&(i64, String, String)>) -> R
     {
         let idx = idx + self.offs;
-        if idx > self.items.items.borrow().len() {
+        if idx > self.items.items.borrow().1.len() {
             return f(idx, None);
         }
 
         let items = self.items.items.borrow();
-        let item = items.get(idx);
+        let item = items.1.get(idx);
         f(idx, item)
     }
 
     pub fn is_last_item_visible(&self, lines: usize) -> bool {
         let items = self.items.items.borrow();
-        let item_count = items.len();
+        let item_count = items.1.len();
         let remaining_after = item_count - (self.offs + lines);
         remaining_after == 0
+    }
+
+    pub fn check_scroll_reset(&mut self) {
+        if self.items.check_reloaded() {
+            self.offs = 0;
+        }
     }
 }
 
@@ -126,6 +141,8 @@ impl WidgetType for List {
         let pos = pos.shrink(UI_SAFETY_PAD, UI_SAFETY_PAD);
 
         data.with(|data: &mut ListData| {
+            data.check_scroll_reset();
+
             p.label(self.font_size, -1, UI_LBL_TXT_CLR,
                 pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label);
 
@@ -210,6 +227,7 @@ impl WidgetType for List {
                     UI_LIST_SEP_CLR,
                     UI_TAB_BG_CLR,
                     btn_up_pos);
+
             if data.offs > 0 {
                 ui.define_active_zone(
                     ActiveZone::new_indexed_click_zone(id, btn_up_pos, 0));
@@ -227,6 +245,7 @@ impl WidgetType for List {
                     UI_LIST_SEP_CLR,
                     UI_TAB_BG_CLR,
                     btn_down_pos);
+
             if !data.is_last_item_visible(self.lines) {
                 ui.define_active_zone(
                     ActiveZone::new_indexed_click_zone(id, btn_down_pos, 1));
@@ -254,7 +273,7 @@ impl WidgetType for List {
                                 data.offs -= data.offs.min(self.lines / 2);
                             }
                         } else if *index == 1 {
-                            let item_count = data.items.items.borrow().len();
+                            let item_count = data.items.items.borrow().1.len();
                             if item_count >= data.offs {
                                 let remaining_after =
                                     item_count - (data.offs + self.lines);
@@ -304,7 +323,7 @@ impl WidgetType for List {
                         } else {
                             let lines = lines.abs() as usize;
 
-                            let item_count = data.items.items.borrow().len();
+                            let item_count = data.items.items.borrow().1.len();
                             if item_count >= data.offs {
                                 let remaining_after =
                                     item_count - (data.offs + self.lines);
