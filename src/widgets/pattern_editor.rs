@@ -646,7 +646,7 @@ fn note_from_char(c: &str, octave: u16) -> Option<u16> {
         "l" => Some(octave + 13),
         "." => Some(octave + 14),
         ";" => Some(octave + 15),
-        "/" => Some(octave + 16),
+        // "/" => Some(octave + 16), // collides with the "/" bind for edit step
 
         "q" => Some(octave + 12),
         "2" => Some(octave + 13),
