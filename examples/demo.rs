@@ -316,8 +316,8 @@ fn main() {
         let wt_text     = Rc::new(Text::new(15.0));
         let wt_entry    = Rc::new(Entry::new_not_editable(60.0, 12.0, 8));
         let wt_list     = Rc::new(List::new(60.0, 12.0, 4));
-        let wt_cva      = Rc::new(CvArray::new(8, 120.0, 30.0, 12.0, false));
-        let wt_cvab     = Rc::new(CvArray::new(8, 120.0, 20.0, 12.0, true));
+        let wt_cva      = Rc::new(CvArray::new(16, 120.0, 30.0, 12.0, false));
+        let wt_cvab     = Rc::new(CvArray::new(16, 120.0, 20.0, 12.0, true));
         let wt_keys     = Rc::new(Keys::new(220.0, 50.0, 12.0));
         let wt_diag     = Rc::new(Dialog::new());
         let wt_tabs     = Tabs::new_ref();
@@ -503,7 +503,9 @@ fn main() {
         atoms[23] = Atom::str("Test");
         atoms[28] = Atom::micro(&[
             0.1, 0.5, 0.01, 0.75,
-            0.9, 1.0, 0.99, 1.00
+            0.9, 1.0, 0.99, 1.00,
+            0.1, 0.5, 0.01, 0.75,
+            0.9, 1.0, 0.99, 1.00,
         ]);
 
         let ui = Box::new(UI::new(

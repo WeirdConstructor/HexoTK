@@ -218,14 +218,14 @@ fn circle_point(r: f64, angle: f64) -> (f64, f64) {
 
 #[derive(Debug, Clone)]
 pub struct KnobData {
-    lbl_buf:    [u8; 10],
+    lbl_buf:    [u8; 15],
     name:       String,
 }
 
 impl KnobData {
 	pub fn new(name: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
-            lbl_buf:    [0; 10],
+            lbl_buf:    [0; 15],
             name:       name.to_string(),
         })
     }

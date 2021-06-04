@@ -282,6 +282,7 @@ impl WidgetType for Button {
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
             UIEvent::Click { id, button, .. } => {
+                println!("BTN CHK: {} == {}", *id, data.id());
                 if *id == data.id() {
                     data.with(|data: &mut ButtonData| {
                         match button {
