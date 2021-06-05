@@ -197,6 +197,25 @@ impl AtomDataModel for SomeParameters {
     fn get(&self, id: AtomId) -> Option<&Atom> {
         Some(&self.atoms[id.atom_id() as usize])
     }
+    fn get_ui_steps(&self, id: AtomId) -> Option<(f32, f32)> {
+        if id.atom_id() == 6 {
+            Some((0.005, 0.001))
+        } else {
+            None
+        }
+    }
+    fn get_ui_range(&self, id: AtomId) -> Option<f32> {
+        if id.atom_id() == 7 {
+            let v = self.get(id)?.f();
+            Some(((v + 1.0) * 0.5).clamp(0.0, 1.0))
+
+        } else if id.atom_id() == 6 {
+            Some(self.get(id)?.f() * 10.0)
+
+        } else {
+            self.get(id).map(|v| v.f())
+        }
+    }
     fn get_denorm(&self, id: AtomId) -> Option<f32> {
         Some(self.atoms[id.atom_id() as usize].f())
     }
@@ -311,7 +330,6 @@ fn main() {
         let wt_btn      = Rc::new(Button::new(80.0, 10.0));
         let wt_btn_spc  = Rc::new(Button::new(80.0, 12.0));
         let wt_knob     = Rc::new(Knob::new(30.0, 10.0, 10.0));
-        let wt_knob_11  = Rc::new(Knob::new(30.0, 10.0, 10.0).range_signed());
         let wt_cont     = Rc::new(Container::new());
         let wt_text     = Rc::new(Text::new(15.0));
         let wt_entry    = Rc::new(Entry::new_not_editable(60.0, 12.0, 8));
@@ -331,8 +349,8 @@ fn main() {
            .new_row()
            .add(wbox!(wt_knob,    4.into(), center(3, 12), KnobData::new("A")))
            .add(wbox!(wt_knob,    5.into(), center(3, 12), KnobData::new("B")))
-           .add(wbox!(wt_knob,    6.into(), center(3, 12), KnobData::new("C")))
-           .add(wbox!(wt_knob_11, 7.into(), center(3, 12), KnobData::new("D")));
+           .add(wbox!(wt_knob,    6.into(), center(3, 12), KnobData::new("C0.1")))
+           .add(wbox!(wt_knob,    7.into(), center(3, 12), KnobData::new("D-11")));
 
         let li = ListItems::new(6);
         li.push(-1, String::from("Main"));

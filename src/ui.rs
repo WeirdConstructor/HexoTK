@@ -801,11 +801,18 @@ impl WindowUI for UI {
                         ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
                             match btn {
                                 MButton::Left => {
+                                    let steps =
+                                        self.atoms.as_ref().unwrap()
+                                            .get_ui_steps(az.id)
+                                            .unwrap_or(
+                                                (DEFAULT_COARSE_STEP,
+                                                 DEFAULT_FINE_STEP));
+
                                     let step_dt =
                                         if let ZoneType::ValueDragCoarse = az.zone_type {
-                                            DEFAULT_COARSE_STEP
+                                            steps.0
                                         } else {
-                                            DEFAULT_FINE_STEP
+                                            steps.1
                                         };
 
                                     let v =

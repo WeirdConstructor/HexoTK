@@ -609,6 +609,16 @@ pub trait AtomDataModel {
     fn get_phase_value(&self, id: AtomId) -> Option<f32>;
     fn get_led_value(&self, id: AtomId) -> Option<f32>;
     fn get(&self, id: AtomId) -> Option<&Atom>;
+    /// Should return a value in the range 0.0 to 1.0 for displayed knob position.
+    /// For instance: a normalized value in the range -1.0 to 1.0 needs to be mapped
+    /// to 0.0 to 1.0 by: `(x + 1.0) * 0.5`
+    fn get_ui_range(&self, id: AtomId) -> Option<f32>;
+    /// Should return a coarse step and a fine step for the normalized value.
+    /// If none are returned, the UI will assume default steps of:
+    ///
+    /// * Default coarse: 0.05
+    /// * Default fine: 0.01
+    fn get_ui_steps(&self, id: AtomId) -> Option<(f32, f32)>;
     fn get_denorm(&self, id: AtomId) -> Option<f32>;
     fn set(&mut self, id: AtomId, v: Atom);
     fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;

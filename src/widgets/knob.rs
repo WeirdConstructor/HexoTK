@@ -15,7 +15,6 @@ pub struct Knob {
     radius:         f64,
     font_size_lbl:  f64,
     font_size_data: f64,
-    range_signed:   bool,
 }
 
 impl Knob {
@@ -60,13 +59,7 @@ impl Knob {
             radius,
             font_size_lbl,
             font_size_data,
-            range_signed: false,
         }
-    }
-
-    pub fn range_signed(mut self) -> Self {
-        self.range_signed = true;
-        self
     }
 
     pub fn get_center_offset(&self, line_width: f64) -> (f64, f64) {
@@ -277,12 +270,9 @@ impl WidgetType for Knob {
         let id = data.id();
         let highlight = ui.hl_style_for(id, None);
         let value =
-            if let Some(v) = ui.atoms().get(id) { v.f() as f64 }
-            else { 0.0 };
-
-        let ranged_value =
-            if self.range_signed { (value.clamp(-1.0, 1.0) + 1.0) * 0.5 }
-            else                 { value.clamp(0.0, 1.0) };
+            if let Some(v) = ui.atoms().get_ui_range(id) {
+                (v as f64).clamp(0.0, 1.0)
+            } else { 0.0 };
 
         match highlight {
             HLStyle::ModTarget => {
@@ -314,7 +304,7 @@ impl WidgetType for Knob {
                     UI_MG_KNOB_STROKE,
                     UI_FG_KNOB_STROKE_CLR,
                     true,
-                    ranged_value);
+                    value);
             },
             HLStyle::Inactive => {
                 self.draw_oct_arc(
@@ -328,7 +318,7 @@ impl WidgetType for Knob {
                     UI_MG_KNOB_STROKE,
                     UI_INACTIVE2_CLR,
                     true,
-                    ranged_value);
+                    value);
             },
               HLStyle::None
             | HLStyle::AtomClick
@@ -338,7 +328,7 @@ impl WidgetType for Knob {
                     UI_MG_KNOB_STROKE,
                     UI_FG_KNOB_STROKE_CLR,
                     true,
-                    ranged_value);
+                    value);
             }
         }
 
