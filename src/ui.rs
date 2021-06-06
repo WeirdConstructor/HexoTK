@@ -84,8 +84,6 @@ pub struct UI {
     atoms:          Option<Box<dyn AtomDataModel>>,
     /// The current input mode.
     input_mode:     Option<InputMode>,
-    /// Holds the pressed modifier keys.
-    mod_keys:       ModifierKeys,
     /// Holds the currently pressed keys for the widgets to query:
     pressed_keys:   Option<Box<HashMap<UIKey, bool>>>,
     /// Is set, when a widget requires a redraw after some event.
@@ -300,19 +298,33 @@ enum InputMode {
 }
 
 impl InputMode {
-    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(AtomId, f32, ChangeRes)> {
+    fn calc_value_delta(
+        orig_pos: (f64, f64), mouse_pos: (f64, f64), fine_key: bool, step_dt: f32)
+        -> f32
+    {
+        let distance = (orig_pos.1 - mouse_pos.1) as f32;
+
+        let steps =
+            if fine_key { distance / 25.0 }
+            else        { distance / 10.0 };
+
+        steps as f32 * step_dt
+    }
+
+    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64))
+        -> Option<(AtomId, f32, ChangeRes)>
+    {
         match self {
             InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
                                    fine_key, orig_pos, res, .. } => {
 
-                let distance = (orig_pos.1 - mouse_pos.1) as f32;
-                let steps =
-                    if *fine_key { distance / 25.0 }
-                    else         { distance / 10.0 };
+                let value_delta =
+                    InputMode::calc_value_delta(
+                        *orig_pos, mouse_pos, *fine_key, *step_dt);
 
                 Some((
                     zone.id,
-                    (value + steps * step_dt + pre_fine_delta),
+                    (value + value_delta + pre_fine_delta),
                     *res
                 ))
             },
@@ -381,9 +393,6 @@ impl UI {
             window_size,
             pressed_keys:       Some(Box::new(HashMap::new())),
             cur_hex_trans:      None,
-            mod_keys: ModifierKeys {
-                fine_drag_key: false
-            },
         }
     }
 
@@ -638,8 +647,9 @@ impl WindowUI for UI {
                 let new_hz = self.get_zone_at(self.mouse_pos);
 
                 if let Some(input_mode) = &self.input_mode {
-                    if let Some(pc) = input_mode.get_param_change_when_drag(self.mouse_pos) {
-
+                    if let Some(pc) =
+                        input_mode.get_param_change_when_drag(self.mouse_pos)
+                    {
                         param_change = Some(pc);
                     } else {
                         match input_mode {
@@ -681,7 +691,7 @@ impl WindowUI for UI {
 
                 if let Some((id, val, res)) = param_change {
                     let res =
-                        if self.is_key_pressed(UIKey::Shift) {
+                        if self.is_key_pressed(UIKey::Ctrl) {
                             ChangeRes::Free
                         } else { res };
 
@@ -832,14 +842,17 @@ impl WindowUI for UI {
                                             0.0
                                         };
 
+                                    let fine_key =
+                                        self.is_key_pressed(UIKey::Shift);
+
                                     self.input_mode =
                                         Some(InputMode::ValueDrag {
                                             step_dt,
                                             res,
+                                            fine_key,
                                             value:          v,
                                             orig_pos:       self.mouse_pos,
                                             zone:           az,
-                                            fine_key:       self.mod_keys.fine_drag_key,
                                             pre_fine_delta: 0.0,
                                         });
 
@@ -962,9 +975,27 @@ impl WindowUI for UI {
                         }
                     },
                     _ => {
+                        if key.key == Key::Shift {
+                            if let Some(InputMode::ValueDrag {
+                                value, pre_fine_delta, fine_key,
+                                step_dt, orig_pos, ..
+                            }) = &mut self.input_mode
+                            {
+                                if !*fine_key {
+                                    *pre_fine_delta =
+                                        InputMode::calc_value_delta(
+                                            *orig_pos, self.mouse_pos,
+                                            false, *step_dt);
+                                    *orig_pos       = self.mouse_pos;
+                                    *fine_key       = true;
+                                }
+                            }
+                        }
+
                         if let Some(ui_key) = UIKey::from(key.key.clone()) {
                             self.pressed_keys.as_mut().unwrap()
                                 .insert(ui_key, true);
+
                         } else if dispatch_event.is_none() {
                             if let Some(main) = &self.main {
                                 dispatch_event =
