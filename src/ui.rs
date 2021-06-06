@@ -305,7 +305,7 @@ impl InputMode {
         let distance = (orig_pos.1 - mouse_pos.1) as f32;
 
         let steps =
-            if fine_key { distance / 25.0 }
+            if fine_key { distance / 100.0 }
             else        { distance / 10.0 };
 
         steps as f32 * step_dt
