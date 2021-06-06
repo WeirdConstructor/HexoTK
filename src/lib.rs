@@ -604,6 +604,16 @@ impl From<(usize, usize)> for AtomId {
     }
 }
 
+/// This specifies the granularity or resultion of the change.
+/// The client of this API can then round the given changed values
+/// to a fine/coarse step, or no step at all.
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
+pub enum ChangeRes {
+    Free,
+    Fine,
+    Coarse,
+}
+
 pub trait AtomDataModel {
     fn check_sync(&mut self);
     fn get_phase_value(&self, id: AtomId) -> Option<f32>;
@@ -626,8 +636,8 @@ pub trait AtomDataModel {
     fn step_prev(&mut self, id: AtomId);
     fn set_default(&mut self, id: AtomId);
     fn change_start(&mut self, id: AtomId);
-    fn change(&mut self, id: AtomId, v: f32, single: bool);
-    fn change_end(&mut self, id: AtomId, v: f32);
+    fn change(&mut self, id: AtomId, v: f32, single: bool, res: ChangeRes);
+    fn change_end(&mut self, id: AtomId, v: f32, res: ChangeRes);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

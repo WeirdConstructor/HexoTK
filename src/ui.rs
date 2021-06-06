@@ -46,10 +46,10 @@ struct ModifierKeys {
 ///         fn set(&mut self, id: AtomId, v: Atom) { self.atoms[id.param_id() as usize] = v; }
 ///         fn set_default(&mut self, id: AtomId) { self.set(id, 0.0); }
 ///         fn change_start(&mut self, id: AtomId) { }
-///         fn change(&mut self, id: AtomId, v: f32, single: bool) {
+///         fn change(&mut self, id: AtomId, v: f32, single: bool, _res: ChangeRes) {
 ///             self.set(id, v);
 ///         }
-///         fn change_end(&mut self, id: AtomId, v: f32) {
+///         fn change_end(&mut self, id: AtomId, v: f32, _res: ChangeRes) {
 ///             self.set(id, v);
 ///         }
 ///         fn step_next(&mut self, id: AtomId) {
@@ -253,7 +253,9 @@ enum InputMode {
         /// A delta value that is set when the user hits the Shift key.
         pre_fine_delta: f32,
         /// Whether the Shift key was pressed.
-        fine_key:       bool
+        fine_key:       bool,
+        /// The change resolution, used by the client to round the values.
+        res:            ChangeRes,
     },
     HexFieldZoom {
         zone:        ActiveZone,
@@ -298,10 +300,10 @@ enum InputMode {
 }
 
 impl InputMode {
-    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(AtomId, f32)> {
+    pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64)) -> Option<(AtomId, f32, ChangeRes)> {
         match self {
             InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
-                                   fine_key, orig_pos, .. } => {
+                                   fine_key, orig_pos, res, .. } => {
 
                 let distance = (orig_pos.1 - mouse_pos.1) as f32;
                 let steps =
@@ -310,7 +312,8 @@ impl InputMode {
 
                 Some((
                     zone.id,
-                    (value + steps * step_dt + pre_fine_delta)
+                    (value + steps * step_dt + pre_fine_delta),
+                    *res
                 ))
             },
             _ => None,
@@ -676,8 +679,13 @@ impl WindowUI for UI {
                     };
                 }
 
-                if let Some((id, val)) = param_change {
-                    self.atoms.as_mut().unwrap().change(id, val, false);
+                if let Some((id, val, res)) = param_change {
+                    let res =
+                        if self.is_key_pressed(UIKey::Shift) {
+                            ChangeRes::Free
+                        } else { res };
+
+                    self.atoms.as_mut().unwrap().change(id, val, false, res);
                     self.queue_redraw();
                 }
 
@@ -705,10 +713,10 @@ impl WindowUI for UI {
                 let mut reset_input_mode = true;
 
                 if let Some(input_mode) = self.input_mode.take() {
-                    if let Some((id, val)) =
+                    if let Some((id, val, res)) =
                         input_mode.get_param_change_when_drag(self.mouse_pos) {
 
-                        self.atoms.as_mut().unwrap().change_end(id, val);
+                        self.atoms.as_mut().unwrap().change_end(id, val, res);
                         self.queue_redraw();
                     } else {
                         match input_mode {
@@ -808,11 +816,11 @@ impl WindowUI for UI {
                                                 (DEFAULT_COARSE_STEP,
                                                  DEFAULT_FINE_STEP));
 
-                                    let step_dt =
+                                    let (step_dt, res) =
                                         if let ZoneType::ValueDragCoarse = az.zone_type {
-                                            steps.0
+                                            (steps.0, ChangeRes::Coarse)
                                         } else {
-                                            steps.1
+                                            (steps.1, ChangeRes::Fine)
                                         };
 
                                     let v =
@@ -827,6 +835,7 @@ impl WindowUI for UI {
                                     self.input_mode =
                                         Some(InputMode::ValueDrag {
                                             step_dt,
+                                            res,
                                             value:          v,
                                             orig_pos:       self.mouse_pos,
                                             zone:           az,

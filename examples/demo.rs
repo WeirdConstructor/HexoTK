@@ -244,14 +244,34 @@ impl AtomDataModel for SomeParameters {
 //        println!("CHANGE START: {}", id);
     }
 
-    fn change(&mut self, id: AtomId, v: f32, _single: bool) {
+    fn change(&mut self, id: AtomId, v: f32, _single: bool, res: ChangeRes) {
 //        println!("CHANGE: {},{} ({})", id, v, single);
-        self.set(id, Atom::param(v));
+        if id.atom_id() == 5 {
+            match res {
+                ChangeRes::Coarse =>
+                    self.set(id, Atom::param((v * 10.0).round() / 10.0)),
+                ChangeRes::Fine =>
+                    self.set(id, Atom::param((v * 100.0).round() / 100.0)),
+                _ => self.set(id, Atom::param(v)),
+            }
+        } else {
+            self.set(id, Atom::param(v));
+        }
     }
 
-    fn change_end(&mut self, id: AtomId, v: f32) {
+    fn change_end(&mut self, id: AtomId, v: f32, res: ChangeRes) {
 //        println!("CHANGE END: {},{}", id, v);
-        self.set(id, Atom::param(v));
+        if id.atom_id() == 5 {
+            match res {
+                ChangeRes::Coarse =>
+                    self.set(id, Atom::param((v * 10.0).round() / 10.0)),
+                ChangeRes::Fine =>
+                    self.set(id, Atom::param((v * 100.0).round() / 100.0)),
+                _ => self.set(id, Atom::param(v)),
+            }
+        } else {
+            self.set(id, Atom::param(v));
+        }
     }
 
     fn step_next(&mut self, id: AtomId) {
