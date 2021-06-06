@@ -726,6 +726,11 @@ impl WindowUI for UI {
                     if let Some((id, val, res)) =
                         input_mode.get_param_change_when_drag(self.mouse_pos) {
 
+                        let res =
+                            if self.is_key_pressed(UIKey::Ctrl) {
+                                ChangeRes::Free
+                            } else { res };
+
                         self.atoms.as_mut().unwrap().change_end(id, val, res);
                         self.queue_redraw();
                     } else {
