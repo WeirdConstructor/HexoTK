@@ -6,10 +6,6 @@ use keyboard_types::{Key};
 const DEFAULT_COARSE_STEP : f32 = 0.05;
 const DEFAULT_FINE_STEP   : f32 = 0.01;
 
-struct ModifierKeys {
-    fine_drag_key: bool,
-}
-
 /// The primary UI logic implementation.
 ///
 /// It takes care of processing the basic mouse and keyboard inputs
@@ -982,8 +978,7 @@ impl WindowUI for UI {
                     _ => {
                         if key.key == Key::Shift {
                             if let Some(InputMode::ValueDrag {
-                                value, pre_fine_delta, fine_key,
-                                step_dt, orig_pos, ..
+                                pre_fine_delta, fine_key, step_dt, orig_pos, ..
                             }) = &mut self.input_mode
                             {
                                 if !*fine_key {
