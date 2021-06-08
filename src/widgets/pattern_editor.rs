@@ -397,6 +397,17 @@ impl PatternEditorData {
                                     edit_step as i16, 0, pat);
                                 reset_entered_value = true;
                             },
+                            "," => {
+                                let cell_value =
+                                    pat.get_cell_value(
+                                        self.cursor.0,
+                                        self.cursor.1);
+                                self.last_set_value = cell_value;
+                                advance_cursor(
+                                    &mut self.cursor,
+                                    edit_step as i16, 0, pat);
+                                reset_entered_value = true;
+                            },
                             _ if pat.is_col_note(self.cursor.1) => {
                                 if let Some(value) =
                                     note_from_char(&c[..], octave)
