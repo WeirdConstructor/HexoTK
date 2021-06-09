@@ -76,12 +76,16 @@ pub struct Text {
 pub struct TextData {
     source:  Rc<dyn TextSource>,
     last_id: usize,
-    text:    String,
+    text:    Vec<String>,
 }
 
 impl TextData {
     pub fn new(source: Rc<dyn TextSource>) -> Box<dyn std::any::Any> {
-        Box::new(Self { source, last_id: 0, text: "".to_string() })
+        Box::new(Self {
+            source,
+            last_id: 0,
+            text: vec!["".to_string()]})
+            // , "Test\n1 2 3 4 5\nfeofeow eow".to_string()] })
     }
 }
 
@@ -110,9 +114,20 @@ impl WidgetType for Text {
 
         data.with(|data: &mut TextData| {
             if let Some((id, s)) = data.source.get(data.last_id) {
-                data.text    = s;
+                data.text[0] = s;
                 data.last_id = id;
             }
+
+            let (pos, btn_pos) =
+                if data.text.len() > 1 {
+                    let btn_height = UI_ELEM_TXT_H + 2.0 * UI_BORDER_WIDTH;
+                    let btn_pos =
+                        pos.crop_top(
+                            pos.h - btn_height);
+                    (pos.crop_bottom(btn_height), Some(btn_pos))
+                } else {
+                    (pos, None)
+                };
 
             let xo     = pos.x;
             let mut yo = pos.y;
@@ -121,7 +136,7 @@ impl WidgetType for Text {
                 p.font_height(self.font_size as f32, true) as f64;
 
             let mut first = true;
-            for line in data.text.split("\n") {
+            for line in data.text[0].split("\n") {
                 if first {
                     p.label_mono((self.font_size * 1.5).round(), 0,
                         UI_HELP_TXT_CLR,
@@ -137,6 +152,15 @@ impl WidgetType for Text {
                 yo += y_increment;
 
                 first = false;
+            }
+
+            if let Some(pos) = btn_pos {
+                p.rect_fill(
+                    (0.0, 0.0, 0.0),
+                    pos.x,
+                    pos.y,
+                    pos.w,
+                    pos.h);
             }
         });
     }
