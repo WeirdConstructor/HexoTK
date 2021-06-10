@@ -3,6 +3,7 @@
 
 use crate::constants::*;
 use super::*;
+use super::util::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -74,18 +75,22 @@ pub struct Text {
 }
 
 pub struct TextData {
-    source:  Rc<dyn TextSource>,
-    last_id: usize,
-    text:    Vec<String>,
+    source:     Rc<dyn TextSource>,
+    last_id:    usize,
+    text:       Vec<String>,
+    pages:      usize,
+    page_idx:   usize,
 }
 
 impl TextData {
     pub fn new(source: Rc<dyn TextSource>) -> Box<dyn std::any::Any> {
         Box::new(Self {
             source,
-            last_id: 0,
-            text: vec!["".to_string()]})
-            // , "Test\n1 2 3 4 5\nfeofeow eow".to_string()] })
+            last_id:    0,
+            page_idx:   0,
+            pages:      2,
+            text: vec!["".to_string() // ]})
+             , "Test\n1 2 3 4 5\nfeofeow eow".to_string()] })
     }
 }
 
@@ -107,10 +112,12 @@ impl Text {
 }
 
 impl WidgetType for Text {
-    fn draw(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
+    fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
         let pos =
             if self.no_padding { pos }
             else               { pos.shrink(UI_PADDING, UI_PADDING) };
+
+        let id = data.id();
 
         data.with(|data: &mut TextData| {
             if let Some((id, s)) = data.source.get(data.last_id) {
@@ -120,7 +127,7 @@ impl WidgetType for Text {
 
             let (pos, btn_pos) =
                 if data.text.len() > 1 {
-                    let btn_height = UI_ELEM_TXT_H + 2.0 * UI_BORDER_WIDTH;
+                    let btn_height = UI_ELEM_TXT_H + 2.0 * UI_BTN_BORDER2_WIDTH;
                     let btn_pos =
                         pos.crop_top(
                             pos.h - btn_height);
@@ -136,7 +143,7 @@ impl WidgetType for Text {
                 p.font_height(self.font_size as f32, true) as f64;
 
             let mut first = true;
-            for line in data.text[0].split("\n") {
+            for line in data.text[data.page_idx].split("\n") {
                 if first {
                     p.label_mono((self.font_size * 1.5).round(), 0,
                         UI_HELP_TXT_CLR,
@@ -155,12 +162,63 @@ impl WidgetType for Text {
             }
 
             if let Some(pos) = btn_pos {
-                p.rect_fill(
-                    (0.0, 0.0, 0.0),
-                    pos.x,
-                    pos.y,
-                    pos.w,
-                    pos.h);
+                let btn_right_pos = pos.crop_left((pos.w - UI_BTN_WIDTH).max((pos.w / 2.0).floor()));
+                let btn_left_pos  = pos.crop_right((pos.w - UI_BTN_WIDTH).max((pos.w / 2.0).floor()));
+                let btn_left_pos =
+                    rect_border(p,
+                        UI_BTN_BORDER2_WIDTH,
+                        UI_BTN_BORDER2_CLR,
+                        UI_BTN_BG_CLR,
+                        btn_left_pos);
+                let btn_right_pos =
+                    rect_border(p,
+                        UI_BTN_BORDER2_WIDTH,
+                        UI_BTN_BORDER2_CLR,
+                        UI_BTN_BG_CLR,
+                        btn_right_pos);
+
+                ui.define_active_zone(
+                    ActiveZone::new_indexed_click_zone(id, btn_left_pos, 0));
+                ui.define_active_zone(
+                    ActiveZone::new_indexed_click_zone(id, btn_right_pos, 1));
+
+                let hlt_left  = ui.hl_style_for(id, Some(0));
+                let hlt_right = ui.hl_style_for(id, Some(1));
+                let btn_txt_left_clr =
+                    match hlt_left {
+                        HLStyle::Hover(_) => UI_BTN_TXT_HOVER_CLR,
+                        _                 => UI_BTN_TXT_CLR,
+                    };
+                let btn_txt_right_clr =
+                    match hlt_right {
+                        HLStyle::Hover(_) => UI_BTN_TXT_HOVER_CLR,
+                        _                 => UI_BTN_TXT_CLR,
+                    };
+
+                p.label(
+                    self.font_size, 0,
+                    btn_txt_left_clr,
+                    btn_left_pos.x,
+                    btn_left_pos.y.floor(),
+                    btn_left_pos.w,
+                    UI_ELEM_TXT_H, "<");
+                p.label(
+                    self.font_size, 0,
+                    btn_txt_right_clr,
+                    btn_right_pos.x,
+                    btn_right_pos.y.floor(),
+                    btn_right_pos.w,
+                    UI_ELEM_TXT_H, ">");
+//
+//                if pos.w > 3 * UI_BTN_WIDTH {
+//                    p.label(
+//                        self.font_size, 0,
+//                        btn_txt_left_clr,
+//                        btn_left_pos.x,
+//                        btn_left_pos.y.floor(),
+//                        btn_left_pos.w,
+//                        UI_ELEM_TXT_H, "<");
+//                }
             }
         });
     }
@@ -169,9 +227,20 @@ impl WidgetType for Text {
         avail
     }
 
-    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) {
-//        match ev {
-//            _ => {},
-//        }
+    fn event(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
+        match ev {
+            UIEvent::Click { id, index, .. } => {
+                if data.id() == *id {
+                    data.with(|data: &mut TextData| {
+                        if *index == 0 {
+                            data.page_idx = (data.page_idx + 1 + data.pages) % data.pages;
+                        } else if *index == 1 {
+                            data.page_idx = (data.page_idx + 1) % data.pages;
+                        }
+                    });
+                }
+            },
+            _ => {}
+        }
     }
 }
