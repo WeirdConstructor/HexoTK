@@ -88,9 +88,8 @@ impl TextData {
             source,
             last_id:    0,
             page_idx:   0,
-            pages:      2,
-            text: vec!["".to_string() // ]})
-             , "Test\n1 2 3 4 5\nfeofeow eow".to_string()] })
+            pages:      1,
+            text: vec!["".to_string()]})
     }
 }
 
@@ -119,15 +118,25 @@ impl WidgetType for Text {
 
         let id = data.id();
 
+        let btn_height = UI_ELEM_TXT_H * 2.0;
+
         data.with(|data: &mut TextData| {
             if let Some((id, s)) = data.source.get(data.last_id) {
-                data.text[0] = s;
+                data.text.clear();
+                data.pages = 0;
+
+                for part in s.split("\n---page---\n") {
+                    data.text.push(part.to_string());
+                    data.pages += 1;
+                }
+
                 data.last_id = id;
+                data.page_idx = 0;
             }
 
             let (pos, btn_pos) =
                 if data.text.len() > 1 {
-                    let btn_height = UI_ELEM_TXT_H + 2.0 * UI_BTN_BORDER2_WIDTH;
+                    let btn_height = btn_height + 2.0 * UI_BTN_BORDER2_WIDTH;
                     let btn_pos =
                         pos.crop_top(
                             pos.h - btn_height);
@@ -201,24 +210,33 @@ impl WidgetType for Text {
                     btn_left_pos.x,
                     btn_left_pos.y.floor(),
                     btn_left_pos.w,
-                    UI_ELEM_TXT_H, "<");
+                    btn_height, "<");
                 p.label(
                     self.font_size, 0,
                     btn_txt_right_clr,
                     btn_right_pos.x,
                     btn_right_pos.y.floor(),
                     btn_right_pos.w,
-                    UI_ELEM_TXT_H, ">");
-//
-//                if pos.w > 3 * UI_BTN_WIDTH {
-//                    p.label(
-//                        self.font_size, 0,
-//                        btn_txt_left_clr,
-//                        btn_left_pos.x,
-//                        btn_left_pos.y.floor(),
-//                        btn_left_pos.w,
-//                        UI_ELEM_TXT_H, "<");
-//                }
+                    btn_height, ">");
+
+                if pos.w > 3.0 * UI_BTN_WIDTH {
+                    use std::io::Write;
+
+                    let mut buf : [u8; 128] = [0_u8; 128];
+                    let mut bw = std::io::BufWriter::new(&mut buf[..]);
+                    let _ = write!(bw, "Page {}/{}", data.page_idx + 1, data.pages);
+
+                    let lbl_left  = pos.x + ((pos.w / 2.0) - (UI_BTN_WIDTH / 2.0));
+                    let lbl_pos = Rect::from(lbl_left, pos.y, UI_BTN_WIDTH, btn_height);
+                    p.label(
+                        self.font_size, 0,
+                        UI_HELP_TXT_CLR,
+                        lbl_pos.x,
+                        lbl_pos.y.floor(),
+                        lbl_pos.w,
+                        btn_height,
+                        &std::str::from_utf8(bw.buffer()).unwrap());
+                }
             }
         });
     }

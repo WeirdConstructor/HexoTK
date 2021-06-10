@@ -229,7 +229,8 @@ impl AtomDataModel for SomeParameters {
             self.test_list1_items.clear();
 
             self.dialog_model.borrow_mut().open(
-                "Test\nFofeo woei jfweo\nfewiofewiofewfoweifewfewfoiwe jfweofi jewf ijwefo we",
+                "Test\nFofeo woei jfweo\nfewiofewiofewfoweifewfewfoiwe jfweofi jewf ijwefo we\
+                 \n---page---\nNew page!\nYay you read the second page!",
                 Box::new(|_atoms: &mut dyn AtomDataModel| {
                     println!("ATOMS CLICK!!!!");
                 }));
