@@ -6,26 +6,35 @@ pub fn lighten_clr(depth: u32, clr: (f64, f64, f64)) -> (f64, f64, f64) {
      clr.1 * (1.2_f64).powf(depth as f64),
      clr.2 * (1.2_f64).powf(depth as f64))
 }
-pub const UI_BG_CLR               : (f64, f64, f64) = ( 71.0 / 255.0,   63.0 / 255.0,   73.0 / 255.0);
-pub const UI_BG2_CLR              : (f64, f64, f64) = ( 89.0 / 255.0,   79.0 / 255.0,   93.0 / 255.0);
-//pub const UI_BG3_CLR              : (f64, f64, f64) = ( 98.0 / 255.0,   87.0 / 255.0,  102.0 / 255.0);
-pub const UI_BG3_CLR              : (f64, f64, f64) = (100.0 / 255.0,   88.0 / 255.0,  104.0 / 255.0);
-pub const UI_TXT_CLR              : (f64, f64, f64) = (220.0 / 255.0,  220.0 / 255.0,  240.0 / 255.0);
-//pub const UI_LBL_BG_CLR           : (f64, f64, f64) = ( 31.0 / 255.0,   27.0 / 255.0,   33.0 / 255.0);
-//pub const UI_LBL_BG_CLR           : (f64, f64, f64) = ( 63.0 / 255.0,   18.0 / 255.0,   61.0 / 255.0);
-//pub const UI_BORDER_CLR           : (f64, f64, f64) = ( 54.0 / 255.0,   45.0 / 255.0,   56.0 / 255.0);
-//pub const UI_BORDER_CLR           : (f64, f64, f64) = ( 47.0 / 255.0,   39.0 / 255.0,   48.0 / 255.0);
-pub const UI_BORDER_CLR           : (f64, f64, f64) = ( 43.0 / 255.0,    5.0 / 255.0,   48.0 / 255.0);
-pub const UI_LBL_BG_CLR           : (f64, f64, f64) = ( 32.0 / 255.0,   14.0 / 255.0,   31.0 / 255.0);
-pub const UI_ACCENT_CLR           : (f64, f64, f64) = (179.0 / 255.0,   20.0 / 255.0,  170.0 / 255.0);
-//pub const UI_ACCENT2_CLR          : (f64, f64, f64) = ( 63.0 / 255.0,   18.0 / 255.0,   61.0 / 255.0);
-pub const UI_PRIM_CLR             : (f64, f64, f64) = (105.0 / 255.0,  232.0 / 255.0,  237.0 / 255.0);
-pub const UI_PRIM2_CLR            : (f64, f64, f64) = (26.0  / 255.0,  174.0 / 255.0,  179.0 / 255.0);
-pub const UI_HLIGHT_CLR           : (f64, f64, f64) = (233.0 / 255.0,  248.0 / 255.0,   64.0 / 255.0);
-pub const UI_HLIGHT2_CLR          : (f64, f64, f64) = (181.0 / 255.0,  196.0 / 255.0,   18.0 / 255.0);
 
-pub const UI_INACTIVE_CLR         : (f64, f64, f64) = (111.0 / 255.0,   99.0 / 255.0,  116.0 / 255.0);
-pub const UI_INACTIVE2_CLR        : (f64, f64, f64) = (167.0 / 255.0,  148.0 / 255.0,  174.0 / 255.0);
+macro_rules! hxclr {
+    ($i: expr) => {
+        (
+            ($i >> 16 & 0xFF) as f64 / 255.0,
+            ($i >> 8  & 0xFF) as f64 / 255.0,
+            ($i       & 0xFF) as f64 / 255.0,
+        )
+    }
+}
+
+pub const UI_BG_CLR               : (f64, f64, f64) = hxclr!(0x414a51); // 473f49
+pub const UI_BG2_CLR              : (f64, f64, f64) = hxclr!(0x4b535a); // 594f5d
+pub const UI_BG3_CLR              : (f64, f64, f64) = hxclr!(0x545b61); // 645868
+pub const UI_TXT_CLR              : (f64, f64, f64) = hxclr!(0xdcdcf0);
+pub const UI_BORDER_CLR           : (f64, f64, f64) = hxclr!(0x163239); // 2b0530);
+pub const UI_LBL_BG_CLR           : (f64, f64, f64) = hxclr!(0x1a2733); // 200e1f);
+pub const UI_LBL_BG_ALT_CLR       : (f64, f64, f64) = hxclr!(0x2d4d5e); // 323237
+pub const UI_ACCENT_CLR           : (f64, f64, f64) = hxclr!(0x922f93); // b314aa);
+pub const UI_ACCENT_DARK_CLR      : (f64, f64, f64) = hxclr!(0x1e333d); // 4d184a); // 4d184a);
+pub const UI_ACCENT_BG1_CLR       : (f64, f64, f64) = hxclr!(0x111920); // UI_LBL_BG_CLR; // hxclr!(0x27091b); // 381c38); // 200e1f);
+pub const UI_ACCENT_BG2_CLR       : (f64, f64, f64) = hxclr!(0x192129); // 2c132a);
+pub const UI_PRIM_CLR             : (f64, f64, f64) = hxclr!(0x03fdcb); // 69e8ed
+pub const UI_PRIM2_CLR            : (f64, f64, f64) = hxclr!(0x228f9d); // 1aaeb3
+pub const UI_HLIGHT_CLR           : (f64, f64, f64) = hxclr!(0xecf9ce); // e9f840
+pub const UI_HLIGHT2_CLR          : (f64, f64, f64) = hxclr!(0xbcf9cd); // b5c412
+pub const UI_SELECT_CLR           : (f64, f64, f64) = hxclr!(0xd73988); // 0xdc1821);
+pub const UI_INACTIVE_CLR         : (f64, f64, f64) = hxclr!(0x6f6374);
+pub const UI_INACTIVE2_CLR        : (f64, f64, f64) = hxclr!(0xa794ae);
 
 pub const UI_VERSION_FONT_SIZE    : f64 = 10.0;
 
@@ -48,8 +57,6 @@ pub const UI_TXT_KNOB_HOVER_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_TXT_KNOB_HLIGHT_CLR  : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_TXT_KNOB_HLHOVR_CLR  : (f64, f64, f64) = UI_HLIGHT2_CLR;
 pub const UI_GUI_BG_CLR           : (f64, f64, f64) = UI_BG_CLR;
-//pub const UI_GUI_BG2_CLR          : (f64, f64, f64) = UI_BG2_CLR;
-//pub const UI_GUI_BG3_CLR          : (f64, f64, f64) = UI_BG3_CLR;
 pub const UI_GUI_CLEAR_CLR        : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_BORDER_WIDTH         : f64 = 2.0;
 pub const UI_KNOB_RADIUS          : f64 = 25.0;
@@ -105,14 +112,14 @@ pub const UI_DRAG_INFO_FONT_SIZE : f64 = 10.0;
 
 pub const UI_GRID_TXT_CENTER_CLR    : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRID_TXT_CENTER_HL_CLR : (f64, f64, f64) = UI_HLIGHT_CLR;
-pub const UI_GRID_TXT_CENTER_SL_CLR : (f64, f64, f64) = (220.0 / 255.0, 24.0 / 255.0, 33.0 / 255.0);
+pub const UI_GRID_TXT_CENTER_SL_CLR : (f64, f64, f64) = UI_SELECT_CLR;
 pub const UI_GRID_TXT_EDGE_CLR      : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRID_CELL_BORDER_CLR   : (f64, f64, f64) = UI_ACCENT_CLR;
-pub const UI_GRID_EMPTY_BORDER_CLR  : (f64, f64, f64) = (77.0 / 255.0, 24.0 / 255.0, 74.0 / 255.0);
+pub const UI_GRID_EMPTY_BORDER_CLR  : (f64, f64, f64) = UI_ACCENT_DARK_CLR;
 pub const UI_GRID_HOVER_BORDER_CLR  : (f64, f64, f64) = UI_ACCENT_CLR;
 pub const UI_GRID_DRAG_BORDER_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
-pub const UI_GRID_BG1_CLR           : (f64, f64, f64) = (32.0 / 255.0, 14.0 / 255.0, 31.0 / 255.0);
-pub const UI_GRID_BG2_CLR           : (f64, f64, f64) = (44.0 / 255.0, 19.0 / 255.0, 42.0 / 255.0);
+pub const UI_GRID_BG1_CLR           : (f64, f64, f64) = UI_ACCENT_BG1_CLR;
+pub const UI_GRID_BG2_CLR           : (f64, f64, f64) = UI_ACCENT_BG2_CLR;
 pub const UI_GRID_SIGNAL_OUT_CLR    : (f64, f64, f64) = UI_PRIM2_CLR;
 pub const UI_GRID_SIGNAL_IN_CLR     : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_GRID_LED_CLR           : (f64, f64, f64) = UI_PRIM_CLR;
@@ -127,8 +134,8 @@ pub const UI_LIST_BTN_WIDTH        : f64 = 20.0;
 pub const UI_LIST_BTN_POINTER_SIZE : f64 = 6.0;
 pub const UI_LIST_BTN_BORDER_WIDTH : f64 = 1.0;
 pub const UI_LIST_BORDER_CLR       : (f64, f64, f64) = UI_ENTRY_BORDER_CLR;
-pub const UI_LIST_SEP_CLR          : (f64, f64, f64) = (100.0 / 255.0,  100.0 / 255.0,  110.0 / 255.0);
-pub const UI_LIST_TXT_CLR          : (f64, f64, f64) = UI_ENTRY_TXT_CLR;
+pub const UI_LIST_SEP_CLR          : (f64, f64, f64) = UI_PRIM2_CLR;
+pub const UI_LIST_TXT_CLR          : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_LIST_TXT_HOVER_CLR    : (f64, f64, f64) = UI_BTN_TXT_HOVER_CLR;
 
 pub const UI_TRK_ROW_HEIGHT        : f64 = 14.0;
@@ -137,14 +144,13 @@ pub const UI_TRK_FONT_SIZE         : f64 = 12.0;
 pub const UI_TRK_BORDER            : f64 = 1.0;
 pub const UI_TRK_COL_DIV_PAD       : f64 = 3.0;
 pub const UI_TRK_BG_CLR            : (f64, f64, f64) = UI_LBL_BG_CLR;
-pub const UI_TRK_BG_ALT_CLR        : (f64, f64, f64) = (50.0 / 255.0,  50.0 / 255.0,  55.0 / 255.0);
+pub const UI_TRK_BG_ALT_CLR        : (f64, f64, f64) = UI_LBL_BG_ALT_CLR;
 pub const UI_TRK_COL_DIV_CLR       : (f64, f64, f64) = UI_LIST_SEP_CLR;
 pub const UI_TRK_BORDER_CLR        : (f64, f64, f64) = UI_GRPH_BORDER_CLR;
 pub const UI_TRK_BORDER_HOVER_CLR  : (f64, f64, f64) = UI_GRPH_BORDER_HOVER_CLR;
-pub const UI_TRK_BORDER_EDIT_CLR   : (f64, f64, f64) = (200.0 / 255.0,  0.0 / 255.0,  20.0 / 255.0);
+pub const UI_TRK_BORDER_EDIT_CLR   : (f64, f64, f64) = UI_SELECT_CLR;
 pub const UI_TRK_TEXT_CLR          : (f64, f64, f64) = UI_TXT_CLR;
 pub const UI_TRK_CURSOR_BG_CLR     : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_TRK_CURSOR_FG_CLR     : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_TRK_PHASEROW_BG_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_TRK_PHASEROW_FG_CLR   : (f64, f64, f64) = UI_LBL_BG_CLR;
-

@@ -116,7 +116,7 @@ impl WidgetType for Tabs {
             let pos = pos.crop_top(UI_TAB_HEIGHT - UI_TAB_BORDER_WIDTH);
 
             let pos =
-                rect_border(p, UI_BORDER_WIDTH, UI_BORDER_CLR, bg_clr, pos);
+                rect_border(p, UI_BORDER_WIDTH, UI_TAB_BORDER_CLR, bg_clr, pos);
 
             if let Some(tab_pos) = indexed_tab_pos {
                 p.path_stroke(
