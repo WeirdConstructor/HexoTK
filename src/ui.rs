@@ -943,6 +943,8 @@ impl WindowUI for UI {
                         Some(UIEvent::Key { id: zone.id, key: key.key.clone() });
                 }
 
+                let key_copy = key.key.clone();
+
                 match key.key {
                     Key::Backspace => {
                         if let Some(InputMode::InputValue { zone }) = self.input_mode {
@@ -972,6 +974,16 @@ impl WindowUI for UI {
                                         format!("{}", c)
                                     };
                                 atoms.set(zone.id, Atom::str_mv(new_str));
+                            }
+                        } else {
+                            if dispatch_event.is_none() {
+                                if let Some(main) = &self.main {
+                                    dispatch_event =
+                                        Some(UIEvent::Key {
+                                            id:  main.id(),
+                                            key: key_copy,
+                                        });
+                                }
                             }
                         }
                     },
