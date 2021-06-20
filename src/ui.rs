@@ -940,7 +940,11 @@ impl WindowUI for UI {
                 println!("KEY PRESSED {:?}", key);
                 if let Some(InputMode::Keyboard { zone }) = self.input_mode {
                     dispatch_event =
-                        Some(UIEvent::Key { id: zone.id, key: key.key.clone() });
+                        Some(UIEvent::Key {
+                            id:         zone.id,
+                            key:        key.key.clone(),
+                            mouse_pos:  self.mouse_pos,
+                        });
                 }
 
                 let key_copy = key.key.clone();
@@ -980,8 +984,9 @@ impl WindowUI for UI {
                                 if let Some(main) = &self.main {
                                     dispatch_event =
                                         Some(UIEvent::Key {
-                                            id:  main.id(),
-                                            key: key_copy,
+                                            id:         main.id(),
+                                            key:        key_copy,
+                                            mouse_pos:  self.mouse_pos,
                                         });
                                 }
                             }
@@ -1012,8 +1017,9 @@ impl WindowUI for UI {
                             if let Some(main) = &self.main {
                                 dispatch_event =
                                     Some(UIEvent::Key {
-                                        id:  main.id(),
-                                        key: key.key.clone()
+                                        id:         main.id(),
+                                        key:        key.key.clone(),
+                                        mouse_pos:  self.mouse_pos,
                                     });
                             }
                         }

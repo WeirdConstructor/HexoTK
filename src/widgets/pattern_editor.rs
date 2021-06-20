@@ -1013,7 +1013,7 @@ impl WidgetType for PatternEditor {
                     });
                 }
             },
-            UIEvent::Key { id, key } => {
+            UIEvent::Key { id, key, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
                         data.handle_key_event(ui, key);
