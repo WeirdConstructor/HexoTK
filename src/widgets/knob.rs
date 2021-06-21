@@ -99,7 +99,7 @@ impl Knob {
     }
 
     pub fn get_label_rect(&self) -> (f64, f64, f64, f64) {
-        let width = self.radius * 2.75;
+        let width = self.radius * 2.25;
         ((self.sbottom.0 - width * 0.5).round(),
          (self.sbottom.1 + 0.5 * UI_BG_KNOB_STROKE).round(),
          width.round(),
