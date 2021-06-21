@@ -95,16 +95,17 @@ impl Button {
         }
     }
 
-    fn draw_border(&self, p: &mut dyn Painter, width: f64, clr: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, fill: bool) {
+    fn draw_border(
+        &self, p: &mut dyn Painter, width: f64, clr: (f64, f64, f64),
+        x: f64, y: f64, w: f64, h: f64, fill: bool)
+    {
         let path = &[
-            (x,                      y + UI_BTN_BEVEL),
+            (x,                      y + (h / 2.0)),
             (x + UI_BTN_BEVEL,       y),
             (x + (w - UI_BTN_BEVEL), y),
-            (x + w,                  y + UI_BTN_BEVEL),
-            (x + w,                  y + (h - UI_BTN_BEVEL)),
+            (x + w,                  y + (h / 2.0)),
             (x + (w - UI_BTN_BEVEL), y + h),
             (x + UI_BTN_BEVEL,       y + h),
-            (x,                      y + (h - UI_BTN_BEVEL)),
         ];
 
         if fill {
