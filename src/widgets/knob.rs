@@ -7,8 +7,8 @@ use super::*;
 #[derive(Debug)]
 pub struct Knob {
     sbottom:        (f64, f64),
-    s:              [(f64, f64); 9],
-    arc_len:        [f64; 7],
+    s:              [(f64, f64); 7],
+    arc_len:        [f64; 5],
     full_len:       f64,
     s1_len:         f64,
     s2_len:         f64,
@@ -21,33 +21,29 @@ impl Knob {
     pub fn new(radius: f64, font_size_lbl: f64, font_size_data: f64) -> Self {
         let init_rot : f64 = 90.;
 
-        let mut s       = [(0.0_f64, 0.0_f64); 9];
-        let mut arc_len = [0.0_f64; 7];
+        let mut s       = [(0.0_f64, 0.0_f64); 7];
+        let mut arc_len = [0.0_f64; 5];
 
         let sbottom = circle_point(radius, init_rot.to_radians());
 
         s[0] = circle_point(radius, (init_rot + 10.0_f64).to_radians());
-        s[1] = circle_point(radius, (init_rot + 45.0_f64).to_radians());
-        s[2] = circle_point(radius, (init_rot + 90.0_f64).to_radians());
-        s[3] = circle_point(radius, (init_rot + 135.0_f64).to_radians());
-        s[4] = circle_point(radius, (init_rot + 180.0_f64).to_radians());
-        s[5] = circle_point(radius, (init_rot + 225.0_f64).to_radians());
-        s[6] = circle_point(radius, (init_rot + 270.0_f64).to_radians());
-        s[7] = circle_point(radius, (init_rot + 315.0_f64).to_radians());
-        s[8] = circle_point(radius, (init_rot + 350.0_f64).to_radians());
+        s[1] = circle_point(radius, (init_rot + 60.0_f64).to_radians());
+        s[2] = circle_point(radius, (init_rot + 120.0_f64).to_radians());
+        s[3] = circle_point(radius, (init_rot + 180.0_f64).to_radians());
+        s[4] = circle_point(radius, (init_rot + 240.0_f64).to_radians());
+        s[5] = circle_point(radius, (init_rot + 300.0_f64).to_radians());
+        s[6] = circle_point(radius, (init_rot + 350.0_f64).to_radians());
 
         let s1_len  = ((s[0].0 - s[1].1).powf(2.0) + (s[0].0 - s[1].1).powf(2.0)).sqrt();
         let s2_len  = ((s[1].0 - s[2].1).powf(2.0) + (s[1].0 - s[2].1).powf(2.0)).sqrt();
 
-        let full_len = s1_len * 2.0 + s2_len * 6.0;
+        let full_len = s1_len * 2.0 + s2_len * 4.0;
 
         arc_len[0] = s1_len                  / full_len;
         arc_len[1] = (s1_len + s2_len)       / full_len;
         arc_len[2] = (s1_len + 2.0 * s2_len) / full_len;
         arc_len[3] = (s1_len + 3.0 * s2_len) / full_len;
         arc_len[4] = (s1_len + 4.0 * s2_len) / full_len;
-        arc_len[5] = (s1_len + 5.0 * s2_len) / full_len;
-        arc_len[6] = (s1_len + 6.0 * s2_len) / full_len;
 
         Self {
             sbottom,
@@ -105,7 +101,7 @@ impl Knob {
     pub fn get_label_rect(&self) -> (f64, f64, f64, f64) {
         let width = self.radius * 2.75;
         ((self.sbottom.0 - width * 0.5).round(),
-         (self.sbottom.1 + UI_BG_KNOB_STROKE).round(),
+         (self.sbottom.1 + 0.5 * UI_BG_KNOB_STROKE).round(),
          width.round(),
          UI_ELEM_TXT_H)
     }
@@ -113,9 +109,9 @@ impl Knob {
     pub fn get_decor_rect1(&self) -> (f64, f64, f64, f64) {
         ((self.s[0].0      - 0.25 * UI_BG_KNOB_STROKE).round(),
          (self.sbottom.1    - 0.5 * UI_BG_KNOB_STROKE).round(),
-         ((self.s[8].0 - self.s[0].0).abs()
+         ((self.s[6].0 - self.s[0].0).abs()
                            + 0.5 * UI_BG_KNOB_STROKE).round(),
-         UI_BG_KNOB_STROKE * 3.0)
+         UI_BG_KNOB_STROKE * 1.0)
     }
 
     pub fn draw_name(&self, p: &mut dyn Painter, x: f64, y: f64, s: &str) {
@@ -150,12 +146,8 @@ impl Knob {
         let arc_len = &self.arc_len;
 
         let (next_idx, segment_len, prev_arc_len) =
-            if        value > arc_len[6] {
-                (8, self.s1_len, arc_len[6])
-            } else if value > arc_len[5] {
-                (7, self.s2_len, arc_len[5])
-            } else if value > arc_len[4] {
-                (6, self.s2_len, arc_len[4])
+            if value > arc_len[4] {
+                (6, self.s1_len, arc_len[4])
             } else if value > arc_len[3] {
                 (5, self.s2_len, arc_len[3])
             } else if value > arc_len[2] {
@@ -168,7 +160,7 @@ impl Knob {
                 (1, self.s1_len, 0.0)
             };
 
-        let mut s : [(f64, f64); 9] = self.s;
+        let mut s : [(f64, f64); 7] = self.s;
         for p in s.iter_mut() {
             p.0 += x;
             p.1 += y;
@@ -194,9 +186,9 @@ impl Knob {
 
         if with_dot {
             p.arc_stroke(
-                line_w * 0.5,
+                0.9 * line_w * 0.5,
                 color,
-                line_w * 1.5,
+                0.9 * line_w * 1.5,
                 0.0, 2.0 * std::f64::consts::PI,
                 prev.0 + partial.0,
                 prev.1 + partial.1);
