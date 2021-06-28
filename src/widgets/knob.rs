@@ -72,7 +72,7 @@ impl Knob {
         if (size as i32) % 2 != 0 {
             size += 1.0;
         }
-        (r.0 + (r.2 * 0.5 - size * 0.5).round(),
+        ((r.0 + size * 1.0).round(),
          r.1 + (r.3 * 0.5 + size * 0.5).round(),
          size,
          size)
@@ -266,6 +266,8 @@ impl WidgetType for Knob {
                 (v as f64).clamp(0.0, 1.0)
             } else { 0.0 };
 
+        let mut hover_fine_adj = false;
+
         match highlight {
             HLStyle::ModTarget => {
                 self.draw_oct_arc(
@@ -285,6 +287,8 @@ impl WidgetType for Knob {
             },
             HLStyle::Hover(subtype) => {
                 if let ZoneType::ValueDragFine = subtype {
+                    hover_fine_adj = true;
+
                     let r = self.get_fine_adjustment_mark();
                     p.rect_fill(
                         UI_TXT_KNOB_HOVER_CLR,
@@ -329,7 +333,14 @@ impl WidgetType for Knob {
             let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
             self.draw_value_label(p, xo, yo, highlight, val_s);
 
-            self.draw_name(p, xo, yo, &data.name);
+            if hover_fine_adj {
+                let len = ui.atoms().fmt_norm(id, &mut data.lbl_buf[..]);
+                let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
+                // + 2.0 for the marker cube, to space it from the minus sign.
+                self.draw_name(p, xo + 2.0, yo, &val_s);
+            } else {
+                self.draw_name(p, xo, yo, &data.name);
+            }
         });
 
         ui.define_active_zone(

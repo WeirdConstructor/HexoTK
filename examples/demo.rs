@@ -283,6 +283,15 @@ impl AtomDataModel for SomeParameters {
         self.set(id, Atom::setting(self.get(id).unwrap().i() - 1));
     }
 
+    fn fmt_norm<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
+        use std::io::Write;
+        let mut bw = std::io::BufWriter::new(buf);
+        match write!(bw, "{:6.3}", self.get(id).unwrap().f()) {
+            Ok(_)  => bw.buffer().len(),
+            Err(_) => 0,
+        }
+    }
+
     fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
