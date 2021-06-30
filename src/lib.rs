@@ -180,6 +180,15 @@ impl Rect {
         }
     }
 
+    pub fn grow(&self, delta_x: f64, delta_y: f64) -> Self {
+        Self {
+            x: self.x - delta_x,
+            y: self.y - delta_y,
+            w: self.w + 2.0 * delta_x,
+            h: self.h + 2.0 * delta_y,
+        }
+    }
+
     pub fn offs(&self, x: f64, y: f64) -> Self {
         Self {
             x: self.x + x,
@@ -635,6 +644,7 @@ pub trait AtomDataModel {
     fn get_ui_steps(&self, id: AtomId) -> Option<(f32, f32)>;
     fn get_denorm(&self, id: AtomId) -> Option<f32>;
     fn set(&mut self, id: AtomId, v: Atom);
+    fn set_denorm(&mut self, id: AtomId, v: f32);
     fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
     fn fmt_norm<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
     fn step_next(&mut self, id: AtomId);

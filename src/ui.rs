@@ -1,5 +1,7 @@
 use crate::*;
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use keyboard_types::{Key};
 
@@ -139,11 +141,11 @@ impl WidgetUI for WidgetUIHolder {
     }
 
     fn is_input_value_for(&self, az_id: AtomId) -> bool {
-        if let Some(InputMode::InputValue { zone }) = self.input_mode {
-            return zone.id == az_id;
+        match &self.input_mode {
+            Some(InputMode::InputText { zone })      => zone.id == az_id ,
+            Some(InputMode::InputValue { zone, .. }) => zone.id == az_id,
+            _ => false,
         }
-
-        false
     }
 
     fn drag_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
@@ -281,8 +283,17 @@ enum InputMode {
         /// The zone the modulation is selected for.
         zone: ActiveZone
     },
-    /// Direct value input via keyboard.
+    /// Direct parameter value input via keyboard.
     InputValue {
+        /// The zone for which the value is entered.
+        zone:           ActiveZone,
+        prev_value:     Atom,
+        prev_value_str: String,
+        cur_input:      Rc<RefCell<String>>,
+        normalized:     bool,
+    },
+    /// Direct string input via keyboard.
+    InputText {
         /// The zone for which the value is entered.
         zone: ActiveZone,
     },
@@ -567,7 +578,33 @@ impl UI {
         }
     }
 
+    fn new_input_value_mode(&self, zone: ActiveZone, fine: bool)
+        -> Option<InputMode>
+    {
+        let v = self.atoms.as_ref().unwrap().get(zone.id)?;
 
+        let mut buf : [u8; 128] = [0; 128];
+        let len =
+            if fine {
+                self.atoms.as_ref().unwrap().fmt_norm(zone.id, &mut buf[..])
+            } else {
+                self.atoms.as_ref().unwrap().fmt(zone.id, &mut buf[..])
+            };
+
+        let prev_value_str =
+            std::str::from_utf8(&buf[0..len]).unwrap().to_string();
+
+        Some(InputMode::InputValue {
+            zone,
+            normalized: fine,
+            prev_value: v.clone(),
+            prev_value_str,
+            cur_input:
+                Rc::new(
+                    RefCell::new(
+                        String::new())),
+        })
+    }
 
     fn dispatch<F>(&mut self, f: F)
         where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
@@ -782,6 +819,22 @@ impl WindowUI for UI {
 
                     if let Some(az) = az {
                         match az.zone_type {
+                            ZoneType::ValueDragCoarse => {
+                                if btn == MButton::Right {
+                                    self.input_mode =
+                                        self.new_input_value_mode(az, false);
+                                    self.queue_redraw();
+                                    reset_input_mode = false;
+                                }
+                            },
+                            ZoneType::ValueDragFine => {
+                                if btn == MButton::Right {
+                                    self.input_mode =
+                                        self.new_input_value_mode(az, true);
+                                    self.queue_redraw();
+                                    reset_input_mode = false;
+                                }
+                            },
                             ZoneType::Click { index } => {
                                 dispatch_event =
                                     Some(UIEvent::Click {
@@ -795,7 +848,7 @@ impl WindowUI for UI {
                             },
                             ZoneType::TextInput => {
                                 self.input_mode =
-                                    Some(InputMode::InputValue {
+                                    Some(InputMode::InputText {
                                         zone: az,
                                     });
                                 self.queue_redraw();
@@ -960,8 +1013,47 @@ impl WindowUI for UI {
                 let key_copy = key.key.clone();
 
                 match key.key {
+                    Key::Escape => {
+                        let mut del_input_mode = false;
+
+                        if let Some(InputMode::InputValue { .. }) = self.input_mode {
+                            del_input_mode = true;
+                        }
+
+                        if del_input_mode {
+                            self.input_mode = None;
+                        }
+
+                        self.queue_redraw();
+                    },
+                    Key::Enter => {
+                        let mut reset_input_mode = false;
+                        if let Some(InputMode::InputValue {
+                            zone, normalized, cur_input, ..
+                        }) = &self.input_mode
+                        {
+                            let s = cur_input.borrow();
+                            if s.len() > 0 {
+                                if let Ok(v) = s.parse::<f32>() {
+                                    if let Some(atoms) = self.atoms.as_mut() {
+                                        if *normalized {
+                                            atoms.set(zone.id, v.into());
+                                        } else {
+                                            atoms.set_denorm(zone.id, v);
+                                        }
+                                    }
+                                }
+                            }
+
+                            reset_input_mode = true;
+                        }
+
+                        if reset_input_mode {
+                            self.input_mode = None;
+                        }
+                    },
                     Key::Backspace => {
-                        if let Some(InputMode::InputValue { zone }) = self.input_mode {
+                        if let Some(InputMode::InputText { zone }) = self.input_mode {
                             if let Some(atoms) = self.atoms.as_mut() {
                                 let new_str =
                                     if let Some(at) = atoms.get(zone.id) {
@@ -975,10 +1067,25 @@ impl WindowUI for UI {
                                     };
                                 atoms.set(zone.id, Atom::str_mv(new_str));
                             }
+                        } else if let Some(InputMode::InputValue { cur_input, .. })
+                            = &self.input_mode
+                        {
+                            let s = {
+                                let s = cur_input.borrow();
+                                let len = s.chars().count();
+                                if len > 0 {
+                                    s.chars().take(len - 1).collect()
+                                } else {
+                                    "".to_string()
+                                }
+                            };
+                            *cur_input.borrow_mut() = s;
                         }
                     },
                     Key::Character(c) => {
-                        if let Some(InputMode::InputValue { zone }) = self.input_mode {
+                        if let Some(InputMode::InputText { zone })
+                            = self.input_mode
+                        {
                             if let Some(atoms) = self.atoms.as_mut() {
                                 let new_str =
                                     if let Some(at) = atoms.get(zone.id) {
@@ -989,6 +1096,35 @@ impl WindowUI for UI {
                                     };
                                 atoms.set(zone.id, Atom::str_mv(new_str));
                             }
+
+                        } else if let Some(InputMode::InputValue { cur_input, .. })
+                            = &self.input_mode
+                        {
+                            let slen = cur_input.borrow().len();
+                            let contains_dot =
+                                cur_input.borrow().chars()
+                                    .find(|c| *c == '.')
+                                    .is_some();
+
+                            let c = c.chars().next().unwrap_or(' ');
+                            if c.is_ascii_digit() {
+                                let s = {
+                                    let s = cur_input.borrow();
+                                    format!("{}{}", s, c)
+                                };
+                                *cur_input.borrow_mut() = s;
+
+                            } else if slen == 0 && c == '-' {
+                                *cur_input.borrow_mut() = "-".to_string();
+
+                            } else if !contains_dot && (c == '.' || c == ',') {
+                                let s = {
+                                    let s = cur_input.borrow();
+                                    format!("{}.", s)
+                                };
+                                *cur_input.borrow_mut() = s;
+                            }
+
                         } else {
                             if dispatch_event.is_none() {
                                 if let Some(main) = &self.main {
@@ -1085,6 +1221,47 @@ impl WindowUI for UI {
         });
 
         self.dialog = dialog;
+
+        if let Some(InputMode::InputValue { zone, cur_input, prev_value_str, .. }) =
+            &mut self.input_mode
+        {
+            use crate::constants::*;
+
+            let pos = Rect {
+                x : (zone.pos.x
+                     + zone.pos.w / 2.0
+                     - UI_INPUT_W / 2.0).round(),
+                y : (zone.pos.y
+                     + zone.pos.h / 2.0
+                     - UI_ELEM_TXT_H / 2.0).round(),
+                w : UI_INPUT_W,
+                h : UI_ELEM_TXT_H,
+            };
+            let bpos = pos.grow(UI_INPUT_BORDER_WIDTH, UI_INPUT_BORDER_WIDTH);
+            painter.rect_fill(
+                UI_INPUT_BORDER_CLR,
+                bpos.x, bpos.y, bpos.w, bpos.h);
+
+            painter.rect_fill(
+                UI_INPUT_BG_CLR,
+                pos.x, pos.y, pos.w, pos.h);
+
+            if cur_input.borrow().len() > 0 {
+                painter.label(
+                    UI_INPUT_FONT_SIZE, 0, UI_BTN_TXT_CLR,
+                    pos.x,
+                    pos.y,
+                    pos.w,
+                    pos.h, &cur_input.borrow());
+            } else {
+                painter.label(
+                    UI_INPUT_FONT_SIZE, 0, UI_BTN_TXT_CLR,
+                    pos.x,
+                    pos.y,
+                    pos.w,
+                    pos.h, &prev_value_str);
+            }
+        }
     }
 
     fn set_window_size(&mut self, _w: f64, _h: f64) {

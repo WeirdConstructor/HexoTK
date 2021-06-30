@@ -240,6 +240,11 @@ impl AtomDataModel for SomeParameters {
         }
         self.atoms[id.atom_id() as usize] = v;
     }
+
+    fn set_denorm(&mut self, id: AtomId, v: f32) {
+        self.set(id, v.into());
+    }
+
     fn set_default(&mut self, id: AtomId) {
         self.set(id, self.get(id).unwrap().default_of());
     }
@@ -289,7 +294,7 @@ impl AtomDataModel for SomeParameters {
     fn fmt_norm<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
-        match write!(bw, "{:6.3}", self.get(id).unwrap().f()) {
+        match write!(bw, "{:6.4}", self.get(id).unwrap().f()) {
             Ok(_)  => bw.buffer().len(),
             Err(_) => 0,
         }

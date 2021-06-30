@@ -104,8 +104,11 @@ pub const UI_PADDING        : f64 =   6.0;
 pub const UI_ELEM_TXT_H     : f64 =  16.0;
 pub const UI_SAFETY_PAD     : f64 =   1.0;
 
-pub const UI_INPUT_BOX_W         : f64 = 200.0;
-pub const UI_INPUT_BOX_FONT_SIZE : f64 = 16.0;
+pub const UI_INPUT_W            : f64 = 90.0;
+pub const UI_INPUT_FONT_SIZE    : f64 = 16.0;
+pub const UI_INPUT_BORDER_CLR   : (f64, f64, f64) = UI_BTN_BORDER2_CLR;
+pub const UI_INPUT_BG_CLR       : (f64, f64, f64) = UI_BTN_BG_CLR;
+pub const UI_INPUT_BORDER_WIDTH : f64 = UI_BTN_BORDER2_WIDTH;
 
 pub const UI_DRAG_INFO_W         : f64 = 70.0;
 pub const UI_DRAG_INFO_FONT_SIZE : f64 = 10.0;
