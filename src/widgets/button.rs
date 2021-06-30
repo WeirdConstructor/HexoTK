@@ -213,7 +213,7 @@ impl WidgetType for Button {
             p, 0.0, bg_color, xo, yo, w, h, true);
 
         if view_value {
-            self.draw_divider(p, UI_BTN_BORDER2_WIDTH, UI_BTN_BORDER2_CLR, x, y);
+            self.draw_divider(p, UI_BTN_BORDER2_WIDTH, border_color, x, y);
         }
 
         data.with(|data: &mut ButtonData| {

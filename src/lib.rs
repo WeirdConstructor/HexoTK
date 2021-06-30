@@ -618,6 +618,10 @@ pub trait AtomDataModel {
     fn check_sync(&mut self);
     fn get_phase_value(&self, id: AtomId) -> Option<f32>;
     fn get_led_value(&self, id: AtomId) -> Option<f32>;
+    /// Should return true if the UI for the parameter can be changed
+    /// by the user. In HexoSynth this might return false if the
+    /// corresponding input is controlled by an output port.
+    fn enabled(&self, id: AtomId) -> bool;
     fn get(&self, id: AtomId) -> Option<&Atom>;
     /// Should return a value in the range 0.0 to 1.0 for displayed knob position.
     /// For instance: a normalized value in the range -1.0 to 1.0 needs to be mapped

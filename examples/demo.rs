@@ -197,6 +197,9 @@ impl AtomDataModel for SomeParameters {
     fn get(&self, id: AtomId) -> Option<&Atom> {
         Some(&self.atoms[id.atom_id() as usize])
     }
+    fn enabled(&self, id: AtomId) -> bool {
+        id.atom_id() % 2 == 0
+    }
     fn get_ui_steps(&self, id: AtomId) -> Option<(f32, f32)> {
         if id.atom_id() == 6 {
             Some((0.005, 0.001))

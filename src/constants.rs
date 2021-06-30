@@ -33,8 +33,8 @@ pub const UI_PRIM2_CLR            : (f64, f64, f64) = hxclr!(0x228f9d); // 1aaeb
 pub const UI_HLIGHT_CLR           : (f64, f64, f64) = hxclr!(0xecf9ce); // e9f840
 pub const UI_HLIGHT2_CLR          : (f64, f64, f64) = hxclr!(0xbcf9cd); // b5c412
 pub const UI_SELECT_CLR           : (f64, f64, f64) = hxclr!(0xd73988); // 0xdc1821);
-pub const UI_INACTIVE_CLR         : (f64, f64, f64) = hxclr!(0x6f6374);
-pub const UI_INACTIVE2_CLR        : (f64, f64, f64) = hxclr!(0xa794ae);
+pub const UI_INACTIVE_CLR         : (f64, f64, f64) = hxclr!(0x6f8782);
+pub const UI_INACTIVE2_CLR        : (f64, f64, f64) = hxclr!(0xa6dbd0);
 
 pub const UI_VERSION_FONT_SIZE    : f64 = 10.0;
 

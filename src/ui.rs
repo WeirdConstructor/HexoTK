@@ -174,6 +174,12 @@ impl WidgetUI for WidgetUIHolder {
     }
 
     fn hl_style_for(&self, az_id: AtomId, idx: Option<usize>) -> HLStyle {
+        if let Some(InputMode::ValueDrag { zone, .. }) = &self.input_mode {
+            if zone.id == az_id {
+                return HLStyle::Hover(zone.zone_type);
+            }
+        }
+
         if let Some(hz) = self.hover_zone_for(az_id) {
             if let Some(input_mode) = &self.input_mode {
                 match input_mode {
@@ -207,7 +213,11 @@ impl WidgetUI for WidgetUIHolder {
                 }
             }
 
-            HLStyle::None
+            if self.atoms.enabled(az_id) {
+                HLStyle::None
+            } else {
+                HLStyle::Inactive
+            }
         }
     }
 
