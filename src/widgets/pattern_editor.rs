@@ -10,6 +10,8 @@ use std::cell::RefCell;
 
 pub use hexodsp::dsp::tracker::UIPatternModel;
 
+const BLINK_FRAMES : usize = 20;
+
 fn value2note_name(val: u16) -> Option<&'static str> {
     if val < 21 || val > 127 {
         return None;
@@ -170,6 +172,9 @@ pub struct PatternEditorData {
     follow_phase:  bool,
     info_line:     String,
     update_info_line: bool,
+
+    blink_count:   usize,
+    blink_visible: bool,
 }
 
 impl PatternEditorData {
@@ -188,6 +193,8 @@ impl PatternEditorData {
             follow_phase: false,
             update_info_line: true,
             info_line: String::from(""),
+            blink_count: 0,
+            blink_visible: true,
         })
     }
 
@@ -722,6 +729,14 @@ impl WidgetType for PatternEditor {
                 data.cursor.0 = pat.rows() - 1;
             }
 
+            data.blink_count += 1;
+            if data.blink_count > BLINK_FRAMES {
+                data.blink_visible = !data.blink_visible;
+                data.blink_count = 0;
+            }
+
+            let mut notify_click = false;
+
             let border_color =
                 match highlight {
                     HLStyle::Hover(_) => {
@@ -730,6 +745,10 @@ impl WidgetType for PatternEditor {
                         } else {
                             UI_TRK_BORDER_HOVER_CLR
                         }
+                    },
+                    HLStyle::Inactive => {
+                        notify_click = true;
+                        UI_TRK_BORDER_INACT_CLR
                     },
                     _ => {
                         data.enter_mode = EnterMode::None;
@@ -764,7 +783,13 @@ impl WidgetType for PatternEditor {
                         Some("> [Rows] (0-F 00-0F)")
                     },
                     EnterMode::Rows(EnterValue::Two(_)) => None,
-                    EnterMode::None => None,
+                    EnterMode::None => {
+                        if notify_click && data.blink_visible {
+                            Some("*** >>> CLICK FOR KEYBOARD FOCUS <<< ***")
+                        } else {
+                            None
+                        }
+                    },
                 };
 
             if let Some(mode_line) = mode_line {

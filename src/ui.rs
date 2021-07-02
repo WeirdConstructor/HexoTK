@@ -188,6 +188,11 @@ impl WidgetUI for WidgetUIHolder {
                     InputMode::AtomClick { .. } => {
                         return HLStyle::AtomClick;
                     },
+                    InputMode::Keyboard { zone } => {
+                        if zone.id == az_id {
+                            return HLStyle::Hover(zone.zone_type);
+                        }
+                    },
                     _ => {},
                 }
             }
@@ -198,10 +203,14 @@ impl WidgetUI for WidgetUIHolder {
                         if idx == index { HLStyle::Hover(hz.zone_type) }
                         else            { HLStyle::None }
                     },
-                    _ => HLStyle::None,
+                    ZoneType::Keyboard => HLStyle::Inactive,
+                    _                  => HLStyle::None,
                 }
             } else {
-                HLStyle::Hover(hz.zone_type)
+                match hz.zone_type {
+                    ZoneType::Keyboard => HLStyle::Inactive,
+                    _                  => HLStyle::Hover(hz.zone_type),
+                }
             }
         } else {
             if let Some(input_mode) = &self.input_mode {
