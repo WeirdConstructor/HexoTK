@@ -1114,7 +1114,7 @@ impl WindowUI for UI {
                                 };
                                 *cur_input.borrow_mut() = s;
 
-                            } else if slen == 0 && c == '-' {
+                            } else if slen == 0 && (c == '-' || c == '/') {
                                 *cur_input.borrow_mut() = "-".to_string();
 
                             } else if !contains_dot && (c == '.' || c == ',') {
