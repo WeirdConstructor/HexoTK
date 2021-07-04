@@ -37,13 +37,14 @@ impl Knob {
         let s1_len  = ((s[0].0 - s[1].1).powf(2.0) + (s[0].0 - s[1].1).powf(2.0)).sqrt();
         let s2_len  = ((s[1].0 - s[2].1).powf(2.0) + (s[1].0 - s[2].1).powf(2.0)).sqrt();
 
-        let full_len = s1_len * 2.0 + s2_len * 4.0;
+        // TODO: If I stumble across this the next time, simplify this.
+        let full_len = s2_len * 2.0 + s2_len * 4.0;
 
-        arc_len[0] = s1_len                  / full_len;
-        arc_len[1] = (s1_len + s2_len)       / full_len;
-        arc_len[2] = (s1_len + 2.0 * s2_len) / full_len;
-        arc_len[3] = (s1_len + 3.0 * s2_len) / full_len;
-        arc_len[4] = (s1_len + 4.0 * s2_len) / full_len;
+        arc_len[0] = s2_len                  / full_len;
+        arc_len[1] = (s2_len + s2_len)       / full_len;
+        arc_len[2] = (s2_len + 2.0 * s2_len) / full_len;
+        arc_len[3] = (s2_len + 3.0 * s2_len) / full_len;
+        arc_len[4] = (s2_len + 4.0 * s2_len) / full_len;
 
         Self {
             sbottom,
@@ -127,7 +128,7 @@ impl Knob {
             match highlight {
                 HLStyle::Hover(_subtype) => { UI_TXT_KNOB_HOVER_CLR },
                 HLStyle::Inactive        => { UI_INACTIVE_CLR },
-                HLStyle::ModTarget       => { UI_TXT_KNOB_HLIGHT_CLR },
+                HLStyle::EditModAmt      => { UI_TXT_KNOB_MOD_CLR },
                 _                        => { UI_TXT_KNOB_CLR },
             };
 
@@ -142,22 +143,65 @@ impl Knob {
             r.3, s);
     }
 
+    pub fn draw_mod_arc(
+        &self, p: &mut dyn Painter, xo: f64, yo: f64,
+        value: f64, modamt: Option<f64>,
+        fg_clr: (f64, f64, f64))
+    {
+        if let Some(modamt) = modamt {
+            if modamt > 0.0 {
+                self.draw_oct_arc(
+                    p, xo, yo,
+                    UI_MG_KNOB_STROKE,
+                    UI_FG_KNOB_MODPOS_CLR,
+                    false,
+                    (value + modamt).clamp(0.0, 1.0));
+                self.draw_oct_arc(
+                    p, xo, yo,
+                    UI_MG_KNOB_STROKE,
+                    fg_clr,
+                    true,
+                    value);
+            } else {
+                self.draw_oct_arc(
+                    p, xo, yo,
+                    UI_MG_KNOB_STROKE,
+                    UI_FG_KNOB_MODNEG_CLR,
+                    true,
+                    value);
+                self.draw_oct_arc(
+                    p, xo, yo,
+                    UI_MG_KNOB_STROKE,
+                    fg_clr,
+                    false,
+                    (value + modamt).clamp(0.0, 1.0));
+            }
+        } else {
+            self.draw_oct_arc(
+                p, xo, yo,
+                UI_MG_KNOB_STROKE,
+                fg_clr,
+                true,
+                value);
+        }
+    }
+
     pub fn draw_oct_arc(&self, p: &mut dyn Painter, x: f64, y: f64, line_w: f64, color: (f64, f64, f64), with_dot: bool, value: f64) {
         let arc_len = &self.arc_len;
 
-        let (next_idx, segment_len, prev_arc_len) =
+        let (next_idx, prev_arc_len) =
             if value > arc_len[4] {
-                (6, self.s1_len, arc_len[4])
+                (6, arc_len[4])
             } else if value > arc_len[3] {
-                (5, self.s2_len, arc_len[3])
+                (5, arc_len[3])
             } else if value > arc_len[2] {
-                (4, self.s2_len, arc_len[2])
+                (4, arc_len[2])
             } else if value > arc_len[1] {
-                (3, self.s2_len, arc_len[1])
+                (3, arc_len[1])
             } else if value > arc_len[0] {
-                (2, self.s2_len, arc_len[0])
+                (2, arc_len[0])
             } else {
-                (1, self.s1_len, 0.0)
+                (1, 0.0)
             };
 
         let mut s : [(f64, f64); 7] = self.s;
@@ -166,6 +210,9 @@ impl Knob {
             p.1 += y;
         }
 
+        // The segment len is used to calculate the ratio of the traveled
+        // total length.
+        let segment_len = self.s2_len;
         let prev       = s[next_idx - 1];
         let last       = s[next_idx];
         let rest_len   = value - prev_arc_len;
@@ -252,13 +299,6 @@ impl WidgetType for Knob {
             UI_BG_KNOB_STROKE_CLR,
             xo + r.0, yo + r.1, r.2, r.3);
 
-        self.draw_oct_arc(
-            p, xo, yo,
-            UI_MG_KNOB_STROKE,
-            UI_MG_KNOB_STROKE_CLR,
-            false,
-            1.0);
-
         let id = data.id();
         let highlight = ui.hl_style_for(id, None);
         let value =
@@ -268,33 +308,40 @@ impl WidgetType for Knob {
 
         let mut hover_fine_adj = false;
 
+        let modamt = Some(-0.3);
+
         // TODO MOD AMOUNT:
         // double click enables mod mode, which highlights the outer
         // ring of the buttons differently.
         // Dragging on the fine/coarse zones then goes into ValueDragMod
         // mode, which sets the mod amount.
         // after dragging the mod mode is resetted.
+        // Right click after double click removes the modulation!
         //
         // We get the displayed mod value from ui.atoms().mod_amount(id)
         // (modamt + value) is then the position. if modamt < 0.0 we
         // draw different ring colors in layers.
         match highlight {
-            HLStyle::ModTarget => {
+            HLStyle::EditModAmt => {
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
-                    UI_TXT_KNOB_HLIGHT_CLR,
+                    UI_MG_KNOB_STROKE_CLR,
                     false,
                     1.0);
+
+                self.draw_mod_arc(
+                    p, xo, yo, value, modamt,
+                    UI_FG_KNOB_STROKE_CLR);
             },
-            HLStyle::HoverModTarget => {
-                self.draw_oct_arc(
-                    p, xo, yo,
-                    UI_MG_KNOB_STROKE * 2.0,
-                    UI_TXT_KNOB_MODPOS_CLR,
-                    false,
-                    1.0);
-            },
+//            HLStyle::HoverModTarget => {
+//                self.draw_oct_arc(
+//                    p, xo, yo,
+//                    UI_MG_KNOB_STROKE * 2.0,
+//                    UI_TXT_KNOB_MODPOS_CLR,
+//                    false,
+//                    1.0);
+//            },
             HLStyle::Hover(subtype) => {
                 if let ZoneType::ValueDragFine = subtype {
                     hover_fine_adj = true;
@@ -308,23 +355,25 @@ impl WidgetType for Knob {
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
-                    UI_FG_KNOB_STROKE_CLR,
-                    true,
-                    value);
+                    UI_MG_KNOB_STROKE_CLR,
+                    false,
+                    1.0);
+
+                self.draw_mod_arc(
+                    p, xo, yo, value, modamt,
+                    UI_FG_KNOB_STROKE_CLR);
             },
             HLStyle::Inactive => {
                 self.draw_oct_arc(
                     p, xo, yo,
-                    UI_MG_KNOB_STROKE * 1.1,
+                    UI_MG_KNOB_STROKE,
                     UI_INACTIVE_CLR,
                     false,
                     1.0);
-                self.draw_oct_arc(
-                    p, xo, yo,
-                    UI_MG_KNOB_STROKE,
-                    UI_INACTIVE2_CLR,
-                    true,
-                    value);
+
+                self.draw_mod_arc(
+                    p, xo, yo, value, modamt,
+                    UI_INACTIVE2_CLR);
             },
               HLStyle::None
             | HLStyle::AtomClick
@@ -332,9 +381,13 @@ impl WidgetType for Knob {
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
-                    UI_FG_KNOB_STROKE_CLR,
-                    true,
-                    value);
+                    UI_MG_KNOB_STROKE_CLR,
+                    false,
+                    1.0);
+
+                self.draw_mod_arc(
+                    p, xo, yo, value, modamt,
+                    UI_FG_KNOB_STROKE_CLR);
             }
         }
 

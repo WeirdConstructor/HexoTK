@@ -177,15 +177,12 @@ impl WidgetType for Button {
 
         let (mut color, border_color, mut bg_color) =
             match highlight {
-                HLStyle::Hover(_) | HLStyle::HoverModTarget => {
+                HLStyle::Hover(_) => {
                     (UI_BTN_TXT_HOVER_CLR, UI_BTN_TXT_HOVER_CLR, UI_BTN_BG_CLR)
                 },
                 HLStyle::AtomClick => {
                     label_color = UI_BTN_BG_CLR;
                     (UI_BTN_BG_CLR, UI_BTN_BORDER2_CLR, UI_BTN_TXT_CLR)
-                },
-                HLStyle::ModTarget => {
-                    (UI_BTN_TXT_HLIGHT_CLR, UI_BTN_TXT_HLIGHT_CLR, UI_BTN_BG_CLR)
                 },
                 HLStyle::Inactive => {
                     (UI_INACTIVE2_CLR, UI_INACTIVE2_CLR, UI_BTN_BG_CLR)

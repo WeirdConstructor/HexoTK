@@ -661,8 +661,7 @@ pub enum HLStyle {
     Inactive,
     Hover(ZoneType),
     AtomClick,
-    ModTarget,
-    HoverModTarget,
+    EditModAmt,
 }
 
 #[derive(Debug, Clone)]
