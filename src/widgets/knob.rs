@@ -182,8 +182,6 @@ impl Knob {
             prev.1 + partial.1
         );
 
-        p.path_stroke(line_w, color, &mut s.iter().copied().take(next_idx + 1), false);
-
         if with_dot {
             p.arc_stroke(
                 0.9 * line_w * 0.5,
@@ -193,6 +191,8 @@ impl Knob {
                 prev.0 + partial.0,
                 prev.1 + partial.1);
         }
+
+        p.path_stroke(line_w, color, &mut s.iter().copied().take(next_idx + 1), false);
     }
 }
 
@@ -268,6 +268,16 @@ impl WidgetType for Knob {
 
         let mut hover_fine_adj = false;
 
+        // TODO MOD AMOUNT:
+        // double click enables mod mode, which highlights the outer
+        // ring of the buttons differently.
+        // Dragging on the fine/coarse zones then goes into ValueDragMod
+        // mode, which sets the mod amount.
+        // after dragging the mod mode is resetted.
+        //
+        // We get the displayed mod value from ui.atoms().mod_amount(id)
+        // (modamt + value) is then the position. if modamt < 0.0 we
+        // draw different ring colors in layers.
         match highlight {
             HLStyle::ModTarget => {
                 self.draw_oct_arc(
@@ -281,7 +291,7 @@ impl WidgetType for Knob {
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE * 2.0,
-                    UI_TXT_KNOB_HLHOVR_CLR,
+                    UI_TXT_KNOB_MODPOS_CLR,
                     false,
                     1.0);
             },
