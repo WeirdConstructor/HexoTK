@@ -271,6 +271,8 @@ enum InputMode {
         fine_key:       bool,
         /// The change resolution, used by the client to round the values.
         res:            ChangeRes,
+        /// What is actually changed is the modulation amount.
+        is_modamt:      bool,
     },
     HexFieldZoom {
         zone:        ActiveZone,
@@ -338,11 +340,11 @@ impl InputMode {
     }
 
     pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64))
-        -> Option<(AtomId, f32, ChangeRes)>
+        -> Option<(AtomId, f32, ChangeRes, bool)>
     {
         match self {
             InputMode::ValueDrag { value, zone, step_dt, pre_fine_delta,
-                                   fine_key, orig_pos, res, .. } => {
+                                   fine_key, orig_pos, res, is_modamt, .. } => {
 
                 let value_delta =
                     InputMode::calc_value_delta(
@@ -351,7 +353,8 @@ impl InputMode {
                 Some((
                     zone.id,
                     (value + value_delta + pre_fine_delta),
-                    *res
+                    *res,
+                    *is_modamt
                 ))
             },
             _ => None,
@@ -615,6 +618,56 @@ impl UI {
         })
     }
 
+    fn new_value_drag_mode(&mut self, zone: ActiveZone, is_modamt: bool)
+        -> Option<InputMode>
+    {
+        let steps =
+            self.atoms.as_ref().unwrap()
+                .get_ui_steps(zone.id)
+                .unwrap_or(
+                    (DEFAULT_COARSE_STEP,
+                     DEFAULT_FINE_STEP));
+
+        let (step_dt, res) =
+            if let ZoneType::ValueDragCoarse = zone.zone_type {
+                (steps.0, ChangeRes::Coarse)
+            } else {
+                (steps.1, ChangeRes::Fine)
+            };
+
+        let v =
+            if is_modamt {
+                if let Some(v) =
+                    self.atoms.as_ref().unwrap().get_mod_amt(zone.id)
+                {
+                    v
+                } else { 0.0 }
+            } else {
+                if let Some(v) =
+                    self.atoms.as_ref().unwrap().get(zone.id)
+                {
+                    v.f()
+                } else { 0.0 }
+            };
+
+        let fine_key = self.is_key_pressed(UIKey::Shift);
+
+        if !is_modamt {
+            self.atoms.as_mut().unwrap().change_start(zone.id);
+        }
+
+        Some(InputMode::ValueDrag {
+            step_dt,
+            res,
+            fine_key,
+            value:          v,
+            orig_pos:       self.mouse_pos,
+            zone,
+            pre_fine_delta: 0.0,
+            is_modamt,
+        })
+    }
+
     fn dispatch<F>(&mut self, f: F)
         where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
 
@@ -741,13 +794,18 @@ impl WindowUI for UI {
                     };
                 }
 
-                if let Some((id, val, res)) = param_change {
-                    let res =
-                        if self.is_key_pressed(UIKey::Ctrl) {
-                            ChangeRes::Free
-                        } else { res };
+                if let Some((id, val, res, is_modamt)) = param_change {
+                    if is_modamt {
+                        self.atoms.as_mut().unwrap().set_mod_amt(id, Some(val));
 
-                    self.atoms.as_mut().unwrap().change(id, val, false, res);
+                    } else {
+                        let res =
+                            if self.is_key_pressed(UIKey::Ctrl) {
+                                ChangeRes::Free
+                            } else { res };
+
+                        self.atoms.as_mut().unwrap().change(id, val, false, res);
+                    }
                     self.queue_redraw();
                 }
 
@@ -775,18 +833,29 @@ impl WindowUI for UI {
                 let mut reset_input_mode = true;
 
                 if let Some(input_mode) = self.input_mode.take() {
-                    if let Some((id, val, res)) =
-                        input_mode.get_param_change_when_drag(self.mouse_pos) {
+                    if let Some((id, val, res, is_modamt)) =
+                        input_mode.get_param_change_when_drag(self.mouse_pos)
+                    {
+                        if is_modamt {
+                            self.atoms.as_mut().unwrap().set_mod_amt(id, Some(val));
+                        } else {
+                            let res =
+                                if self.is_key_pressed(UIKey::Ctrl) {
+                                    ChangeRes::Free
+                                } else { res };
 
-                        let res =
-                            if self.is_key_pressed(UIKey::Ctrl) {
-                                ChangeRes::Free
-                            } else { res };
-
-                        self.atoms.as_mut().unwrap().change_end(id, val, res);
+                            self.atoms.as_mut().unwrap().change_end(id, val, res);
+                        }
                         self.queue_redraw();
+
                     } else {
                         match input_mode {
+                            InputMode::InputValue { .. } => {
+                                if btn == MButton::Right {
+                                    self.input_mode = Some(input_mode);
+                                    reset_input_mode = false;
+                                }
+                            },
                             InputMode::AtomClick { zone, prev_value } => {
                                 self.handle_atom_mouse_released(
                                     zone, prev_value);
@@ -829,7 +898,9 @@ impl WindowUI for UI {
                     if let Some(az) = az {
                         match az.zone_type {
                             ZoneType::ValueDragCoarse => {
-                                if btn == MButton::Right {
+                                if btn == MButton::Right
+                                   && self.is_key_pressed(UIKey::Shift)
+                                {
                                     self.input_mode =
                                         self.new_input_value_mode(az, false);
                                     self.queue_redraw();
@@ -837,7 +908,9 @@ impl WindowUI for UI {
                                 }
                             },
                             ZoneType::ValueDragFine => {
-                                if btn == MButton::Right {
+                                if btn == MButton::Right
+                                   && self.is_key_pressed(UIKey::Shift)
+                                {
                                     self.input_mode =
                                         self.new_input_value_mode(az, true);
                                     self.queue_redraw();
@@ -891,54 +964,34 @@ impl WindowUI for UI {
                     match az.zone_type {
                         ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
                             match btn {
-                                MButton::Left => {
-                                    let steps =
-                                        self.atoms.as_ref().unwrap()
-                                            .get_ui_steps(az.id)
-                                            .unwrap_or(
-                                                (DEFAULT_COARSE_STEP,
-                                                 DEFAULT_FINE_STEP));
+                                MButton::Left | MButton::Right => {
+                                    let is_modamt = btn == MButton::Right;
 
-                                    let (step_dt, res) =
+                                    if btn == MButton::Right
+                                       && self.is_key_pressed(UIKey::Ctrl)
+                                    {
                                         if let ZoneType::ValueDragCoarse = az.zone_type {
-                                            (steps.0, ChangeRes::Coarse)
-                                        } else {
-                                            (steps.1, ChangeRes::Fine)
-                                        };
+                                            self.input_mode =
+                                                self.new_input_value_mode(az, false);
+                                            self.queue_redraw();
+                                        } else if let ZoneType::ValueDragFine = az.zone_type {
+                                            self.input_mode =
+                                                self.new_input_value_mode(az, true);
+                                            self.queue_redraw();
+                                        }
 
-                                    let v =
-                                        if let Some(v) =
-                                            self.atoms.as_ref().unwrap().get(az.id)
-                                        {
-                                            v.f()
-                                        } else {
-                                            0.0
-                                        };
+                                    } else {
+                                        self.input_mode =
+                                            self.new_value_drag_mode(
+                                                az, is_modamt);
 
-                                    let fine_key =
-                                        self.is_key_pressed(UIKey::Shift);
-
-                                    self.input_mode =
-                                        Some(InputMode::ValueDrag {
-                                            step_dt,
-                                            res,
-                                            fine_key,
-                                            value:          v,
-                                            orig_pos:       self.mouse_pos,
-                                            zone:           az,
-                                            pre_fine_delta: 0.0,
-                                        });
-
-                                    self.atoms.as_mut().unwrap().change_start(az.id);
+                                    }
                                     self.queue_redraw();
                                 },
                                 MButton::Middle => {
                                     self.atoms.as_mut().unwrap().set_default(az.id);
                                     self.queue_redraw();
                                 },
-                                MButton::Right => {
-                                    // TODO: Enter value input mode!
-                                }
                             }
                         },
                         ZoneType::HexFieldClick { hex_trans, .. } => {
@@ -1021,6 +1074,8 @@ impl WindowUI for UI {
 
                 let key_copy = key.key.clone();
 
+                let az = self.get_zone_at(self.mouse_pos);
+
                 match key.key {
                     Key::Escape => {
                         let mut del_input_mode = false;
@@ -1055,6 +1110,23 @@ impl WindowUI for UI {
                             }
 
                             reset_input_mode = true;
+
+                        } else if let Some(az) = az {
+                            match az.zone_type {
+                                ZoneType::ValueDragCoarse => {
+                                    self.input_mode =
+                                        self.new_input_value_mode(az, false);
+                                    self.queue_redraw();
+                                    reset_input_mode = false;
+                                },
+                                ZoneType::ValueDragFine => {
+                                    self.input_mode =
+                                        self.new_input_value_mode(az, true);
+                                    self.queue_redraw();
+                                    reset_input_mode = false;
+                                },
+                                _ => {},
+                            }
                         }
 
                         if reset_input_mode {
@@ -1089,6 +1161,28 @@ impl WindowUI for UI {
                                 }
                             };
                             *cur_input.borrow_mut() = s;
+
+                        } else if let Some(az) = az {
+                            match az.zone_type {
+                                ZoneType::ValueDragCoarse
+                                | ZoneType::ValueDragFine => {
+                                    self.atoms.as_mut().unwrap()
+                                       .set_mod_amt(az.id, None)
+                                },
+                                _ => {},
+                            }
+                        }
+                    },
+                    Key::Delete => {
+                        if let Some(az) = az {
+                            match az.zone_type {
+                                ZoneType::ValueDragCoarse
+                                | ZoneType::ValueDragFine => {
+                                    self.atoms.as_mut().unwrap()
+                                       .set_mod_amt(az.id, None)
+                                },
+                                _ => {},
+                            }
                         }
                     },
                     Key::Character(c) => {

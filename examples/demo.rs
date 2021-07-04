@@ -180,6 +180,7 @@ impl UIPatternModel for PatternData {
 struct SomeParameters {
     dialog_model:   Rc<RefCell<DialogModel>>,
     atoms:          Vec<Atom>,
+    modamts:        Vec<Option<f32>>,
     phase:          f32,
     test_list1_items: crate::widgets::ListItems,
 }
@@ -219,9 +220,32 @@ impl AtomDataModel for SomeParameters {
             self.get(id).map(|v| v.f())
         }
     }
+
     fn get_denorm(&self, id: AtomId) -> Option<f32> {
         Some(self.atoms[id.atom_id() as usize].f())
     }
+
+    fn get_mod_amt(&self, id: AtomId) -> Option<f32> {
+        *self.modamts.get(id.atom_id() as usize)?
+    }
+
+    fn get_ui_mod_amt(&self, id: AtomId) -> Option<f32> {
+        let amt = *self.modamts.get(id.atom_id() as usize)?;
+        if let Some(amt) = amt {
+            if id.atom_id() == 6 {
+                Some(amt * 10.0)
+            } else {
+                Some(amt)
+            }
+        } else {
+            None
+        }
+    }
+
+    fn set_mod_amt(&mut self, id: AtomId, amt: Option<f32>) {
+        self.modamts[id.atom_id() as usize] = amt;
+    }
+
     fn set(&mut self, id: AtomId, v: Atom) {
         println!("SET ATOM: {}: {:?}", id, v);
         let atid = id.atom_id() as usize;
@@ -555,6 +579,8 @@ fn main() {
 
         let mut atoms = vec![];
         atoms.resize_with(100, || Atom::default());
+        let mut modamts = vec![];
+        modamts.resize_with(100, || None);
 
         atoms[23] = Atom::str("Test");
         atoms[28] = Atom::micro(&[
@@ -572,6 +598,7 @@ fn main() {
                 DialogData::new(90001, 45.into(), dialog_model.clone()))),
             Box::new(SomeParameters {
                 atoms,
+                modamts,
                 phase: 0.0,
                 dialog_model: dialog_model.clone(),
                 test_list1_items: li,

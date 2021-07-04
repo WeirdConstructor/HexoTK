@@ -642,6 +642,16 @@ pub trait AtomDataModel {
     /// * Default coarse: 0.05
     /// * Default fine: 0.01
     fn get_ui_steps(&self, id: AtomId) -> Option<(f32, f32)>;
+    /// Should return the modulation amount like it will be applied to the
+    /// inputs.
+    fn get_mod_amt(&self, id: AtomId) -> Option<f32>;
+    /// Should return the modulation amount for the 0..1 UI knob range.
+    /// Internally you should transform that into the appropriate
+    /// modulation amount in relation to what [get_ui_range] returns.
+    fn get_ui_mod_amt(&self, id: AtomId) -> Option<f32>;
+    /// Set the UI modulation amount like it will be used in the
+    /// modulation later and be returned from [get_mod_amt].
+    fn set_mod_amt(&mut self, id: AtomId, amt: Option<f32>);
     fn get_denorm(&self, id: AtomId) -> Option<f32>;
     fn set(&mut self, id: AtomId, v: Atom);
     fn set_denorm(&mut self, id: AtomId, v: f32);

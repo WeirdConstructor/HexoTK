@@ -308,7 +308,7 @@ impl WidgetType for Knob {
 
         let mut hover_fine_adj = false;
 
-        let modamt = Some(-0.3);
+        let modamt = ui.atoms().get_ui_mod_amt(id).map(|v| v as f64);
 
         // TODO MOD AMOUNT:
         // double click enables mod mode, which highlights the outer
