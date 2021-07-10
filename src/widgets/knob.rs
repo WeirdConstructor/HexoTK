@@ -91,12 +91,19 @@ impl Knob {
          (self.radius * 2.0).round())
     }
 
-    pub fn get_value_rect(&self) -> (f64, f64, f64, f64) {
+    pub fn get_value_rect(&self, double: bool) -> (f64, f64, f64, f64) {
         let width = self.radius * 2.0;
-        ((self.sbottom.0 - self.radius).round(),
-         (self.sbottom.1 - (self.radius + UI_ELEM_TXT_H * 0.5)).round(),
-         width.round(),
-         UI_ELEM_TXT_H)
+        if double {
+            ((self.sbottom.0 - self.radius).round(),
+             (self.sbottom.1 - (self.radius + UI_ELEM_TXT_H)).round(),
+             width.round(),
+             2.0 * UI_ELEM_TXT_H)
+        } else {
+            ((self.sbottom.0 - self.radius).round(),
+             (self.sbottom.1 - (self.radius + UI_ELEM_TXT_H * 0.5)).round(),
+             width.round(),
+             UI_ELEM_TXT_H)
+        }
     }
 
     pub fn get_label_rect(&self) -> (f64, f64, f64, f64) {
@@ -121,8 +128,19 @@ impl Knob {
             self.font_size_lbl, 0, UI_TXT_KNOB_CLR, x + r.0, y + r.1, r.2, r.3, s);
     }
 
-    pub fn draw_value_label(&self, p: &mut dyn Painter, x: f64, y: f64, highlight: HLStyle, s: &str) {
-        let r = self.get_value_rect();
+    pub fn draw_value_label(&self, double: bool, first: bool, p: &mut dyn Painter, x: f64, y: f64, highlight: HLStyle, s: &str) {
+        let r = self.get_value_rect(double);
+
+        let r =
+            if double {
+                if first {
+                    (r.0, r.1 + 1.0, r.2, UI_ELEM_TXT_H)
+                } else {
+                    (r.0, r.1 + UI_ELEM_TXT_H - 1.0, r.2, UI_ELEM_TXT_H)
+                }
+            } else {
+                r
+            };
 
         let color =
             match highlight {
@@ -154,26 +172,26 @@ impl Knob {
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     UI_FG_KNOB_MODPOS_CLR,
-                    false,
+                    None,
                     (value + modamt).clamp(0.0, 1.0));
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     fg_clr,
-                    true,
+                    Some(UI_FG_KNOB_MODPOS_CLR),
                     value);
             } else {
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     UI_FG_KNOB_MODNEG_CLR,
-                    true,
+                    Some(UI_FG_KNOB_MODNEG_CLR),
                     value);
                 self.draw_oct_arc(
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     fg_clr,
-                    false,
+                    None,
                     (value + modamt).clamp(0.0, 1.0));
             }
         } else {
@@ -181,12 +199,12 @@ impl Knob {
                 p, xo, yo,
                 UI_MG_KNOB_STROKE,
                 fg_clr,
-                true,
+                Some(fg_clr),
                 value);
         }
     }
 
-    pub fn draw_oct_arc(&self, p: &mut dyn Painter, x: f64, y: f64, line_w: f64, color: (f64, f64, f64), with_dot: bool, value: f64) {
+    pub fn draw_oct_arc(&self, p: &mut dyn Painter, x: f64, y: f64, line_w: f64, color: (f64, f64, f64), dot_color: Option<(f64, f64, f64)>, value: f64) {
         let arc_len = &self.arc_len;
 
         let (next_idx, prev_arc_len) =
@@ -229,10 +247,10 @@ impl Knob {
             prev.1 + partial.1
         );
 
-        if with_dot {
+        if let Some(clr) = dot_color {
             p.arc_stroke(
                 0.9 * line_w * 0.5,
-                color,
+                clr,
                 0.9 * line_w * 1.5,
                 0.0, 2.0 * std::f64::consts::PI,
                 prev.0 + partial.0,
@@ -272,11 +290,14 @@ impl WidgetType for Knob {
         // let (knob_w, knob_h) = self.size(ui, data, (pos.w, pos.h));
         let (xo, yo) = (x + knob_xo, y + knob_yo);
 
+        let id     = data.id();
+        let modamt = ui.atoms().get_ui_mod_amt(id).map(|v| v as f64);
+
         self.draw_oct_arc(
             p, xo, yo,
             UI_BG_KNOB_STROKE,
             UI_BG_KNOB_STROKE_CLR,
-            false,
+            None,
             1.0);
 
         let dc1 = self.get_decor_rect1();
@@ -284,7 +305,7 @@ impl WidgetType for Knob {
             UI_BG_KNOB_STROKE_CLR,
             xo + dc1.0, yo + dc1.1, dc1.2, dc1.3);
 
-        let valrect = self.get_value_rect();
+        let valrect = self.get_value_rect(modamt.is_some());
         p.rect_fill(
             UI_BG_KNOB_STROKE_CLR,
             valrect.0 + xo, valrect.1 + yo, valrect.2, valrect.3);
@@ -299,7 +320,6 @@ impl WidgetType for Knob {
             UI_BG_KNOB_STROKE_CLR,
             xo + r.0, yo + r.1, r.2, r.3);
 
-        let id = data.id();
         let highlight = ui.hl_style_for(id, None);
         let value =
             if let Some(v) = ui.atoms().get_ui_range(id) {
@@ -307,8 +327,6 @@ impl WidgetType for Knob {
             } else { 0.0 };
 
         let mut hover_fine_adj = false;
-
-        let modamt = ui.atoms().get_ui_mod_amt(id).map(|v| v as f64);
 
         // TODO MOD AMOUNT:
         // double click enables mod mode, which highlights the outer
@@ -327,7 +345,7 @@ impl WidgetType for Knob {
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     UI_MG_KNOB_STROKE_CLR,
-                    false,
+                    None,
                     1.0);
 
                 self.draw_mod_arc(
@@ -356,7 +374,7 @@ impl WidgetType for Knob {
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     UI_MG_KNOB_STROKE_CLR,
-                    false,
+                    None,
                     1.0);
 
                 self.draw_mod_arc(
@@ -368,7 +386,7 @@ impl WidgetType for Knob {
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     UI_INACTIVE_CLR,
-                    false,
+                    None,
                     1.0);
 
                 self.draw_mod_arc(
@@ -382,7 +400,7 @@ impl WidgetType for Knob {
                     p, xo, yo,
                     UI_MG_KNOB_STROKE,
                     UI_MG_KNOB_STROKE_CLR,
-                    false,
+                    None,
                     1.0);
 
                 self.draw_mod_arc(
@@ -394,7 +412,14 @@ impl WidgetType for Knob {
         data.with(|data: &mut KnobData| {
             let len = ui.atoms().fmt(id, &mut data.lbl_buf[..]);
             let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
-            self.draw_value_label(p, xo, yo, highlight, val_s);
+            self.draw_value_label(modamt.is_some(), true, p, xo, yo, highlight, val_s);
+
+
+            if let Some(_) = modamt {
+                let len = ui.atoms().fmt_mod(id, &mut data.lbl_buf[..]);
+                let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
+                self.draw_value_label(true, false, p, xo, yo, highlight, val_s);
+            }
 
             if hover_fine_adj {
                 let len = ui.atoms().fmt_norm(id, &mut data.lbl_buf[..]);

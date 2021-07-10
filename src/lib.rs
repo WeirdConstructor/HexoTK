@@ -656,6 +656,7 @@ pub trait AtomDataModel {
     fn set(&mut self, id: AtomId, v: Atom);
     fn set_denorm(&mut self, id: AtomId, v: f32);
     fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
+    fn fmt_mod<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
     fn fmt_norm<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
     fn step_next(&mut self, id: AtomId);
     fn step_prev(&mut self, id: AtomId);

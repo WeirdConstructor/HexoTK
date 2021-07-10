@@ -324,6 +324,23 @@ impl AtomDataModel for SomeParameters {
         }
     }
 
+    fn fmt_mod<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
+        let modamt =
+            if let Some(ma) = self.get_mod_amt(id) {
+                ma
+            } else {
+                return 0;
+            };
+        let norm = self.atoms[id.atom_id() as usize].f();
+
+        use std::io::Write;
+        let mut bw = std::io::BufWriter::new(buf);
+        match write!(bw, "{:6.3}", norm + modamt) {
+            Ok(_)  => bw.buffer().len(),
+            Err(_) => 0,
+        }
+    }
+
     fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
