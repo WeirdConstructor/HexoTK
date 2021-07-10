@@ -668,6 +668,15 @@ impl UI {
         })
     }
 
+    fn new_main_key_dispatch_event(&self, key: KeyboardEvent) -> Option<UIEvent> {
+        let main = self.main.as_ref()?;
+        Some(UIEvent::Key {
+            id:         main.id(),
+            key:        key.key.clone(),
+            mouse_pos:  self.mouse_pos,
+        })
+    }
+
     fn dispatch<F>(&mut self, f: F)
         where F: FnOnce(&mut dyn WidgetUI, &mut WidgetData, &dyn WidgetType) {
 
@@ -1086,6 +1095,9 @@ impl WindowUI for UI {
 
                         if del_input_mode {
                             self.input_mode = None;
+                        } else {
+                            dispatch_event =
+                                self.new_main_key_dispatch_event(key);
                         }
 
                         self.queue_redraw();
@@ -1263,14 +1275,8 @@ impl WindowUI for UI {
                                 .insert(ui_key, true);
 
                         } else if dispatch_event.is_none() {
-                            if let Some(main) = &self.main {
-                                dispatch_event =
-                                    Some(UIEvent::Key {
-                                        id:         main.id(),
-                                        key:        key.key.clone(),
-                                        mouse_pos:  self.mouse_pos,
-                                    });
-                            }
+                            dispatch_event =
+                                self.new_main_key_dispatch_event(key);
                         }
                     },
                 }
