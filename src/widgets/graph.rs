@@ -12,12 +12,12 @@ pub struct Graph {
 
 pub struct GraphData {
     samples:   usize,
-    func:      Box<dyn FnMut(&dyn WidgetUI, bool, f64) -> f64>,
+    func:      Box<dyn FnMut(&dyn WidgetUI, bool, f64, f64) -> f64>,
     buf:       Vec<(f64, f64)>,
 }
 
 impl GraphData {
-    pub fn new(samples: usize, func: Box<dyn FnMut(&dyn WidgetUI, bool, f64) -> f64>) -> Box<dyn std::any::Any> {
+    pub fn new(samples: usize, func: Box<dyn FnMut(&dyn WidgetUI, bool, f64, f64) -> f64>) -> Box<dyn std::any::Any> {
         let mut buf = vec![];
         buf.resize(samples, (0.0, 0.0));
 
@@ -53,7 +53,7 @@ impl WidgetType for Graph {
             for i in 0..data.samples {
                 let gx = x * in_pos.w;
                 let gy =
-                    (1.0 - (*data.func)(ui, i == 0, x).clamp(0.0, 1.0))
+                    (1.0 - (*data.func)(ui, i == 0, x, x + xd).clamp(0.0, 1.0))
                     * in_pos.h;
 
                 data.buf[i] = (
