@@ -784,8 +784,8 @@ impl WidgetType for PatternEditor {
                     },
                     EnterMode::Rows(EnterValue::Two(_)) => None,
                     EnterMode::None => {
-                        if notify_click && data.blink_visible {
-                            Some("*** >>> CLICK FOR KEYBOARD FOCUS <<< ***")
+                        if notify_click {
+                            Some("*** >>> click for keyboard focus <<< ***")
                         } else {
                             None
                         }
