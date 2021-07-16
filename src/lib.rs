@@ -862,3 +862,38 @@ macro_rules! define_containing_widget {
         }
     }
 }
+
+#[macro_export]
+macro_rules! define_containing_widget_v_split {
+    ($type: ident, $data_type: ident, $first_height: expr) => {
+        #[derive(Debug)]
+        pub struct $type;
+
+        impl $type {
+            pub fn new_ref() -> Rc<$type> { Rc::new(Self) }
+        }
+
+        impl WidgetType for $type {
+            fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData,
+                    p: &mut dyn Painter, pos: Rect)
+            {
+                data.with(|data: &mut $data_type| {
+                    data.check_cont_update(ui);
+                    let pos_top    = pos.crop_bottom(pos.h - $first_height);
+                    let pos_bottom = pos.crop_top($first_height);
+                    data.cont_top.draw(ui, p, pos_top);
+                    data.cont_bottom.draw(ui, p, pos_bottom);
+                });
+            }
+
+            fn event(&self, ui: &mut dyn WidgetUI,
+                     data: &mut WidgetData, ev: &UIEvent)
+            {
+                data.with(|data: &mut $data_type| {
+                    data.cont_top.event(ui, ev);
+                    data.cont_bottom.event(ui, ev);
+                });
+            }
+        }
+    }
+}

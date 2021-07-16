@@ -73,10 +73,12 @@ impl ContainerData {
     }
 
     pub fn add(&mut self, widget_data: WidgetData) -> &mut Self {
-        if self.rows.len() > 0 {
-            let last_idx = self.rows.len() - 1;
-            self.rows[last_idx].push(widget_data);
+        if self.rows.len() == 0 {
+            self.new_row();
         }
+
+        let last_idx = self.rows.len() - 1;
+        self.rows[last_idx].push(widget_data);
 
         self
     }

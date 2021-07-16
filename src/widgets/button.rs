@@ -6,8 +6,9 @@ use super::*;
 
 #[derive(Debug)]
 pub struct Button {
-    width:      f64,
-    font_size:  f64,
+    width:       f64,
+    line_height: f64,
+    font_size:   f64,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -92,6 +93,15 @@ impl Button {
         Self {
             width,
             font_size,
+            line_height: UI_ELEM_TXT_H,
+        }
+    }
+
+    pub fn new_height(width: f64, font_size: f64, line_height: f64) -> Self {
+        Self {
+            width,
+            font_size,
+            line_height,
         }
     }
 
@@ -122,7 +132,7 @@ impl Button {
         );
 
         let w = self.width;
-        let h = UI_ELEM_TXT_H * 2.0 + UI_BTN_BORDER_WIDTH;
+        let h = self.line_height * 2.0 + UI_BTN_BORDER_WIDTH;
 
         // divider
         p.path_stroke(
@@ -147,7 +157,7 @@ impl WidgetType for Button {
         );
 
         let w = self.width;
-        let h = UI_ELEM_TXT_H * 2.0 + UI_BTN_BORDER_WIDTH;
+        let h = self.line_height * 2.0 + UI_BTN_BORDER_WIDTH;
 
         let id = data.id();
         let highlight = ui.hl_style_for(id, None);
@@ -219,17 +229,17 @@ impl WidgetType for Button {
 
                 p.label(self.font_size, 0, label_color,
                     xo,
-                    yo + UI_ELEM_TXT_H + UI_BTN_BORDER2_WIDTH,
+                    yo + self.line_height + UI_BTN_BORDER2_WIDTH,
                     w, (h / 2.0).round(), &data.name);
 
             } else {
                 p.label(self.font_size, 0, label_color,
                     xo,
                     (yo
-                     + 0.5 * UI_ELEM_TXT_H
+                     + 0.5 * self.line_height
                      + UI_BTN_BORDER2_WIDTH)
                     .round(),
-                    w, UI_ELEM_TXT_H, &data.name);
+                    w, self.line_height, &data.name);
             }
 
             let zone_rect = Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo);
@@ -270,7 +280,7 @@ impl WidgetType for Button {
     fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
         (self.width
          + UI_BTN_BORDER_WIDTH + UI_SAFETY_PAD,
-         UI_ELEM_TXT_H + UI_BTN_BORDER_WIDTH + UI_ELEM_TXT_H
+         self.line_height + UI_BTN_BORDER_WIDTH + self.line_height
          + UI_BTN_BORDER_WIDTH + UI_SAFETY_PAD)
     }
 
