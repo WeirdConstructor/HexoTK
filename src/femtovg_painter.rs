@@ -107,7 +107,7 @@ impl<'a> Painter for FemtovgPainter<'a> {
     fn move_and_scale(&mut self, x: f64, y: f64, x2: f64, y2: f64, factor: f64) {
         self.canvas.save();
         self.cur_scale = factor as f32;
-        let factor = self.scale * self.cur_scale;
+        let factor = self.cur_scale;
 //        self.canvas.translate(x as f32, y as f32);
         self.canvas.translate(x as f32, y as f32);
         self.canvas.scale(factor, factor);

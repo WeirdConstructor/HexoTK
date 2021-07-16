@@ -507,21 +507,21 @@ fn main() {
         let wt_graph = Rc::new(Graph::new(60.0, 60.0));
 
         let fun0 =
-            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64| -> f64 {
+            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64, _xn: f64| -> f64 {
                 let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
                 let v = v.clamp(0.0, 1.0);
                 myfun1(x as f32, v as f32) as f64
             });
 
         let fun =
-            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64| -> f64 {
+            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64, _xn: f64| -> f64 {
                 let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
                 let v = v.clamp(0.0, 1.0);
                 fastapprox::pow(x as f32, 0.25 + (1.0 - v as f32) * 3.75) as f64
             });
 
         let fun2 =
-            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64| -> f64 {
+            Box::new(move |ui: &dyn WidgetUI, _init: bool, x: f64, _xn: f64| -> f64 {
                 let v = ui.atoms().get_denorm(4.into()).unwrap_or(1.0) as f64;
                 let v = v.clamp(0.0, 1.0);
                     (x).powf(0.25 * v + (1.0 - v) * 4.0)
