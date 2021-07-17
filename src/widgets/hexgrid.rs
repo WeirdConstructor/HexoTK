@@ -174,7 +174,7 @@ impl HexEdge {
                     value.1 as f64,
                     0.3,
                 );
-                draw_arrow(p, clr, x, y, 1.0, 0.0, 7.5, rot);
+                draw_arrow(p, clr, x, y, 1.0, 0.0, 7.0, rot);
             },
         }
     }
@@ -202,6 +202,18 @@ fn draw_hexagon<F: Fn(&mut dyn Painter, HexDecorPos, (f64, f64, f64))>(p: &mut d
     let (w, h) = hex_size2wh(size);
 
     let sz = (w, h, size);
+
+    p.path_stroke(
+        line,
+        clr,
+        &mut ([
+            (x - 0.50 * w, y          ),
+            (x - 0.25 * w, y - 0.5 * h),
+            (x + 0.25 * w, y - 0.5 * h),
+            (x + 0.50 * w, y          ),
+            (x + 0.25 * w, y + 0.5 * h),
+            (x - 0.25 * w, y + 0.5 * h),
+        ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 
     decor_fun(p,
         HexDecorPos::Center(x.floor(), y.floor()), sz);
@@ -241,18 +253,6 @@ fn draw_hexagon<F: Fn(&mut dyn Painter, HexDecorPos, (f64, f64, f64))>(p: &mut d
             (x - 0.75 * size).floor(),
             (y + 0.25 * h   ).floor(),
         ), sz);
-
-    p.path_stroke(
-        line,
-        clr,
-        &mut ([
-            (x - 0.50 * w, y          ),
-            (x - 0.25 * w, y - 0.5 * h),
-            (x + 0.25 * w, y - 0.5 * h),
-            (x + 0.50 * w, y          ),
-            (x + 0.25 * w, y + 0.5 * h),
-            (x - 0.25 * w, y + 0.5 * h),
-        ].iter().copied().map(|p| (p.0.floor(), p.1.floor()))), true);
 }
 
 fn draw_led(p: &mut dyn Painter, x: f64, y: f64, led_value: (f32, f32)) {

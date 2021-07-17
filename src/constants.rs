@@ -123,8 +123,7 @@ pub const UI_GRID_HOVER_BORDER_CLR  : (f64, f64, f64) = UI_ACCENT_CLR;
 pub const UI_GRID_DRAG_BORDER_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_GRID_BG1_CLR           : (f64, f64, f64) = UI_ACCENT_BG1_CLR;
 pub const UI_GRID_BG2_CLR           : (f64, f64, f64) = UI_ACCENT_BG2_CLR;
-pub const UI_GRID_SIGNAL_OUT_CLR    : (f64, f64, f64) = UI_PRIM2_CLR;
-pub const UI_GRID_SIGNAL_IN_CLR     : (f64, f64, f64) = UI_HLIGHT_CLR;
+pub const UI_GRID_SIGNAL_OUT_CLR    : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_GRID_LED_CLR           : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_GRID_LED_R             : f64             = 5.0;
 
