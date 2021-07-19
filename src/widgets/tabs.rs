@@ -110,7 +110,8 @@ impl WidgetType for Tabs {
                     UI_TAB_BG_CLR, tab_pos.x, tab_pos.y, tab_pos.w, tab_pos.h);
                 p.label(UI_TAB_FONT_SIZE, 0, text_color,
                     tab_pos.x, tab_pos.y, tab_pos.w, tab_pos.h,
-                    &label);
+                    &label,
+                    dbgid_pack(DBGID_TAB_NAME, i as u16, 0));
             }
 
             let pos = pos.crop_top(UI_TAB_HEIGHT - UI_TAB_BORDER_WIDTH);

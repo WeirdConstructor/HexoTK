@@ -125,7 +125,8 @@ impl Knob {
     pub fn draw_name(&self, p: &mut dyn Painter, x: f64, y: f64, s: &str) {
         let r = self.get_label_rect();
         p.label(
-            self.font_size_lbl, 0, UI_TXT_KNOB_CLR, x + r.0, y + r.1, r.2, r.3, s);
+            self.font_size_lbl, 0, UI_TXT_KNOB_CLR,
+            x + r.0, y + r.1, r.2, r.3, s, DBGID_KNOB_NAME);
     }
 
     pub fn draw_value_label(&self, double: bool, first: bool, p: &mut dyn Painter, x: f64, y: f64, highlight: HLStyle, s: &str) {
@@ -158,7 +159,10 @@ impl Knob {
             x + r.0 + light_font_offs,
             y + r.1,
             r.2 - some_right_padding,
-            r.3, s);
+            r.3, s,
+            if double {
+                if first { DBGID_KNOB_VALUE } else { DBGID_KNOB_MODAMT }
+            } else { DBGID_KNOB_VALUE });
     }
 
     pub fn draw_mod_arc(

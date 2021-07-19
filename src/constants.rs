@@ -157,3 +157,52 @@ pub const UI_TRK_CURSOR_BG_CLR     : (f64, f64, f64) = UI_PRIM_CLR;
 pub const UI_TRK_CURSOR_FG_CLR     : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_TRK_PHASEROW_BG_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_TRK_PHASEROW_FG_CLR   : (f64, f64, f64) = UI_LBL_BG_CLR;
+
+#[inline]
+pub fn dbgid_pack(id: usize, x: u16, y: u16) -> usize {
+      (y as usize) << 32
+    | (x as usize) << 16
+    | (id & DBGID_MASK)
+}
+
+#[inline]
+pub fn dbgid_unpack(lblidx: usize) -> (usize, u16, u16) {
+    ((lblidx         & DBGID_MASK) as usize,
+     ((lblidx >> 16) & DBGID_MASK) as u16,
+     ((lblidx >> 32) & DBGID_MASK) as u16)
+}
+pub const DBGID_MASK               : usize = 0x0000_0000_0000_FFFF;
+pub const DBGID_X                  : usize = 0x0000_0000_FFFF_0000;
+pub const DBGID_Y                  : usize = 0x0000_FFFF_0000_0000;
+pub const DBGID_BTN_VAL            : usize =  0;
+pub const DBGID_BTN_NAME           : usize =  1;
+pub const DBGID_CONT_TITLE         : usize =  2;
+pub const DBGID_CVARRAY_NAME       : usize =  3;
+pub const DBGID_ENTRY_LBL          : usize =  4;
+pub const DBGID_ENTRY_VAL          : usize =  5;
+pub const DBGID_HEX_TILE_NAME      : usize =  6;
+pub const DBGID_HEX_TILE_NUM       : usize =  7;
+pub const DBGID_HEX_TILE_T         : usize =  8;
+pub const DBGID_HEX_TILE_B         : usize =  9;
+pub const DBGID_HEX_TILE_TR        : usize = 10;
+pub const DBGID_HEX_TILE_BR        : usize = 11;
+pub const DBGID_HEX_TILE_TL        : usize = 12;
+pub const DBGID_HEX_TILE_BL        : usize = 13;
+pub const DBGID_KEYS_NAME          : usize = 14;
+pub const DBGID_KNOB_NAME          : usize = 15;
+pub const DBGID_KNOB_VALUE         : usize = 16;
+pub const DBGID_KNOB_MODAMT        : usize = 17;
+pub const DBGID_PATEDIT_MODE       : usize = 18;
+pub const DBGID_PATEDIT_INFO       : usize = 19;
+pub const DBGID_PATEDIT_HEADER     : usize = 20;
+pub const DBGID_PATEDIT_ROWNR      : usize = 21;
+pub const DBGID_PATEDIT_ROW        : usize = 22;
+pub const DBGID_PATEDIT_CELL       : usize = 23;
+pub const DBGID_TAB_NAME           : usize = 24;
+pub const DBGID_TEXT_HEADER        : usize = 25;
+pub const DBGID_TEXT_LINE          : usize = 26;
+pub const DBGID_TEXT_PGBTN         : usize = 27;
+pub const DBGID_TEXT_PG            : usize = 28;
+pub const DBGID_INPUT_VALUE        : usize = 29;
+pub const DBGID_LIST_NAME          : usize = 30;
+pub const DBGID_LIST_ITEM          : usize = 31;

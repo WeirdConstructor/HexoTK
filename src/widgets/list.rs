@@ -144,7 +144,8 @@ impl WidgetType for List {
             data.check_scroll_reset();
 
             p.label(self.font_size, -1, UI_LBL_TXT_CLR,
-                pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label);
+                pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label,
+                DBGID_LIST_NAME);
 
             p.path_stroke(
                 1.0,
@@ -178,7 +179,8 @@ impl WidgetType for List {
                         Rect::from(pos.x, pos.y + yo, pos.w, UI_ELEM_TXT_H)
                         .crop_right(UI_LIST_BTN_WIDTH);
                     p.label_mono(self.font_size, -1, txt_color,
-                        lpos.x, lpos.y, lpos.w, lpos.h, &item.2);
+                        lpos.x, lpos.y, lpos.w, lpos.h, &item.2,
+                        dbgid_pack(DBGID_LIST_ITEM, i as u16, 0));
 
                     ui.define_active_zone(
                         ActiveZone::new_indexed_click_zone(

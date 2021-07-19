@@ -226,7 +226,6 @@ impl WindowHandler for GUIWindowHandler {
 
                 test_debug,
                 cur_id_stk: vec![],
-                dbg_count:  0,
             };
             self.ui.draw(painter);
 

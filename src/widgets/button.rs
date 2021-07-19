@@ -225,12 +225,12 @@ impl WidgetType for Button {
                 let len = ui.atoms().fmt(id, &mut data.value_buf[..]);
                 let val_s = std::str::from_utf8(&data.value_buf[0..len]).unwrap();
                 p.label(self.font_size, 0, color,
-                    xo, yo, w, (h / 2.0).round(), val_s);
+                    xo, yo, w, (h / 2.0).round(), val_s, DBGID_BTN_VAL);
 
                 p.label(self.font_size, 0, label_color,
                     xo,
                     yo + self.line_height + UI_BTN_BORDER2_WIDTH,
-                    w, (h / 2.0).round(), &data.name);
+                    w, (h / 2.0).round(), &data.name, DBGID_BTN_NAME);
 
             } else {
                 p.label(self.font_size, 0, label_color,
@@ -239,7 +239,7 @@ impl WidgetType for Button {
                      + 0.5 * self.line_height
                      + UI_BTN_BORDER2_WIDTH)
                     .round(),
-                    w, self.line_height, &data.name);
+                    w, self.line_height, &data.name, DBGID_BTN_NAME);
             }
 
             let zone_rect = Rect::from_tpl((0.0, 0.0, w, h)).offs(xo, yo);

@@ -76,7 +76,8 @@ impl WidgetType for Keys {
                 lbl_y,
                 pos.w,
                 UI_ELEM_TXT_H,
-                &data.name);
+                &data.name,
+                DBGID_KEYS_NAME);
 
             let pos = pos.crop_bottom(UI_ELEM_TXT_H);
 

@@ -1374,14 +1374,16 @@ impl WindowUI for UI {
                     pos.x,
                     pos.y,
                     pos.w,
-                    pos.h, &cur_input.borrow());
+                    pos.h, &cur_input.borrow(),
+                    DBGID_INPUT_VALUE);
             } else {
                 painter.label(
                     UI_INPUT_FONT_SIZE, 0, UI_BTN_TXT_CLR,
                     pos.x,
                     pos.y,
                     pos.w,
-                    pos.h, &prev_value_str);
+                    pos.h, &prev_value_str,
+                    DBGID_INPUT_VALUE);
             }
         }
     }

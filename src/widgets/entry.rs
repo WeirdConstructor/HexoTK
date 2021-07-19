@@ -78,7 +78,8 @@ impl WidgetType for Entry {
 
         data.with(|data: &mut EntryData| {
             p.label(self.font_size, -1, UI_LBL_TXT_CLR,
-                pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label);
+                pos.x, pos.y, pos.w, UI_ELEM_TXT_H, &data.label,
+                DBGID_ENTRY_LBL);
 
             p.path_stroke(
                 1.0,
@@ -129,7 +130,8 @@ impl WidgetType for Entry {
 
                     p.label_mono(self.font_size, -1, UI_LIST_TXT_CLR,
                         pos.x, pos.y + pos.h - 2.0 * UI_ELEM_TXT_H, pos.w, UI_ELEM_TXT_H,
-                        &std::str::from_utf8(bw.buffer()).unwrap());
+                        &std::str::from_utf8(bw.buffer()).unwrap(),
+                        DBGID_ENTRY_VAL);
                 }
             }
         });

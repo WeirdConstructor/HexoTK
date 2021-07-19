@@ -21,7 +21,6 @@ pub struct FemtovgPainter<'a> {
 
     pub test_debug: Option<Box<dyn FnMut(crate::AtomId, usize, &str)>>,
     pub cur_id_stk: Vec<crate::AtomId>,
-    pub dbg_count:  usize,
 }
 
 fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
@@ -33,11 +32,14 @@ fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
 }
 
 impl<'a> FemtovgPainter<'a> {
-    fn label_with_font(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64, text: &str, font: FontId) {
+    fn label_with_font(
+        &mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64),
+        x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64,
+        text: &str, font: FontId, lblid: usize)
+    {
         #[cfg(debug_assertions)]
         if let Some(f) = &mut self.test_debug {
-            f(self.cur_id_stk.last().copied().unwrap(), self.dbg_count, text);
-            self.dbg_count += 1;
+            f(self.cur_id_stk.last().copied().unwrap(), lblid, text);
         }
 
         let mut paint = color_paint(color);
@@ -234,16 +236,16 @@ impl<'a> Painter for FemtovgPainter<'a> {
         self.canvas.stroke_path(&mut p, paint);
     }
 
-    fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font);
+    fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, lblid: usize) {
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font, lblid);
     }
 
-    fn label_rot(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, xo: f64, yo: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font);
+    fn label_rot(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, xo: f64, yo: f64, w: f64, h: f64, text: &str, lblid: usize) {
+        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font, lblid);
     }
 
-    fn label_mono(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str) {
-        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono);
+    fn label_mono(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, lblid: usize) {
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono, lblid);
     }
 
     fn font_height(&mut self, size: f32, mono: bool) -> f32 {
@@ -264,7 +266,6 @@ impl<'a> Painter for FemtovgPainter<'a> {
     #[cfg(debug_assertions)]
     fn start_widget(&mut self, id: crate::AtomId) {
         self.cur_id_stk.push(id);
-        self.dbg_count = 0;
     }
 
     #[cfg(debug_assertions)]

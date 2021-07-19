@@ -3,7 +3,7 @@ use crate::AtomId;
 use std::collections::HashMap;
 
 pub struct Driver {
-    texts:      HashMap<(AtomId, usize), String>,
+    texts: HashMap<(AtomId, usize), String>,
 }
 
 impl Driver {
@@ -11,6 +11,10 @@ impl Driver {
         Self {
             texts: HashMap::new(),
         }
+    }
+
+    pub fn clear_texts(&mut self) {
+        self.texts.clear();
     }
 
     pub fn update_text(&mut self, id: AtomId, idx: usize, txt: &str) {

@@ -10,8 +10,8 @@ description = "HexoTK - A GUI Toolkit for Audio Plugins"
 name = "hexotk"
 
 [dependencies]
-hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
-#hexodsp             = { path = "../hexodsp" }
+#hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
+hexodsp             = { path = "../hexodsp" }
 femtovg            = { git = "https://github.com/femtovg/femtovg" }
 raw-gl-context     = { git = "https://github.com/glowcoil/raw-gl-context" }
 #baseview           = { git = "https://github.com/WeirdConstructor/baseview.git", branch = "fix_resize_problems" }

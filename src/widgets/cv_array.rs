@@ -111,7 +111,7 @@ impl WidgetType for CvArray {
                 lbl_y,
                 pos.w,
                 UI_ELEM_TXT_H,
-                &data.name);
+                &data.name, DBGID_CVARRAY_NAME);
 
             let pos = pos.crop_bottom(UI_ELEM_TXT_H);
 

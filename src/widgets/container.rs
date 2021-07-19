@@ -128,7 +128,7 @@ impl WidgetType for Container {
                     p.label(
                         UI_CONT_FONT_SIZE, 0, UI_CONT_FONT_CLR,
                         inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H,
-                        title);
+                        title, DBGID_CONT_TITLE);
                     new_inner
                 } else { inner_pos };
 

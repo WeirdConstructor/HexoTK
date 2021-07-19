@@ -801,7 +801,8 @@ impl WidgetType for PatternEditor {
                     pos.y,
                     pos.w,
                     UI_TRK_ROW_HEIGHT,
-                    &mode_line);
+                    &mode_line,
+                    DBGID_PATEDIT_MODE);
             }
 
             if data.update_info_line {
@@ -824,7 +825,8 @@ impl WidgetType for PatternEditor {
                 pos.y + UI_TRK_ROW_HEIGHT,
                 pos.w,
                 UI_TRK_ROW_HEIGHT,
-                &data.info_line);
+                &data.info_line,
+                DBGID_PATEDIT_INFO);
 
             ui.define_active_zone(ActiveZone::new_keyboard_zone(id, pos));
 
@@ -848,7 +850,8 @@ impl WidgetType for PatternEditor {
                         "Gate"
                     } else {
                         "Value"
-                    });
+                    },
+                    dbgid_pack(DBGID_PATEDIT_HEADER, ic as u16, 0));
             }
 
             p.path_stroke(
@@ -900,7 +903,8 @@ impl WidgetType for PatternEditor {
                     pos.y + y,
                     UI_TRK_COL_WIDTH,
                     UI_TRK_ROW_HEIGHT,
-                    &format!("{:-02}", ir));
+                    &format!("{:-02}", ir),
+                    dbgid_pack(DBGID_PATEDIT_ROW, 0, ir as u16));
 
                 let phase =
                     if let Some(phase) = ui.atoms().get_phase_value(id) {
@@ -950,7 +954,8 @@ impl WidgetType for PatternEditor {
                                 UI_TRK_COL_WIDTH,
                                 UI_TRK_ROW_HEIGHT,
                                 value2note_name(cell_value)
-                                    .unwrap_or(s));
+                                    .unwrap_or(s),
+                                dbgid_pack(DBGID_PATEDIT_CELL, ic as u16, ir as u16));
                         } else {
                             p.label_mono(
                                 UI_TRK_FONT_SIZE,
@@ -960,7 +965,8 @@ impl WidgetType for PatternEditor {
                                 pos.y + y,
                                 UI_TRK_COL_WIDTH,
                                 UI_TRK_ROW_HEIGHT,
-                                s);
+                                s,
+                                dbgid_pack(DBGID_PATEDIT_CELL, ic as u16, ir as u16));
                         }
                     } else {
                         p.label_mono(
@@ -971,7 +977,8 @@ impl WidgetType for PatternEditor {
                             pos.y + y,
                             UI_TRK_COL_WIDTH,
                             UI_TRK_ROW_HEIGHT,
-                            "---");
+                            "---",
+                            dbgid_pack(DBGID_PATEDIT_CELL, ic as u16, ir as u16));
                     }
                 }
             }

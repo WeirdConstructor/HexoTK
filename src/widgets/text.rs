@@ -152,17 +152,25 @@ impl WidgetType for Text {
                 p.font_height(self.font_size as f32, true) as f64;
 
             let mut first = true;
-            for line in data.text[data.page_idx].split("\n") {
+            for (i, line) in data.text[data.page_idx].split("\n").enumerate() {
                 if first {
                     p.label_mono((self.font_size * 1.5).round(), 0,
                         UI_HELP_TXT_CLR,
-                        xo, yo.floor(), pos.w, y_increment, line);
+                        xo, yo.floor(), pos.w, y_increment, line,
+                        dbgid_pack(
+                            DBGID_TEXT_HEADER,
+                            data.page_idx as u16,
+                            i as u16));
                     yo += y_increment;
 
                 } else {
                     p.label_mono(self.font_size, -1,
                         UI_HELP_TXT_CLR,
-                        xo, yo.floor(), pos.w, y_increment, line);
+                        xo, yo.floor(), pos.w, y_increment, line,
+                        dbgid_pack(
+                            DBGID_TEXT_HEADER,
+                            data.page_idx as u16,
+                            i as u16));
                 }
 
                 yo += y_increment;
@@ -210,14 +218,16 @@ impl WidgetType for Text {
                     btn_left_pos.x,
                     btn_left_pos.y.floor(),
                     btn_left_pos.w,
-                    btn_height, "<");
+                    btn_height, "<",
+                    dbgid_pack(DBGID_TEXT_PGBTN, data.page_idx as u16, 0));
                 p.label(
                     self.font_size, 0,
                     btn_txt_right_clr,
                     btn_right_pos.x,
                     btn_right_pos.y.floor(),
                     btn_right_pos.w,
-                    btn_height, ">");
+                    btn_height, ">",
+                    dbgid_pack(DBGID_TEXT_PGBTN, data.page_idx as u16, 0));
 
                 if pos.w > 3.0 * UI_BTN_WIDTH {
                     use std::io::Write;
@@ -235,7 +245,8 @@ impl WidgetType for Text {
                         lbl_pos.y.floor(),
                         lbl_pos.w,
                         btn_height,
-                        &std::str::from_utf8(bw.buffer()).unwrap());
+                        &std::str::from_utf8(bw.buffer()).unwrap(),
+                        DBGID_TEXT_PG);
                 }
             }
         });

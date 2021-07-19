@@ -461,7 +461,8 @@ impl WidgetType for HexGrid {
                                             fs, 0, txt_clr,
                                             x - 0.5 * sz.0,
                                             y - 0.5 * th,
-                                            sz.0, th, name_lbl);
+                                            sz.0, th, name_lbl,
+                                            dbgid_pack(DBGID_HEX_TILE_NAME, xi as u16, yi as u16));
                                     }
 
                                     if let Some(num_lbl) = lbl_it.next() {
@@ -469,7 +470,8 @@ impl WidgetType for HexGrid {
                                             num_fs, 0, txt_clr,
                                             x - 0.5 * sz.0,
                                             y - 0.5 * th + y_inc,
-                                            sz.0, th, num_lbl);
+                                            sz.0, th, num_lbl,
+                                            dbgid_pack(DBGID_HEX_TILE_NUM, xi as u16, yi as u16));
                                     }
 
                                     if let Some(led) = led {
@@ -489,7 +491,8 @@ impl WidgetType for HexGrid {
                                         fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                         x - 0.5 * sz.0,
                                         y - 1.0,
-                                        sz.0, th, s);
+                                        sz.0, th, s,
+                                        dbgid_pack(DBGID_HEX_TILE_T, xi as u16, yi as u16));
                                 }
                             },
                             HexDecorPos::Bottom(x, y) => {
@@ -498,7 +501,8 @@ impl WidgetType for HexGrid {
                                         fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                         x - 0.5 * sz.0,
                                         y - th,
-                                        sz.0, th, s);
+                                        sz.0, th, s,
+                                        dbgid_pack(DBGID_HEX_TILE_B, xi as u16, yi as u16));
 
                                     et.draw(p, x, y, 90.0);
                                 }
@@ -511,7 +515,8 @@ impl WidgetType for HexGrid {
                                         (y - 0.5 * th2).floor(),
                                         0.0,
                                         (0.5 * th2).floor() + 2.0,
-                                        sz.0, th2, s);
+                                        sz.0, th2, s,
+                                        dbgid_pack(DBGID_HEX_TILE_TL, xi as u16, yi as u16));
                                 }
                             },
                             HexDecorPos::TopRight(x, y) => {
@@ -522,7 +527,8 @@ impl WidgetType for HexGrid {
                                         (y - 0.5 * th2).floor(),
                                         0.0,
                                         (0.5 * th2).floor() + 2.0,
-                                        sz.0, th2, s);
+                                        sz.0, th2, s,
+                                        dbgid_pack(DBGID_HEX_TILE_TR, xi as u16, yi as u16));
 
                                     et.draw(p, x, y, -30.0);
                                 }
@@ -535,7 +541,8 @@ impl WidgetType for HexGrid {
                                         (y - 0.5 * th2).floor(),
                                         0.0,
                                         -(0.5 * th2).floor() - 2.0,
-                                        sz.0, th2, s);
+                                        sz.0, th2, s,
+                                        dbgid_pack(DBGID_HEX_TILE_BL, xi as u16, yi as u16));
                                 }
                             },
                             HexDecorPos::BotRight(x, y) => {
@@ -546,7 +553,8 @@ impl WidgetType for HexGrid {
                                         (y - 0.5 * th2).floor(),
                                         0.0,
                                         -(0.5 * th2).floor() - 2.0,
-                                        sz.0, th2, s);
+                                        sz.0, th2, s,
+                                        dbgid_pack(DBGID_HEX_TILE_BR, xi as u16, yi as u16));
 
                                     et.draw(p, x, y, 30.0);
                                 }
