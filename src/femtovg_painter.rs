@@ -39,7 +39,9 @@ impl<'a> FemtovgPainter<'a> {
     {
         #[cfg(debug_assertions)]
         if let Some(f) = &mut self.test_debug {
-            f(self.cur_id_stk.last().copied().unwrap(), lblid, text);
+            if let Some(id) = self.cur_id_stk.last().copied() {
+                f(id, lblid, text);
+            }
         }
 
         let mut paint = color_paint(color);

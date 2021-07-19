@@ -238,7 +238,7 @@ dbgid_list!{define_dbgids}
 pub fn dbgid2str(id: usize) -> &'static str {
     macro_rules! define_dbgid2str {
         ($($id: ident = $nr: expr,)+) => {
-            match id {
+            match (id & DBGID_MASK) {
                 $($nr => { stringify!($id) })+
                 _   => { stringify!(UNKNOWN) }
             }

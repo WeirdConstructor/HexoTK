@@ -480,7 +480,7 @@ impl Atom {
                     Some(&s)
                 }
             },
-            _                           => None,
+            _ => None,
         }
     }
 
@@ -752,6 +752,9 @@ pub trait WindowUI {
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut dyn Painter);
     fn set_window_size(&mut self, w: f64, h: f64);
+    /// This breaks abstraction a bit, but is used for the [crate::Driver] to
+    /// get it's data.
+    fn query_active_zones(&self, at_id: AtomId) -> Vec<ActiveZone>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]

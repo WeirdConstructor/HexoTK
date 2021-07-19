@@ -183,6 +183,8 @@ impl WindowHandler for GUIWindowHandler {
     }
 
     fn on_frame(&mut self, _win: &mut Window) {
+        self.driver.borrow_mut().handle_request(&mut *self.ui);
+
         self.counter += 1;
         if self.counter % 500 == 0 {
 //            println!("REDRAW.....");

@@ -1393,4 +1393,14 @@ impl WindowUI for UI {
         //      So we ignore the real window size here.
         self.queue_redraw();
     }
+
+    fn query_active_zones(&self, at_id: AtomId) -> Vec<ActiveZone> {
+        let mut ret = vec![];
+        for az in self.zones.as_ref().unwrap().iter() {
+            if az.id == at_id {
+                ret.push(*az);
+            }
+        }
+        ret
+    }
 }

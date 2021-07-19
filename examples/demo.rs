@@ -554,7 +554,7 @@ fn main() {
         node_ctrls.new_row()
            .add(wbox!(wt_cont,99.into(), center(2, 4), cont))
            .add(wbox!(wt_btn,  1.into(), right( 3, 4), ButtonData::new_toggle("Test Btn")))
-           .add(wbox!(wt_text, 6.into(), center(3, 4), TextData::new(txtsrc.clone())))
+           .add(wbox!(wt_text, 9.into(), center(3, 4), TextData::new(txtsrc.clone())))
            .add(wbox!(wt_cont,101.into(),center(4, 4), cont2))
            .new_row()
            .add(wbox!(wt_tabs, 46.into(),center(12,4), tabs))
@@ -626,11 +626,28 @@ fn main() {
         let (drv, drv_frontend) = Driver::new();
 
         std::thread::spawn(move || {
+            use hexotk::constants::*;
             loop {
-                std::thread::sleep(std::time::Duration::from_millis(1000));
-                println!(
-                    "DRIVERREPLY: {:?}",
-                    drv_frontend.get_text(24.into(), 0));
+                std::thread::sleep(
+                    std::time::Duration::from_millis(1000));
+
+                println!("ZONES: {:#?}",
+                    drv_frontend.query_zones(
+                        6.into()).unwrap());
+
+                let pos =
+                    drv_frontend.get_zone_pos(
+                        6.into(), DBGID_KNOB_FINE)
+                    .unwrap();
+
+                drv_frontend.move_mouse(
+                    pos.x + 1.0, pos.y + 1.0);
+
+                assert_eq!(
+                    drv_frontend.get_text(
+                        6.into(),
+                        DBGID_KNOB_NAME).unwrap(),
+                    "0.0000");
             }
         });
 
