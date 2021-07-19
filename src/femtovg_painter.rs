@@ -18,6 +18,10 @@ pub struct FemtovgPainter<'a> {
 //    pub images:     Vec<Option<ImageId>>,
     pub scale:      f32,
     pub cur_scale:  f32,
+
+    pub test_debug: Option<Box<dyn FnMut(crate::AtomId, usize, &str)>>,
+    pub cur_id_stk: Vec<crate::AtomId>,
+    pub dbg_count:  usize,
 }
 
 fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
@@ -30,6 +34,12 @@ fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
 
 impl<'a> FemtovgPainter<'a> {
     fn label_with_font(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64, text: &str, font: FontId) {
+        #[cfg(debug_assertions)]
+        if let Some(f) = &mut self.test_debug {
+            f(self.cur_id_stk.last().copied().unwrap(), self.dbg_count, text);
+            self.dbg_count += 1;
+        }
+
         let mut paint = color_paint(color);
         paint.set_font(&[font]);
         paint.set_font_size(size as f32);
@@ -249,5 +259,16 @@ impl<'a> Painter for FemtovgPainter<'a> {
         } else {
             UI_ELEM_TXT_H as f32
         }
+    }
+
+    #[cfg(debug_assertions)]
+    fn start_widget(&mut self, id: crate::AtomId) {
+        self.cur_id_stk.push(id);
+        self.dbg_count = 0;
+    }
+
+    #[cfg(debug_assertions)]
+    fn end_widget(&mut self, _id: crate::AtomId) {
+        self.cur_id_stk.pop();
     }
 }

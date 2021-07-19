@@ -11,6 +11,7 @@ use femtovg::{
 
 use crate::constants::*;
 use crate::femtovg_painter::FemtovgPainter;
+use crate::driver::Driver;
 
 use raw_gl_context::{GlContext, GlConfig, Profile};
 
@@ -23,6 +24,9 @@ use baseview::{
 };
 
 use crate::{InputEvent, MButton, WindowUI};
+
+use std::rc::Rc;
+use std::cell::RefCell;
 
 struct FrameTimeMeasurement {
     buf: [u128; 240],
@@ -81,6 +85,10 @@ pub struct GUIWindowHandler {
     size:       (f64, f64),
     // focused:    bool,
     counter:    usize,
+
+    #[allow(dead_code)]
+    driver:     Rc<RefCell<Driver>>,
+    dbg_cb:     Option<Box<dyn FnMut(crate::AtomId, usize, &str)>>,
 }
 
 impl WindowHandler for GUIWindowHandler {
@@ -206,14 +214,23 @@ impl WindowHandler for GUIWindowHandler {
                     UI_GUI_BG_CLR.0 as f32,
                     UI_GUI_BG_CLR.1 as f32,
                     UI_GUI_BG_CLR.2 as f32));
-            self.ui.draw(&mut FemtovgPainter {
+
+            let test_debug = self.dbg_cb.take();
+            let painter = &mut FemtovgPainter {
                 canvas:     &mut self.canvas,
                 font:       self.font,
 //                images:     vec![],
                 font_mono:  self.font_mono,
                 scale:      self.scale,
                 cur_scale:  1.0,
-            });
+
+                test_debug,
+                cur_id_stk: vec![],
+                dbg_count:  0,
+            };
+            self.ui.draw(painter);
+
+            self.dbg_cb = painter.test_debug.take();
             self.canvas.restore();
             self.ftm_redraw.end_measure();
         }
@@ -304,6 +321,17 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
 
         ui.set_window_size(window_width as f64, window_height as f64);
 
+        let drv = Rc::new(RefCell::new(Driver::new()));
+        let cb_drv = drv.clone();
+        let cb : Option<Box<dyn FnMut(crate::AtomId, usize, &str)>> =
+            if cfg!(debug_assertions) {
+                Some(Box::new(move |id, idx, txt| {
+                    cb_drv.borrow_mut().update_text(id, idx, txt);
+                }))
+            } else {
+                None
+            };
+
         GUIWindowHandler {
             ui,
             size: (window_width as f64, window_height as f64),
@@ -317,6 +345,9 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
             scale:      1.0,
             // focused:    false,
             counter:    0,
+
+            dbg_cb: cb,
+            driver: drv,
         }
     };
 

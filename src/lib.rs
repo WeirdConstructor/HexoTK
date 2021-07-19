@@ -5,6 +5,7 @@ pub mod widgets;
 pub mod components;
 pub mod constants;
 
+mod driver;
 mod ui;
 mod window;
 mod femtovg_painter;
@@ -87,7 +88,11 @@ impl WidgetData {
 
     pub fn draw(&mut self, ui: &mut dyn WidgetUI, p: &mut dyn Painter, rect: Rect) {
         let wt = self.widget_type();
+        #[cfg(debug_assertions)]
+        { p.start_widget(self.id()); }
         wt.draw(ui, self, p, rect);
+        #[cfg(debug_assertions)]
+        { p.end_widget(self.id()); }
     }
 }
 
@@ -695,6 +700,9 @@ pub trait Painter {
 //    fn start_imgbuf(&mut self, global_id: usize, w: usize, h: usize);
 //    fn stop_imgbuf(&mut self);
 //    fn imgbuf(&mut self, global_id: usize, x: f64, y: f64);
+
+    fn start_widget(&mut self, _id: AtomId) { }
+    fn end_widget(&mut self, _id: AtomId) { }
 
     fn path_fill(&mut self, color: (f64, f64, f64),
                  segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,

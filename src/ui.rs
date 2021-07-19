@@ -1317,7 +1317,14 @@ impl WindowUI for UI {
 
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
             let main_pos = Rect::from(0.0, 0.0, win_size.0, win_size.1);
+
+            #[cfg(debug_assertions)]
+            { painter.start_widget(data.id()); }
+
             wt.draw(ui, data, painter, main_pos);
+
+            #[cfg(debug_assertions)]
+            { painter.end_widget(data.id()); }
 
             if let Some(dialog) = &mut dialog {
                 let dialog_pos =
@@ -1325,7 +1332,13 @@ impl WindowUI for UI {
 
                 let wt = dialog.widget_type();
 
+                #[cfg(debug_assertions)]
+                { painter.start_widget(data.id()); }
+
                 wt.draw(ui, dialog, painter, dialog_pos);
+
+                #[cfg(debug_assertions)]
+                { painter.end_widget(data.id()); }
             }
         });
 
