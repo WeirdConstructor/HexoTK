@@ -320,7 +320,9 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
 
         ui.set_window_size(window_width as f64, window_height as f64);
 
-        let drv = Rc::new(RefCell::new(Driver::new()));
+        let (drv, drv_frontend) = Driver::new();
+        let drv = Rc::new(RefCell::new(drv));
+
         let cb_drv = drv.clone();
         let cb : Option<Box<dyn FnMut(crate::AtomId, usize, &str)>> =
             if cfg!(debug_assertions) {

@@ -260,3 +260,15 @@ pub fn str2dbgid(id: &str) -> usize {
 
     dbgid_list!{define_str2dbgid}
 }
+
+pub fn dbgid_list() -> Vec<(usize, &'static str)> {
+    macro_rules! define_str2dbgid {
+        ($($id: ident = $nr: expr,)+) => {
+            let mut v = vec![];
+            $(v.push(($nr, stringify!($id)));)+
+            v
+        }
+    }
+
+    dbgid_list!{define_str2dbgid}
+}
