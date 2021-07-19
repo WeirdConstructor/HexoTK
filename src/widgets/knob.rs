@@ -438,11 +438,13 @@ impl WidgetType for Knob {
         ui.define_active_zone(
             ActiveZone::new_drag_zone(
                 id,
-                Rect::from_tpl(self.get_coarse_adjustment_rect()).offs(xo, yo), true));
+                Rect::from_tpl(self.get_coarse_adjustment_rect()).offs(xo, yo), true)
+            .dbgid(DBGID_KNOB_COARSE));
         ui.define_active_zone(
             ActiveZone::new_drag_zone(
                 id,
-                Rect::from_tpl(self.get_fine_adjustment_rect()).offs(xo, yo), false));
+                Rect::from_tpl(self.get_fine_adjustment_rect()).offs(xo, yo), false)
+            .dbgid(DBGID_KNOB_FINE));
     }
 
     fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {

@@ -195,9 +195,11 @@ impl WidgetType for Text {
                         btn_right_pos);
 
                 ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(id, btn_left_pos, 0));
+                    ActiveZone::new_indexed_click_zone(id, btn_left_pos, 0)
+                    .dbgid(dbgid_pack(DBGID_TEXT_PGBTN, 0, 0)));
                 ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(id, btn_right_pos, 1));
+                    ActiveZone::new_indexed_click_zone(id, btn_right_pos, 1)
+                    .dbgid(dbgid_pack(DBGID_TEXT_PGBTN, 1, 0)));
 
                 let hlt_left  = ui.hl_style_for(id, Some(0));
                 let hlt_right = ui.hl_style_for(id, Some(1));

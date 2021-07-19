@@ -98,7 +98,9 @@ impl WidgetType for CvArray {
             rect_border(p, UI_GRPH_BORDER, border_color, UI_GRPH_BG, pos);
 
         if !self.binary {
-            ui.define_active_zone(ActiveZone::new_indexed_drag_zone(id, pos, 4));
+            ui.define_active_zone(
+                ActiveZone::new_indexed_drag_zone(id, pos, 4)
+                .dbgid(DBGID_CVARRAY_DRAG));
         }
 
         data.with(|data: &mut CvArrayData| {
@@ -156,7 +158,8 @@ impl WidgetType for CvArray {
 
                         ui.define_active_zone(
                             ActiveZone::new_indexed_click_zone(
-                                id, zone_pos, i));
+                                id, zone_pos, i)
+                            .dbgid(DBGID_CVARRAY_CLICK));
 
                         if let HLStyle::None = ui.hl_style_for(id, Some(i)) {
                             false

@@ -828,7 +828,9 @@ impl WidgetType for PatternEditor {
                 &data.info_line,
                 DBGID_PATEDIT_INFO);
 
-            ui.define_active_zone(ActiveZone::new_keyboard_zone(id, pos));
+            ui.define_active_zone(
+                ActiveZone::new_keyboard_zone(id, pos)
+                .dbgid(DBGID_PATEDIT));
 
             for ic in 0..self.columns {
                 let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;

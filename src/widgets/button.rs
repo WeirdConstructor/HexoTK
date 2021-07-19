@@ -247,31 +247,38 @@ impl WidgetType for Button {
             match data.mode {
                 ButtonMode::SignalSettingInc => {
                     ui.define_active_zone(
-                        ActiveZone::new_atom_inc(id, zone_rect, false));
+                        ActiveZone::new_atom_inc(id, zone_rect, false)
+                        .dbgid(DBGID_BTN));
                 },
                 ButtonMode::SignalSettingToggle => {
                     ui.define_active_zone(
-                        ActiveZone::new_atom_toggle(id, zone_rect, true, false));
+                        ActiveZone::new_atom_toggle(id, zone_rect, true, false)
+                        .dbgid(DBGID_BTN));
                 },
                 ButtonMode::SignalSettingClick => {
                     ui.define_active_zone(
-                        ActiveZone::new_atom_toggle(id, zone_rect, true, true));
+                        ActiveZone::new_atom_toggle(id, zone_rect, true, true)
+                        .dbgid(DBGID_BTN));
                 },
                 ButtonMode::SignalParamToggle => {
                     ui.define_active_zone(
-                        ActiveZone::new_atom_toggle(id, zone_rect, false, false));
+                        ActiveZone::new_atom_toggle(id, zone_rect, false, false)
+                        .dbgid(DBGID_BTN));
                 },
                 ButtonMode::SignalParamClick => {
                     ui.define_active_zone(
-                        ActiveZone::new_atom_toggle(id, zone_rect, false, true));
+                        ActiveZone::new_atom_toggle(id, zone_rect, false, true)
+                        .dbgid(DBGID_BTN));
                 },
                 ButtonMode::Toggle => {
                     ui.define_active_zone(
-                        ActiveZone::new_click_zone(id, zone_rect));
+                        ActiveZone::new_click_zone(id, zone_rect)
+                        .dbgid(DBGID_BTN));
                 },
                 ButtonMode::ValueDrag => {
                     ui.define_active_zone(
-                        ActiveZone::new_drag_zone(id, zone_rect, true));
+                        ActiveZone::new_drag_zone(id, zone_rect, true)
+                        .dbgid(DBGID_BTN));
                 },
             }
         });

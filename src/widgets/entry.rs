@@ -61,7 +61,8 @@ impl WidgetType for Entry {
 
         if self.editable {
             ui.define_active_zone(
-                ActiveZone::new_input_zone(id, pos));
+                ActiveZone::new_input_zone(id, pos)
+                .dbgid(DBGID_ENTRY));
         }
 
         let border_color =

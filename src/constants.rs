@@ -206,3 +206,17 @@ pub const DBGID_TEXT_PG            : usize = 28;
 pub const DBGID_INPUT_VALUE        : usize = 29;
 pub const DBGID_LIST_NAME          : usize = 30;
 pub const DBGID_LIST_ITEM          : usize = 31;
+
+// Active zones:
+pub const DBGID_TAB                : usize = 1000;
+pub const DBGID_BTN                : usize = 1001;
+pub const DBGID_CVARRAY_DRAG       : usize = 1002;
+pub const DBGID_CVARRAY_CLICK      : usize = 1003;
+pub const DBGID_ENTRY              : usize = 1004;
+pub const DBGID_KEYS               : usize = 1005;
+pub const DBGID_KNOB_COARSE        : usize = 1006;
+pub const DBGID_KNOB_FINE          : usize = 1007;
+pub const DBGID_LIST_ITEM_CLICK    : usize = 1008;
+pub const DBGID_LIST_SCROLL_UP     : usize = 1009;
+pub const DBGID_LIST_SCROLL_DOWN   : usize = 1010;
+pub const DBGID_PATEDIT            : usize = 1011;

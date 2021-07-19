@@ -115,7 +115,8 @@ impl WidgetType for Keys {
             {
                 ui.define_active_zone(
                     ActiveZone::new_indexed_click_zone(
-                        id, key, index));
+                        id, key, index)
+                    .dbgid(DBGID_KEYS));
 
                 let data = ui.atoms().get(id);
                 let key_is_set =

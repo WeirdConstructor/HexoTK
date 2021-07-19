@@ -184,7 +184,8 @@ impl WidgetType for List {
 
                     ui.define_active_zone(
                         ActiveZone::new_indexed_click_zone(
-                            id, lpos, vis_item_idx));
+                            id, lpos, vis_item_idx)
+                        .dbgid(DBGID_LIST_ITEM_CLICK));
 
                     p.path_stroke(
                         1.0,
@@ -232,7 +233,8 @@ impl WidgetType for List {
 
             if data.offs > 0 {
                 ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(id, btn_up_pos, 0));
+                    ActiveZone::new_indexed_click_zone(id, btn_up_pos, 0)
+                    .dbgid(DBGID_LIST_SCROLL_UP));
                 draw_pointer(
                     p,
                     true,
@@ -250,7 +252,8 @@ impl WidgetType for List {
 
             if !data.is_last_item_visible(self.lines) {
                 ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(id, btn_down_pos, 1));
+                    ActiveZone::new_indexed_click_zone(id, btn_down_pos, 1)
+                    .dbgid(DBGID_LIST_SCROLL_DOWN));
                 draw_pointer(
                     p,
                     false,

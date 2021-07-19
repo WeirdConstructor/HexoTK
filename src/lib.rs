@@ -256,14 +256,15 @@ pub struct ActiveZone {
     pub id:         AtomId,
     pub pos:        Rect,
     pub zone_type:  ZoneType,
+    pub dbgid:      usize,
 }
 
 impl ActiveZone {
     pub fn new_drag_zone(id: AtomId, pos: Rect, coarse: bool) -> Self {
         if coarse {
-            Self { id, pos, zone_type: ZoneType::ValueDragCoarse }
+            Self { id, pos, zone_type: ZoneType::ValueDragCoarse, dbgid: 0 }
         } else {
-            Self { id, pos, zone_type: ZoneType::ValueDragFine }
+            Self { id, pos, zone_type: ZoneType::ValueDragFine, dbgid: 0 }
         }
     }
 
@@ -278,31 +279,32 @@ impl ActiveZone {
                 hex_trans,
                 pos: (0, 0),
             },
+            dbgid: 0,
         }
     }
 
     pub fn new_input_zone(id: AtomId, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::TextInput }
+        Self { id, pos, zone_type: ZoneType::TextInput, dbgid: 0 }
     }
 
     pub fn new_click_zone(id: AtomId, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::Click { index: 0 } }
+        Self { id, pos, zone_type: ZoneType::Click { index: 0 }, dbgid: 0 }
     }
 
     pub fn new_toggle_zone(id: AtomId, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::Click { index: 0 } }
+        Self { id, pos, zone_type: ZoneType::Click { index: 0 }, dbgid: 0 }
     }
 
     pub fn new_indexed_click_zone(id: AtomId, pos: Rect, index: usize) -> Self {
-        Self { id, pos, zone_type: ZoneType::Click { index } }
+        Self { id, pos, zone_type: ZoneType::Click { index }, dbgid: 0 }
     }
 
     pub fn new_indexed_drag_zone(id: AtomId, pos: Rect, index: usize) -> Self {
-        Self { id, pos, zone_type: ZoneType::Drag { index } }
+        Self { id, pos, zone_type: ZoneType::Drag { index }, dbgid: 0 }
     }
 
     pub fn new_keyboard_zone(id: AtomId, pos: Rect) -> Self {
-        Self { id, pos, zone_type: ZoneType::Keyboard }
+        Self { id, pos, zone_type: ZoneType::Keyboard, dbgid: 0 }
     }
 
     pub fn new_atom_toggle(id: AtomId, pos: Rect, atom_type_setting: bool, momentary: bool) -> Self {
@@ -312,7 +314,8 @@ impl ActiveZone {
                 atom_type_setting,
                 increment: false,
                 momentary,
-            }
+            },
+            dbgid: 0,
         }
     }
 
@@ -323,7 +326,8 @@ impl ActiveZone {
                 atom_type_setting: true,
                 increment: true,
                 momentary,
-            }
+            },
+            dbgid: 0,
         }
     }
 }
@@ -413,6 +417,11 @@ impl ActiveZone {
         } else {
             None
         }
+    }
+
+    pub fn dbgid(mut self, dbgid: usize) -> Self {
+        self.dbgid = dbgid;
+        self
     }
 
     pub fn get_zone_type(&self) -> ZoneType {

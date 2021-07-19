@@ -87,7 +87,8 @@ impl WidgetType for Tabs {
                 }
 
                 ui.define_active_zone(
-                    ActiveZone::new_indexed_click_zone(id, tab_pos, i));
+                    ActiveZone::new_indexed_click_zone(id, tab_pos, i)
+                    .dbgid(DBGID_TAB));
 
                 let highlight = ui.hl_style_for(id, Some(i));
 
