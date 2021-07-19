@@ -271,7 +271,13 @@ unsafe impl raw_window_handle::HasRawWindowHandle for StupidWindowHandleHolder {
     }
 }
 
-pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: Option<RawWindowHandle>, factory: Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>) {
+pub fn open_window(
+    title: &str, window_width: i32, window_height: i32,
+    parent: Option<RawWindowHandle>,
+    factory: Box<
+        dyn FnOnce() -> (Driver, Box<dyn WindowUI>) + Send
+    >
+) {
     println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {
@@ -316,11 +322,7 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
                 femtovg::PixelFormat::Rgb8,
                 femtovg::ImageFlags::FLIP_Y).expect("making image buffer");
 
-        let mut ui = factory();
-
-        ui.set_window_size(window_width as f64, window_height as f64);
-
-        let (drv, drv_frontend) = Driver::new();
+        let (drv, mut ui) = factory();
         let drv = Rc::new(RefCell::new(drv));
 
         let cb_drv = drv.clone();
@@ -332,6 +334,8 @@ pub fn open_window(title: &str, window_width: i32, window_height: i32, parent: O
             } else {
                 None
             };
+
+        ui.set_window_size(window_width as f64, window_height as f64);
 
         GUIWindowHandler {
             ui,

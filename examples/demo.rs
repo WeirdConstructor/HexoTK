@@ -623,7 +623,18 @@ fn main() {
             (WINDOW_W as f64, WINDOW_H as f64),
         ));
 
-        ui
+        let (drv, drv_frontend) = Driver::new();
+
+        std::thread::spawn(move || {
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(1000));
+                println!(
+                    "DRIVERREPLY: {:?}",
+                    drv_frontend.get_text(24.into(), 0));
+            }
+        });
+
+        (drv, ui)
     }));
 }
 

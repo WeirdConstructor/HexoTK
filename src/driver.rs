@@ -27,12 +27,12 @@ pub enum DriverError {
 
 impl DriverFrontend {
     pub fn get_text(&self, id: AtomId, idx: usize) -> Result<Option<String>, DriverError> {
-        self.tx.send(DriverRequest::QueryText { id, idx });
+        let _ = self.tx.send(DriverRequest::QueryText { id, idx });
         match self.rx.recv_timeout(Duration::from_millis(1000)) {
             Ok(DriverReply::Text { text })
                     => Ok(text),
-            Err(e)  => Err(DriverError::Timeout),
-            _       => Err(DriverError::BadReply),
+            Err(_)  => Err(DriverError::Timeout),
+            // _       => Err(DriverError::BadReply),
         }
     }
 }
@@ -61,7 +61,7 @@ impl Driver {
         while let Ok(msg) = self.rx.try_recv() {
             match msg {
                 DriverRequest::QueryText { id, idx } => {
-                    self.tx.send(DriverReply::Text {
+                    let _ = self.tx.send(DriverReply::Text {
                         text: self.texts.get(&(id, idx)).cloned()
                     });
                 }

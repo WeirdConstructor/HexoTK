@@ -16,6 +16,7 @@ use keyboard_types::{KeyboardEvent, Key};
 
 pub use window::open_window;
 pub use ui::*;
+pub use driver::*;
 
 use std::fmt::Debug;
 
