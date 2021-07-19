@@ -158,6 +158,8 @@ pub const UI_TRK_CURSOR_FG_CLR     : (f64, f64, f64) = UI_LBL_BG_CLR;
 pub const UI_TRK_PHASEROW_BG_CLR   : (f64, f64, f64) = UI_HLIGHT_CLR;
 pub const UI_TRK_PHASEROW_FG_CLR   : (f64, f64, f64) = UI_LBL_BG_CLR;
 
+pub const DBGID_MASK : usize = 0xFFFF;
+
 #[inline]
 pub fn dbgid_pack(id: usize, x: u16, y: u16) -> usize {
       (y as usize) << 32
@@ -171,52 +173,138 @@ pub fn dbgid_unpack(lblidx: usize) -> (usize, u16, u16) {
      ((lblidx >> 16) & DBGID_MASK) as u16,
      ((lblidx >> 32) & DBGID_MASK) as u16)
 }
-pub const DBGID_MASK               : usize = 0x0000_0000_0000_FFFF;
-pub const DBGID_X                  : usize = 0x0000_0000_FFFF_0000;
-pub const DBGID_Y                  : usize = 0x0000_FFFF_0000_0000;
-pub const DBGID_BTN_VAL            : usize =  0;
-pub const DBGID_BTN_NAME           : usize =  1;
-pub const DBGID_CONT_TITLE         : usize =  2;
-pub const DBGID_CVARRAY_NAME       : usize =  3;
-pub const DBGID_ENTRY_LBL          : usize =  4;
-pub const DBGID_ENTRY_VAL          : usize =  5;
-pub const DBGID_HEX_TILE_NAME      : usize =  6;
-pub const DBGID_HEX_TILE_NUM       : usize =  7;
-pub const DBGID_HEX_TILE_T         : usize =  8;
-pub const DBGID_HEX_TILE_B         : usize =  9;
-pub const DBGID_HEX_TILE_TR        : usize = 10;
-pub const DBGID_HEX_TILE_BR        : usize = 11;
-pub const DBGID_HEX_TILE_TL        : usize = 12;
-pub const DBGID_HEX_TILE_BL        : usize = 13;
-pub const DBGID_KEYS_NAME          : usize = 14;
-pub const DBGID_KNOB_NAME          : usize = 15;
-pub const DBGID_KNOB_VALUE         : usize = 16;
-pub const DBGID_KNOB_MODAMT        : usize = 17;
-pub const DBGID_PATEDIT_MODE       : usize = 18;
-pub const DBGID_PATEDIT_INFO       : usize = 19;
-pub const DBGID_PATEDIT_HEADER     : usize = 20;
-pub const DBGID_PATEDIT_ROWNR      : usize = 21;
-pub const DBGID_PATEDIT_ROW        : usize = 22;
-pub const DBGID_PATEDIT_CELL       : usize = 23;
-pub const DBGID_TAB_NAME           : usize = 24;
-pub const DBGID_TEXT_HEADER        : usize = 25;
-pub const DBGID_TEXT_LINE          : usize = 26;
-pub const DBGID_TEXT_PGBTN         : usize = 27;
-pub const DBGID_TEXT_PG            : usize = 28;
-pub const DBGID_INPUT_VALUE        : usize = 29;
-pub const DBGID_LIST_NAME          : usize = 30;
-pub const DBGID_LIST_ITEM          : usize = 31;
 
-// Active zones:
-pub const DBGID_TAB                : usize = 1000;
-pub const DBGID_BTN                : usize = 1001;
-pub const DBGID_CVARRAY_DRAG       : usize = 1002;
-pub const DBGID_CVARRAY_CLICK      : usize = 1003;
-pub const DBGID_ENTRY              : usize = 1004;
-pub const DBGID_KEYS               : usize = 1005;
-pub const DBGID_KNOB_COARSE        : usize = 1006;
-pub const DBGID_KNOB_FINE          : usize = 1007;
-pub const DBGID_LIST_ITEM_CLICK    : usize = 1008;
-pub const DBGID_LIST_SCROLL_UP     : usize = 1009;
-pub const DBGID_LIST_SCROLL_DOWN   : usize = 1010;
-pub const DBGID_PATEDIT            : usize = 1011;
+
+macro_rules! dbgid_list {
+    ($inmacro: ident) => {
+        $inmacro!{
+            DBGID_BTN_VAL             =  0,
+            DBGID_BTN_NAME            =  1,
+            DBGID_CONT_TITLE          =  2,
+            DBGID_CVARRAY_NAME        =  3,
+            DBGID_ENTRY_LBL           =  4,
+            DBGID_ENTRY_VAL           =  5,
+            DBGID_HEX_TILE_NAME       =  6,
+            DBGID_HEX_TILE_NUM        =  7,
+            DBGID_HEX_TILE_T          =  8,
+            DBGID_HEX_TILE_B          =  9,
+            DBGID_HEX_TILE_TR         = 10,
+            DBGID_HEX_TILE_BR         = 11,
+            DBGID_HEX_TILE_TL         = 12,
+            DBGID_HEX_TILE_BL         = 13,
+            DBGID_KEYS_NAME           = 14,
+            DBGID_KNOB_NAME           = 15,
+            DBGID_KNOB_VALUE          = 16,
+            DBGID_KNOB_MODAMT         = 17,
+            DBGID_PATEDIT_MODE        = 18,
+            DBGID_PATEDIT_INFO        = 19,
+            DBGID_PATEDIT_HEADER      = 20,
+            DBGID_PATEDIT_ROWNR       = 21,
+            DBGID_PATEDIT_ROW         = 22,
+            DBGID_PATEDIT_CELL        = 23,
+            DBGID_TAB_NAME            = 24,
+            DBGID_TEXT_HEADER         = 25,
+            DBGID_TEXT_LINE           = 26,
+            DBGID_TEXT_PGBTN          = 27,
+            DBGID_TEXT_PG             = 28,
+            DBGID_INPUT_VALUE         = 29,
+            DBGID_LIST_NAME           = 30,
+            DBGID_LIST_ITEM           = 31,
+
+            // Active zones:
+            DBGID_TAB                 = 1000,
+            DBGID_BTN                 = 1001,
+            DBGID_CVARRAY_DRAG        = 1002,
+            DBGID_CVARRAY_CLICK       = 1003,
+            DBGID_ENTRY               = 1004,
+            DBGID_KEYS                = 1005,
+            DBGID_KNOB_COARSE         = 1006,
+            DBGID_KNOB_FINE           = 1007,
+            DBGID_LIST_ITEM_CLICK     = 1008,
+            DBGID_LIST_SCROLL_UP      = 1009,
+            DBGID_LIST_SCROLL_DOWN    = 1010,
+            DBGID_PATEDIT             = 1011,
+        }
+    }
+}
+
+macro_rules! define_dbgids {
+    ($($id: ident = $nr: expr,)+) => {
+        $(pub const $id : usize = $nr;)+
+    }
+}
+
+dbgid_list!{define_dbgids}
+
+pub fn dbgid2str(id: usize) -> &'static str {
+    macro_rules! define_dbgid2str {
+        ($($id: ident = $nr: expr,)+) => {
+            match id {
+                $($nr => { stringify!($id) })+
+                _   => { stringify!(UNKNOWN) }
+            }
+        }
+    }
+
+    dbgid_list!{define_dbgid2str}
+}
+
+pub fn str2dbgid(id: &str) -> usize {
+    macro_rules! define_str2dbgid {
+        ($($id: ident = $nr: expr,)+) => {
+            match &id[..] {
+                $(stringify!($id) => { $nr })+
+                _               => 0xFFFF,
+            }
+        }
+    }
+
+    dbgid_list!{define_str2dbgid}
+}
+
+//pub const DBGID_BTN_VAL            : usize =  0;
+//pub const DBGID_BTN_NAME           : usize =  1;
+//pub const DBGID_CONT_TITLE         : usize =  2;
+//pub const DBGID_CVARRAY_NAME       : usize =  3;
+//pub const DBGID_ENTRY_LBL          : usize =  4;
+//pub const DBGID_ENTRY_VAL          : usize =  5;
+//pub const DBGID_HEX_TILE_NAME      : usize =  6;
+//pub const DBGID_HEX_TILE_NUM       : usize =  7;
+//pub const DBGID_HEX_TILE_T         : usize =  8;
+//pub const DBGID_HEX_TILE_B         : usize =  9;
+//pub const DBGID_HEX_TILE_TR        : usize = 10;
+//pub const DBGID_HEX_TILE_BR        : usize = 11;
+//pub const DBGID_HEX_TILE_TL        : usize = 12;
+//pub const DBGID_HEX_TILE_BL        : usize = 13;
+//pub const DBGID_KEYS_NAME          : usize = 14;
+//pub const DBGID_KNOB_NAME          : usize = 15;
+//pub const DBGID_KNOB_VALUE         : usize = 16;
+//pub const DBGID_KNOB_MODAMT        : usize = 17;
+//pub const DBGID_PATEDIT_MODE       : usize = 18;
+//pub const DBGID_PATEDIT_INFO       : usize = 19;
+//pub const DBGID_PATEDIT_HEADER     : usize = 20;
+//pub const DBGID_PATEDIT_ROWNR      : usize = 21;
+//pub const DBGID_PATEDIT_ROW        : usize = 22;
+//pub const DBGID_PATEDIT_CELL       : usize = 23;
+//pub const DBGID_TAB_NAME           : usize = 24;
+//pub const DBGID_TEXT_HEADER        : usize = 25;
+//pub const DBGID_TEXT_LINE          : usize = 26;
+//pub const DBGID_TEXT_PGBTN         : usize = 27;
+//pub const DBGID_TEXT_PG            : usize = 28;
+//pub const DBGID_INPUT_VALUE        : usize = 29;
+//pub const DBGID_LIST_NAME          : usize = 30;
+//pub const DBGID_LIST_ITEM          : usize = 31;
+//
+//// Active zones:
+//pub const DBGID_TAB                : usize = 1000;
+//pub const DBGID_BTN                : usize = 1001;
+//pub const DBGID_CVARRAY_DRAG       : usize = 1002;
+//pub const DBGID_CVARRAY_CLICK      : usize = 1003;
+//pub const DBGID_ENTRY              : usize = 1004;
+//pub const DBGID_KEYS               : usize = 1005;
+//pub const DBGID_KNOB_COARSE        : usize = 1006;
+//pub const DBGID_KNOB_FINE          : usize = 1007;
+//pub const DBGID_LIST_ITEM_CLICK    : usize = 1008;
+//pub const DBGID_LIST_SCROLL_UP     : usize = 1009;
+//pub const DBGID_LIST_SCROLL_DOWN   : usize = 1010;
+//pub const DBGID_PATEDIT            : usize = 1011;
