@@ -37,7 +37,7 @@ impl<'a> FemtovgPainter<'a> {
         x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64,
         text: &str, font: FontId, lblid: usize)
     {
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "driver")]
         if let Some(f) = &mut self.test_debug {
             if let Some(id) = self.cur_id_stk.last().copied() {
                 f(id, lblid, text);
@@ -265,12 +265,12 @@ impl<'a> Painter for FemtovgPainter<'a> {
         }
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "driver")]
     fn start_widget(&mut self, id: crate::AtomId) {
         self.cur_id_stk.push(id);
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "driver")]
     fn end_widget(&mut self, _id: crate::AtomId) {
         self.cur_id_stk.pop();
     }

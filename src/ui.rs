@@ -1318,12 +1318,12 @@ impl WindowUI for UI {
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {
             let main_pos = Rect::from(0.0, 0.0, win_size.0, win_size.1);
 
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "driver")]
             { painter.start_widget(data.id()); }
 
             wt.draw(ui, data, painter, main_pos);
 
-            #[cfg(debug_assertions)]
+            #[cfg(feature = "driver")]
             { painter.end_widget(data.id()); }
 
             if let Some(dialog) = &mut dialog {
@@ -1332,12 +1332,12 @@ impl WindowUI for UI {
 
                 let wt = dialog.widget_type();
 
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "driver")]
                 { painter.start_widget(data.id()); }
 
                 wt.draw(ui, dialog, painter, dialog_pos);
 
-                #[cfg(debug_assertions)]
+                #[cfg(feature = "driver")]
                 { painter.end_widget(data.id()); }
             }
         });
@@ -1385,6 +1385,25 @@ impl WindowUI for UI {
                     pos.h, &prev_value_str,
                     DBGID_INPUT_VALUE);
             }
+        }
+
+        if cfg!(feature = "driver") {
+            let (x, y) = self.mouse_pos;
+            let path = &[
+                (x - 10.0,   y),
+                (x + 10.0,   y),
+                (x, y - 10.0),
+                (x, y + 10.0),
+            ];
+
+            painter.path_stroke(
+                1.0,
+                crate::constants::UI_SELECT_CLR,
+                &mut path.iter().copied()
+                    .map(|(x, y)|
+                        (x.floor() + 0.5,
+                         y.floor() + 0.5)),
+                true);
         }
     }
 

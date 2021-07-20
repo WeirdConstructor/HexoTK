@@ -89,10 +89,10 @@ impl WidgetData {
 
     pub fn draw(&mut self, ui: &mut dyn WidgetUI, p: &mut dyn Painter, rect: Rect) {
         let wt = self.widget_type();
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "driver")]
         { p.start_widget(self.id()); }
         wt.draw(ui, self, p, rect);
-        #[cfg(debug_assertions)]
+        #[cfg(feature = "driver")]
         { p.end_widget(self.id()); }
     }
 }
