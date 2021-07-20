@@ -9,6 +9,10 @@ description = "HexoTK - A GUI Toolkit for Audio Plugins"
 [lib]
 name = "hexotk"
 
+[features]
+default=[]
+driver=[]
+
 [dependencies]
 hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
 #hexodsp             = { path = "../hexodsp" }

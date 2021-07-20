@@ -96,7 +96,10 @@ impl WindowHandler for GUIWindowHandler {
     fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
-                if cfg!(feature = "driver") { return EventStatus::Captured; }
+                if cfg!(feature = "driver") {
+                    println!("=> mouse move to {:?}", p);
+                    return EventStatus::Captured;
+                }
 
                 self.ui.handle_input_event(
                     InputEvent::MousePosition(
