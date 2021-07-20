@@ -755,6 +755,8 @@ pub trait WindowUI {
     /// This breaks abstraction a bit, but is used for the [crate::Driver] to
     /// get it's data.
     fn query_active_zones(&self, at_id: AtomId) -> Vec<ActiveZone>;
+    /// Also used by [crate::Driver] to test things.
+    fn query_hover_zone(&self) -> Option<ActiveZone>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]

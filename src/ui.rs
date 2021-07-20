@@ -1422,4 +1422,8 @@ impl WindowUI for UI {
         }
         ret
     }
+
+    fn query_hover_zone(&self) -> Option<ActiveZone> {
+        self.hover_zone
+    }
 }

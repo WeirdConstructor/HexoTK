@@ -11,6 +11,7 @@ enum DriverRequest {
     QueryZones { id: AtomId },
     QueryText  { id: AtomId, idx: usize },
     QueryTexts { id: AtomId },
+    QueryHover,
     QueryTextDump,
 }
 
@@ -18,6 +19,7 @@ enum DriverRequest {
 enum DriverReply {
     Ack,
     Zones    { zones: Vec<ActiveZone> },
+    Hover    { zone:  Option<ActiveZone> },
     Text     { text:  Option<String> },
     Texts    { texts: Vec<(usize, String)> },
     TextDump { dump:  HashMap<(AtomId, usize), String> },
@@ -35,18 +37,53 @@ pub enum DriverError {
     NotFound,
 }
 
+macro_rules! request {
+    ($self: ident
+        $sid: ident :: $send: tt $sb: tt
+        => $mid: ident :: $match: tt $mb: tt
+        => $arm: expr
+    ) => {
+        let _ = $self.tx.send($sid::$send $sb);
+        match $self.rx.recv_timeout(Duration::from_millis(1000)) {
+            Ok($mid::$match $mb) => $arm,
+            Err(_)     => Err(DriverError::Timeout),
+            _          => Err(DriverError::BadReply),
+        }
+    };
+
+    ($self: ident
+        $sid: ident :: $send: tt
+        => $mid: ident :: $match: tt $mb: tt
+        => $arm: expr
+    ) => {
+        let _ = $self.tx.send($sid::$send);
+        match $self.rx.recv_timeout(Duration::from_millis(1000)) {
+            Ok($mid::$match $mb) => $arm,
+            Err(_)     => Err(DriverError::Timeout),
+            _          => Err(DriverError::BadReply),
+        }
+    };
+
+    ($self: ident $sid: ident :: $send: tt $sb: tt) => {
+        let _ = $self.tx.send($sid::$send $sb);
+        match $self.rx.recv_timeout(Duration::from_millis(1000)) {
+            Ok(DriverReply::Ack) => Ok(()),
+            Err(_)     => Err(DriverError::Timeout),
+            _          => Err(DriverError::BadReply),
+        }
+    }
+}
+
 impl DriverFrontend {
     pub fn get_text(
         &self, id: AtomId, idx: usize
     ) -> Result<String, DriverError>
     {
-        let _ = self.tx.send(DriverRequest::QueryText { id, idx });
-        match self.rx.recv_timeout(Duration::from_millis(1000)) {
-            Ok(DriverReply::Text { text })
-                    => if let Some(text) = text { Ok(text) }
-                       else { Err(DriverError::NotFound) },
-            Err(_)  => Err(DriverError::Timeout),
-            _       => Err(DriverError::BadReply),
+        request!{self
+            DriverRequest::QueryText { id, idx }
+            => DriverReply::Text { text }
+            => if let Some(text) = text { Ok(text) }
+               else { Err(DriverError::NotFound) }
         }
     }
 
@@ -54,24 +91,20 @@ impl DriverFrontend {
         &self, id: AtomId
     ) -> Result<Vec<(usize, String)>, DriverError>
     {
-        let _ = self.tx.send(DriverRequest::QueryTexts { id });
-        match self.rx.recv_timeout(Duration::from_millis(1000)) {
-            Ok(DriverReply::Texts { texts })
-                    => Ok(texts),
-            Err(_)  => Err(DriverError::Timeout),
-            _       => Err(DriverError::BadReply),
+        request!{self
+            DriverRequest::QueryTexts { id }
+            => DriverReply::Texts { texts }
+            => Ok(texts)
         }
     }
 
     pub fn get_text_dump(&self)
         -> Result<HashMap<(AtomId, usize), String>, DriverError>
     {
-        let _ = self.tx.send(DriverRequest::QueryTextDump);
-        match self.rx.recv_timeout(Duration::from_millis(1000)) {
-            Ok(DriverReply::TextDump { dump })
-                    => Ok(dump),
-            Err(_)  => Err(DriverError::Timeout),
-            _       => Err(DriverError::BadReply),
+        request!{self
+            DriverRequest::QueryTextDump
+            => DriverReply::TextDump { dump }
+            => Ok(dump)
         }
     }
 
@@ -88,25 +121,28 @@ impl DriverFrontend {
         Err(DriverError::NotFound)
     }
 
+    pub fn query_hover(&self)
+        -> Result<Option<ActiveZone>, DriverError>
+    {
+        request!{self
+            DriverRequest::QueryHover
+            => DriverReply::Hover { zone }
+            => Ok(zone)
+        }
+    }
+
     pub fn query_zones(&self, id: AtomId)
         -> Result<Vec<ActiveZone>, DriverError>
     {
-        let _ = self.tx.send(DriverRequest::QueryZones { id });
-        match self.rx.recv_timeout(Duration::from_millis(1000)) {
-            Ok(DriverReply::Zones { zones })
-                    => Ok(zones),
-            Err(_)  => Err(DriverError::Timeout),
-            _       => Err(DriverError::BadReply),
+        request!{self
+            DriverRequest::QueryZones { id }
+            => DriverReply::Zones { zones }
+            => Ok(zones)
         }
     }
 
     pub fn move_mouse(&self, x: f64, y: f64) -> Result<(), DriverError> {
-        let _ = self.tx.send(DriverRequest::MoveMouse { x, y });
-        match self.rx.recv_timeout(Duration::from_millis(1000)) {
-            Ok(DriverReply::Ack) => Ok(()),
-            Err(_)  => Err(DriverError::Timeout),
-            _       => Err(DriverError::BadReply),
-        }
+        request!{self DriverRequest::MoveMouse { x, y } }
     }
 }
 
@@ -138,6 +174,11 @@ impl Driver {
                         zones: ui.query_active_zones(id),
                     });
                 },
+                DriverRequest::QueryHover => {
+                    let _ = self.tx.send(DriverReply::Hover {
+                        zone: ui.query_hover_zone(),
+                    });
+                },
                 DriverRequest::QueryText { id, idx } => {
                     let _ = self.tx.send(DriverReply::Text {
                         text: self.texts.get(&(id, idx)).cloned()
@@ -162,6 +203,7 @@ impl Driver {
                 DriverRequest::MoveMouse { x, y } => {
                     ui.handle_input_event(
                         InputEvent::MousePosition(x, y));
+                    let _ = self.tx.send(DriverReply::Ack);
                 },
             }
         }

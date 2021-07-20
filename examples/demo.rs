@@ -635,19 +635,28 @@ fn main() {
                     drv_frontend.query_zones(
                         6.into()).unwrap());
 
+                println!("A");
                 let pos =
                     drv_frontend.get_zone_pos(
                         6.into(), DBGID_KNOB_FINE)
                     .unwrap();
+                println!("b");
 
                 drv_frontend.move_mouse(
                     pos.x + 1.0, pos.y + 1.0);
+                println!("c");
+
+                let hz = drv_frontend.query_hover().unwrap();
+                println!(">= {:?}", hz);
+
+                assert_eq!(hz.unwrap().zone_type, ZoneType::ValueDragFine);
 
                 assert_eq!(
                     drv_frontend.get_text(
                         6.into(),
                         DBGID_KNOB_NAME).unwrap(),
                     "0.0000");
+                println!("d");
             }
         });
 
