@@ -240,7 +240,7 @@ pub fn dbgid2str(id: usize) -> &'static str {
         ($($id: ident = $nr: expr,)+) => {
             match (id & DBGID_MASK) {
                 $($nr => { stringify!($id) })+
-                _   => { stringify!(UNKNOWN) }
+                _   => { stringify!(DBGID_UNKNOWN) }
             }
         }
     }
@@ -253,7 +253,7 @@ pub fn str2dbgid(id: &str) -> usize {
         ($($id: ident = $nr: expr,)+) => {
             match &id[..] {
                 $(stringify!($id) => { $nr })+
-                _               => 0xFFFF,
+                _                 => 0xFFFF,
             }
         }
     }
