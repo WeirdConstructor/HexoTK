@@ -9,6 +9,7 @@ use femtovg::{
 };
 
 use crate::Painter;
+use crate::Rect;
 use crate::constants::*;
 
 pub struct FemtovgPainter<'a> {
@@ -19,7 +20,7 @@ pub struct FemtovgPainter<'a> {
     pub scale:      f32,
     pub cur_scale:  f32,
 
-    pub test_debug: Option<Box<dyn FnMut(crate::AtomId, usize, &str)>>,
+    pub test_debug: Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>>,
     pub cur_id_stk: Vec<crate::AtomId>,
 }
 
@@ -37,18 +38,18 @@ impl<'a> FemtovgPainter<'a> {
         x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64,
         text: &str, font: FontId, lblid: usize)
     {
-        #[cfg(feature = "driver")]
-        if let Some(f) = &mut self.test_debug {
-            if let Some(id) = self.cur_id_stk.last().copied() {
-                f(id, lblid, text);
-            }
-        }
-
         let mut paint = color_paint(color);
         paint.set_font(&[font]);
         paint.set_font_size(size as f32);
         paint.set_text_baseline(femtovg::Baseline::Middle);
         let x = x.round();
+
+        #[cfg(feature = "driver")]
+        if let Some(f) = &mut self.test_debug {
+            if let Some(id) = self.cur_id_stk.last().copied() {
+                f(id, lblid, text, Rect { x, y, w, h });
+            }
+        }
 
         let (x, y) =
             if rot > 0.0 {

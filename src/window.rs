@@ -10,6 +10,7 @@ use femtovg::{
 };
 
 use crate::constants::*;
+use crate::Rect;
 use crate::femtovg_painter::FemtovgPainter;
 use crate::driver::Driver;
 
@@ -88,7 +89,7 @@ pub struct GUIWindowHandler {
 
     #[allow(dead_code)]
     driver:     Rc<RefCell<Driver>>,
-    dbg_cb:     Option<Box<dyn FnMut(crate::AtomId, usize, &str)>>,
+    dbg_cb:     Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>>,
 }
 
 impl WindowHandler for GUIWindowHandler {
@@ -347,10 +348,10 @@ pub fn open_window(
         let drv = Rc::new(RefCell::new(drv));
 
         let cb_drv = drv.clone();
-        let cb : Option<Box<dyn FnMut(crate::AtomId, usize, &str)>> =
+        let cb : Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>> =
             if cfg!(feature = "driver") {
-                Some(Box::new(move |id, idx, txt| {
-                    cb_drv.borrow_mut().update_text(id, idx, txt);
+                Some(Box::new(move |id, idx, txt, pos| {
+                    cb_drv.borrow_mut().update_text(id, idx, txt, pos);
                 }))
             } else {
                 None

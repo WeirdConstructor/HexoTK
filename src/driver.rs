@@ -1,5 +1,6 @@
 use crate::AtomId;
 use crate::{WindowUI, InputEvent, ActiveZone};
+use crate::Rect;
 
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver, channel};
@@ -18,7 +19,7 @@ enum DriverReply {
     Ack,
     State {
         zones:      Vec<ActiveZone>,
-        texts:      HashMap<(AtomId, usize), String>,
+        texts:      HashMap<(AtomId, usize), (String, Rect)>,
         hover:      Option<ActiveZone>,
         mouse_pos:  (f64, f64),
     },
@@ -29,7 +30,7 @@ pub struct DriverFrontend {
     tx: Sender<DriverRequest>,
 
     pub zones:      Vec<ActiveZone>,
-    pub texts:      HashMap<(AtomId, usize), String>,
+    pub texts:      HashMap<(AtomId, usize), (String, Rect)>,
     pub hover:      Option<ActiveZone>,
     pub mouse_pos:  (f64, f64),
 }
@@ -110,68 +111,13 @@ impl DriverFrontend {
         let _ = { request!{self DriverRequest::Exit} };
     }
 
-//    pub fn get_texts(&self, id: AtomId) -> Vec<(usize, String)> {
-//        let mut texts = vec![];
-//
-//        for ((aid, idx), s) in self.texts.iter() {
-//            if *aid == id {
-//                texts.push((*idx, s.to_string()));
-//            }
-//        }
-//
-//        texts
-//    }
-//
-//    pub fn get_text_dump(&self)
-//        -> Result<HashMap<(AtomId, usize), String>, DriverError>
-//    {
-//        request!{self
-//            DriverRequest::QueryTextDump
-//            => DriverReply::TextDump { dump }
-//            => Ok(dump)
-//        }
-//    }
-//
-//    pub fn get_zone_pos(&self, id: AtomId, dbgid: usize)
-//        -> Result<Rect, DriverError>
-//    {
-//        let zones = self.query_zones(id)?;
-//        for z in zones.iter() {
-//            if z.dbgid == dbgid {
-//                return Ok(z.pos);
-//            }
-//        }
-//
-//        Err(DriverError::NotFound)
-//    }
-//
-//    pub fn query_hover(&self)
-//        -> Result<Option<ActiveZone>, DriverError>
-//    {
-//        request!{self
-//            DriverRequest::QueryHover
-//            => DriverReply::Hover { zone }
-//            => Ok(zone)
-//        }
-//    }
-//
-//    pub fn query_zones(&self, id: AtomId)
-//        -> Result<Vec<ActiveZone>, DriverError>
-//    {
-//        request!{self
-//            DriverRequest::QueryZones { id }
-//            => DriverReply::Zones { zones }
-//            => Ok(zones)
-//        }
-//    }
-
     pub fn move_mouse(&self, x: f64, y: f64) -> Result<(), DriverError> {
         request!{self DriverRequest::MoveMouse { x, y } }
     }
 }
 
 pub struct Driver {
-    texts:  HashMap<(AtomId, usize), String>,
+    texts:  HashMap<(AtomId, usize), (String, Rect)>,
     rx:     Receiver<DriverRequest>,
     tx:     Sender<DriverReply>,
     inhibit_frame_time: bool,
@@ -231,14 +177,14 @@ impl Driver {
         self.texts.clear();
     }
 
-    pub fn update_text(&mut self, id: AtomId, idx: usize, txt: &str) {
+    pub fn update_text(&mut self, id: AtomId, idx: usize, txt: &str, pos: Rect) {
         let key = (id, idx);
         if let Some(s) = self.texts.get(&key) {
-            if txt != s {
-                self.texts.insert(key, txt.to_string());
+            if txt != s.0 {
+                self.texts.insert(key, (txt.to_string(), pos));
             }
         } else {
-            self.texts.insert(key, txt.to_string());
+            self.texts.insert(key, (txt.to_string(), pos));
         }
     }
 }
