@@ -1,5 +1,5 @@
 use crate::AtomId;
-use crate::{WindowUI, InputEvent, ActiveZone, Rect};
+use crate::{WindowUI, InputEvent, ActiveZone};
 
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver, channel};
@@ -7,27 +7,29 @@ use std::time::Duration;
 
 #[derive(Debug, Clone)]
 enum DriverRequest {
-    MoveMouse  { x: f64, y: f64 },
-    QueryZones { id: AtomId },
-    QueryText  { id: AtomId, idx: usize },
-    QueryTexts { id: AtomId },
-    QueryHover,
-    QueryTextDump,
+    MoveMouse       { x: f64, y: f64 },
+    Query,
 }
 
 #[derive(Debug, Clone)]
 enum DriverReply {
     Ack,
-    Zones    { zones: Vec<ActiveZone> },
-    Hover    { zone:  Option<ActiveZone> },
-    Text     { text:  Option<String> },
-    Texts    { texts: Vec<(usize, String)> },
-    TextDump { dump:  HashMap<(AtomId, usize), String> },
+    State {
+        zones:      Vec<ActiveZone>,
+        texts:      HashMap<(AtomId, usize), String>,
+        hover:      Option<ActiveZone>,
+        mouse_pos:  (f64, f64),
+    },
 }
 
 pub struct DriverFrontend {
     rx: Receiver<DriverReply>,
     tx: Sender<DriverRequest>,
+
+    pub zones:      Vec<ActiveZone>,
+    pub texts:      HashMap<(AtomId, usize), String>,
+    pub hover:      Option<ActiveZone>,
+    pub mouse_pos:  (f64, f64),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -75,71 +77,74 @@ macro_rules! request {
 }
 
 impl DriverFrontend {
-    pub fn get_text(
-        &self, id: AtomId, idx: usize
-    ) -> Result<String, DriverError>
-    {
+    pub fn query_state(&mut self) -> Result<(), DriverError> {
         request!{self
-            DriverRequest::QueryText { id, idx }
-            => DriverReply::Text { text }
-            => if let Some(text) = text { Ok(text) }
-               else { Err(DriverError::NotFound) }
-        }
-    }
-
-    pub fn get_texts(
-        &self, id: AtomId
-    ) -> Result<Vec<(usize, String)>, DriverError>
-    {
-        request!{self
-            DriverRequest::QueryTexts { id }
-            => DriverReply::Texts { texts }
-            => Ok(texts)
-        }
-    }
-
-    pub fn get_text_dump(&self)
-        -> Result<HashMap<(AtomId, usize), String>, DriverError>
-    {
-        request!{self
-            DriverRequest::QueryTextDump
-            => DriverReply::TextDump { dump }
-            => Ok(dump)
-        }
-    }
-
-    pub fn get_zone_pos(&self, id: AtomId, dbgid: usize)
-        -> Result<Rect, DriverError>
-    {
-        let zones = self.query_zones(id)?;
-        for z in zones.iter() {
-            if z.dbgid == dbgid {
-                return Ok(z.pos);
+            DriverRequest::Query
+            => DriverReply::State { zones, texts, hover, mouse_pos }
+            => {
+                self.zones      = zones;
+                self.texts      = texts;
+                self.hover      = hover;
+                self.mouse_pos  = mouse_pos;
+                Ok(())
             }
         }
-
-        Err(DriverError::NotFound)
     }
 
-    pub fn query_hover(&self)
-        -> Result<Option<ActiveZone>, DriverError>
-    {
-        request!{self
-            DriverRequest::QueryHover
-            => DriverReply::Hover { zone }
-            => Ok(zone)
-        }
-    }
-
-    pub fn query_zones(&self, id: AtomId)
-        -> Result<Vec<ActiveZone>, DriverError>
-    {
-        request!{self
-            DriverRequest::QueryZones { id }
-            => DriverReply::Zones { zones }
-            => Ok(zones)
-        }
-    }
+//    pub fn get_texts(&self, id: AtomId) -> Vec<(usize, String)> {
+//        let mut texts = vec![];
+//
+//        for ((aid, idx), s) in self.texts.iter() {
+//            if *aid == id {
+//                texts.push((*idx, s.to_string()));
+//            }
+//        }
+//
+//        texts
+//    }
+//
+//    pub fn get_text_dump(&self)
+//        -> Result<HashMap<(AtomId, usize), String>, DriverError>
+//    {
+//        request!{self
+//            DriverRequest::QueryTextDump
+//            => DriverReply::TextDump { dump }
+//            => Ok(dump)
+//        }
+//    }
+//
+//    pub fn get_zone_pos(&self, id: AtomId, dbgid: usize)
+//        -> Result<Rect, DriverError>
+//    {
+//        let zones = self.query_zones(id)?;
+//        for z in zones.iter() {
+//            if z.dbgid == dbgid {
+//                return Ok(z.pos);
+//            }
+//        }
+//
+//        Err(DriverError::NotFound)
+//    }
+//
+//    pub fn query_hover(&self)
+//        -> Result<Option<ActiveZone>, DriverError>
+//    {
+//        request!{self
+//            DriverRequest::QueryHover
+//            => DriverReply::Hover { zone }
+//            => Ok(zone)
+//        }
+//    }
+//
+//    pub fn query_zones(&self, id: AtomId)
+//        -> Result<Vec<ActiveZone>, DriverError>
+//    {
+//        request!{self
+//            DriverRequest::QueryZones { id }
+//            => DriverReply::Zones { zones }
+//            => Ok(zones)
+//        }
+//    }
 
     pub fn move_mouse(&self, x: f64, y: f64) -> Result<(), DriverError> {
         request!{self DriverRequest::MoveMouse { x, y } }
@@ -163,41 +168,23 @@ impl Driver {
         }, DriverFrontend {
             tx: tx2,
             rx: rx1,
+            zones: vec![],
+            texts: HashMap::new(),
+            hover: None,
+            mouse_pos: (0.0, 0.0),
         })
     }
 
     pub fn handle_request(&mut self, ui: &mut dyn WindowUI) {
         while let Ok(msg) = self.rx.try_recv() {
             match msg {
-                DriverRequest::QueryZones { id } => {
-                    let _ = self.tx.send(DriverReply::Zones {
-                        zones: ui.query_active_zones(id),
-                    });
-                },
-                DriverRequest::QueryHover => {
-                    let _ = self.tx.send(DriverReply::Hover {
-                        zone: ui.query_hover_zone(),
-                    });
-                },
-                DriverRequest::QueryText { id, idx } => {
-                    let _ = self.tx.send(DriverReply::Text {
-                        text: self.texts.get(&(id, idx)).cloned()
-                    });
-                },
-                DriverRequest::QueryTexts { id } => {
-                    let mut texts = vec![];
-                    for ((aid, idx), s) in self.texts.iter() {
-                        if *aid == id {
-                            texts.push((*idx, s.to_string()));
-                        }
-                    }
-                    let _ = self.tx.send(DriverReply::Texts {
-                        texts
-                    });
-                },
-                DriverRequest::QueryTextDump => {
-                    let _ = self.tx.send(DriverReply::TextDump {
-                        dump: self.texts.clone()
+                DriverRequest::Query => {
+                    let state = ui.query_state();
+                    let _ = self.tx.send(DriverReply::State {
+                        zones:      state.zones,
+                        texts:      self.texts.clone(),
+                        hover:      state.hover,
+                        mouse_pos:  state.mouse_pos,
                     });
                 },
                 DriverRequest::MoveMouse { x, y } => {

@@ -1413,17 +1413,11 @@ impl WindowUI for UI {
         self.queue_redraw();
     }
 
-    fn query_active_zones(&self, at_id: AtomId) -> Vec<ActiveZone> {
-        let mut ret = vec![];
-        for az in self.zones.as_ref().unwrap().iter() {
-            if az.id == at_id {
-                ret.push(*az);
-            }
+    fn query_state(&self) -> UIState {
+        UIState {
+            zones:      self.zones.as_ref().unwrap().clone(),
+            hover:      self.hover_zone,
+            mouse_pos:  self.mouse_pos,
         }
-        ret
-    }
-
-    fn query_hover_zone(&self) -> Option<ActiveZone> {
-        self.hover_zone
     }
 }

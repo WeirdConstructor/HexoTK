@@ -744,6 +744,12 @@ pub trait Painter {
     fn reset_scale(&mut self);
 }
 
+pub struct UIState {
+    zones:      Vec<ActiveZone>,
+    mouse_pos:  (f64, f64),
+    hover:      Option<ActiveZone>,
+}
+
 pub trait WindowUI {
     fn pre_frame(&mut self);
     fn post_frame(&mut self);
@@ -753,10 +759,8 @@ pub trait WindowUI {
     fn draw(&mut self, painter: &mut dyn Painter);
     fn set_window_size(&mut self, w: f64, h: f64);
     /// This breaks abstraction a bit, but is used for the [crate::Driver] to
-    /// get it's data.
-    fn query_active_zones(&self, at_id: AtomId) -> Vec<ActiveZone>;
-    /// Also used by [crate::Driver] to test things.
-    fn query_hover_zone(&self) -> Option<ActiveZone>;
+    /// get it's data for testing purposes.
+    fn query_state(&self) -> UIState;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]

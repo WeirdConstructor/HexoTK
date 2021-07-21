@@ -623,7 +623,7 @@ fn main() {
             (WINDOW_W as f64, WINDOW_H as f64),
         ));
 
-        let (drv, drv_frontend) = Driver::new();
+        let (drv, mut drv_frontend) = Driver::new();
 
         std::thread::spawn(move || {
             use hexotk::constants::*;
@@ -631,32 +631,31 @@ fn main() {
                 std::thread::sleep(
                     std::time::Duration::from_millis(1000));
 
-                println!("ZONES: {:#?}",
-                    drv_frontend.query_zones(
-                        6.into()).unwrap());
+                drv_frontend.query_state();
+                println!("TEXTS: {:#?}", drv_frontend.texts);
+                println!("MOUSE: {:#?}", drv_frontend.mouse_pos);
 
-                println!("A");
-                let pos =
-                    drv_frontend.get_zone_pos(
-                        6.into(), DBGID_KNOB_FINE)
-                    .unwrap();
-                println!("b");
+//                println!("A");
+//                let pos =
+//                    drv_frontend.get_zone_pos(
+//                        6.into(), DBGID_KNOB_FINE)
+//                    .unwrap();
+//                println!("b");
 
-                drv_frontend.move_mouse(
-                    pos.x + 1.0, pos.y + 1.0);
-                println!("c");
+                drv_frontend.move_mouse(316.0, 375.0);
 
-                let hz = drv_frontend.query_hover().unwrap();
+                drv_frontend.query_state();
+                let hz = drv_frontend.hover.unwrap();
                 println!(">= {:?}", hz);
 
-                assert_eq!(hz.unwrap().zone_type, ZoneType::ValueDragFine);
+//                assert_eq!(hz.unwrap().zone_type, ZoneType::ValueDragFine);
 
-                assert_eq!(
-                    drv_frontend.get_text(
-                        6.into(),
-                        DBGID_KNOB_NAME).unwrap(),
-                    "0.0000");
-                println!("d");
+//                assert_eq!(
+//                    drv_frontend.get_text(
+//                        6.into(),
+//                        DBGID_KNOB_NAME).unwrap(),
+//                    "0.0000");
+//                println!("d");
             }
         });
 
