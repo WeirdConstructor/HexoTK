@@ -8,6 +8,8 @@ use std::time::Duration;
 #[derive(Debug, Clone)]
 enum DriverRequest {
     MoveMouse       { x: f64, y: f64 },
+    BeQuiet,
+    Exit,
     Query,
 }
 
@@ -73,6 +75,15 @@ macro_rules! request {
             Err(_)     => Err(DriverError::Timeout),
             _          => Err(DriverError::BadReply),
         }
+    };
+
+    ($self: ident $sid: ident :: $send: tt) => {
+        let _ = $self.tx.send($sid::$send);
+        match $self.rx.recv_timeout(Duration::from_millis(1000)) {
+            Ok(DriverReply::Ack) => Ok(()),
+            Err(_)     => Err(DriverError::Timeout),
+            _          => Err(DriverError::BadReply),
+        }
     }
 }
 
@@ -89,6 +100,14 @@ impl DriverFrontend {
                 Ok(())
             }
         }
+    }
+
+    pub fn be_quiet(&mut self) {
+        let _ = { request!{self DriverRequest::BeQuiet} };
+    }
+
+    pub fn exit(&mut self) {
+        let _ = { request!{self DriverRequest::Exit} };
     }
 
 //    pub fn get_texts(&self, id: AtomId) -> Vec<(usize, String)> {
@@ -155,6 +174,7 @@ pub struct Driver {
     texts:  HashMap<(AtomId, usize), String>,
     rx:     Receiver<DriverRequest>,
     tx:     Sender<DriverReply>,
+    inhibit_frame_time: bool,
 }
 
 impl Driver {
@@ -165,6 +185,7 @@ impl Driver {
             texts: HashMap::new(),
             tx: tx1,
             rx: rx2,
+            inhibit_frame_time: false,
         }, DriverFrontend {
             tx: tx2,
             rx: rx1,
@@ -175,9 +196,19 @@ impl Driver {
         })
     }
 
+    pub fn be_quiet(&self) -> bool {
+        self.inhibit_frame_time
+    }
+
     pub fn handle_request(&mut self, ui: &mut dyn WindowUI) {
         while let Ok(msg) = self.rx.try_recv() {
             match msg {
+                DriverRequest::Exit => {
+                    std::process::exit(0);
+                },
+                DriverRequest::BeQuiet => {
+                    self.inhibit_frame_time = true;
+                },
                 DriverRequest::Query => {
                     let state = ui.query_state();
                     let _ = self.tx.send(DriverReply::State {

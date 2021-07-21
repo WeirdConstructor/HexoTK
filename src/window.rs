@@ -198,6 +198,8 @@ impl WindowHandler for GUIWindowHandler {
     fn on_frame(&mut self, _win: &mut Window) {
         self.driver.borrow_mut().handle_request(&mut *self.ui);
 
+        let quiet = self.driver.borrow().be_quiet();
+
         self.counter += 1;
         if self.counter % 500 == 0 {
 //            println!("REDRAW.....");
@@ -246,7 +248,9 @@ impl WindowHandler for GUIWindowHandler {
 
             self.dbg_cb = painter.test_debug.take();
             self.canvas.restore();
-            self.ftm_redraw.end_measure();
+            if !quiet {
+                self.ftm_redraw.end_measure();
+            }
         }
 
         let img_paint =
@@ -266,7 +270,9 @@ impl WindowHandler for GUIWindowHandler {
         self.context.swap_buffers();
 
         if redraw {
-            self.ftm.end_measure();
+            if !quiet {
+                self.ftm.end_measure();
+            }
         }
 
         self.ui.post_frame();
