@@ -1016,6 +1016,9 @@ impl WidgetType for PatternEditor {
                         let xi = (x - data.cell_zone.x) / UI_TRK_COL_WIDTH;
                         let yi = (y - data.cell_zone.y) / UI_TRK_ROW_HEIGHT;
 
+                        let xi = xi.max(1.0);
+                        let yi = yi.max(1.0);
+
                         let row_scroll_offs = data.calc_row_offs(self.rows);
                         let yr = (yi as usize - 1) + row_scroll_offs;
 
