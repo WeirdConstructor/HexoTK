@@ -219,9 +219,9 @@ impl Driver {
 
                     ui.handle_input_event(
                         InputEvent::KeyPressed(KeyboardEvent {
-                            state:          KeyState::Down,
                             key,
                             // XXX: the rest is not used by HexoTK!
+                            state:          KeyState::Down,
                             code:           Code::Escape,
                             location:       Location::Standard,
                             modifiers:      Modifiers::empty(),
@@ -237,10 +237,10 @@ impl Driver {
                     };
 
                     ui.handle_input_event(
-                        InputEvent::KeyPressed(KeyboardEvent {
-                            state:          KeyState::Up,
+                        InputEvent::KeyReleased(KeyboardEvent {
                             key,
                             // XXX: the rest is not used by HexoTK!
+                            state:          KeyState::Up,
                             code:           Code::Escape,
                             location:       Location::Standard,
                             modifiers:      Modifiers::empty(),
