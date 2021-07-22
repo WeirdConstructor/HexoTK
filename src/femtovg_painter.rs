@@ -33,6 +33,7 @@ fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
 }
 
 impl<'a> FemtovgPainter<'a> {
+    #[allow(unused_variables)] // because if lblid if no driver is enabled
     fn label_with_font(
         &mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64),
         x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64,

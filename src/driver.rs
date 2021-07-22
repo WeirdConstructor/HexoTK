@@ -1,14 +1,20 @@
 use crate::AtomId;
-use crate::{WindowUI, InputEvent, ActiveZone};
+use crate::{WindowUI, InputEvent, MButton, ActiveZone};
 use crate::Rect;
 
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver, channel};
 use std::time::Duration;
 
+use keyboard_types::Key;
+
 #[derive(Debug, Clone)]
 enum DriverRequest {
     MoveMouse       { x: f64, y: f64 },
+    MouseDown       { btn: MButton },
+    MouseUp         { btn: MButton },
+    KeyDown         { key: Key },
+    KeyUp           { key: Key },
     BeQuiet,
     Exit,
     Query,
@@ -114,6 +120,22 @@ impl DriverFrontend {
     pub fn move_mouse(&self, x: f64, y: f64) -> Result<(), DriverError> {
         request!{self DriverRequest::MoveMouse { x, y } }
     }
+
+    pub fn mouse_down(&self, btn: MButton) -> Result<(), DriverError> {
+        request!{self DriverRequest::MouseDown { btn } }
+    }
+
+    pub fn mouse_up(&self, btn: MButton) -> Result<(), DriverError> {
+        request!{self DriverRequest::MouseUp { btn } }
+    }
+
+    pub fn key_down(&self, key: Key) -> Result<(), DriverError> {
+        request!{self DriverRequest::KeyDown { key } }
+    }
+
+    pub fn key_up(&self, key: Key) -> Result<(), DriverError> {
+        request!{self DriverRequest::KeyUp { key } }
+    }
 }
 
 pub struct Driver {
@@ -167,6 +189,54 @@ impl Driver {
                 DriverRequest::MoveMouse { x, y } => {
                     ui.handle_input_event(
                         InputEvent::MousePosition(x, y));
+                    let _ = self.tx.send(DriverReply::Ack);
+                },
+                DriverRequest::MouseDown { btn } => {
+                    ui.handle_input_event(
+                        InputEvent::MouseButtonPressed(btn));
+                    let _ = self.tx.send(DriverReply::Ack);
+                },
+                DriverRequest::MouseUp { btn } => {
+                    ui.handle_input_event(
+                        InputEvent::MouseButtonReleased(btn));
+                    let _ = self.tx.send(DriverReply::Ack);
+                },
+                DriverRequest::KeyDown { key } => {
+                    use keyboard_types::{
+                        KeyboardEvent, Code, Location,
+                        Modifiers, KeyState
+                    };
+
+                    ui.handle_input_event(
+                        InputEvent::KeyPressed(KeyboardEvent {
+                            state:          KeyState::Down,
+                            key,
+                            // XXX: the rest is not used by HexoTK!
+                            code:           Code::Escape,
+                            location:       Location::Standard,
+                            modifiers:      Modifiers::empty(),
+                            repeat:         false,
+                            is_composing:   false,
+                        }));
+                    let _ = self.tx.send(DriverReply::Ack);
+                },
+                DriverRequest::KeyUp { key } => {
+                    use keyboard_types::{
+                        KeyboardEvent, Code, Location,
+                        Modifiers, KeyState
+                    };
+
+                    ui.handle_input_event(
+                        InputEvent::KeyPressed(KeyboardEvent {
+                            state:          KeyState::Up,
+                            key,
+                            // XXX: the rest is not used by HexoTK!
+                            code:           Code::Escape,
+                            location:       Location::Standard,
+                            modifiers:      Modifiers::empty(),
+                            repeat:         false,
+                            is_composing:   false,
+                        }));
                     let _ = self.tx.send(DriverReply::Ack);
                 },
             }
