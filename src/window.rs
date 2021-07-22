@@ -97,7 +97,7 @@ impl WindowHandler for GUIWindowHandler {
     fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
-                if cfg!(feature = "driver") {
+                if self.driver.borrow().has_control() {
                     println!("=> mouse move to {:?}", p);
                     return EventStatus::Captured;
                 }
@@ -108,7 +108,7 @@ impl WindowHandler for GUIWindowHandler {
                         p.y / self.scale as f64));
             },
             Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
-                if cfg!(feature = "driver") { return EventStatus::Captured; }
+                if self.driver.borrow().has_control() { return EventStatus::Captured; }
 
                 let ev_btn =
                     match btn {
@@ -120,7 +120,7 @@ impl WindowHandler for GUIWindowHandler {
                 self.ui.handle_input_event(InputEvent::MouseButtonPressed(ev_btn));
             },
             Event::Mouse(MouseEvent::ButtonReleased(btn)) => {
-                if cfg!(feature = "driver") { return EventStatus::Captured; }
+                if self.driver.borrow().has_control() { return EventStatus::Captured; }
 
                 let ev_btn =
                     match btn {
@@ -132,7 +132,7 @@ impl WindowHandler for GUIWindowHandler {
                 self.ui.handle_input_event(InputEvent::MouseButtonReleased(ev_btn));
             },
             Event::Mouse(MouseEvent::WheelScrolled(scroll)) => {
-                if cfg!(feature = "driver") { return EventStatus::Captured; }
+                if self.driver.borrow().has_control() { return EventStatus::Captured; }
 
                 match scroll {
                     ScrollDelta::Lines { y, .. } => {
@@ -144,7 +144,7 @@ impl WindowHandler for GUIWindowHandler {
                 }
             },
             Event::Keyboard(ev) => {
-                if cfg!(feature = "driver") { return EventStatus::Captured; }
+                if self.driver.borrow().has_control() { return EventStatus::Captured; }
 
                 use keyboard_types::KeyState;
                 match ev.state {
@@ -349,7 +349,7 @@ pub fn open_window(
 
         let cb_drv = drv.clone();
         let cb : Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>> =
-            if cfg!(feature = "driver") {
+            if drv.borrow().has_control() {
                 Some(Box::new(move |id, idx, txt, pos| {
                     cb_drv.borrow_mut().update_text(id, idx, txt, pos);
                 }))

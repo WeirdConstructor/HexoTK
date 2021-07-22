@@ -143,6 +143,7 @@ pub struct Driver {
     rx:     Receiver<DriverRequest>,
     tx:     Sender<DriverReply>,
     inhibit_frame_time: bool,
+    has_control: bool,
 }
 
 impl Driver {
@@ -154,6 +155,7 @@ impl Driver {
             tx: tx1,
             rx: rx2,
             inhibit_frame_time: false,
+            has_control:        false,
         }, DriverFrontend {
             tx: tx2,
             rx: rx1,
@@ -162,6 +164,14 @@ impl Driver {
             hover: None,
             mouse_pos: (0.0, 0.0),
         })
+    }
+
+    pub fn take_control(&mut self) {
+        self.has_control = true;
+    }
+
+    pub fn has_control(&self) -> bool {
+        self.has_control
     }
 
     pub fn be_quiet(&self) -> bool {
