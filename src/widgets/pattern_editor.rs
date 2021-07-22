@@ -5,8 +5,7 @@ use crate::constants::*;
 use super::*;
 use super::util::*;
 
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 pub use hexodsp::dsp::tracker::UIPatternModel;
 
@@ -159,7 +158,7 @@ enum EnterMode {
 
 #[derive(Debug)]
 pub struct PatternEditorData {
-    pattern:       Rc<RefCell<dyn UIPatternModel>>,
+    pattern:       Arc<Mutex<dyn UIPatternModel>>,
     cursor:        (usize, usize),
     enter_mode:    EnterMode,
 
@@ -178,7 +177,7 @@ pub struct PatternEditorData {
 }
 
 impl PatternEditorData {
-    pub fn new(pattern: Rc<RefCell<dyn UIPatternModel>>) -> Box<dyn std::any::Any> {
+    pub fn new(pattern: Arc<Mutex<dyn UIPatternModel>>) -> Box<dyn std::any::Any> {
         Box::new(Self {
             pattern,
             cursor: (1, 2),
@@ -218,7 +217,7 @@ impl PatternEditorData {
     }
 
     fn handle_key_event(&mut self, ui: &mut dyn WidgetUI, key: &Key) {
-        let mut pat = self.pattern.borrow_mut();
+        let mut pat = self.pattern.lock().unwrap();
 
         let mut edit_step = self.edit_step as i16;
 
@@ -252,7 +251,7 @@ impl PatternEditorData {
                     advance_cursor(
                         &mut self.cursor,
                         -2 * edit_step as i16,
-                        0, pat);
+                        0, &mut *pat);
                 }
                 reset_entered_value = true;
             },
@@ -267,7 +266,7 @@ impl PatternEditorData {
                     advance_cursor(
                         &mut self.cursor,
                         2 * edit_step as i16,
-                        0, pat);
+                        0, &mut *pat);
                 }
                 reset_entered_value = true;
             },
@@ -295,7 +294,7 @@ impl PatternEditorData {
                         advance_cursor(
                             &mut self.cursor,
                             -1 * edit_step as i16,
-                            0, pat);
+                            0, &mut *pat);
                     }
                 }
                 reset_entered_value = true;
@@ -325,7 +324,7 @@ impl PatternEditorData {
                         advance_cursor(
                             &mut self.cursor,
                             edit_step as i16,
-                            0, pat);
+                            0, &mut *pat);
                     }
                 }
                 reset_entered_value = true;
@@ -339,7 +338,7 @@ impl PatternEditorData {
 
                 } else {
                     advance_cursor(
-                        &mut self.cursor, 0, -1, pat);
+                        &mut self.cursor, 0, -1, &mut *pat);
                 }
                 reset_entered_value = true;
             },
@@ -352,7 +351,7 @@ impl PatternEditorData {
 
                 } else {
                     advance_cursor(
-                        &mut self.cursor, 0, 1, pat);
+                        &mut self.cursor, 0, 1, &mut *pat);
                 }
                 reset_entered_value = true;
             },
@@ -362,7 +361,7 @@ impl PatternEditorData {
                     self.cursor.1);
                 advance_cursor(
                     &mut self.cursor,
-                    edit_step as i16, 0, pat);
+                    edit_step as i16, 0, &mut *pat);
                 reset_entered_value = true;
             },
             Key::Character(c) => {
@@ -401,7 +400,7 @@ impl PatternEditorData {
                                     self.last_set_value);
                                 advance_cursor(
                                     &mut self.cursor,
-                                    edit_step as i16, 0, pat);
+                                    edit_step as i16, 0, &mut *pat);
                                 reset_entered_value = true;
                             },
                             "," => {
@@ -412,7 +411,7 @@ impl PatternEditorData {
                                 self.last_set_value = cell_value;
                                 advance_cursor(
                                     &mut self.cursor,
-                                    edit_step as i16, 0, pat);
+                                    edit_step as i16, 0, &mut *pat);
                                 reset_entered_value = true;
                             },
                             _ if pat.is_col_note(self.cursor.1) => {
@@ -425,7 +424,7 @@ impl PatternEditorData {
                                         value as u16);
                                     advance_cursor(
                                         &mut self.cursor,
-                                        edit_step as i16, 0, pat);
+                                        edit_step as i16, 0, &mut *pat);
                                     self.last_set_value = value as u16;
                                 }
                             },
@@ -466,7 +465,7 @@ impl PatternEditorData {
                                             self.last_set_value = nv as u16;
                                             advance_cursor(
                                                 &mut self.cursor,
-                                                edit_step as i16, 0, pat);
+                                                edit_step as i16, 0, &mut *pat);
                                         },
                                     }
                                 }
@@ -614,7 +613,7 @@ impl PatternEditorData {
 
 pub fn advance_cursor(
     cursor: &mut (usize, usize), row_offs: i16, col_offs: i16,
-    pat: std::cell::RefMut<dyn UIPatternModel>)
+    pat: &mut dyn UIPatternModel)
 {
     if row_offs >= 0 {
         let row_offs = row_offs as usize;
@@ -723,7 +722,7 @@ impl WidgetType for PatternEditor {
         let orig_pos  = pos;
 
         data.with(|data: &mut PatternEditorData| {
-            let mut pat = data.pattern.borrow_mut();
+            let mut pat = data.pattern.lock().unwrap();
 
             if data.cursor.0 >= pat.rows() {
                 data.cursor.0 = pat.rows() - 1;
@@ -1010,7 +1009,7 @@ impl WidgetType for PatternEditor {
             UIEvent::Click { id, index, x, y, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
-                        let pat = data.pattern.borrow_mut();
+                        let pat = data.pattern.lock().unwrap();
 
                         // TODO => find cell!
                         let xi = (x - data.cell_zone.x) / UI_TRK_COL_WIDTH;
@@ -1035,7 +1034,7 @@ impl WidgetType for PatternEditor {
             UIEvent::Scroll { id, amt, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
-                        let pat = data.pattern.borrow_mut();
+                        let pat = data.pattern.lock().unwrap();
 
                         if *amt > 0.0 {
                             if data.cursor.0 > 0 {
