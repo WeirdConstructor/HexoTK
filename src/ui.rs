@@ -541,6 +541,7 @@ impl UI {
         }
     }
 
+    #[allow(clippy::collapsible_else_if)]
     fn handle_atom_mouse_pressed(&mut self, az: ActiveZone) {
         if let ZoneType::AtomClick {
                 atom_type_setting,
@@ -637,17 +638,12 @@ impl UI {
 
         let v =
             if is_modamt {
-                if let Some(v) =
-                    self.atoms.as_ref().unwrap().get_mod_amt(zone.id)
-                {
-                    v
-                } else { 0.0 }
+                self.atoms.as_ref().unwrap().get_mod_amt(zone.id)
+                    .unwrap_or(0.0)
             } else {
-                if let Some(v) =
-                    self.atoms.as_ref().unwrap().get(zone.id)
-                {
-                    v.f()
-                } else { 0.0 }
+                self.atoms.as_ref().unwrap().get(zone.id)
+                    .map(|v| v.f())
+                    .unwrap_or(0.0)
             };
 
         let fine_key = self.is_key_pressed(UIKey::Shift);
@@ -1240,16 +1236,14 @@ impl WindowUI for UI {
                                 *cur_input.borrow_mut() = s;
                             }
 
-                        } else {
-                            if dispatch_event.is_none() {
-                                if let Some(main) = &self.main {
-                                    dispatch_event =
-                                        Some(UIEvent::Key {
-                                            id:         main.id(),
-                                            key:        key_copy,
-                                            mouse_pos:  self.mouse_pos,
-                                        });
-                                }
+                        } else if dispatch_event.is_none() {
+                            if let Some(main) = &self.main {
+                                dispatch_event =
+                                    Some(UIEvent::Key {
+                                        id:         main.id(),
+                                        key:        key_copy,
+                                        mouse_pos:  self.mouse_pos,
+                                    });
                             }
                         }
                     },

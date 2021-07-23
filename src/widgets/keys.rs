@@ -123,36 +123,23 @@ impl WidgetType for Keys {
                     data.map(|atom| atom.i() & (0x1 << index) > 0)
                         .unwrap_or(false);
 
-                let (bg_color, line_color) =
+                let (mut bg_color, mut line_color) =
                     if key_is_set {
                         if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
-                            if phase_index == index {
-                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
-                            } else {
-                                (UI_GRPH_LINE_CLR, UI_GRPH_BG)
-                            }
+                            (UI_GRPH_LINE_CLR, UI_GRPH_BG)
                         } else {
-                            if phase_index == index {
-                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
-                            } else {
-                                (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
-                            }
+                            (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
                         }
+                    } else if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
+                        (UI_GRPH_BG, UI_GRPH_LINE_CLR)
                     } else {
-                        if let HLStyle::None = ui.hl_style_for(id, Some(index)) {
-                            if phase_index == index {
-                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
-                            } else {
-                                (UI_GRPH_BG, UI_GRPH_LINE_CLR)
-                            }
-                        } else {
-                            if phase_index == index {
-                                (UI_GRPH_PHASE_CLR, UI_GRPH_BG)
-                            } else {
-                                (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
-                            }
-                        }
+                        (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
                     };
+
+                if phase_index == index {
+                    bg_color   = UI_GRPH_PHASE_CLR;
+                    line_color = UI_GRPH_BG;
+                }
 
                 p.rect_fill(line_color, key.x, key.y, key.w, key.h);
                 let k2 = key.shrink(1.0, 1.0);

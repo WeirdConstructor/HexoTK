@@ -284,18 +284,16 @@ impl PatternEditorData {
                             0x10);
                     }
 
-                } else {
-                    if let EnterMode::Rows(_) = self.enter_mode {
-                        let rows = pat.rows() + 1;
-                        pat.set_rows(rows);
-                        self.update_info_line = true;
+                } else if let EnterMode::Rows(_) = self.enter_mode {
+                    let rows = pat.rows() + 1;
+                    pat.set_rows(rows);
+                    self.update_info_line = true;
 
-                    } else {
-                        advance_cursor(
-                            &mut self.cursor,
-                            -1 * edit_step as i16,
-                            0, &mut *pat);
-                    }
+                } else {
+                    advance_cursor(
+                        &mut self.cursor,
+                        -1 * edit_step as i16,
+                        0, &mut *pat);
                 }
                 reset_entered_value = true;
             },
@@ -313,19 +311,17 @@ impl PatternEditorData {
                             -0x10);
                     }
 
-                } else {
-                    if let EnterMode::Rows(_) = self.enter_mode {
-                        if pat.rows() > 0 {
-                            let rows = pat.rows() - 1;
-                            pat.set_rows(rows);
-                            self.update_info_line = true;
-                        }
-                    } else {
-                        advance_cursor(
-                            &mut self.cursor,
-                            edit_step as i16,
-                            0, &mut *pat);
+                } else if let EnterMode::Rows(_) = self.enter_mode {
+                    if pat.rows() > 0 {
+                        let rows = pat.rows() - 1;
+                        pat.set_rows(rows);
+                        self.update_info_line = true;
                     }
+                } else {
+                    advance_cursor(
+                        &mut self.cursor,
+                        edit_step as i16,
+                        0, &mut *pat);
                 }
                 reset_entered_value = true;
             },
@@ -1003,6 +999,7 @@ impl WidgetType for PatternEditor {
          (self.rows + 3)    as f64 * UI_TRK_ROW_HEIGHT + UI_TRK_BORDER * 2.0)
     }
 
+    #[allow(clippy::collapsible_else_if)]
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
             UIEvent::Click { id, x, y, .. } => {

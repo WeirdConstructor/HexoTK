@@ -27,7 +27,7 @@ impl HexDir {
 
     #[inline]
     pub fn is_right_half(&self) -> bool {
-        let e = self.to_edge();
+        let e = self.as_edge();
         e <= 2
     }
 
@@ -37,7 +37,7 @@ impl HexDir {
     }
 
     #[inline]
-    pub fn to_edge(&self) -> u8 {
+    pub fn as_edge(&self) -> u8 {
         *self as u8
     }
 }
@@ -46,13 +46,13 @@ use hexodsp::CellDir;
 
 impl From<HexDir> for CellDir {
     fn from(h: HexDir) -> Self {
-        CellDir::from(h.to_edge())
+        CellDir::from(h.as_edge())
     }
 }
 
 impl From<CellDir> for HexDir {
     fn from(c: CellDir) -> Self {
-        HexDir::from(c.to_edge())
+        HexDir::from(c.as_edge())
     }
 }
 
@@ -152,8 +152,8 @@ fn hex_at_is_inside(x: f64, y: f64, w: f64, h: f64, pos: Rect) -> bool {
     let aabb = Rect {
         x: x - 0.5 * w,
         y: y - 0.5 * h,
-        w: w,
-        h: h,
+        w,
+        h,
     };
 
     pos.aabb_is_inside(aabb)
@@ -189,6 +189,7 @@ impl HexEdge {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_arrow(p: &mut dyn Painter, clr: (f64, f64, f64), x: f64, y: f64, xo: f64, yo: f64, size: f64, rot: f64) {
     p.path_fill_rot(
         clr,
@@ -432,14 +433,12 @@ impl WidgetType for HexGrid {
                     let (line, clr) =
                         if marked.0 == xi && marked.1 == yi {
                             (5.0, UI_GRID_HOVER_BORDER_CLR)
+                        } else  if Some((xi, yi)) == drag_source {
+                            (3.0, UI_GRID_DRAG_BORDER_CLR)
+                        } else if data.model.cell_empty(xi, yi) {
+                            (3.0, UI_GRID_EMPTY_BORDER_CLR)
                         } else {
-                            if Some((xi, yi)) == drag_source {
-                                (3.0, UI_GRID_DRAG_BORDER_CLR)
-                            } else if data.model.cell_empty(xi, yi) {
-                                (3.0, UI_GRID_EMPTY_BORDER_CLR)
-                            } else {
-                                (3.0, UI_GRID_CELL_BORDER_CLR)
-                            }
+                            (3.0, UI_GRID_CELL_BORDER_CLR)
                         };
 
                     // padded outer hex
@@ -469,7 +468,7 @@ impl WidgetType for HexGrid {
 
                                     let num_fs = fs * 0.8;
                                     let y_inc = -1.0 + p.font_height(fs as f32, false) as f64;
-                                    let mut lbl_it = s.split(" ");
+                                    let mut lbl_it = s.split(' ');
 
                                     if let Some(name_lbl) = lbl_it.next() {
                                         p.label(

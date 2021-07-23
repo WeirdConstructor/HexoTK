@@ -227,17 +227,17 @@ impl<'a> Painter for FemtovgPainter<'a> {
     }
 
     fn rect_fill(&mut self, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64) {
-        let mut p = femtovg::Path::new();
-        p.rect(x as f32, y as f32, w as f32, h as f32);
-        self.canvas.fill_path(&mut p, color_paint(color));
+        let mut pth = femtovg::Path::new();
+        pth.rect(x as f32, y as f32, w as f32, h as f32);
+        self.canvas.fill_path(&mut pth, color_paint(color));
     }
 
     fn rect_stroke(&mut self, width: f64, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64) {
-        let mut p = femtovg::Path::new();
-        p.rect(x as f32, y as f32, w as f32, h as f32);
+        let mut pth = femtovg::Path::new();
+        pth.rect(x as f32, y as f32, w as f32, h as f32);
         let mut paint = color_paint(color);
         paint.set_line_width(width as f32);
-        self.canvas.stroke_path(&mut p, paint);
+        self.canvas.stroke_path(&mut pth, paint);
     }
 
     fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, lblid: usize) {

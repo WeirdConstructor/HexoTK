@@ -270,10 +270,8 @@ impl WindowHandler for GUIWindowHandler {
 
         self.context.swap_buffers();
 
-        if redraw {
-            if !quiet {
-                self.ftm.end_measure();
-            }
+        if redraw && !quiet {
+            self.ftm.end_measure();
         }
 
         self.ui.post_frame();

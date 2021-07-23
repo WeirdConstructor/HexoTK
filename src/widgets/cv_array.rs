@@ -140,11 +140,9 @@ impl WidgetType for CvArray {
                                 if atom.i() & (0x1 << i) > 0 { 1.0 }
                                 else                         { 0.0 }
                             }).unwrap_or(0.0)
-                    } else {
-                        if let Some(Some(data)) = data.map(|atom| atom.v_ref()) {
-                            (data[i] as f64).clamp(0.0, 1.0)
-                        } else { 0.0 }
-                    }
+                    } else if let Some(Some(data)) = data.map(|atom| atom.v_ref()) {
+                        (data[i] as f64).clamp(0.0, 1.0)
+                    } else { 0.0 }
                 };
 
                 let hover_highlight =

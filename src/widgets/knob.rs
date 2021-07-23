@@ -129,6 +129,7 @@ impl Knob {
             x + r.0, y + r.1, r.2, r.3, s, DBGID_KNOB_NAME);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_value_label(&self, double: bool, first: bool, p: &mut dyn Painter, x: f64, y: f64, highlight: HLStyle, s: &str) {
         let r = self.get_value_rect(double);
 
@@ -208,7 +209,13 @@ impl Knob {
         }
     }
 
-    pub fn draw_oct_arc(&self, p: &mut dyn Painter, x: f64, y: f64, line_w: f64, color: (f64, f64, f64), dot_color: Option<(f64, f64, f64)>, value: f64) {
+    #[allow(clippy::too_many_arguments)]
+    pub fn draw_oct_arc(
+        &self, p: &mut dyn Painter, x: f64, y: f64, line_w: f64,
+        color: (f64, f64, f64),
+        dot_color: Option<(f64, f64, f64)>,
+        value: f64
+    ) {
         let arc_len = &self.arc_len;
 
         let (next_idx, prev_arc_len) =
@@ -276,6 +283,7 @@ pub struct KnobData {
     name:       String,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl KnobData {
 	pub fn new(name: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
@@ -419,7 +427,7 @@ impl WidgetType for Knob {
             self.draw_value_label(modamt.is_some(), true, p, xo, yo, highlight, val_s);
 
 
-            if let Some(_) = modamt {
+            if modamt.is_some() {
                 let len = ui.atoms().fmt_mod(id, &mut data.lbl_buf[..]);
                 let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
                 self.draw_value_label(true, false, p, xo, yo, highlight, val_s);

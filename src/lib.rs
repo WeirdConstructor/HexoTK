@@ -370,8 +370,8 @@ impl HexGridTransform {
 
     pub fn set_scale(&self, scale: f64) -> Self {
         Self {
+            scale,
             offs:      self.offs,
-            scale:     scale,
             scale_mid: self.scale_mid,
         }
     }

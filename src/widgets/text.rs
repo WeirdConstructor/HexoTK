@@ -82,6 +82,7 @@ pub struct TextData {
     page_idx:   usize,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl TextData {
     pub fn new(source: Rc<dyn TextSource>) -> Box<dyn std::any::Any> {
         Box::new(Self {

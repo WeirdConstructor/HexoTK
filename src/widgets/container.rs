@@ -19,6 +19,8 @@ impl Container {
     }
 }
 
+impl Default for Container { fn default() -> Self { Self::new() } }
+
 pub struct ContainerData {
     rows:            Vec<Vec<WidgetData>>,
     border:          bool,
@@ -73,7 +75,7 @@ impl ContainerData {
     }
 
     pub fn add(&mut self, widget_data: WidgetData) -> &mut Self {
-        if self.rows.len() == 0 {
+        if self.rows.is_empty() {
             self.new_row();
         }
 

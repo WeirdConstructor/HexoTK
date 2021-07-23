@@ -105,6 +105,7 @@ impl Button {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn draw_border(
         &self, p: &mut dyn Painter, width: f64, clr: (f64, f64, f64),
         x: f64, y: f64, w: f64, h: f64, fill: bool)
@@ -292,36 +293,27 @@ impl WidgetType for Button {
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
-        match ev {
-            UIEvent::Click { id, button, .. } => {
-                //d// println!("BTN CHK: {} == {}", *id, data.id());
-                if *id == data.id() {
-                    data.with(|data: &mut ButtonData| {
-                        match button {
-                            MButton::Left   => {
-                                match data.mode {
-                                    ButtonMode::Toggle => {
-                                        ui.atoms_mut().step_next(*id);
-                                    },
-                                    _ => {},
-                                }
-                            },
-                            MButton::Right  => {
-                                match data.mode {
-                                    ButtonMode::Toggle => {
-                                        ui.atoms_mut().step_prev(*id);
-                                    },
-                                    _ => {},
-                                }
-                            },
-                            MButton::Middle => { ui.atoms_mut().set_default(*id); },
-                        }
-                    });
+        if let UIEvent::Click { id, button, .. } = ev {
+            //d// println!("BTN CHK: {} == {}", *id, data.id());
+            if *id == data.id() {
+                data.with(|data: &mut ButtonData| {
+                    match button {
+                        MButton::Left   => {
+                            if let ButtonMode::Toggle = data.mode {
+                                ui.atoms_mut().step_next(*id);
+                            }
+                        },
+                        MButton::Right  => {
+                            if let ButtonMode::Toggle = data.mode {
+                                ui.atoms_mut().step_prev(*id);
+                            }
+                        },
+                        MButton::Middle => { ui.atoms_mut().set_default(*id); },
+                    }
+                });
 
-                    ui.queue_redraw();
-                }
-            },
-            _ => {},
+                ui.queue_redraw();
+            }
         }
     }
 }

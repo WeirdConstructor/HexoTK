@@ -1,8 +1,11 @@
 // Copyright (c) 2020-2021 Weird Constructor <weirdconstructor@gmail.com>
 // This is a part of HexoTK. See README.md and COPYING for details.
 
+#[allow(clippy::many_single_char_names)]
 pub mod hexgrid;
+#[allow(clippy::many_single_char_names)]
 mod knob;
+#[allow(clippy::many_single_char_names)]
 mod button;
 mod container;
 mod text;
@@ -10,6 +13,7 @@ mod graph;
 mod graph_minmax;
 mod entry;
 mod list;
+#[allow(clippy::many_single_char_names)]
 mod cv_array;
 mod keys;
 mod dialog;
