@@ -1,6 +1,7 @@
 use hexotk::*;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use hexotk::widgets::DialogModel;
 use hexotk::widgets::UIPatternModel;
@@ -561,9 +562,9 @@ fn main() {
            .new_row()
            .add(wbox!(wt_cont,100.into(),center(12,4), other));
 
-        let pattern_data = Rc::new(RefCell::new(PatternData::new(256)));
+        let pattern_data = Arc::new(Mutex::new(PatternData::new(256)));
         {
-            let mut p = pattern_data.borrow_mut();
+            let mut p = pattern_data.lock().unwrap();
             p.set_cell_value(0, 0, 0xFFF);
             p.set_cell_value(0, 1, 0x00F);
             p.set_cell_value(0, 2, 0xF00);
@@ -626,12 +627,11 @@ fn main() {
         let (drv, mut drv_frontend) = Driver::new();
 
         std::thread::spawn(move || {
-            use hexotk::constants::*;
             loop {
                 std::thread::sleep(
                     std::time::Duration::from_millis(1000));
 
-                drv_frontend.query_state();
+                drv_frontend.query_state().unwrap();
                 println!("TEXTS: {:#?}", drv_frontend.texts);
                 println!("MOUSE: {:#?}", drv_frontend.mouse_pos);
 
@@ -642,9 +642,9 @@ fn main() {
 //                    .unwrap();
 //                println!("b");
 
-                drv_frontend.move_mouse(316.0, 375.0);
+                drv_frontend.move_mouse(316.0, 375.0).unwrap();
 
-                drv_frontend.query_state();
+                drv_frontend.query_state().unwrap();
                 let hz = drv_frontend.hover.unwrap();
                 println!(">= {:?}", hz);
 

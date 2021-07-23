@@ -24,6 +24,7 @@ pub use hexgrid::HexGrid;
 pub use hexgrid::HexGridData;
 pub use hexgrid::HexGridModel;
 pub use hexgrid::HexCell;
+pub use hexgrid::HexHLight;
 pub use hexgrid::HexEdge;
 pub use hexgrid::HexDir;
 

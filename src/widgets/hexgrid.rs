@@ -64,11 +64,18 @@ pub enum HexEdge {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum HexCell {
+pub enum HexHLight {
     Normal,
     Plain,
     HLight,
     Select,
+}
+
+#[derive(Debug)]
+pub struct HexCell<'a> {
+    pub label:      &'a str,
+    pub hlight:     HexHLight,
+    pub rg_colors:  Option<(f32, f32)>,
 }
 
 pub trait HexGridModel {
@@ -76,9 +83,11 @@ pub trait HexGridModel {
     fn height(&self) -> usize;
     fn cell_visible(&self, x: usize, y: usize) -> bool;
     fn cell_empty(&self, x: usize, y: usize) -> bool;
-    fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8]) -> Option<(&'a str, HexCell, Option<(f32, f32)>)>;
+    fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8])
+        -> Option<HexCell<'a>>; // (&'a str, HexCell, Option<(f32, f32)>)>;
     /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
-    fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8]) -> Option<(&'a str, HexEdge)>;
+    fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8])
+        -> Option<(&'a str, HexEdge)>;
     fn cell_click(&self, x: usize, y: usize, btn: MButton, modkey: bool);
     fn cell_hover(&self, _x: usize, _y: usize) { }
 }
@@ -439,17 +448,23 @@ impl WidgetType for HexGrid {
 
                         match pos {
                             HexDecorPos::Center(x, y) => {
-                                if let Some((s, hc, led)) = data.model.cell_label(xi, yi, &mut label_buf) {
+                                if let Some(cell_vis) = data.model.cell_label(xi, yi, &mut label_buf) {
+                                    let (s, hc, led) = (
+                                        cell_vis.label,
+                                        cell_vis.hlight,
+                                        cell_vis.rg_colors
+                                    );
+
                                     let (txt_clr, clr) =
                                         match hc {
-                                            HexCell::Normal => (UI_GRID_TXT_CENTER_CLR, clr),
-                                            HexCell::Plain  => (UI_GRID_TXT_CENTER_CLR, clr),
-                                            HexCell::HLight => (UI_GRID_TXT_CENTER_HL_CLR, UI_GRID_TXT_CENTER_HL_CLR),
-                                            HexCell::Select => (UI_GRID_TXT_CENTER_SL_CLR, UI_GRID_TXT_CENTER_SL_CLR),
+                                            HexHLight::Normal => (UI_GRID_TXT_CENTER_CLR, clr),
+                                            HexHLight::Plain  => (UI_GRID_TXT_CENTER_CLR, clr),
+                                            HexHLight::HLight => (UI_GRID_TXT_CENTER_HL_CLR, UI_GRID_TXT_CENTER_HL_CLR),
+                                            HexHLight::Select => (UI_GRID_TXT_CENTER_SL_CLR, UI_GRID_TXT_CENTER_SL_CLR),
                                         };
 
                                     let fs =
-                                        if hc == HexCell::Plain { fs * 1.4 }
+                                        if hc == HexHLight::Plain { fs * 1.4 }
                                         else { fs };
 
                                     let num_fs = fs * 0.8;
@@ -478,7 +493,7 @@ impl WidgetType for HexGrid {
                                         draw_led(p, x, y - th, led);
                                     }
 
-                                    if hc != HexCell::Plain {
+                                    if hc != HexHLight::Plain {
                                         draw_hexagon(
                                             p, size * 0.5, line * 0.5, x, y, clr,
                                             |_p, _pos, _sz| ());

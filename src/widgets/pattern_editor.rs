@@ -1005,7 +1005,7 @@ impl WidgetType for PatternEditor {
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
         match ev {
-            UIEvent::Click { id, index, x, y, .. } => {
+            UIEvent::Click { id, x, y, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut PatternEditorData| {
                         let pat = data.pattern.lock().unwrap();
