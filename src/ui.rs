@@ -983,6 +983,10 @@ impl WindowUI for UI {
                                     self.queue_redraw();
                                 },
                                 MButton::Middle => {
+                                    if az.zone_type == ZoneType::ValueDragFine {
+                                        self.atoms.as_mut().unwrap()
+                                           .set_mod_amt(az.id, None)
+                                    }
                                     self.atoms.as_mut().unwrap().set_default(az.id);
                                     self.queue_redraw();
                                 },
