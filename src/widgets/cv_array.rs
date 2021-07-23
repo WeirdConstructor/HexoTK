@@ -22,6 +22,7 @@ pub struct CvArrayData {
     active_area:    Rect,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl CvArrayData {
     pub fn new(name: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
@@ -159,9 +160,7 @@ impl WidgetType for CvArray {
                                 id, zone_pos, i)
                             .dbgid(DBGID_CVARRAY_CLICK));
 
-                        if let HLStyle::None = ui.hl_style_for(id, Some(i)) {
-                            false
-                        } else { true }
+                        !matches!(ui.hl_style_for(id, Some(i)), HLStyle::None)
                     } else {
                         false
                     };

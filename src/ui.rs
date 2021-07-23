@@ -159,11 +159,7 @@ impl WidgetUI for WidgetUIHolder {
     }
 
     fn hover_atom_id(&self) -> Option<AtomId> {
-        if let Some(hz) = self.hover_zone {
-            Some(hz.id)
-        } else {
-            None
-        }
+        self.hover_zone.map(|hz| hz.id)
     }
 
     fn hover_zone_for(&self, az_id: AtomId) -> Option<ActiveZone> {
@@ -213,14 +209,9 @@ impl WidgetUI for WidgetUIHolder {
                 }
             }
         } else {
-            if let Some(input_mode) = &self.input_mode {
-                match input_mode {
-                    InputMode::Keyboard { zone } => {
-                        if zone.id == az_id {
-                            return HLStyle::Hover(zone.zone_type);
-                        }
-                    },
-                    _ => ()
+            if let Some(InputMode::Keyboard { zone }) = &self.input_mode {
+                if zone.id == az_id {
+                    return HLStyle::Hover(zone.zone_type);
                 }
             }
 
@@ -382,14 +373,13 @@ impl InputMode {
                             }
                         }
 
-                        return
-                            Some(UIEvent::Click {
-                                id:     release_az.id,
-                                button: btn,
-                                index:  0,
-                                x:      mouse_pos.0,
-                                y:      mouse_pos.1,
-                            });
+                        Some(UIEvent::Click {
+                            id:     release_az.id,
+                            button: btn,
+                            index:  0,
+                            x:      mouse_pos.0,
+                            y:      mouse_pos.1,
+                        })
                     },
                     _ => None,
                 }
@@ -668,7 +658,7 @@ impl UI {
         let main = self.main.as_ref()?;
         Some(UIEvent::Key {
             id:         main.id(),
-            key:        key.key.clone(),
+            key:        key.key,
             mouse_pos:  self.mouse_pos,
         })
     }
@@ -883,14 +873,13 @@ impl WindowUI for UI {
                                 if let Some(az) =
                                     self.get_zone_at(self.mouse_pos)
                                 {
-                                    match az.zone_type {
-                                        ZoneType::HexFieldClick { .. } => {
-                                            dispatch_event =
-                                                input_mode.check_hex_field_click(
-                                                    az, btn, self.mouse_pos);
-                                            self.queue_redraw();
-                                        },
-                                        _ => {}
+                                    if let ZoneType::HexFieldClick { .. } =
+                                        az.zone_type
+                                    {
+                                        dispatch_event =
+                                            input_mode.check_hex_field_click(
+                                                az, btn, self.mouse_pos);
+                                        self.queue_redraw();
                                     }
                                 }
                             }
@@ -1203,7 +1192,7 @@ impl WindowUI for UI {
                                         let s = at.str_ref().unwrap_or("");
                                         format!("{}{}", s, c)
                                     } else {
-                                        format!("{}", c)
+                                        c
                                     };
                                 atoms.set(zone.id, Atom::str_mv(new_str));
                             }
@@ -1214,8 +1203,7 @@ impl WindowUI for UI {
                             let slen = cur_input.borrow().len();
                             let contains_dot =
                                 cur_input.borrow().chars()
-                                    .find(|c| *c == '.')
-                                    .is_some();
+                                    .any(|c| c == '.');
 
                             let c = c.chars().next().unwrap_or(' ');
                             if c.is_ascii_digit() {
@@ -1306,7 +1294,7 @@ impl WindowUI for UI {
     fn draw(&mut self, painter: &mut dyn Painter) {
         let win_size = self.window_size;
 
-        self.zones.as_mut().map(|zones| zones.clear());
+        if let Some(zones) = self.zones.as_mut() { zones.clear() }
         let mut dialog = self.dialog.take();
 
         self.dispatch(|ui: &mut dyn WidgetUI, data: &mut WidgetData, wt: &dyn WidgetType| {

@@ -143,14 +143,11 @@ impl WidgetType for Tabs {
         let my_id = data.id();
 
         data.with(|data: &mut TabsData| {
-            match ev {
-                UIEvent::Click { id, index, .. } => {
-                    if my_id == *id {
-                        ui.atoms_mut().set(
-                            my_id, Atom::setting(*index as i64));
-                    }
-                },
-                _ => {}
+            if let UIEvent::Click { id, index, .. } = ev {
+                if my_id == *id {
+                    ui.atoms_mut().set(
+                        my_id, Atom::setting(*index as i64));
+                }
             }
 
             let index = ui.atoms().get(my_id).map(|at| at.i()).unwrap_or(0);

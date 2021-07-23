@@ -23,6 +23,7 @@ pub struct GraphMinMaxData {
     font_size:            f64,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl GraphMinMaxData {
     pub fn new(font_size: f64, txt_src: Rc<TextSourceRef>, minmax_sample_count: usize, source: Box<dyn GraphMinMaxSource>) -> Box<dyn std::any::Any> {
         let mut buf = vec![];
@@ -94,22 +95,19 @@ impl WidgetType for GraphMinMax {
                 let gy1 = (1.0 - min) * grph_pos.h;
                 let gy2 = (1.0 - max) * grph_pos.h;
 
+                data.buf[i * 2] = (
+                    (grph_pos.x + gx),
+                    (grph_pos.y + gy1)
+                );
+
                 if (last_minmax.1 - 0.00001) <= max {
                     // (probably) Rising edge
-                    data.buf[i * 2] = (
-                        (grph_pos.x + gx),
-                        (grph_pos.y + gy1)
-                    );
                     data.buf[i * 2 + 1] = (
                         (grph_pos.x + gx + 0.5),
                         (grph_pos.y + gy2)
                     );
                 } else {
                     // (probably) Falling edge
-                    data.buf[i * 2] = (
-                        (grph_pos.x + gx),
-                        (grph_pos.y + gy1)
-                    );
                     data.buf[i * 2 + 1] = (
                         (grph_pos.x + gx - 0.5),
                         (grph_pos.y + gy2)
@@ -150,9 +148,6 @@ impl WidgetType for GraphMinMax {
         (self.width, self.height)
     }
 
-    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, ev: &UIEvent) {
-        match ev {
-            _ => {},
-        }
+    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) {
     }
 }

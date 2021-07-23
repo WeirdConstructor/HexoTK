@@ -20,6 +20,7 @@ enum DriverRequest {
     Query,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 enum DriverReply {
     Ack,

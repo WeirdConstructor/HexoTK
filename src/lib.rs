@@ -7,7 +7,10 @@ pub mod constants;
 
 mod driver;
 mod ui;
+#[allow(clippy::type_complexity)]
 mod window;
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 mod femtovg_painter;
 
 use std::rc::Rc;
@@ -70,11 +73,7 @@ impl WidgetData {
     pub fn with<F, T: 'static, R>(&mut self, f: F) -> Option<R>
         where F: FnOnce(&mut T) -> R
     {
-        if let Some(data) = self.data.downcast_mut::<T>() {
-            Some(f(data))
-        } else {
-            None
-        }
+        self.data.downcast_mut::<T>().map(|data| f(data))
     }
 
     pub fn event(&mut self, ui: &mut dyn WidgetUI, ev: &UIEvent) {
@@ -382,6 +381,8 @@ impl HexGridTransform {
     pub fn y_offs(&self) -> f64 { self.offs.1 }
 }
 
+impl Default for HexGridTransform { fn default() -> Self { Self::new() } }
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ZoneType {
     ValueDragFine,
@@ -464,17 +465,16 @@ impl Atom {
     }
 
     pub fn is_continous(&self) -> bool {
-        if let Atom::Param(_) = self { true }
-        else { false }
+        matches!(self, Atom::Param(_))
     }
 
     pub fn str_ref(&self) -> Option<&str> {
         match self {
             Atom::Str(s)                => Some(&s),
             Atom::AudioSample((s, _))   => {
-                if let Some(idx) = s.rfind("/") {
+                if let Some(idx) = s.rfind('/') {
                     Some(&s[(idx + 1)..])
-                } else if let Some(idx) = s.rfind("\\") {
+                } else if let Some(idx) = s.rfind('\\') {
                     Some(&s[(idx + 1)..])
                 } else {
                     Some(&s)
@@ -670,9 +670,9 @@ pub trait AtomDataModel {
     fn get_denorm(&self, id: AtomId) -> Option<f32>;
     fn set(&mut self, id: AtomId, v: Atom);
     fn set_denorm(&mut self, id: AtomId, v: f32);
-    fn fmt<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
-    fn fmt_mod<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
-    fn fmt_norm<'a>(&self, id: AtomId, buf: &'a mut [u8]) -> usize;
+    fn fmt(&self, id: AtomId, buf: &mut [u8]) -> usize;
+    fn fmt_mod(&self, id: AtomId, buf: &mut [u8]) -> usize;
+    fn fmt_norm(&self, id: AtomId, buf: &mut [u8]) -> usize;
     fn step_next(&mut self, id: AtomId);
     fn step_prev(&mut self, id: AtomId);
     fn set_default(&mut self, id: AtomId);
@@ -706,6 +706,7 @@ pub enum WidgetEvent {
     Clicked,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub trait Painter {
 //    fn start_imgbuf(&mut self, global_id: usize, w: usize, h: usize);
 //    fn stop_imgbuf(&mut self);
@@ -836,6 +837,7 @@ impl UIEvent {
 #[derive(Debug, Clone, Copy)]
 pub struct DummyWidget { }
 
+#[allow(clippy::new_without_default)]
 impl DummyWidget {
     pub fn new() -> Self { Self { } }
 }

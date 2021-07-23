@@ -21,6 +21,7 @@ pub struct EntryData {
     curs_vis:  bool,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl EntryData {
     pub fn new(label: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
@@ -142,9 +143,6 @@ impl WidgetType for Entry {
         (self.rect.w, self.rect.h)
     }
 
-    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, ev: &UIEvent) {
-        match ev {
-            _ => {},
-        }
+    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) {
     }
 }

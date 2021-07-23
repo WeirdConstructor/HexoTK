@@ -111,8 +111,8 @@ impl UIMatrixModel {
         let x   = Rc::new(DummyNode { name: String::from("*") });
 
         cells[18] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), Some(1)).input(Some(2), Some(0), Some(2));
-        cells[19] = MatrixCell::new(dmy.clone(), 1).out(Some(0), Some(1), Some(1)).input(Some(1), Some(3), Some(2));
-        cells[11] = MatrixCell::new(x.clone(),   2).out(Some(1), Some(1), Some(2));
+        cells[19] = MatrixCell::new(dmy,         1).out(Some(0), Some(1), Some(1)).input(Some(1), Some(3), Some(2));
+        cells[11] = MatrixCell::new(x,           2).out(Some(1), Some(1), Some(2));
 
         Self {
             w,
@@ -144,7 +144,7 @@ impl HexGridModel for UIMatrixModel {
     fn cell_empty(&self, x: usize, y: usize) -> bool {
         if x >= self.w || y >= self.h { return true; }
 
-        !self.cells[y * self.w + x].node.is_some()
+        self.cells[y * self.w + x].node.is_none()
     }
 
     fn cell_visible(&self, x: usize, y: usize) -> bool {
@@ -249,6 +249,8 @@ impl NodeMatrix {
     }
 }
 
+impl Default for NodeMatrix { fn default() -> Self { Self::new() } }
+
 use std::cell::RefCell;
 use crate::widgets::{HexGrid, HexGridData};
 use crate::{Rect, WidgetUI, Painter, WidgetData, WidgetType, UIEvent};
@@ -266,6 +268,8 @@ impl NodeMatrixModel {
         }
     }
 }
+
+impl Default for NodeMatrixModel { fn default() -> Self { Self::new() } }
 
 pub struct UINodeMenuModel {
 }
@@ -289,7 +293,7 @@ impl HexGridModel for UINodeMenuModel {
 
     fn cell_visible(&self, x: usize, y: usize) -> bool {
         if x >= 3 || y >= 3 { return false; }
-        if x == 0 && y == 0 || x == 2 && y == 0 { return false; }
+        if (x == 0 || x == 2) && y == 0 { return false; }
         true
     }
 
@@ -317,6 +321,8 @@ impl UINodeMenuModel {
     }
 }
 
+impl Default for UINodeMenuModel { fn default() -> Self { Self::new() } }
+
 #[allow(dead_code)]
 pub struct NodeMatrixData {
     hex_grid:     Box<WidgetData>,
@@ -327,6 +333,7 @@ pub struct NodeMatrixData {
     display_menu: Option<(f64, f64)>,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl NodeMatrixData {
     pub fn new(pos: UIPos, node_id: u32) -> WidgetData {
         let wt_nmatrix  = Rc::new(NodeMatrix::new());
@@ -357,7 +364,7 @@ impl NodeMatrixData {
             pos,
             Box::new(Self {
                 hex_grid: WidgetData::new_tl_box(
-                    wt_hexgrid.clone(),
+                    wt_hexgrid,
                     AtomId::new(node_id, 1),
                     HexGridData::new(matrix_model.clone())),
                 hex_menu: WidgetData::new_tl_box(
@@ -402,16 +409,11 @@ impl WidgetType for NodeMatrix {
                     println!("EV: {:?} id={}, data.id={}", ev, *id, data.id());
 
                     data.with(|data: &mut NodeMatrixData| {
-                        if let Some(_) = data.display_menu {
+                        if data.display_menu.is_some() {
                             data.hex_menu.event(ui, ev);
                             data.display_menu = None;
-                        } else {
-                            match ev {
-                                UIEvent::Click { x, y, .. } => {
-                                    data.display_menu = Some((*x, *y));
-                                },
-                                _ => {}
-                            }
+                        } else if let UIEvent::Click { x, y, .. } = ev {
+                            data.display_menu = Some((*x, *y));
                         }
                     });
                     ui.queue_redraw();

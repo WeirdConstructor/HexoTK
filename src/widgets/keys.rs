@@ -17,6 +17,7 @@ pub struct KeysData {
     name:           String,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl KeysData {
     pub fn new(name: &str) -> Box<dyn std::any::Any> {
         Box::new(Self {
@@ -146,30 +147,30 @@ impl WidgetType for Keys {
                 p.rect_fill(bg_color, k2.x, k2.y, k2.w, k2.h);
             }
 
-            for i in 0..xoffs_w.len() {
+            for xw in xoffs_w.iter() {
                 let key =
                     Rect {
-                        x: pos.x + xoffs_w[i].1,
+                        x: pos.x + (*xw).1,
                         y: pos.y,
                         w: xd,
                         h: pos.h,
                     };
 
-                draw_key(p, ui, id, key, xoffs_w[i].0, phase_index);
+                draw_key(p, ui, id, key, (*xw).0, phase_index);
             }
 
             let black_width = xd * 0.75;
 
-            for i in 0..xoffs_b.len() {
+            for xb in xoffs_b.iter() {
                 let key =
                     Rect {
-                        x: pos.x + xoffs_b[i].1 - black_width * 0.5,
+                        x: pos.x + (*xb).1 - black_width * 0.5,
                         y: pos.y,
                         w: black_width,
                         h: pos.h * 0.5,
                     };
 
-                draw_key(p, ui, id, key, xoffs_b[i].0, phase_index);
+                draw_key(p, ui, id, key, (*xb).0, phase_index);
             }
         });
     }
@@ -180,16 +181,13 @@ impl WidgetType for Keys {
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
-        match ev {
-            UIEvent::Click { id, index, .. } => {
-                if *id == data.id() {
-                    data.with(|data: &mut KeysData| {
-                        data.set_cv_binary(ui, *id, *index);
-                        ui.queue_redraw();
-                    });
-                }
-            },
-            _ => {},
+        if let UIEvent::Click { id, index, .. } = ev {
+            if *id == data.id() {
+                data.with(|data: &mut KeysData| {
+                    data.set_cv_binary(ui, *id, *index);
+                    ui.queue_redraw();
+                });
+            }
         }
     }
 }

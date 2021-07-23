@@ -22,9 +22,19 @@ pub enum ListOutput {
     ByAudioSample,
 }
 
+
+#[derive(Debug, Clone)]
+pub struct ListItem {
+    setting: i64,
+    s:       String,
+    s_short: String,
+
+
+}
+
 #[derive(Debug, Clone)]
 pub struct ListItems {
-    items:      Rc<RefCell<(bool, Vec<(i64, String, String)>)>>,
+    items:      Rc<RefCell<(bool, Vec<ListItem>)>>,
     width:      usize,
 }
 
@@ -58,7 +68,7 @@ impl ListItems {
             } else {
                 s.to_string()
             };
-        self.items.borrow_mut().1.push((setting, s, s_short));
+        self.items.borrow_mut().1.push(ListItem { setting, s, s_short });
     }
 }
 
@@ -70,8 +80,11 @@ pub struct ListData {
     offs:      usize,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl ListData {
-    pub fn new(label: &str, out_mode: ListOutput, items: ListItems) -> Box<dyn std::any::Any> {
+    pub fn new(label: &str, out_mode: ListOutput, items: ListItems)
+        -> Box<dyn std::any::Any>
+    {
         Box::new(Self {
             label: label.to_string(),
             items,
@@ -82,7 +95,7 @@ impl ListData {
 
     pub fn with_visible_item<R, F>(
         &self, idx: usize, mut f: F) -> R
-        where F: FnMut(usize, Option<&(i64, String, String)>) -> R
+        where F: FnMut(usize, Option<&ListItem>) -> R
     {
         let idx = idx + self.offs;
         if idx > self.items.items.borrow().1.len() {
@@ -179,7 +192,7 @@ impl WidgetType for List {
                         Rect::from(pos.x, pos.y + yo, pos.w, UI_ELEM_TXT_H)
                         .crop_right(UI_LIST_BTN_WIDTH);
                     p.label_mono(self.font_size, -1, txt_color,
-                        lpos.x, lpos.y, lpos.w, lpos.h, &item.2,
+                        lpos.x, lpos.y, lpos.w, lpos.h, &item.s_short,
                         dbgid_pack(DBGID_LIST_ITEM, i as u16, 0));
 
                     ui.define_active_zone(
@@ -289,26 +302,22 @@ impl WidgetType for List {
 
                             let item =
                                 data.with_visible_item(*index - 2, |_idx, item| {
-                                    if let Some(item) = item {
-                                        Some(item.clone())
-                                    } else {
-                                        None
-                                    }
+                                    item.cloned()
                                 });
                             if let Some(item) = item  {
                                 match mode {
                                     ListOutput::ByString => {
                                         ui.atoms_mut().set(
-                                            *id, Atom::str(&item.1))
+                                            *id, Atom::str(&item.s))
                                     },
                                     ListOutput::BySetting => {
                                         ui.atoms_mut().set(
-                                            *id, Atom::setting(item.0))
+                                            *id, Atom::setting(item.setting))
                                     },
                                     ListOutput::ByAudioSample => {
                                         ui.atoms_mut().set(
                                             *id,
-                                            Atom::audio_unloaded(&item.1));
+                                            Atom::audio_unloaded(&item.s));
                                     },
                                 }
                             }

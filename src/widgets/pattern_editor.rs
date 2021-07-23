@@ -12,7 +12,7 @@ pub use hexodsp::dsp::tracker::UIPatternModel;
 const BLINK_FRAMES : usize = 20;
 
 fn value2note_name(val: u16) -> Option<&'static str> {
-    if val < 21 || val > 127 {
+    if (21..=127).contains(&val) {
         return None;
     }
 
@@ -176,6 +176,7 @@ pub struct PatternEditorData {
     blink_visible: bool,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl PatternEditorData {
     pub fn new(pattern: Arc<Mutex<dyn UIPatternModel>>) -> Box<dyn std::any::Any> {
         Box::new(Self {
@@ -292,7 +293,7 @@ impl PatternEditorData {
                 } else {
                     advance_cursor(
                         &mut self.cursor,
-                        -1 * edit_step as i16,
+                        -edit_step as i16,
                         0, &mut *pat);
                 }
                 reset_entered_value = true;
@@ -828,7 +829,7 @@ impl WidgetType for PatternEditor {
 
             for ic in 0..self.columns {
                 let x = (ic + 1) as f64 * UI_TRK_COL_WIDTH;
-                let y = 2        as f64 * UI_TRK_ROW_HEIGHT;
+                let y = 2.0             * UI_TRK_ROW_HEIGHT;
 
                 p.label_mono(
                     UI_TRK_FONT_SIZE,

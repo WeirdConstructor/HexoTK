@@ -16,8 +16,13 @@ pub struct GraphData {
     buf:       Vec<(f64, f64)>,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl GraphData {
-    pub fn new(samples: usize, func: Box<dyn FnMut(&dyn WidgetUI, bool, f64, f64) -> f64>) -> Box<dyn std::any::Any> {
+    pub fn new(
+        samples: usize,
+        func: Box<dyn FnMut(&dyn WidgetUI, bool, f64, f64) -> f64>
+    ) -> Box<dyn std::any::Any>
+    {
         let mut buf = vec![];
         buf.resize(samples, (0.0, 0.0));
 
@@ -75,9 +80,6 @@ impl WidgetType for Graph {
         (self.width, self.height)
     }
 
-    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, ev: &UIEvent) {
-        match ev {
-            _ => {},
-        }
+    fn event(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _ev: &UIEvent) {
     }
 }

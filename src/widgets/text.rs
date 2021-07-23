@@ -153,7 +153,9 @@ impl WidgetType for Text {
                 p.font_height(self.font_size as f32, true) as f64;
 
             let mut first = true;
-            for (i, line) in data.text[data.page_idx].split("\n").enumerate() {
+            for (i, line) in
+                data.text[data.page_idx].split('\n').enumerate()
+            {
                 if first {
                     p.label_mono((self.font_size * 1.5).round(), 0,
                         UI_HELP_TXT_CLR,
@@ -260,19 +262,16 @@ impl WidgetType for Text {
     }
 
     fn event(&self, _ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
-        match ev {
-            UIEvent::Click { id, index, .. } => {
-                if data.id() == *id {
-                    data.with(|data: &mut TextData| {
-                        if *index == 0 {
-                            data.page_idx = (data.page_idx + 1 + data.pages) % data.pages;
-                        } else if *index == 1 {
-                            data.page_idx = (data.page_idx + 1) % data.pages;
-                        }
-                    });
-                }
-            },
-            _ => {}
+        if let UIEvent::Click { id, index, .. } = ev {
+            if data.id() == *id {
+                data.with(|data: &mut TextData| {
+                    if *index == 0 {
+                        data.page_idx = (data.page_idx + 1 + data.pages) % data.pages;
+                    } else if *index == 1 {
+                        data.page_idx = (data.page_idx + 1) % data.pages;
+                    }
+                });
+            }
         }
     }
 }

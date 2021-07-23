@@ -12,6 +12,7 @@ pub struct DialogModel {
     visible: bool,
 }
 
+#[allow(clippy::new_ret_no_self)]
 impl DialogModel {
     pub fn new() -> Self {
         Self {
@@ -33,6 +34,8 @@ impl DialogModel {
     }
 }
 
+impl Default for DialogModel { fn default() -> Self { Self::new() } }
+
 #[derive(Debug)]
 pub struct Dialog {
 }
@@ -42,6 +45,8 @@ impl Dialog {
         Self { }
     }
 }
+
+impl Default for Dialog { fn default() -> Self { Self::new() } }
 
 pub struct DialogData {
     model:          Rc<RefCell<DialogModel>>,
