@@ -1071,7 +1071,7 @@ impl WindowUI for UI {
 
             },
             InputEvent::KeyPressed(key) => {
-                println!("KEY PRESSED {:?} (ipmode: {:?})", key, self.input_mode);
+                //d// println!("KEY PRESSED {:?} (ipmode: {:?})", key, self.input_mode);
                 if let Some(InputMode::Keyboard { zone }) = self.input_mode {
                     dispatch_event =
                         Some(UIEvent::Key {

@@ -607,7 +607,6 @@ impl PatternEditorData {
         }
 
         ui.queue_redraw();
-        println!("PATTERN EDIT KEY: {:?}", key);
     }
 }
 
@@ -1021,7 +1020,7 @@ impl WidgetType for PatternEditor {
                         let row_scroll_offs = data.calc_row_offs(self.rows);
                         let yr = (yi as usize - 1) + row_scroll_offs;
 
-                        println!("INDEX: {} {},{} => {},{}", index, x, y, xi, yi);
+                        //d// println!("INDEX: {} {},{} => {},{}", index, x, y, xi, yi);
                         data.cursor = (yr, xi as usize - 1);
 
                         data.cursor.0 = data.cursor.0.min(pat.rows() - 1);

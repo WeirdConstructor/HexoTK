@@ -300,7 +300,7 @@ pub fn open_window(
         dyn FnOnce() -> (Driver, Box<dyn WindowUI>) + Send
     >
 ) {
-    println!("*** OPEN WINDOW ***");
+    //d// println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {
             title:  title.to_string(),
