@@ -12,7 +12,7 @@ pub use hexodsp::dsp::tracker::UIPatternModel;
 const BLINK_FRAMES : usize = 20;
 
 fn value2note_name(val: u16) -> Option<&'static str> {
-    if (21..=127).contains(&val) {
+    if !(21..=127).contains(&val) {
         return None;
     }
 
