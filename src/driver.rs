@@ -4,12 +4,13 @@ use crate::Rect;
 
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver, channel};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use keyboard_types::Key;
 
 #[derive(Debug, Clone)]
-enum DriverRequest {
+pub enum DriverRequest {
     MoveMouse       { x: f64, y: f64 },
     MouseDown       { btn: MButton },
     MouseUp         { btn: MButton },
@@ -140,11 +141,71 @@ impl DriverFrontend {
 }
 
 pub struct Driver {
-    texts:  HashMap<(AtomId, usize), (String, Rect)>,
-    rx:     Receiver<DriverRequest>,
-    tx:     Sender<DriverReply>,
+    texts:              HashMap<(AtomId, usize), (String, Rect)>,
+    rx:                 Receiver<DriverRequest>,
+    tx:                 Sender<DriverReply>,
+    sync_queue:         Option<Arc<Mutex<Vec<DriverRequest>>>>,
     inhibit_frame_time: bool,
-    has_control: bool,
+    has_control:        bool,
+}
+
+fn handle_ui_command(msg: DriverRequest, ui: &mut dyn WindowUI) -> bool {
+    match msg {
+        DriverRequest::Exit => {
+            std::process::exit(0);
+        },
+        DriverRequest::MoveMouse { x, y } => {
+            ui.handle_input_event(
+                InputEvent::MousePosition(x, y));
+        },
+        DriverRequest::MouseDown { btn } => {
+            ui.handle_input_event(
+                InputEvent::MouseButtonPressed(btn));
+        },
+        DriverRequest::MouseUp { btn } => {
+            ui.handle_input_event(
+                InputEvent::MouseButtonReleased(btn));
+        },
+        DriverRequest::KeyDown { key } => {
+            use keyboard_types::{
+                KeyboardEvent, Code, Location,
+                Modifiers, KeyState
+            };
+
+            ui.handle_input_event(
+                InputEvent::KeyPressed(KeyboardEvent {
+                    key,
+                    // XXX: the rest is not used by HexoTK!
+                    state:          KeyState::Down,
+                    code:           Code::Escape,
+                    location:       Location::Standard,
+                    modifiers:      Modifiers::empty(),
+                    repeat:         false,
+                    is_composing:   false,
+                }));
+        },
+        DriverRequest::KeyUp { key } => {
+            use keyboard_types::{
+                KeyboardEvent, Code, Location,
+                Modifiers, KeyState
+            };
+
+            ui.handle_input_event(
+                InputEvent::KeyReleased(KeyboardEvent {
+                    key,
+                    // XXX: the rest is not used by HexoTK!
+                    state:          KeyState::Up,
+                    code:           Code::Escape,
+                    location:       Location::Standard,
+                    modifiers:      Modifiers::empty(),
+                    repeat:         false,
+                    is_composing:   false,
+                }));
+        },
+        _ => { return false; }
+    }
+
+    true
 }
 
 impl Driver {
@@ -157,6 +218,7 @@ impl Driver {
             rx: rx2,
             inhibit_frame_time: false,
             has_control:        false,
+            sync_queue: None,
         }, DriverFrontend {
             tx: tx2,
             rx: rx1,
@@ -179,12 +241,21 @@ impl Driver {
         self.inhibit_frame_time
     }
 
+    pub fn set_sync_queue(&mut self, queue: Arc<Mutex<Vec<DriverRequest>>>) {
+        self.sync_queue = Some(queue);
+    }
+
     pub fn handle_request(&mut self, ui: &mut dyn WindowUI) {
+        if let Some(sync_queue) = self.sync_queue.as_mut() {
+            if let Ok(mut queue) = sync_queue.lock() {
+                while let Some(msg) = queue.pop() {
+                    handle_ui_command(msg, ui);
+                }
+            }
+        }
+
         while let Ok(msg) = self.rx.try_recv() {
             match msg {
-                DriverRequest::Exit => {
-                    std::process::exit(0);
-                },
                 DriverRequest::BeQuiet => {
                     self.inhibit_frame_time = true;
                 },
@@ -197,59 +268,11 @@ impl Driver {
                         mouse_pos:  state.mouse_pos,
                     });
                 },
-                DriverRequest::MoveMouse { x, y } => {
-                    ui.handle_input_event(
-                        InputEvent::MousePosition(x, y));
-                    let _ = self.tx.send(DriverReply::Ack);
-                },
-                DriverRequest::MouseDown { btn } => {
-                    ui.handle_input_event(
-                        InputEvent::MouseButtonPressed(btn));
-                    let _ = self.tx.send(DriverReply::Ack);
-                },
-                DriverRequest::MouseUp { btn } => {
-                    ui.handle_input_event(
-                        InputEvent::MouseButtonReleased(btn));
-                    let _ = self.tx.send(DriverReply::Ack);
-                },
-                DriverRequest::KeyDown { key } => {
-                    use keyboard_types::{
-                        KeyboardEvent, Code, Location,
-                        Modifiers, KeyState
-                    };
-
-                    ui.handle_input_event(
-                        InputEvent::KeyPressed(KeyboardEvent {
-                            key,
-                            // XXX: the rest is not used by HexoTK!
-                            state:          KeyState::Down,
-                            code:           Code::Escape,
-                            location:       Location::Standard,
-                            modifiers:      Modifiers::empty(),
-                            repeat:         false,
-                            is_composing:   false,
-                        }));
-                    let _ = self.tx.send(DriverReply::Ack);
-                },
-                DriverRequest::KeyUp { key } => {
-                    use keyboard_types::{
-                        KeyboardEvent, Code, Location,
-                        Modifiers, KeyState
-                    };
-
-                    ui.handle_input_event(
-                        InputEvent::KeyReleased(KeyboardEvent {
-                            key,
-                            // XXX: the rest is not used by HexoTK!
-                            state:          KeyState::Up,
-                            code:           Code::Escape,
-                            location:       Location::Standard,
-                            modifiers:      Modifiers::empty(),
-                            repeat:         false,
-                            is_composing:   false,
-                        }));
-                    let _ = self.tx.send(DriverReply::Ack);
-                },
+                _ => {
+                    if handle_ui_command(msg, ui) {
+                        let _ = self.tx.send(DriverReply::Ack);
+                    }
+                }
             }
         }
     }
