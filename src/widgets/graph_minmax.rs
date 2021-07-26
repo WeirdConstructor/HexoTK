@@ -6,6 +6,7 @@ use super::*;
 
 pub trait GraphMinMaxSource {
     fn read(&mut self, dst: &mut [(f64, f64)]);
+    fn fmt_val(&mut self, buf: &mut [u8]) -> usize;
 }
 
 #[derive(Debug)]
@@ -21,11 +22,18 @@ pub struct GraphMinMaxData {
     minmax_sample_count:  usize,
     txt_wd:               WidgetData,
     font_size:            f64,
+    lbl_buf:              [u8; 50],
 }
 
 #[allow(clippy::new_ret_no_self)]
 impl GraphMinMaxData {
-    pub fn new(font_size: f64, txt_src: Rc<TextSourceRef>, minmax_sample_count: usize, source: Box<dyn GraphMinMaxSource>) -> Box<dyn std::any::Any> {
+    pub fn new(
+        font_size: f64,
+        txt_src: Rc<TextSourceRef>,
+        minmax_sample_count: usize,
+        source: Box<dyn GraphMinMaxSource>
+    ) -> Box<dyn std::any::Any>
+    {
         let mut buf = vec![];
         buf.resize(2 * minmax_sample_count, (0.0, 0.0));
 
@@ -47,6 +55,7 @@ impl GraphMinMaxData {
             minmax_sample_count,
             txt_wd,
             font_size,
+            lbl_buf: [0; 50],
         })
     }
 }
@@ -64,6 +73,8 @@ const WAVEFORM_SCALE_FACTOR : f64 = 0.9;
 
 impl WidgetType for GraphMinMax {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
+        let id = data.id();
+
         let out_pos = Rect::from(pos.x, pos.y, self.width, self.height);
         let in_pos  = pos.shrink(UI_GRPH_BORDER, UI_GRPH_BORDER);
 
@@ -72,8 +83,9 @@ impl WidgetType for GraphMinMax {
 
         data.with(|data: &mut GraphMinMaxData| {
             let txt_h = p.font_height(data.font_size as f32, true) as f64;
-            let txt_h = txt_h * 1.5;
-            let grph_pos = in_pos.crop_bottom(txt_h);
+            let txt_h_b = txt_h * 1.5;
+            let val_pos  = in_pos.resize(in_pos.w, txt_h);
+            let grph_pos = in_pos.crop_bottom(txt_h_b).crop_top(txt_h);
 
             data.source.read(&mut data.minmax_buf[..]);
 
@@ -130,14 +142,20 @@ impl WidgetType for GraphMinMax {
             p.path_stroke(
                 0.9,
                 UI_GRPH_LINE_CLR,
-                &mut data.buf.iter().copied(),
+                &mut data.buf.iter().copied().map(|p| (p.0, p.1 + 0.5)),
                 false);
+
+            let len = data.source.fmt_val(&mut data.lbl_buf[..]);
+            let val_s = std::str::from_utf8(&data.lbl_buf[0..len]).unwrap();
+            p.label(data.font_size, 0, UI_GRPH_PHASE_CLR,
+                val_pos.x, val_pos.y, val_pos.w, txt_h, val_s,
+                DBGID_GRPH_VALUE);
 
             let txt_pos = Rect {
                 x: grph_pos.x,
-                y: grph_pos.y + grph_pos.h,
+                y: val_pos.y + grph_pos.h + val_pos.h,
                 w: grph_pos.w,
-                h: txt_h,
+                h: txt_h_b,
             };
             p.rect_fill(UI_GRPH_BG, txt_pos.x, txt_pos.y, txt_pos.w, txt_pos.h);
             data.txt_wd.draw(ui, p, txt_pos.offs(0.0, 0.0));

@@ -398,6 +398,15 @@ impl hexotk::widgets::GraphMinMaxSource for MinMaxSrc {
             buf[5] = (0.5111111, 0.5111111);
         }
     }
+
+    fn fmt_val(&mut self, buf: &mut[u8]) -> usize {
+        use std::io::Write;
+        let mut bw = std::io::BufWriter::new(buf);
+        match write!(bw, "{:5.3} | {:5.3} | {:5.3}", -0.843223, 0.99932, 0.12132) {
+            Ok(_)  => bw.buffer().len(),
+            Err(_) => 0,
+        }
+    }
 }
 
 fn main() {

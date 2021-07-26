@@ -209,6 +209,7 @@ macro_rules! dbgid_list {
             DBGID_INPUT_VALUE         = 29,
             DBGID_LIST_NAME           = 30,
             DBGID_LIST_ITEM           = 31,
+            DBGID_GRPH_VALUE          = 32,
 
             // Active zones:
             DBGID_TAB                 = 1000,
