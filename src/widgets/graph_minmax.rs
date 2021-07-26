@@ -120,18 +120,18 @@ impl WidgetType for GraphMinMax {
             }
 
             p.path_stroke(
-                0.9,
-                UI_GRPH_LINE_CLR,
-                &mut data.buf.iter().copied(),
-                false);
-
-            p.path_stroke(
                 1.0,
                 UI_GRPH_BORDER_CLR,
                 &mut ([
                     (grph_pos.x             , grph_pos.y + grph_pos.h * 0.5),
                     (grph_pos.x + grph_pos.w, grph_pos.y + grph_pos.h * 0.5),
                 ].iter().copied().map(|p| (p.0.floor(), p.1.floor() + 0.5))), false);
+
+            p.path_stroke(
+                0.9,
+                UI_GRPH_LINE_CLR,
+                &mut data.buf.iter().copied(),
+                false);
 
             let txt_pos = Rect {
                 x: grph_pos.x,
