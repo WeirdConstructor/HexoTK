@@ -19,6 +19,7 @@ pub enum DriverRequest {
     BeQuiet,
     Exit,
     Query,
+    ClearStateForQuery,
 }
 
 #[allow(clippy::large_enum_variant)]
@@ -98,6 +99,8 @@ macro_rules! request {
 
 impl DriverFrontend {
     pub fn query_state(&mut self) -> Result<(), DriverError> {
+        let _ = { request!{self DriverRequest::ClearStateForQuery} };
+
         request!{self
             DriverRequest::Query
             => DriverReply::State { zones, texts, hover, mouse_pos }
@@ -258,6 +261,11 @@ impl Driver {
             match msg {
                 DriverRequest::BeQuiet => {
                     self.inhibit_frame_time = true;
+                    let _ = self.tx.send(DriverReply::Ack);
+                },
+                DriverRequest::ClearStateForQuery => {
+                    self.texts.clear();
+                    let _ = self.tx.send(DriverReply::Ack);
                 },
                 DriverRequest::Query => {
                     let state = ui.query_state();

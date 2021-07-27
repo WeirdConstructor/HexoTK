@@ -73,8 +73,6 @@ const WAVEFORM_SCALE_FACTOR : f64 = 0.9;
 
 impl WidgetType for GraphMinMax {
     fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, p: &mut dyn Painter, pos: Rect) {
-        let id = data.id();
-
         let out_pos = Rect::from(pos.x, pos.y, self.width, self.height);
         let in_pos  = pos.shrink(UI_GRPH_BORDER, UI_GRPH_BORDER);
 
