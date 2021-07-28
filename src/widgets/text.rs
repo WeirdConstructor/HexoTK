@@ -14,6 +14,16 @@ pub struct TextSourceRef {
     width: usize,
 }
 
+impl std::fmt::Debug for TextSourceRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.debug_struct("TextSourceRef")
+         .field("wrap", &self.text.borrow().0)
+         .field("text", &self.text.borrow().1)
+         .field("width", &self.width)
+         .finish()
+    }
+}
+
 impl TextSourceRef {
     pub fn new(line_width: usize) -> Self {
         Self {

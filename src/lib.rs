@@ -893,6 +893,44 @@ macro_rules! define_containing_widget {
 }
 
 #[macro_export]
+macro_rules! define_containing_opt_shared_widget {
+    ($type: ident, $data_type: ident) => {
+        #[derive(Debug)]
+        pub struct $type;
+
+        impl $type {
+            pub fn new_ref() -> Rc<$type> { Rc::new(Self) }
+        }
+
+        impl WidgetType for $type {
+            fn draw(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData,
+                    p: &mut dyn Painter, pos: Rect)
+            {
+                data.with(|data: &mut $data_type| {
+                    data.check_cont_update(ui);
+                    let mut bor = data.cont.borrow_mut();
+                    if let Some(wid) = bor.as_mut() {
+                        wid.draw(ui, p, pos);
+                    }
+                });
+            }
+
+            fn event(&self, ui: &mut dyn WidgetUI,
+                     data: &mut WidgetData, ev: &UIEvent)
+            {
+                data.with(|data: &mut $data_type| {
+                    let mut bor = data.cont.borrow_mut();
+                    if let Some(wid) = bor.as_mut() {
+                        wid.event(ui, ev);
+                    }
+                });
+            }
+        }
+    }
+}
+
+
+#[macro_export]
 macro_rules! define_containing_widget_v_split {
     ($type: ident, $data_type: ident, $first_height: expr) => {
         #[derive(Debug)]

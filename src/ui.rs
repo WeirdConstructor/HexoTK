@@ -1015,10 +1015,22 @@ impl WindowUI for UI {
                                 }
 
                             } else {
-                                self.input_mode =
-                                    Some(InputMode::HexFieldDrag {
-                                        zone: az
-                                    });
+                                match btn {
+                                    MButton::Middle => {
+                                        self.input_mode =
+                                            Some(InputMode::HexFieldScroll {
+                                                orig_pos:    self.mouse_pos,
+                                                zone:        az,
+                                                hex_trans,
+                                            });
+                                    },
+                                    _ => {
+                                        self.input_mode =
+                                            Some(InputMode::HexFieldDrag {
+                                                zone: az
+                                            });
+                                    }
+                                }
                             }
                         },
                         ZoneType::AtomClick { ..  } => {
