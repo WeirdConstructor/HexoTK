@@ -5,6 +5,7 @@ use crate::constants::*;
 use super::*;
 
 use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Container { }
@@ -28,6 +29,7 @@ pub struct ContainerData {
     level:           usize,
     shrink:          (f64, f64),
     title:           Option<String>,
+    title_text:      Option<Rc<RefCell<String>>>,
     debug:           bool,
 }
 
@@ -40,6 +42,7 @@ impl ContainerData {
             level:              0,
             shrink:             (0.0, 0.0),
             title:              None,
+            title_text:         None,
             debug:              false,
         })
     }
@@ -61,6 +64,11 @@ impl ContainerData {
 
     pub fn title(&mut self, title: &str) -> &mut Self {
         self.title = Some(title.to_string());
+        self
+    }
+
+    pub fn title_text(&mut self, title_text: Rc<RefCell<String>>) -> &mut Self {
+        self.title_text = Some(title_text);
         self
     }
 
@@ -131,6 +139,16 @@ impl WidgetType for Container {
                         UI_CONT_FONT_SIZE, 0, UI_CONT_FONT_CLR,
                         inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H,
                         title, DBGID_CONT_TITLE);
+                    new_inner
+                } else if let Some(ref title_text) = &data.title_text {
+                    let new_inner = inner_pos.crop_top(UI_ELEM_TXT_H);
+                    p.rect_fill(
+                        UI_LBL_BG_CLR,
+                        inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H);
+                    p.label(
+                        UI_CONT_FONT_SIZE, 0, UI_CONT_FONT_CLR,
+                        inner_pos.x, inner_pos.y, new_inner.w, UI_ELEM_TXT_H,
+                        &*title_text.borrow(), DBGID_CONT_TITLE);
                     new_inner
                 } else { inner_pos };
 
