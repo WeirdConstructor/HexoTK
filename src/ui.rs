@@ -365,10 +365,11 @@ impl InputMode {
                             if dst_pos != pos {
                                 return
                                     Some(UIEvent::FieldDrag {
-                                        id:     release_az.id,
-                                        button: btn,
-                                        src:    pos,
-                                        dst:    dst_pos,
+                                        id:         release_az.id,
+                                        button:     btn,
+                                        src:        pos,
+                                        dst:        dst_pos,
+                                        mouse_pos:  mouse_pos,
                                     });
                             }
                         }

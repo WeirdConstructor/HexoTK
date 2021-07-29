@@ -815,7 +815,7 @@ pub enum UIEvent {
     Click          { id: AtomId, button: MButton, index: usize, x: f64, y: f64 },
     Drag           { id: AtomId, button: MButton, index: usize, x: f64, y: f64, start_x: f64, start_y: f64 },
     Scroll         { id: AtomId, amt: f64, x: f64, y: f64 },
-    FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize) },
+    FieldDrag      { id: AtomId, button: MButton, src: (usize, usize), dst: (usize, usize), mouse_pos: (f64, f64) },
     Key            { id: AtomId, key: Key, mouse_pos: (f64, f64) },
 }
 
