@@ -67,6 +67,7 @@ pub enum HexEdge {
 pub enum HexHLight {
     Normal,
     Plain,
+    Accent,
     HLight,
     Select,
 }
@@ -458,6 +459,7 @@ impl WidgetType for HexGrid {
                                         match hc {
                                             HexHLight::Normal => (UI_GRID_TXT_CENTER_CLR, clr),
                                             HexHLight::Plain  => (UI_GRID_TXT_CENTER_CLR, clr),
+                                            HexHLight::Accent => (UI_GRID_TXT_CENTER_CLR, UI_GRID_TXT_CENTER_CLR),
                                             HexHLight::HLight => (UI_GRID_TXT_CENTER_HL_CLR, UI_GRID_TXT_CENTER_HL_CLR),
                                             HexHLight::Select => (UI_GRID_TXT_CENTER_SL_CLR, UI_GRID_TXT_CENTER_SL_CLR),
                                         };
