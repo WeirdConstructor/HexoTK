@@ -651,11 +651,11 @@ fn main() {
 //                    .unwrap();
 //                println!("b");
 
-                drv_frontend.move_mouse(316.0, 375.0).unwrap();
-
-                drv_frontend.query_state().unwrap();
-                let hz = drv_frontend.hover.unwrap();
-                println!(">= {:?}", hz);
+//                drv_frontend.move_mouse(316.0, 375.0).unwrap();
+//
+//                drv_frontend.query_state().unwrap();
+//                let hz = drv_frontend.hover.unwrap();
+//                println!(">= {:?}", hz);
 
 //                assert_eq!(hz.unwrap().zone_type, ZoneType::ValueDragFine);
 

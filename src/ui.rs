@@ -815,13 +815,26 @@ impl WindowUI for UI {
                 let az = self.get_zone_at(self.mouse_pos);
 
                 if let Some(az) = az {
-                    dispatch_event =
-                        Some(UIEvent::Scroll {
-                            id:     az.id,
-                            amt,
-                            x:      self.mouse_pos.0,
-                            y:      self.mouse_pos.1,
-                        });
+                    match az.zone_type {
+                        ZoneType::HexFieldClick { hex_trans, .. } => {
+                            let scale =
+                                ((hex_trans.scale() + -amt * 0.20001) * 20.0).round() / 20.0;
+                            //d// println!("SCALE {} | {} => {}",
+                            //d//     hex_trans.scale(), hex_trans.scale() + -amt * 0.01, scale);
+                            self.cur_hex_trans =
+                                Some((az.id, hex_trans.set_scale(scale)));
+                        },
+                        _ => {
+                            dispatch_event =
+                                Some(UIEvent::Scroll {
+                                    id:     az.id,
+                                    amt,
+                                    x:      self.mouse_pos.0,
+                                    y:      self.mouse_pos.1,
+                                });
+                        }
+                    }
+
                     self.queue_redraw();
                 }
             },
