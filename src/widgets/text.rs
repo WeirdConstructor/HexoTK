@@ -277,7 +277,7 @@ impl WidgetType for Text {
             if data.id() == *id {
                 data.with(|data: &mut TextData| {
                     if *index == 0 {
-                        data.page_idx = (data.page_idx + 1 + data.pages) % data.pages;
+                        data.page_idx = (data.page_idx + data.pages - 1) % data.pages;
                     } else if *index == 1 {
                         data.page_idx = (data.page_idx + 1) % data.pages;
                     }
