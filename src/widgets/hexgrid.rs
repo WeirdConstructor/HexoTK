@@ -477,6 +477,17 @@ impl WidgetType for HexGrid {
                                     let mut lbl_it = s.split(' ');
 
                                     if let Some(name_lbl) = lbl_it.next() {
+                                        let maxwidth =
+                                            if hc == HexHLight::Plain {
+                                                (size * 1.3) as f32
+                                            } else { (size * 0.82) as f32 };
+
+                                        let mut fs = fs;
+                                        //d// println!("TEXT: {:8.3} => {} (@{})", p.text_width(fs as f32, false, name_lbl), name_lbl, size * scale);
+                                        while p.text_width(fs as f32, false, name_lbl) > maxwidth {
+                                            fs *= 0.9;
+                                        }
+
                                         p.label(
                                             fs, 0, txt_clr,
                                             x - 0.5 * sz.0,

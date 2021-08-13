@@ -253,6 +253,21 @@ impl<'a> Painter for FemtovgPainter<'a> {
         self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono, lblid);
     }
 
+    fn text_width(&mut self, size: f32, mono: bool, text: &str) -> f32 {
+        let mut paint = color_paint(UI_PRIM_CLR);
+        if mono {
+            paint.set_font(&[self.font_mono]);
+        } else {
+            paint.set_font(&[self.font]);
+        }
+        paint.set_font_size(size);
+        if let Ok(metr) = self.canvas.measure_text(0.0, 0.0, text, paint) {
+            metr.width() // / (self.scale * self.cur_scale)
+        } else {
+            20.0
+        }
+    }
+
     fn font_height(&mut self, size: f32, mono: bool) -> f32 {
         let mut paint = color_paint(UI_PRIM_CLR);
         if mono {
