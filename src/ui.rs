@@ -334,6 +334,32 @@ impl InputMode {
         steps as f32 * step_dt
     }
 
+    pub fn get_param_change_when_wheel(&self, wheel_dir: i8)
+        -> Option<(AtomId, f32, ChangeRes, bool)>
+    {
+        match self {
+            InputMode::ValueDrag { value, zone, step_dt, // pre_fine_delta,
+                                   /* fine_key, orig_pos, */ res, .. } => {
+
+                let value_delta =
+                    if wheel_dir > 0 {
+                        *step_dt
+                    } else {
+                        -*step_dt
+                    };
+
+                Some((
+                    zone.id,
+                    (value + value_delta),
+                    *res,
+                    false
+                ))
+            },
+            _ => None,
+        }
+    }
+
+
     pub fn get_param_change_when_drag(&self, mouse_pos: (f64, f64))
         -> Option<(AtomId, f32, ChangeRes, bool)>
     {
@@ -827,6 +853,20 @@ impl WindowUI for UI {
                             //d//     hex_trans.scale(), hex_trans.scale() + -amt * 0.01, scale);
                             self.cur_hex_trans =
                                 Some((az.id, hex_trans.set_scale(scale)));
+                        },
+                        ZoneType::ValueDragCoarse | ZoneType::ValueDragFine => {
+                            if let Some(mode) = self.new_value_drag_mode(az, false) {
+                                let pc =
+                                    mode.get_param_change_when_wheel(
+                                        if amt > 0.0 { 1 } else { -1 });
+
+                                let amut = self.atoms.as_mut().unwrap();
+
+                                if let Some((id, val, res, is_modamt)) = pc {
+                                    amut.change(id, val, false, res);
+                                    amut.change_end(id, val, res);
+                                }
+                            }
                         },
                         _ => {
                             dispatch_event =
