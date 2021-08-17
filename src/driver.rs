@@ -18,6 +18,7 @@ pub enum DriverRequest {
     MoveMouse       { x: f64, y: f64 },
     MouseDown       { btn: MButton },
     MouseUp         { btn: MButton },
+    MouseWheel      { dir: i8 },
     KeyDown         { key: Key },
     KeyUp           { key: Key },
     BeQuiet,
@@ -138,6 +139,10 @@ impl DriverFrontend {
         request!{self DriverRequest::MouseUp { btn } }
     }
 
+    pub fn mouse_wheel(&self, dir: i8) -> Result<(), DriverError> {
+        request!{self DriverRequest::MouseWheel { dir } }
+    }
+
     pub fn key_down(&self, key: Key) -> Result<(), DriverError> {
         request!{self DriverRequest::KeyDown { key } }
     }
@@ -172,6 +177,10 @@ fn handle_ui_command(msg: DriverRequest, ui: &mut dyn WindowUI) -> bool {
         DriverRequest::MouseUp { btn } => {
             ui.handle_input_event(
                 InputEvent::MouseButtonReleased(btn));
+        },
+        DriverRequest::MouseWheel { dir } => {
+            ui.handle_input_event(
+                InputEvent::MouseWheel(if dir > 0 { 1.0 } else { -1.0 }));
         },
         DriverRequest::KeyDown { key } => {
             use keyboard_types::{

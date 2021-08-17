@@ -96,6 +96,8 @@ pub struct UI {
     /// The currently adjusted scroll offset, can be queried
     /// by any widget.
     cur_hex_trans:  Option<(AtomId, HexGridTransform)>,
+    /// If true, the mouse cursor (or a debug version of it) is shown.
+    show_cursor:    bool,
 }
 
 /// A temporary holder of the UI state.
@@ -443,7 +445,12 @@ impl UI {
             window_size,
             pressed_keys:       Some(Box::new(HashMap::new())),
             cur_hex_trans:      None,
+            show_cursor:        false,
         }
+    }
+
+    pub fn enable_show_cursor(&mut self) {
+        self.show_cursor = true;
     }
 
     fn queue_redraw(&mut self) {
@@ -842,6 +849,7 @@ impl WindowUI for UI {
                 }
             },
             InputEvent::MouseWheel(amt) => {
+                println!("WHEEL AMT: {}", amt);
                 let az = self.get_zone_at(self.mouse_pos);
 
                 if let Some(az) = az {
@@ -1443,7 +1451,7 @@ impl WindowUI for UI {
             }
         }
 
-        if cfg!(feature = "driver") {
+        if self.show_cursor {
             let (x, y) = self.mouse_pos;
             let path = &[
                 (x - 10.0,   y),
