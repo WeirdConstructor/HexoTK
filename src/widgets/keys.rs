@@ -139,7 +139,12 @@ impl WidgetType for Keys {
                     };
 
                 if phase_index == index {
-                    bg_color   = UI_GRPH_PHASE_CLR;
+                    if key_is_set {
+                        bg_color = UI_GRPH_BORDER_CLR;
+                    } else {
+                        bg_color = UI_GRPH_PHASE_CLR;
+                    }
+
                     line_color = UI_GRPH_BG;
                 }
 
