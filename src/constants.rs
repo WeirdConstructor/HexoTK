@@ -275,3 +275,17 @@ pub fn dbgid_list() -> Vec<(usize, &'static str)> {
 
     dbgid_list!{define_str2dbgid}
 }
+
+pub fn color_idx_to_clr(idx: u8) -> (f64, f64, f64) {
+    match idx {
+        0 => UI_GRID_CELL_BORDER_CLR,
+        1 => UI_ACCENT_CLR,
+        2 => UI_HLIGHT_CLR,
+        3 => UI_HLIGHT2_CLR,
+        4 => UI_SELECT_CLR,
+        5 => UI_PRIM_CLR,
+        6 => UI_PRIM2_CLR,
+        7 => UI_BORDER_CLR,
+        _ => UI_GRID_CELL_BORDER_CLR,
+    }
+}

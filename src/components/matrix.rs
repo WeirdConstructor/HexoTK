@@ -116,7 +116,15 @@ impl UIMatrixModel {
 
         cells[18] = MatrixCell::new(dmy.clone(), 0).out(Some(1), Some(1), Some(1)).input(Some(2), Some(0), Some(2));
         cells[19] = MatrixCell::new(dmy,         1).out(Some(0), Some(1), Some(1)).input(Some(1), Some(3), Some(2));
-        cells[11] = MatrixCell::new(x,           2).out(Some(1), Some(1), Some(2));
+        cells[11] = MatrixCell::new(x.clone(), 2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 0] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 1] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 2] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 3] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 4] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 5] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 6] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[4 * w + 7] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
 
         Self {
             w,
@@ -155,6 +163,10 @@ impl HexGridModel for UIMatrixModel {
         if x >= self.w || y >= self.h { return false; }
 
         self.cells[y * self.w + x].visible
+    }
+
+    fn cell_color(&self, x: usize, y: usize) -> u8 {
+        ((x + y) % 6) as u8
     }
 
     fn cell_label<'a>(&self, x: usize, y: usize, buf: &'a mut [u8])
@@ -308,7 +320,7 @@ impl HexGridModel for UINodeMenuModel {
         Some(HexCell {
             label:     "test",
             hlight:    HexHLight::Plain,
-            rg_colors: None
+            rg_colors: None,
         })
     }
 

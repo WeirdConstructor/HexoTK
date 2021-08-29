@@ -88,6 +88,7 @@ pub trait HexGridModel {
     fn height(&self) -> usize;
     fn cell_visible(&self, x: usize, y: usize) -> bool;
     fn cell_empty(&self, x: usize, y: usize) -> bool;
+    fn cell_color(&self, x: usize, y: usize) -> u8 { 0 }
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8])
         -> Option<HexCell<'a>>; // (&'a str, HexCell, Option<(f32, f32)>)>;
     /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
@@ -443,7 +444,7 @@ impl WidgetType for HexGrid {
                         } else if data.model.cell_empty(xi, yi) {
                             (3.0, UI_GRID_EMPTY_BORDER_CLR)
                         } else {
-                            (3.0, UI_GRID_CELL_BORDER_CLR)
+                            (3.0, color_idx_to_clr(data.model.cell_color(xi, yi)))
                         };
 
                     // padded outer hex
