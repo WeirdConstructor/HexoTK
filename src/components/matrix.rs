@@ -123,8 +123,18 @@ impl UIMatrixModel {
         cells[4 * w + 3] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
         cells[4 * w + 4] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
         cells[4 * w + 5] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
-        cells[4 * w + 6] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
-        cells[4 * w + 7] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[5 * w + 0] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[5 * w + 1] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[5 * w + 2] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[5 * w + 3] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[5 * w + 4] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[5 * w + 5] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[6 * w + 0] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[6 * w + 1] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[6 * w + 2] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[6 * w + 3] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[6 * w + 4] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
+        cells[6 * w + 5] = MatrixCell::new(x.clone(),  2).out(Some(1), Some(1), Some(2));
 
         Self {
             w,
@@ -166,7 +176,13 @@ impl HexGridModel for UIMatrixModel {
     }
 
     fn cell_color(&self, x: usize, y: usize) -> u8 {
-        ((x + y) % 6) as u8
+        if y % 3 == 0 {
+            (x % 6) as u8
+        } else if y % 3 == 1 {
+            6 + (x % 6) as u8
+        } else {
+            12 + (x % 6) as u8
+        }
     }
 
     fn cell_label<'a>(&self, x: usize, y: usize, buf: &'a mut [u8])

@@ -641,8 +641,8 @@ fn main() {
                     std::time::Duration::from_millis(1000));
 
                 drv_frontend.query_state().unwrap();
-                println!("TEXTS: {:#?}", drv_frontend.texts);
-                println!("MOUSE: {:#?}", drv_frontend.mouse_pos);
+                //d// println!("TEXTS: {:#?}", drv_frontend.texts);
+                //d// println!("MOUSE: {:#?}", drv_frontend.mouse_pos);
 
 //                println!("A");
 //                let pos =

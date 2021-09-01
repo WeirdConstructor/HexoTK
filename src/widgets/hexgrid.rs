@@ -444,7 +444,7 @@ impl WidgetType for HexGrid {
                         } else if data.model.cell_empty(xi, yi) {
                             (3.0, UI_GRID_EMPTY_BORDER_CLR)
                         } else {
-                            (3.0, color_idx_to_clr(data.model.cell_color(xi, yi)))
+                            (3.0, hex_color_idx2clr(data.model.cell_color(xi, yi)))
                         };
 
                     // padded outer hex

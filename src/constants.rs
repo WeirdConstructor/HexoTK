@@ -18,6 +18,27 @@ macro_rules! hxclr {
     }
 }
 
+pub const HEX_CLRS : [(f64, f64, f64); 18] = [
+    hxclr!(0x922f93), // 0
+    hxclr!(0x99313f),
+    hxclr!(0xb45745),
+    hxclr!(0x99683b),
+    hxclr!(0xb1a562),
+    hxclr!(0xbec8a6),
+    hxclr!(0x899b5e), // 6
+    hxclr!(0x56ae63),
+    hxclr!(0x4cdb80),
+    hxclr!(0x52b59c),
+    hxclr!(0x2c8c8c),
+    hxclr!(0x487ca1),
+    hxclr!(0x3b5eca), // 12
+    hxclr!(0x7668d4),
+    hxclr!(0xc2b2eb),
+    hxclr!(0xa278d8),
+    hxclr!(0x9850a9),
+    hxclr!(0xb4419e), // 17
+];
+
 pub const UI_BG_CLR               : (f64, f64, f64) = hxclr!(0x414a51); // 473f49
 pub const UI_BG2_CLR              : (f64, f64, f64) = hxclr!(0x4b535a); // 594f5d
 pub const UI_BG3_CLR              : (f64, f64, f64) = hxclr!(0x545b61); // 645868
@@ -276,16 +297,6 @@ pub fn dbgid_list() -> Vec<(usize, &'static str)> {
     dbgid_list!{define_str2dbgid}
 }
 
-pub fn color_idx_to_clr(idx: u8) -> (f64, f64, f64) {
-    match idx {
-        0 => UI_GRID_CELL_BORDER_CLR,
-        1 => UI_ACCENT_CLR,
-        2 => UI_HLIGHT_CLR,
-        3 => UI_HLIGHT2_CLR,
-        4 => UI_SELECT_CLR,
-        5 => UI_PRIM_CLR,
-        6 => UI_PRIM2_CLR,
-        7 => UI_BORDER_CLR,
-        _ => UI_GRID_CELL_BORDER_CLR,
-    }
+pub fn hex_color_idx2clr(idx: u8) -> (f64, f64, f64) {
+    HEX_CLRS[idx as usize % HEX_CLRS.len()]
 }
