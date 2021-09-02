@@ -20,6 +20,7 @@ mod keys;
 mod dialog;
 mod tabs;
 mod pattern_editor;
+mod clr_array;
 
 pub mod util;
 
@@ -78,3 +79,6 @@ pub use tabs::TabsData;
 pub use pattern_editor::PatternEditor;
 pub use pattern_editor::PatternEditorData;
 pub use pattern_editor::UIPatternModel;
+
+pub use clr_array::ClrArray;
+pub use clr_array::ClrArrayData;

@@ -246,6 +246,7 @@ macro_rules! dbgid_list {
             DBGID_LIST_SCROLL_UP      = 1009,
             DBGID_LIST_SCROLL_DOWN    = 1010,
             DBGID_PATEDIT             = 1011,
+            DBGID_CLRARRAY            = 1012,
         }
     }
 }

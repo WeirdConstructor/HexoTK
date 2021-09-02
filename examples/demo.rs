@@ -428,6 +428,7 @@ fn main() {
         let wt_keys     = Rc::new(Keys::new(220.0, 50.0, 12.0));
         let wt_diag     = Rc::new(Dialog::new());
         let wt_tabs     = Tabs::new_ref();
+        let wt_clra     = Rc::new(ClrArray::new(220.0, 60.0));
 
         let txtsrc = Rc::new(TextSourceRef::new(5));
         txtsrc.set("Foobar\nXXX1239\nfiewfwe\n* 1\n* 2\n* 3");
@@ -500,11 +501,15 @@ fn main() {
         pres.level(2)
             .new_row()
             .add(wbox!(
-                 wt_entry, 23.into(), center(12, 4),
+                 wt_clra, 31.into(), center(12, 4),
+                 ClrArrayData::new()))
+            .new_row()
+            .add(wbox!(
+                 wt_entry, 23.into(), center(12, 2),
                  EntryData::new("Preset:")))
             .new_row()
             .add(wbox!(
-                 wt_list, 24.into(), center(12, 8),
+                 wt_list, 24.into(), center(12, 6),
                  ListData::new("Preset:", ListOutput::ByString, li.clone())));
 
         let mut other = ContainerData::new();
