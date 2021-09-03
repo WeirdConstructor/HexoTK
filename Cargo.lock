@@ -257,6 +257,8 @@ name = "hexodsp"
 version = "0.1.0"
 dependencies = [
  "hound",
+ "lazy_static",
+ "num-traits",
  "ringbuf",
  "serde",
  "serde_json",

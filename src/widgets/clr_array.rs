@@ -6,52 +6,29 @@ use crate::constants::*;
 use super::*;
 use super::util::*;
 
+const UNUSED_COLOR_IDX : i64 = 99999;
+
 #[derive(Debug)]
 pub struct ClrArray {
-    width:      f64,
-    height:     f64,
 }
 
 #[derive(Debug)]
 pub struct ClrArrayData {
+    with_unset_option:  bool,
 }
 
 #[allow(clippy::new_ret_no_self)]
 impl ClrArrayData {
-    pub fn new() -> Box<dyn std::any::Any> {
+    pub fn new(with_unset_option: bool) -> Box<dyn std::any::Any> {
         Box::new(Self {
+            with_unset_option,
         })
     }
-
-//    pub fn set_cv(&self, ui: &mut dyn WidgetUI, id: AtomId,
-//                  x: f64, y: f64, samples: usize)
-//    {
-//        let delta = (self.active_area.h - y) / self.active_area.h;
-//        let xoffs = (x / self.x_delta).max(0.0);
-//        let idx   = xoffs.floor().min(samples as f64 - 1.0) as usize;
-//
-//        if let Some(Some(new)) =
-//            ui.atoms()
-//              .get(id)
-//              .map(|atom|
-//                  atom.set_v_idx_micro(idx, delta.clamp(0.0, 1.0) as f32))
-//        {
-//            ui.atoms_mut().set(id, new);
-//        }
-//    }
 }
 
-
 impl ClrArray {
-    pub fn new(width: f64, height: f64) -> Self {
-//        let inner_w = width - 2.0 * UI_GRPH_BORDER;
-//        let xd      = (inner_w / (samples as f64)).floor();
-//        let width   = xd * (samples as f64) + 2.0 * UI_GRPH_BORDER;
-
-        Self {
-            width,
-            height,
-        }
+    pub fn new() -> Self {
+        Self { }
     }
 }
 
@@ -62,8 +39,13 @@ impl WidgetType for ClrArray {
         let id = data.id();
 
         data.with(|data: &mut ClrArrayData| {
-            let xd = pos.w / 9.0;
-            let yd = pos.h / 2.0;
+            let xd = (pos.w / 9.0).floor();
+            let yd = (pos.h / 2.0).floor();
+
+            let rest_w = pos.w - xd * 9.0;
+            let rest_h = pos.h - yd * 2.0;
+            let xo = (rest_w / 2.0).round();
+            let yo = (rest_h / 2.0).round();
 
             // XXX: Offset by 1, to wrap the magenta at index 0 to the
             //      end of the selector!
@@ -72,10 +54,10 @@ impl WidgetType for ClrArray {
             for row in 0..2 {
                 for i in 0..9 {
                     let pos = Rect {
-                        x: pos.x + (i   as f64) * xd,
-                        y: pos.y + (row as f64) * yd,
-                        w: xd,
-                        h: yd,
+                        x: (xo + pos.x + (i   as f64) * xd).round(),
+                        y: (yo + pos.y + (row as f64) * yd).round(),
+                        w: xd.round(),
+                        h: yd.round(),
                     };
 
                     let highlight = ui.hl_style_for(id, Some(clr as usize));
@@ -83,8 +65,7 @@ impl WidgetType for ClrArray {
                     let selected =
                         ui.atoms().get(id)
                           .cloned()
-                          // XXX: 1000 is a color that won't ever exist... very probably
-                          .unwrap_or_else(|| Atom::setting(1000));
+                          .unwrap_or_else(|| Atom::setting(UNUSED_COLOR_IDX));
 
                     let border_color =
                         if clr as i64 == selected.i() {
@@ -117,9 +98,8 @@ impl WidgetType for ClrArray {
         });
     }
 
-    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, _avail: (f64, f64)) -> (f64, f64) {
-        (self.width  + UI_GRPH_BORDER * 2.0,
-         self.height + UI_GRPH_BORDER * 2.0)
+    fn size(&self, _ui: &mut dyn WidgetUI, _data: &mut WidgetData, avail: (f64, f64)) -> (f64, f64) {
+        avail
     }
 
     fn event(&self, ui: &mut dyn WidgetUI, data: &mut WidgetData, ev: &UIEvent) {
@@ -127,8 +107,21 @@ impl WidgetType for ClrArray {
             UIEvent::Click { id, index, .. } => {
                 if *id == data.id() {
                     data.with(|data: &mut ClrArrayData| {
-                        //d// println!("SELECT COLOR: {}", *index);
-                        ui.atoms_mut().set(*id, Atom::setting(*index as i64));
+                        println!("SELECT THE COLOR: {}", *index);
+
+                        if data.with_unset_option {
+                            let mut idx_out = *index as i64;
+
+                            if let Some(a) = ui.atoms().get(*id) {
+                                if a.i() == *index as i64 {
+                                    idx_out = UNUSED_COLOR_IDX;
+                                }
+                            }
+
+                            ui.atoms_mut().set(*id, Atom::setting(idx_out));
+                        } else {
+                            ui.atoms_mut().set(*id, Atom::setting(*index as i64));
+                        }
                         ui.queue_redraw();
                     });
                 }
