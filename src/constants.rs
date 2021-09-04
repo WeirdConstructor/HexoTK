@@ -20,23 +20,23 @@ macro_rules! hxclr {
 
 pub const HEX_CLRS : [(f64, f64, f64); 18] = [
     hxclr!(0x922f93), // 0
-    hxclr!(0x99313f),
+    hxclr!(0x862b37),
     hxclr!(0xb45745),
-    hxclr!(0x99683b),
-    hxclr!(0xb1a562),
+    hxclr!(0x835933),
+    hxclr!(0xa69b64),
     hxclr!(0xbec8a6),
-    hxclr!(0x899b5e), // 6
-    hxclr!(0x56ae63),
+    hxclr!(0x346c38), // 6
+    hxclr!(0x1fb349),
     hxclr!(0x4cdb80),
-    hxclr!(0x52b59c),
-    hxclr!(0x2c8c8c),
-    hxclr!(0x487ca1),
+    hxclr!(0x59bca3),
+    hxclr!(0x228f9d),
+    hxclr!(0x03b5e7),
     hxclr!(0x3b5eca), // 12
-    hxclr!(0x7668d4),
+    hxclr!(0x594fa1),
     hxclr!(0xc2b2eb),
-    hxclr!(0xa278d8),
+    hxclr!(0xac70fa),
     hxclr!(0x9850a9),
-    hxclr!(0xb4419e), // 17
+    hxclr!(0xdc4fc1), // 17
 ];
 
 pub const UI_BG_CLR               : (f64, f64, f64) = hxclr!(0x414a51); // 473f49
