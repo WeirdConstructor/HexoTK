@@ -12,7 +12,7 @@ use femtovg::{
 
 use crate::constants::*;
 use crate::Rect;
-use crate::femtovg_painter::FemtovgPainter;
+use crate::femtovg_painter::{FemtovgPainter, PersistFemtovgData};
 use crate::driver::Driver;
 
 use raw_gl_context::{GlContext, GlConfig, Profile};
@@ -87,6 +87,8 @@ pub struct GUIWindowHandler {
     size:       (f64, f64),
     // focused:    bool,
     counter:    usize,
+
+    femto_data: PersistFemtovgData,
 
     #[allow(dead_code)]
     driver:     Rc<RefCell<Driver>>,
@@ -237,8 +239,8 @@ impl WindowHandler for GUIWindowHandler {
             let test_debug = self.dbg_cb.take();
             let painter = &mut FemtovgPainter {
                 canvas:     &mut self.canvas,
+                data:       &mut self.femto_data,
                 font:       self.font,
-//                images:     vec![],
                 font_mono:  self.font_mono,
                 scale:      self.scale,
                 cur_scale:  1.0,
@@ -371,6 +373,7 @@ pub fn open_window(
             scale:      1.0,
             // focused:    false,
             counter:    0,
+            femto_data: PersistFemtovgData::new(),
 
             dbg_cb: cb,
             driver: drv,

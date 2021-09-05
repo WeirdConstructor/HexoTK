@@ -707,11 +707,24 @@ pub enum WidgetEvent {
     Clicked,
 }
 
+pub trait ImageRef {
+    fn as_femto(&self) -> Option<&crate::femtovg_painter::FemtoImgRef>;
+}
+
 #[allow(clippy::too_many_arguments)]
 pub trait Painter {
 //    fn start_imgbuf(&mut self, global_id: usize, w: usize, h: usize);
 //    fn stop_imgbuf(&mut self);
 //    fn imgbuf(&mut self, global_id: usize, x: f64, y: f64);
+    fn new_image(&mut self, w: f64, h: f64) -> Box<dyn ImageRef>;
+
+    /// Draw to an image buffer, but substract the `screen_x` and `screen_y`
+    /// parameters internally for every draw operation.
+    /// This is done so that the draw operations end up inside the image.
+    /// You will have to provide screen_x and screen_y on [draw_image] later.
+    fn start_image(&mut self, image: &dyn ImageRef, screen_x: f64, screen_y: f64);
+    fn finish_image(&mut self);
+    fn draw_image(&mut self, image: &dyn ImageRef, screen_x: f64, screen_y: f64);
 
     fn start_widget(&mut self, _id: AtomId) { }
     fn end_widget(&mut self, _id: AtomId) { }

@@ -6,18 +6,63 @@ use femtovg::{
     renderer::OpenGl,
     Canvas,
     FontId,
+    ImageId,
     Color,
 };
 
 use crate::Painter;
 use crate::Rect;
 use crate::constants::*;
+use crate::ImageRef;
 
-pub struct FemtovgPainter<'a> {
+use std::rc::Rc;
+use std::cell::RefCell;
+
+pub struct ImageStore {
+    // TODO: FREE THESE IMAGES OR WE HAVE A MEMORY LEAK!
+    freed_images: Vec<ImageId>,
+}
+
+pub struct FemtoImgRef {
+    store:      Rc<RefCell<ImageStore>>,
+    image_id:   ImageId,
+    w:          f64,
+    h:          f64,
+}
+
+impl ImageRef for FemtoImgRef {
+    fn as_femto(&self) -> Option<&FemtoImgRef> {
+        Some(self)
+    }
+}
+
+impl Drop for FemtoImgRef {
+    fn drop(&mut self) {
+        self.store.borrow_mut().freed_images.push(self.image_id);
+    }
+}
+
+pub struct PersistFemtovgData {
+    store:  Rc<RefCell<ImageStore>>,
+    offs_stk: Vec<(f64, f64)>,
+}
+
+impl PersistFemtovgData {
+    pub fn new() -> Self {
+        Self {
+            offs_stk: vec![(0.0, 0.0)],
+            store: Rc::new(RefCell::new(ImageStore {
+                freed_images: vec![],
+            })),
+        }
+    }
+}
+
+pub struct FemtovgPainter<'a, 'b> {
     pub canvas:     &'a mut Canvas<OpenGl>,
     pub font:       FontId,
     pub font_mono:  FontId,
-//    pub images:     Vec<Option<ImageId>>,
+    pub data:       &'b mut PersistFemtovgData,
     pub scale:      f32,
     pub cur_scale:  f32,
 
@@ -33,7 +78,7 @@ fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
             color.2 as f32))
 }
 
-impl<'a> FemtovgPainter<'a> {
+impl<'a, 'b> FemtovgPainter<'a, 'b> {
     #[allow(unused_variables)] // because if lblid if no driver is enabled
     fn label_with_font(
         &mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64),
@@ -115,7 +160,53 @@ impl<'a> FemtovgPainter<'a> {
     }
 }
 
-impl<'a> Painter for FemtovgPainter<'a> {
+impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
+    fn new_image(&mut self, w: f64, h: f64) -> Box<dyn ImageRef> {
+        let image_id =
+            self.canvas.create_image_empty(
+                w as usize, h as usize,
+                femtovg::PixelFormat::Rgba8,
+                femtovg::ImageFlags::FLIP_Y)
+                .expect("making image buffer");
+
+        Box::new(FemtoImgRef {
+            store:  self.data.store.clone(),
+            w, h, image_id,
+        })
+    }
+
+    fn start_image(&mut self, image: &dyn ImageRef, screen_x: f64, screen_y: f64) {
+        self.data.offs_stk.push((screen_x, screen_y));
+        self.canvas.set_render_target(
+            femtovg::RenderTarget::Image(image.as_femto().unwrap().image_id));
+    }
+
+    fn finish_image(&mut self) {
+        self.data.offs_stk.pop();
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+    }
+
+    fn draw_image(&mut self, image: &dyn ImageRef, screen_x: f64, screen_y: f64) {
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+
+        let img_paint =
+            femtovg::Paint::image(
+                image.as_femto().unwrap().image_id,
+                0.0, 0.0,
+                image.as_femto().unwrap().w as f32,
+                image.as_femto().unwrap().h as f32,
+                0.0, 1.0);
+
+        let mut path = femtovg::Path::new();
+        path.rect(
+            screen_x as f32, screen_y as f32,
+            image.as_femto().unwrap().w as f32,
+            image.as_femto().unwrap().h as f32);
+
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+        self.canvas.fill_path(&mut path, img_paint);
+    }
+
     fn clip_region(&mut self, x: f64, y: f64, w: f64, h: f64) {
         self.canvas.save();
         self.canvas.scissor(x as f32, y as f32, w as f32, h as f32);
