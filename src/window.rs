@@ -10,10 +10,8 @@ use femtovg::{
     Color,
 };
 
-use crate::constants::*;
 use crate::Rect;
-use crate::femtovg_painter::{FemtovgPainter, PersistFemtovgData};
-use crate::driver::Driver;
+use crate::painter::{Painter, PersistPainterData};
 
 use raw_gl_context::{GlContext, GlConfig, Profile};
 
@@ -58,13 +56,22 @@ impl FrameTimeMeasurement {
                 let mut min = 99999999;
                 let mut max = 0;
                 let mut avg = 0;
+
                 for b in self.buf.iter() {
                     if *b < min { min = *b; }
                     if *b > max { max = *b; }
                     avg += *b;
                 }
+
                 avg /= self.buf.len() as u128;
-                println!("Frame time [{:10}]: min={:5.3}, max={:5.3}, avg={:5.3}", self.lbl, min as f64 / 1000.0, max as f64 / 1000.0, avg as f64 / 1000.0);
+
+                println!(
+                    "Frame time [{:10}]: min={:5.3}, max={:5.3}, avg={:5.3}",
+                    self.lbl,
+                    min as f32 / 1000.0,
+                    max as f32 / 1000.0,
+                    avg as f32 / 1000.0);
+
                 self.idx = 0;
             } else {
                 self.idx += 1;
@@ -84,15 +91,13 @@ pub struct GUIWindowHandler {
     ftm_redraw: FrameTimeMeasurement,
     ui:         Box<dyn WindowUI>,
     scale:      f32,
-    size:       (f64, f64),
+    size:       (f32, f32),
     // focused:    bool,
     counter:    usize,
 
-    femto_data: PersistFemtovgData,
+    bg_color:   (f32, f32, f32),
 
-    #[allow(dead_code)]
-    driver:     Rc<RefCell<Driver>>,
-    dbg_cb:     Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>>,
+    painter_data: PersistPainterData,
 }
 
 impl WindowHandler for GUIWindowHandler {
@@ -100,19 +105,12 @@ impl WindowHandler for GUIWindowHandler {
     fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
-                if self.driver.borrow().has_control() {
-                    println!("=> mouse move to {:?}", p);
-                    return EventStatus::Captured;
-                }
-
                 self.ui.handle_input_event(
                     InputEvent::MousePosition(
-                        p.x / self.scale as f64,
-                        p.y / self.scale as f64));
+                        p.x as f32 / self.scale,
+                        p.y as f32 / self.scale));
             },
             Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
-                if self.driver.borrow().has_control() { return EventStatus::Captured; }
-
                 let ev_btn =
                     match btn {
                         MouseButton::Left   => MButton::Left,
@@ -123,8 +121,6 @@ impl WindowHandler for GUIWindowHandler {
                 self.ui.handle_input_event(InputEvent::MouseButtonPressed(ev_btn));
             },
             Event::Mouse(MouseEvent::ButtonReleased(btn)) => {
-                if self.driver.borrow().has_control() { return EventStatus::Captured; }
-
                 let ev_btn =
                     match btn {
                         MouseButton::Left   => MButton::Left,
@@ -135,20 +131,16 @@ impl WindowHandler for GUIWindowHandler {
                 self.ui.handle_input_event(InputEvent::MouseButtonReleased(ev_btn));
             },
             Event::Mouse(MouseEvent::WheelScrolled(scroll)) => {
-                if self.driver.borrow().has_control() { return EventStatus::Captured; }
-
                 match scroll {
                     ScrollDelta::Lines { y, .. } => {
-                        self.ui.handle_input_event(InputEvent::MouseWheel(y as f64));
+                        self.ui.handle_input_event(InputEvent::MouseWheel(y));
                     },
                     ScrollDelta::Pixels { y, .. } => {
-                        self.ui.handle_input_event(InputEvent::MouseWheel((y / 50.0) as f64));
+                        self.ui.handle_input_event(InputEvent::MouseWheel(y / 50.0));
                     },
                 }
             },
             Event::Keyboard(ev) => {
-                if self.driver.borrow().has_control() { return EventStatus::Captured; }
-
                 use keyboard_types::KeyState;
                 match ev.state {
                     KeyState::Up => {
@@ -189,7 +181,7 @@ impl WindowHandler for GUIWindowHandler {
                     self.scale = (h as f32) / (self.size.1 as f32);
                 }
 
-                self.ui.set_window_size(w as f64, h as f64);
+                self.ui.set_window_size(w, h);
             },
             _ => {
                 println!("UNHANDLED EVENT: {:?}", event);
@@ -200,9 +192,7 @@ impl WindowHandler for GUIWindowHandler {
     }
 
     fn on_frame(&mut self, _win: &mut Window) {
-        self.driver.borrow_mut().handle_request(&mut *self.ui);
-
-        let quiet = self.driver.borrow().be_quiet();
+        let quiet = false; // self.driver.borrow().be_quiet();
 
         self.counter += 1;
         if self.counter % 500 == 0 {
@@ -224,7 +214,8 @@ impl WindowHandler for GUIWindowHandler {
 
         if redraw {
             self.ftm_redraw.start_measure();
-            self.canvas.set_render_target(femtovg::RenderTarget::Image(self.img_buf));
+            self.canvas.set_render_target(
+                femtovg::RenderTarget::Image(self.img_buf));
             self.canvas.save();
             self.canvas.scale(self.scale, self.scale);
             self.canvas.clear_rect(
@@ -232,25 +223,20 @@ impl WindowHandler for GUIWindowHandler {
                 self.canvas.width() as u32,
                 self.canvas.height() as u32,
                 Color::rgbf(
-                    UI_GUI_BG_CLR.0 as f32,
-                    UI_GUI_BG_CLR.1 as f32,
-                    UI_GUI_BG_CLR.2 as f32));
+                    self.bg_color.0,
+                    self.bg_color.1,
+                    self.bg_color.2));
 
-            let test_debug = self.dbg_cb.take();
-            let painter = &mut FemtovgPainter {
+            let painter = &mut Painter {
                 canvas:     &mut self.canvas,
-                data:       &mut self.femto_data,
+                data:       &mut self.painter_data,
                 font:       self.font,
                 font_mono:  self.font_mono,
-                scale:      self.scale,
-                cur_scale:  1.0,
-
-                test_debug,
-                cur_id_stk: vec![],
+                // scale:      self.scale,
             };
+
             self.ui.draw(painter);
 
-            self.dbg_cb = painter.test_debug.take();
             self.canvas.restore();
             if !quiet {
                 self.ftm_redraw.end_measure();
@@ -282,7 +268,6 @@ impl WindowHandler for GUIWindowHandler {
 }
 
 struct StupidWindowHandleHolder {
-//    handle: *mut ::std::ffi::c_void,
     handle: RawWindowHandle,
 }
 
@@ -295,11 +280,11 @@ unsafe impl raw_window_handle::HasRawWindowHandle for StupidWindowHandleHolder {
 }
 
 pub fn open_window(
-    title: &str, window_width: i32, window_height: i32,
-    parent: Option<RawWindowHandle>,
-    factory: Box<
-        dyn FnOnce() -> (Driver, Box<dyn WindowUI>) + Send
-    >
+    title:         &str,
+    window_width:  i32,
+    window_height: i32,
+    parent:        Option<RawWindowHandle>,
+    factory:       Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>
 ) {
     //d// println!("*** OPEN WINDOW ***");
     let options =
@@ -345,24 +330,13 @@ pub fn open_window(
                 femtovg::PixelFormat::Rgb8,
                 femtovg::ImageFlags::FLIP_Y).expect("making image buffer");
 
-        let (drv, mut ui) = factory();
-        let drv = Rc::new(RefCell::new(drv));
+        let mut ui = factory();
 
-        let cb_drv = drv.clone();
-        let cb : Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>> =
-            if drv.borrow().has_control() {
-                Some(Box::new(move |id, idx, txt, pos| {
-                    cb_drv.borrow_mut().update_text(id, idx, txt, pos);
-                }))
-            } else {
-                None
-            };
-
-        ui.set_window_size(window_width as f64, window_height as f64);
+        ui.set_window_size(window_width as f32, window_height as f32);
 
         GUIWindowHandler {
             ui,
-            size: (window_width as f64, window_height as f64),
+            size: (window_width as f32, window_height as f32),
             context,
             canvas,
             font,
@@ -373,10 +347,8 @@ pub fn open_window(
             scale:      1.0,
             // focused:    false,
             counter:    0,
-            femto_data: PersistFemtovgData::new(),
-
-            dbg_cb: cb,
-            driver: drv,
+            painter_data: PersistPainterData::new(),
+            bg_color: (0.3, 0.1, 0.3),
         }
     };
 

@@ -2,6 +2,11 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+use super::Rect;
+
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use femtovg::{
     renderer::OpenGl,
     Canvas,
@@ -10,44 +15,28 @@ use femtovg::{
     Color,
 };
 
-use crate::Painter;
-use crate::Rect;
-use crate::constants::*;
-use crate::ImageRef;
-
-use std::rc::Rc;
-use std::cell::RefCell;
-
 pub struct ImageStore {
     // TODO: FREE THESE IMAGES OR WE HAVE A MEMORY LEAK!
     freed_images: Vec<ImageId>,
 }
-
-pub struct FemtoImgRef {
+pub struct ImgRef {
     store:      Rc<RefCell<ImageStore>>,
     image_id:   ImageId,
     w:          f64,
     h:          f64,
 }
 
-impl ImageRef for FemtoImgRef {
-    fn as_femto(&self) -> Option<&FemtoImgRef> {
-        Some(self)
-    }
-}
-
-impl Drop for FemtoImgRef {
+impl Drop for ImgRef {
     fn drop(&mut self) {
         self.store.borrow_mut().freed_images.push(self.image_id);
     }
 }
 
-pub struct PersistFemtovgData {
-    store:  Rc<RefCell<ImageStore>>,
-    offs_stk: Vec<(f64, f64)>,
+pub struct PersistPainterData {
+    store:      Rc<RefCell<ImageStore>>,
+    offs_stk:   Vec<(f64, f64)>,
 }
-
-impl PersistFemtovgData {
+impl PersistPainterData {
     pub fn new() -> Self {
         Self {
             offs_stk: vec![(0.0, 0.0)],
@@ -58,19 +47,14 @@ impl PersistFemtovgData {
     }
 }
 
-pub struct FemtovgPainter<'a, 'b> {
+pub struct Painter<'a, 'b> {
     pub canvas:     &'a mut Canvas<OpenGl>,
+    pub data:       &'b mut PersistPainterData,
     pub font:       FontId,
     pub font_mono:  FontId,
-    pub data:       &'b mut PersistFemtovgData,
-    pub scale:      f32,
-    pub cur_scale:  f32,
-
-    pub test_debug: Option<Box<dyn FnMut(crate::AtomId, usize, &str, Rect)>>,
-    pub cur_id_stk: Vec<crate::AtomId>,
 }
 
-fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
+fn color_paint(color: (f32, f32, f32)) -> femtovg::Paint {
     femtovg::Paint::color(
         Color::rgbf(
             color.0 as f32,
@@ -78,25 +62,62 @@ fn color_paint(color: (f64, f64, f64)) -> femtovg::Paint {
             color.2 as f32))
 }
 
-impl<'a, 'b> FemtovgPainter<'a, 'b> {
-    #[allow(unused_variables)] // because if lblid if no driver is enabled
+impl<'a, 'b> Painter<'a, 'b> {
+    fn new_image(&mut self, w: f64, h: f64) -> Box<ImgRef> {
+        let image_id =
+            self.canvas.create_image_empty(
+                w as usize, h as usize,
+                femtovg::PixelFormat::Rgba8,
+                femtovg::ImageFlags::FLIP_Y)
+                .expect("making image buffer");
+
+        Box::new(ImgRef {
+            store:  self.data.store.clone(),
+            w, h, image_id,
+        })
+    }
+
+    fn start_image(&mut self, image: &ImgRef, screen_x: f64, screen_y: f64) {
+        self.data.offs_stk.push((screen_x, screen_y));
+        self.canvas.set_render_target(
+            femtovg::RenderTarget::Image(
+                image.image_id));
+    }
+
+    fn finish_image(&mut self) {
+        self.data.offs_stk.pop();
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+    }
+
+    fn draw_image(&mut self, image: &ImgRef, screen_x: f64, screen_y: f64) {
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+        let img_paint =
+            femtovg::Paint::image(
+                image.image_id,
+                0.0, 0.0,
+                image.w as f32,
+                image.h as f32,
+                0.0, 1.0);
+        let mut path = femtovg::Path::new();
+        path.rect(
+            screen_x as f32, screen_y as f32,
+            image.w as f32,
+            image.h as f32);
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+        self.canvas.fill_path(&mut path, img_paint);
+    }
+
+    #[allow(unused_variables)]
     fn label_with_font(
-        &mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64),
-        x: f64, y: f64, xoi: f64, yoi: f64, w: f64, h: f64,
-        text: &str, font: FontId, lblid: usize)
+        &mut self, size: f32, align: i8, rot: f32, color: (f32, f32, f32),
+        x: f32, y: f32, xoi: f32, yoi: f32, w: f32, h: f32,
+        text: &str, font: FontId)
     {
         let mut paint = color_paint(color);
         paint.set_font(&[font]);
         paint.set_font_size(size as f32);
         paint.set_text_baseline(femtovg::Baseline::Middle);
         let x = x.round();
-
-        #[cfg(feature = "driver")]
-        if let Some(f) = &mut self.test_debug {
-            if let Some(id) = self.cur_id_stk.last().copied() {
-                f(id, lblid, text, Rect { x, y, w, h });
-            }
-        }
 
         let (x, y) =
             if rot > 0.0 {
@@ -112,7 +133,7 @@ impl<'a, 'b> FemtovgPainter<'a, 'b> {
                 self.canvas.rotate(rot);
                 self.canvas.translate(xoi as f32, yoi as f32);
 
-                (-wh as f64, -hh as f64)
+                (-wh, -hh)
             } else {
                 (x, y)
             };
@@ -160,82 +181,20 @@ impl<'a, 'b> FemtovgPainter<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
-    fn new_image(&mut self, w: f64, h: f64) -> Box<dyn ImageRef> {
-        let image_id =
-            self.canvas.create_image_empty(
-                w as usize, h as usize,
-                femtovg::PixelFormat::Rgba8,
-                femtovg::ImageFlags::FLIP_Y)
-                .expect("making image buffer");
-
-        Box::new(FemtoImgRef {
-            store:  self.data.store.clone(),
-            w, h, image_id,
-        })
-    }
-
-    fn start_image(&mut self, image: &dyn ImageRef, screen_x: f64, screen_y: f64) {
-        self.data.offs_stk.push((screen_x, screen_y));
-        self.canvas.set_render_target(
-            femtovg::RenderTarget::Image(image.as_femto().unwrap().image_id));
-    }
-
-    fn finish_image(&mut self) {
-        self.data.offs_stk.pop();
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-    }
-
-    fn draw_image(&mut self, image: &dyn ImageRef, screen_x: f64, screen_y: f64) {
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-
-        let img_paint =
-            femtovg::Paint::image(
-                image.as_femto().unwrap().image_id,
-                0.0, 0.0,
-                image.as_femto().unwrap().w as f32,
-                image.as_femto().unwrap().h as f32,
-                0.0, 1.0);
-
-        let mut path = femtovg::Path::new();
-        path.rect(
-            screen_x as f32, screen_y as f32,
-            image.as_femto().unwrap().w as f32,
-            image.as_femto().unwrap().h as f32);
-
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-        self.canvas.fill_path(&mut path, img_paint);
-    }
-
-    fn clip_region(&mut self, x: f64, y: f64, w: f64, h: f64) {
+impl<'a, 'b> Painter<'a, 'b> {
+    pub fn clip_region(&mut self, x: f32, y: f32, w: f32, h: f32) {
         self.canvas.save();
         self.canvas.scissor(x as f32, y as f32, w as f32, h as f32);
     }
 
-    fn move_and_scale(&mut self, x: f64, y: f64, x2: f64, y2: f64, factor: f64) {
-        self.canvas.save();
-        self.cur_scale = factor as f32;
-        let factor = self.cur_scale;
-//        self.canvas.translate(x as f32, y as f32);
-        self.canvas.translate(x as f32, y as f32);
-        self.canvas.scale(factor, factor);
-        self.canvas.translate(x2 as f32, y2 as f32);
-//        self.canvas.translate(-x as f32 / factor, -y as f32 / factor);
-    }
-
-    fn reset_scale(&mut self) {
-        self.cur_scale = 1.0;
-        self.canvas.restore();
-    }
-
-    fn reset_clip_region(&mut self) {
+    pub fn reset_clip_region(&mut self) {
         self.canvas.reset_scissor();
         self.canvas.restore();
     }
 
-    fn path_fill_rot(&mut self, color: (f64, f64, f64),
-                     rot: f64, x: f64, y: f64, xo: f64, yo: f64,
-                     segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+    pub fn path_fill_rot(&mut self, color: (f32, f32, f32),
+                     rot: f32, x: f32, y: f32, xo: f32, yo: f32,
+                     segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
                      closed: bool) {
 
         self.canvas.save();
@@ -250,9 +209,10 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         self.canvas.restore();
     }
 
-    fn path_stroke_rot(&mut self, width: f64, color: (f64, f64, f64),
-                       rot: f64, x: f64, y: f64, xo: f64, yo: f64,
-                       segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+    #[allow(dead_code)]
+    pub fn path_stroke_rot(&mut self, width: f32, color: (f32, f32, f32),
+                       rot: f32, x: f32, y: f32, xo: f32, yo: f32,
+                       segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
                        closed: bool) {
 
         self.canvas.save();
@@ -267,7 +227,7 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         self.canvas.restore();
     }
 
-    fn path_fill(&mut self, color: (f64, f64, f64), segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>, closed: bool) {
+    pub fn path_fill(&mut self, color: (f32, f32, f32), segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>, closed: bool) {
         let mut p = femtovg::Path::new();
         let paint = color_paint(color);
 
@@ -286,13 +246,14 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         self.canvas.fill_path(&mut p, paint);
     }
 
-    fn path_stroke(&mut self, width: f64, color: (f64, f64, f64),
-                   segments: &mut dyn std::iter::Iterator<Item = (f64, f64)>,
+    pub fn path_stroke(&mut self, width: f32, color: (f32, f32, f32),
+                   segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
                    closed: bool)
     {
         let mut p = femtovg::Path::new();
         let mut paint = color_paint(color);
         paint.set_line_join(femtovg::LineJoin::Round);
+        // paint.set_line_cap(femtovg::LineCap::Round);
         paint.set_line_width(width as f32);
 
         let mut first = true;
@@ -310,7 +271,7 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         self.canvas.stroke_path(&mut p, paint);
     }
 
-    fn arc_stroke(&mut self, width: f64, color: (f64, f64, f64), radius: f64, from_rad: f64, to_rad: f64, x: f64, y: f64) {
+    pub fn arc_stroke(&mut self, width: f32, color: (f32, f32, f32), radius: f32, from_rad: f32, to_rad: f32, x: f32, y: f32) {
         let mut p = femtovg::Path::new();
         let mut paint = color_paint(color);
         paint.set_line_width(width as f32);
@@ -318,13 +279,22 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         self.canvas.stroke_path(&mut p, paint);
     }
 
-    fn rect_fill(&mut self, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64) {
+    #[allow(dead_code)]
+    pub fn rect_stroke_r(&mut self, width: f32, color: (f32, f32, f32), rect: Rect) {
+        self.rect_stroke(width, color, rect.x, rect.y, rect.w, rect.h)
+    }
+
+    pub fn rect_fill_r(&mut self, color: (f32, f32, f32), rect: Rect) {
+        self.rect_fill(color, rect.x, rect.y, rect.w, rect.h)
+    }
+
+    pub fn rect_fill(&mut self, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32) {
         let mut pth = femtovg::Path::new();
         pth.rect(x as f32, y as f32, w as f32, h as f32);
         self.canvas.fill_path(&mut pth, color_paint(color));
     }
 
-    fn rect_stroke(&mut self, width: f64, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64) {
+    pub fn rect_stroke(&mut self, width: f32, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32) {
         let mut pth = femtovg::Path::new();
         pth.rect(x as f32, y as f32, w as f32, h as f32);
         let mut paint = color_paint(color);
@@ -332,20 +302,20 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         self.canvas.stroke_path(&mut pth, paint);
     }
 
-    fn label(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, lblid: usize) {
-        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font, lblid);
+    pub fn label(&mut self, size: f32, align: i8, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32, text: &str) {
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font);
     }
 
-    fn label_rot(&mut self, size: f64, align: i8, rot: f64, color: (f64, f64, f64), x: f64, y: f64, xo: f64, yo: f64, w: f64, h: f64, text: &str, lblid: usize) {
-        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font, lblid);
+    pub fn label_rot(&mut self, size: f32, align: i8, rot: f32, color: (f32, f32, f32), x: f32, y: f32, xo: f32, yo: f32, w: f32, h: f32, text: &str) {
+        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font);
     }
 
-    fn label_mono(&mut self, size: f64, align: i8, color: (f64, f64, f64), x: f64, y: f64, w: f64, h: f64, text: &str, lblid: usize) {
-        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono, lblid);
+    pub fn label_mono(&mut self, size: f32, align: i8, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32, text: &str) {
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono);
     }
 
-    fn text_width(&mut self, size: f32, mono: bool, text: &str) -> f32 {
-        let mut paint = color_paint(UI_PRIM_CLR);
+    pub fn text_width(&mut self, size: f32, mono: bool, text: &str) -> f32 {
+        let mut paint = color_paint((1.0, 0.0, 1.0));
         if mono {
             paint.set_font(&[self.font_mono]);
         } else {
@@ -353,14 +323,14 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         }
         paint.set_font_size(size);
         if let Ok(metr) = self.canvas.measure_text(0.0, 0.0, text, paint) {
-            metr.width() // / (self.scale * self.cur_scale)
+            metr.width()
         } else {
             20.0
         }
     }
 
-    fn font_height(&mut self, size: f32, mono: bool) -> f32 {
-        let mut paint = color_paint(UI_PRIM_CLR);
+    pub fn font_height(&mut self, size: f32, mono: bool) -> f32 {
+        let mut paint = color_paint((1.0, 0.0, 1.0));
         if mono {
             paint.set_font(&[self.font_mono]);
         } else {
@@ -368,19 +338,40 @@ impl<'a, 'b> Painter for FemtovgPainter<'a, 'b> {
         }
         paint.set_font_size(size);
         if let Ok(metr) = self.canvas.measure_font(paint) {
-            metr.height() / (self.scale * self.cur_scale)
+            metr.height()
         } else {
             UI_ELEM_TXT_H as f32
         }
     }
 
-    #[cfg(feature = "driver")]
-    fn start_widget(&mut self, id: crate::AtomId) {
-        self.cur_id_stk.push(id);
+    pub fn translate(&mut self, x: f32, y: f32) { // , x2: f64, y2: f64, factor: f64) {
+        self.canvas.save();
+//        self.cur_scale = factor as f32;
+//        let factor = self.cur_scale;
+//        self.canvas.translate(x as f32, y as f32);
+        self.canvas.translate(x, y);
+//        self.canvas.scale(factor, factor);
+//        self.canvas.translate(x2 as f32, y2 as f32);
+//        self.canvas.translate(-x as f32 / factor, -y as f32 / factor);
     }
 
-    #[cfg(feature = "driver")]
-    fn end_widget(&mut self, _id: crate::AtomId) {
-        self.cur_id_stk.pop();
+    pub fn restore(&mut self) {
+        self.canvas.restore();
     }
 }
+
+pub fn calc_font_size_from_text(
+    p: &mut Painter,
+    txt: &str,
+    mut max_fs: f32,
+    max_width: f32
+) -> f32
+{
+    while p.text_width(max_fs, false, txt) > max_width {
+        max_fs *= 0.9;
+    }
+
+    max_fs
+}
+
+pub const UI_ELEM_TXT_H : f32 =  16.0;
