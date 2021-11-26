@@ -7,6 +7,7 @@ pub struct Widget {
     parent:     Option<Weak<RefCell<Widget>>>,
     childs:     Option<Vec<Rc<RefCell<Widget>>>>,
     ctrl:       Option<Box<Control>>,
+    handle_childs: Option<Vec<Rc<RefCell<Widget>>>>,
 }
 
 impl Widget {
@@ -15,6 +16,7 @@ impl Widget {
             evc:    EventCore::new(),
             parent: None,
             childs: Some(vec![]),
+            handle_childs: Some(vec![]),
             ctrl:   None,
         }
     }
@@ -75,15 +77,33 @@ pub fn widget_handle(widget: &Rc<RefCell<Widget>>, event: &InputEvent) {
 
         match prop {
             EvProp::Childs => {
-                let childs = widget.borrow_mut().childs.take();
+                let mut hc = {
+                    let mut w = widget.borrow_mut();
+                    if let Some(mut hc) = w.handle_childs.take() {
 
-                if let Some(childs) = &childs {
+                        hc.clear();
+
+                        if let Some(childs) = &w.childs {
+                            for c in childs.iter() {
+                                hc.push(c.clone());
+                            }
+                        }
+
+                        Some(hc)
+                    } else {
+                        None
+                    }
+                };
+
+                if let Some(childs) = &mut hc {
                     for c in childs.iter() {
                         widget_handle(c, event);
                     }
+
+                    childs.clear();
                 }
 
-                widget.borrow_mut().childs = childs;
+                widget.borrow_mut().handle_childs = hc;
             },
             EvProp::Stop => {},
         }
