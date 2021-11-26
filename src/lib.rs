@@ -10,6 +10,7 @@
 //mod ui;
 //#[allow(clippy::type_complexity)]
 mod widget;
+mod ui;
 mod window;
 mod rect;
 mod painter;
@@ -18,12 +19,78 @@ mod painter;
 //mod femtovg_painter;
 
 use std::rc::Rc;
+use std::cell::RefCell;
+
 use keyboard_types::{KeyboardEvent, Key};
 pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
+pub use widget::Widget;
+use widget::{widget_handle, widget_draw};
 
 use std::fmt::Debug;
+
+#[derive(Debug, Clone, Copy)]
+enum EvProp {
+    Childs,
+    Stop,
+}
+
+enum Control {
+    Rect,
+}
+
+impl Control {
+    pub fn draw(&mut self, widget: &Rc<RefCell<Widget>>, painter: &mut Painter) {
+        match self {
+            Control::Rect => {
+                painter.rect_fill(hxclr!(0xFF00FF), 0.0, 0.0, 100.0, 200.0);
+            },
+        }
+    }
+    pub fn handle(&mut self, widget: &Rc<RefCell<Widget>>, event: &InputEvent) -> EvProp {
+        match self {
+            Control::Rect => { EvProp::Stop },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Event {
+    pub name: String,
+    pub data: EvPayload,
+}
+
+#[derive(Debug, Clone)]
+pub enum EvPayload {
+}
+
+pub struct EventCore {
+    callbacks:
+        std::collections::HashMap<
+            String,
+            Option<Vec<Box<dyn Fn(Rc<RefCell<Widget>>, Event)>>>>,
+}
+
+impl EventCore {
+    pub fn new() -> Self {
+        Self {
+            callbacks: std::collections::HashMap::new(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.callbacks.clear();
+    }
+
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Rc<RefCell<Widget>>, Event)>) {
+        if let Some(cbs) = self.callbacks.get_mut(ev_name) {
+            if let Some(cbs) = cbs { cbs.push(cb); }
+        } else {
+            self.callbacks.insert(ev_name.to_string(), Some(vec![cb]));
+        }
+    }
+}
 
 pub trait WindowUI {
     fn pre_frame(&mut self);

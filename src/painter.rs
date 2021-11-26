@@ -15,6 +15,38 @@ use femtovg::{
     Color,
 };
 
+#[macro_export]
+macro_rules! hxclr {
+    ($i: expr) => {
+        (
+            ($i >> 16 & 0xFF) as f32 / 255.0,
+            ($i >> 8  & 0xFF) as f32 / 255.0,
+            ($i       & 0xFF) as f32 / 255.0,
+        )
+    }
+}
+
+pub fn darken_clr(depth: u32, clr: (f32, f32, f32)) -> (f32, f32, f32) {
+    if depth == 0 { return clr; }
+    ((clr.0 * (1.0 / (1.2_f32).powf(depth as f32))).clamp(0.0, 1.0),
+     (clr.1 * (1.0 / (1.2_f32).powf(depth as f32))).clamp(0.0, 1.0),
+     (clr.2 * (1.0 / (1.2_f32).powf(depth as f32))).clamp(0.0, 1.0))
+}
+
+pub fn lighten_clr(depth: u32, clr: (f32, f32, f32)) -> (f32, f32, f32) {
+    if depth == 0 { return clr; }
+    ((clr.0 * (1.2_f32).powf(depth as f32)).clamp(0.0, 1.0),
+     (clr.1 * (1.2_f32).powf(depth as f32)).clamp(0.0, 1.0),
+     (clr.2 * (1.2_f32).powf(depth as f32)).clamp(0.0, 1.0))
+}
+
+//pub fn tpl2clr(clr: (f32, f32, f32)) -> tuix::Color {
+//    tuix::Color::rgb(
+//        (clr.0 * 255.0) as u8,
+//        (clr.1 * 255.0) as u8,
+//        (clr.2 * 255.0) as u8)
+//}
+
 pub struct ImageStore {
     // TODO: FREE THESE IMAGES OR WE HAVE A MEMORY LEAK!
     freed_images: Vec<ImageId>,
