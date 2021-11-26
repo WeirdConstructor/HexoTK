@@ -9,6 +9,7 @@
 //mod driver;
 //mod ui;
 //#[allow(clippy::type_complexity)]
+mod widget;
 mod window;
 mod rect;
 mod painter;
