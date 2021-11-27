@@ -49,23 +49,24 @@ impl Control {
         let pos     = w.pos();
         let style   = w.style();
 
+        if style.border > 0.1 {
+            painter.rect_fill(
+                style.border_color,
+                pos.x - style.border,
+                pos.y - style.border,
+                pos.w + style.border * 2.0,
+                pos.h + style.border * 2.0);
+        }
+
+        painter.rect_fill(
+            style.bg_color,
+            pos.x,
+            pos.y,
+            pos.w,
+            pos.h);
+
         match self {
-            Control::Rect => {
-                if style.border > 0.1 {
-                    painter.rect_fill(
-                        style.border_color,
-                        pos.x - style.border,
-                        pos.y - style.border,
-                        pos.w + style.border * 2.0,
-                        pos.h + style.border * 2.0);
-                }
-                painter.rect_fill(
-                    style.bg_color,
-                    pos.x,
-                    pos.y,
-                    pos.w,
-                    pos.h);
-            },
+            Control::Rect => { },
         }
     }
     pub fn handle(&mut self, widget: &Rc<RefCell<Widget>>, event: &InputEvent) -> EvProp {
