@@ -27,16 +27,10 @@ pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
-use widget::{widget_handle, widget_draw, widget_walk};
+use widget::{widget_draw, widget_walk};
 pub use ui::UI;
 
 use std::fmt::Debug;
-
-#[derive(Debug, Clone, Copy)]
-pub enum EvProp {
-    Childs,
-    Stop,
-}
 
 #[derive(Debug, Clone)]
 pub enum Control {
@@ -58,23 +52,39 @@ impl Control {
                 pos.h + style.border * 2.0);
         }
 
-        painter.rect_fill(
-            style.bg_color,
-            pos.x,
-            pos.y,
-            pos.w,
-            pos.h);
+        painter.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
+
+        println!("DRAW {:?}", pos);
 
         match self {
             Control::Rect => { },
         }
     }
-    pub fn handle(&mut self, widget: &Rc<RefCell<Widget>>, event: &InputEvent) -> EvProp {
-        match self {
-            Control::Rect => { EvProp::Stop },
-        }
+    pub fn handle(&mut self, widget: &Rc<RefCell<Widget>>, event: &InputEvent) {
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct UINotifier {
+    pub tree_changed:   bool,
+    pub layout_changed: bool,
+    pub hover_id:       usize,
+    pub mouse_pos:      (f32, f32),
+    pub redraw:         Vec<usize>,
+}
+
+impl UINotifier {
+    pub fn new_ref() -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self {
+            tree_changed:   false,
+            layout_changed: false,
+            hover_id:       0,
+            mouse_pos:      (0.0, 0.0),
+            redraw:         vec![],
+        }))
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub struct Event {
@@ -118,7 +128,6 @@ pub trait WindowUI {
     fn post_frame(&mut self);
     fn needs_redraw(&mut self) -> bool;
     fn is_active(&mut self) -> bool;
-    fn post_relayout(&mut self);
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut Painter);
     fn set_window_size(&mut self, w: f32, h: f32);

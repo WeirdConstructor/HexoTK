@@ -1,4 +1,4 @@
-use crate::{EvProp, InputEvent, EventCore, Control, Painter, Rect};
+use crate::{InputEvent, EventCore, Control, Painter, Rect, UINotifier};
 use crate::style::Style;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
@@ -27,27 +27,59 @@ impl PosInfo {
 }
 
 pub struct Widget {
+    id:             usize,
     pub evc:        EventCore,
     parent:         Option<Weak<RefCell<Widget>>>,
     childs:         Option<Vec<Rc<RefCell<Widget>>>>,
-    ctrl:           Option<Box<Control>>,
-    handle_childs:  Option<Vec<Rc<RefCell<Widget>>>>,
+    pub ctrl:       Option<Box<Control>>,
+    handle_childs:  Option<Vec<(Rc<RefCell<Widget>>, Rc<RefCell<Widget>>)>>,
     pos:            PosInfo,
     style:          Style,
+    notifier:       Option<Rc<RefCell<UINotifier>>>,
 }
 
 impl Widget {
     pub fn new() -> Self {
         Self {
-            evc:    EventCore::new(),
-            parent: None,
-            childs: Some(vec![]),
+            id:         0,
+            evc:        EventCore::new(),
+            parent:     None,
+            childs:     Some(vec![]),
             handle_childs: Some(vec![]),
-            ctrl:   None,
-            pos:    PosInfo::new(),
-            style:  Style::new(),
+            ctrl:       None,
+            pos:        PosInfo::new(),
+            style:      Style::new(),
+            notifier:   None,
         }
     }
+
+    fn emit_layout_change(&self) {
+        if let Some(notifier) = &self.notifier {
+            notifier.borrow_mut().layout_changed = true;
+        }
+    }
+
+    fn emit_redraw_required(&self) {
+//        let parent = self.parent.take();
+//
+//        if let Some(parent) = parent {
+//            if let Some(parent) = parent.upgrade() {
+//                parent.emit_redraw_required();
+//            }
+//            self.parent = Some(parent);
+//        }
+
+        if let Some(notifier) = &self.notifier {
+            notifier.borrow_mut().redraw.push(self.id);
+        }
+    }
+
+    pub fn set_notifier(&mut self, not: Rc<RefCell<UINotifier>>, id: usize) {
+        self.notifier = Some(not);
+        self.id = id;
+    }
+
+    pub fn id(&self) -> usize { self.id }
 
     pub fn set_direct_ctrl(&mut self, ctrl: Box<Control>, pos: Rect) {
         self.ctrl = Some(ctrl);
@@ -72,8 +104,18 @@ impl Widget {
         }
     }
 
-    pub fn set_parent(&mut self, parent: Rc<RefCell<Widget>>) {
-        self.parent = Some(Rc::downgrade(&parent));
+    pub fn add(&mut self, child: Rc<RefCell<Widget>>) {
+        if let Some(childs) = &mut self.childs {
+            childs.push(child);
+        }
+
+        if let Some(notifier) = &self.notifier {
+            notifier.borrow_mut().tree_changed = true;
+        }
+    }
+
+    pub fn set_parent(&mut self, parent: &Rc<RefCell<Widget>>) {
+        self.parent = Some(Rc::downgrade(parent));
     }
 
     pub fn clear(&mut self, recursive: bool) {
@@ -111,10 +153,11 @@ pub fn widget_draw(widget: &Rc<RefCell<Widget>>, painter: &mut Painter) {
     }
 }
 
-pub fn widget_walk<F: FnMut(&Rc<RefCell<Widget>>)>(widget: &Rc<RefCell<Widget>>, mut cb: F) {
-    cb(widget);
+pub fn widget_walk<F: FnMut(&Rc<RefCell<Widget>>, Option<&Rc<RefCell<Widget>>>)>(widget: &Rc<RefCell<Widget>>, mut cb: F) {
+    cb(widget, None);
 
     let mut hc = {
+        let cur_parent = widget.clone();
         let mut w = widget.borrow_mut();
 
         if let Some(mut hc) = w.handle_childs.take() {
@@ -122,7 +165,7 @@ pub fn widget_walk<F: FnMut(&Rc<RefCell<Widget>>)>(widget: &Rc<RefCell<Widget>>,
 
             if let Some(childs) = &w.childs {
                 for c in childs.iter() {
-                    hc.push(c.clone());
+                    hc.push((c.clone(), cur_parent.clone()));
                 }
             }
 
@@ -133,55 +176,12 @@ pub fn widget_walk<F: FnMut(&Rc<RefCell<Widget>>)>(widget: &Rc<RefCell<Widget>>,
     };
 
     if let Some(hc) = &mut hc {
-        for c in hc.iter() {
-            cb(c);
+        for (c, p) in hc.iter() {
+            cb(c, Some(p));
         }
 
         hc.clear();
     }
 
     widget.borrow_mut().handle_childs = hc;
-}
-
-pub fn widget_handle(widget: &Rc<RefCell<Widget>>, event: &InputEvent) {
-    let ctrl = widget.clone().borrow_mut().ctrl.take();
-
-    if let Some(mut ctrl) = ctrl {
-        let prop = ctrl.handle(widget, event);
-
-        match prop {
-            EvProp::Childs => {
-                let mut hc = {
-                    let mut w = widget.borrow_mut();
-                    if let Some(mut hc) = w.handle_childs.take() {
-
-                        hc.clear();
-
-                        if let Some(childs) = &w.childs {
-                            for c in childs.iter() {
-                                hc.push(c.clone());
-                            }
-                        }
-
-                        Some(hc)
-                    } else {
-                        None
-                    }
-                };
-
-                if let Some(childs) = &mut hc {
-                    for c in childs.iter() {
-                        widget_handle(c, event);
-                    }
-
-                    childs.clear();
-                }
-
-                widget.borrow_mut().handle_childs = hc;
-            },
-            EvProp::Stop => {},
-        }
-
-        widget.borrow_mut().ctrl = Some(ctrl);
-    }
 }
