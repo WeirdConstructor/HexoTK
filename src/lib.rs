@@ -27,7 +27,7 @@ pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
-use widget::{widget_handle, widget_draw};
+use widget::{widget_handle, widget_draw, widget_walk};
 pub use ui::UI;
 
 use std::fmt::Debug;
@@ -118,6 +118,7 @@ pub trait WindowUI {
     fn post_frame(&mut self);
     fn needs_redraw(&mut self) -> bool;
     fn is_active(&mut self) -> bool;
+    fn post_relayout(&mut self);
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut Painter);
     fn set_window_size(&mut self, w: f32, h: f32);
