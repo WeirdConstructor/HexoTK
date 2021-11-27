@@ -14,6 +14,7 @@ mod ui;
 mod window;
 mod rect;
 mod painter;
+mod style;
 //#[allow(clippy::type_complexity)]
 //#[allow(clippy::too_many_arguments)]
 //mod femtovg_painter;
@@ -27,24 +28,43 @@ pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
 use widget::{widget_handle, widget_draw};
+pub use ui::UI;
 
 use std::fmt::Debug;
 
 #[derive(Debug, Clone, Copy)]
-enum EvProp {
+pub enum EvProp {
     Childs,
     Stop,
 }
 
-enum Control {
+#[derive(Debug, Clone)]
+pub enum Control {
     Rect,
 }
 
 impl Control {
     pub fn draw(&mut self, widget: &Rc<RefCell<Widget>>, painter: &mut Painter) {
+        let w       = widget.borrow();
+        let pos     = w.pos();
+        let style   = w.style();
+
         match self {
             Control::Rect => {
-                painter.rect_fill(hxclr!(0xFF00FF), 0.0, 0.0, 100.0, 200.0);
+                if style.border > 0.1 {
+                    painter.rect_fill(
+                        style.border_color,
+                        pos.x - style.border,
+                        pos.y - style.border,
+                        pos.w + style.border * 2.0,
+                        pos.h + style.border * 2.0);
+                }
+                painter.rect_fill(
+                    style.bg_color,
+                    pos.x,
+                    pos.y,
+                    pos.w,
+                    pos.h);
             },
         }
     }

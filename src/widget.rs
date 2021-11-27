@@ -1,13 +1,39 @@
-use crate::{EvProp, InputEvent, EventCore, Control, Painter};
+use crate::{EvProp, InputEvent, EventCore, Control, Painter, Rect};
+use crate::style::Style;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 
+// For morphom Cache
+#[derive(Debug, Clone)]
+pub struct PosInfo {
+    pub pos: Rect,
+
+    pub left:   f32,
+    pub right:  f32,
+    pub top:    f32,
+    pub bottom: f32,
+}
+
+impl PosInfo {
+    pub fn new() -> Self {
+        Self {
+            pos:    Rect::from(0.0, 0.0, 0.0, 0.0),
+            left:   0.0,
+            right:  0.0,
+            top:    0.0,
+            bottom: 0.0,
+        }
+    }
+}
+
 pub struct Widget {
-    pub evc:    EventCore,
-    parent:     Option<Weak<RefCell<Widget>>>,
-    childs:     Option<Vec<Rc<RefCell<Widget>>>>,
-    ctrl:       Option<Box<Control>>,
-    handle_childs: Option<Vec<Rc<RefCell<Widget>>>>,
+    pub evc:        EventCore,
+    parent:         Option<Weak<RefCell<Widget>>>,
+    childs:         Option<Vec<Rc<RefCell<Widget>>>>,
+    ctrl:           Option<Box<Control>>,
+    handle_childs:  Option<Vec<Rc<RefCell<Widget>>>>,
+    pos:            PosInfo,
+    style:          Style,
 }
 
 impl Widget {
@@ -18,8 +44,21 @@ impl Widget {
             childs: Some(vec![]),
             handle_childs: Some(vec![]),
             ctrl:   None,
+            pos:    PosInfo::new(),
+            style:  Style::new(),
         }
     }
+
+    pub fn set_direct_ctrl(&mut self, ctrl: Box<Control>, pos: Rect) {
+        self.ctrl = Some(ctrl);
+        self.pos.pos = pos;
+    }
+
+    pub fn style_mut(&mut self) -> &mut Style { &mut self.style }
+
+    pub fn pos(&self) -> Rect { self.pos.pos }
+
+    pub fn style(&self) -> &Style { &self.style }
 
     pub fn new_ref() -> Rc<RefCell<Self>> {
         Rc::new(RefCell::new(Self::new()))
@@ -55,10 +94,13 @@ impl Widget {
 }
 
 pub fn widget_draw(widget: &Rc<RefCell<Widget>>, painter: &mut Painter) {
-    if let Some(mut ctrl) = widget.borrow_mut().ctrl.take() {
+    let mut ctrl = widget.borrow_mut().ctrl.take();
+    let childs   = widget.borrow_mut().childs.take();
+
+    if let Some(mut ctrl) = ctrl {
         ctrl.draw(widget, painter);
 
-        if let Some(childs) = widget.borrow_mut().childs.take() {
+        if let Some(childs) = childs {
             for c in childs.iter() {
                 widget_draw(c, painter);
             }
