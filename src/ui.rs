@@ -4,7 +4,8 @@ use crate::{
     Event, Style
 };
 use crate::WindowUI;
-use crate::Widget;
+use crate::WidgetRef;
+use crate::widget::WidgetImpl;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -12,8 +13,8 @@ use std::collections::HashSet;
 pub struct UI {
     win_w:      f32,
     win_h:      f32,
-    root:       Rc<RefCell<Widget>>,
-    widgets:    Option<Vec<Weak<RefCell<Widget>>>>,
+    root:       WidgetRef,
+    widgets:    Option<Vec<Weak<RefCell<WidgetImpl>>>>,
     notifier:   UINotifierRef,
     zones:      Option<Vec<(Rect, usize)>>,
     cur_redraw: HashSet<usize>,
@@ -24,7 +25,7 @@ impl UI {
         Self {
             win_h:    0.0,
             win_w:    0.0,
-            root:     Widget::new_ref(Rc::new(Style::new())),
+            root:     WidgetRef::new(Rc::new(Style::new())),
             widgets:  Some(vec![]),
             notifier: UINotifierRef::new(),
             zones:    Some(vec![]),
@@ -32,7 +33,7 @@ impl UI {
         }
     }
 
-    pub fn set_root(&mut self, root: Rc<RefCell<Widget>>) {
+    pub fn set_root(&mut self, root: WidgetRef) {
         self.root = root;
         self.refresh_widget_list();
         self.on_tree_changed();
@@ -42,7 +43,7 @@ impl UI {
         println!("tree changed");
         let notifier = self.notifier.clone();
 
-        self.for_each_widget_ref(|wid, id| {
+        self.for_each_widget_impl(|wid, id| {
             wid.set_notifier(notifier.clone(), id);
             notifier.redraw(id);
         });
@@ -60,7 +61,7 @@ impl UI {
             zones.clear();
 
             self.for_each_widget(|wid, id| {
-                zones.push((wid.borrow().pos(), id));
+                zones.push((wid.pos(), id));
             });
 
             self.zones = Some(zones);
@@ -69,17 +70,17 @@ impl UI {
         self.notifier.reset_layout_changed();
     }
 
-    pub fn for_each_widget<F: FnMut(Rc<RefCell<Widget>>, usize)>(&self, mut f: F) {
+    pub fn for_each_widget<F: FnMut(WidgetRef, usize)>(&self, mut f: F) {
         if let Some(widgets) = &self.widgets {
             for (id, w) in widgets.iter().enumerate() {
-                if let Some(w) = w.upgrade() {
+                if let Some(w) = WidgetRef::from_weak(w) {
                     f(w, id);
                 }
             }
         }
     }
 
-    pub fn for_each_widget_ref<F: FnMut(&mut Widget, usize)>(&self, mut f: F) {
+    pub fn for_each_widget_impl<F: FnMut(&mut WidgetImpl, usize)>(&self, mut f: F) {
         if let Some(widgets) = &self.widgets {
             for (id, w) in widgets.iter().enumerate() {
                 if let Some(w) = w.upgrade() {
@@ -98,9 +99,10 @@ impl UI {
 
             widget_walk(&self.root, |wid, parent| {
                 if let Some(parent) = parent {
-                    wid.borrow_mut().set_parent(parent);
+                    wid.set_parent(parent);
                 }
-                wids.push(Rc::downgrade(wid));
+
+                wids.push(wid.as_weak());
             });
 
             self.widgets = Some(wids);
@@ -167,24 +169,24 @@ impl WindowUI for UI {
         let mut sent_events : Vec<(usize, Event)> = vec![];
 
         self.for_each_widget(|wid, _id| {
-            let ctrl = wid.borrow_mut().ctrl.take();
+            let ctrl = wid.take_ctrl();
 
             if let Some(mut ctrl) = ctrl {
                 ctrl.handle(&wid, &event, &mut sent_events);
 
-                wid.borrow_mut().ctrl = Some(ctrl);
+                wid.give_ctrl_back(ctrl);
             }
         });
 
         for (wid_id, event) in sent_events {
             if let Some(widgets) = &mut self.widgets {
                 if let Some(widget) = widgets.get(wid_id) {
-                    if let Some(widget) = widget.upgrade() {
-                        let evc = widget.borrow_mut().take_event_core();
+                    if let Some(widget) = WidgetRef::from_weak(widget) {
+                        let evc = widget.take_event_core();
 
                         if let Some(mut evc) = evc {
                             evc.call(&event, &widget);
-                            widget.borrow_mut().give_back_event_core(evc);
+                            widget.give_back_event_core(evc);
                         }
                     }
                 }

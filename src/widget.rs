@@ -27,13 +27,131 @@ impl PosInfo {
     }
 }
 
-pub struct Widget {
+#[derive(Clone)]
+pub struct WidgetRef(Rc<RefCell<WidgetImpl>>);
+
+impl WidgetRef {
+    pub fn new(style: Rc<Style>) -> Self {
+        Self(Rc::new(RefCell::new(WidgetImpl::new(style))))
+    }
+
+    pub fn from_weak(w: &Weak<RefCell<WidgetImpl>>) -> Option<WidgetRef> {
+        w.upgrade().map(|w| WidgetRef(w))
+    }
+
+    pub fn as_weak(&self) -> Weak<RefCell<WidgetImpl>> {
+        Rc::downgrade(&self.0)
+    }
+
+    pub fn reg(&self, ev_name: &str, cb: Box<dyn Fn(WidgetRef, &Event)>) {
+        self.0.borrow_mut().reg(ev_name, cb);
+    }
+
+    pub fn take_event_core(&self) -> Option<EventCore> {
+        self.0.borrow_mut().take_event_core()
+    }
+
+    pub fn give_back_event_core(&self, evc: EventCore) {
+        self.0.borrow_mut().give_back_event_core(evc)
+    }
+
+    pub fn is_cached(&self) -> bool {
+        self.0.borrow_mut().is_cached()
+    }
+    pub fn enable_cache(&self) {
+        self.0.borrow_mut().enable_cache();
+    }
+
+    pub fn take_cache_img(&self) -> Option<ImgRef> {
+        self.0.borrow_mut().take_cache_img()
+    }
+    pub fn give_cache_img(&self, img: ImgRef) {
+        self.0.borrow_mut().give_cache_img(img);
+    }
+
+    fn emit_layout_change(&self) {
+        self.0.borrow_mut().emit_layout_change();
+    }
+
+    pub fn emit_redraw_required(&self) {
+        self.0.borrow_mut().emit_redraw_required();
+    }
+
+    pub fn activate(&self) {
+        self.0.borrow_mut().activate();
+    }
+
+    pub fn deactivate(&self) {
+        self.0.borrow_mut().deactivate();
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.0.borrow_mut().is_active()
+    }
+
+    pub fn set_notifier(&self, not: UINotifierRef, id: usize) {
+        self.0.borrow_mut().set_notifier(not, id)
+    }
+
+    pub fn is_hovered(&self) -> bool {
+        self.0.borrow().is_hovered()
+    }
+
+    pub fn id(&self) -> usize { self.0.borrow().id() }
+
+    pub fn check_data_change(&self) -> bool {
+        self.0.borrow_mut().check_data_change()
+    }
+
+    pub fn set_direct_ctrl(&self, ctrl: Control, pos: Rect) {
+        self.0.borrow_mut().set_direct_ctrl(ctrl, pos)
+    }
+
+    pub fn take_ctrl(&self) -> Option<Box<Control>> {
+        self.0.borrow_mut().ctrl.take()
+    }
+
+    pub fn give_ctrl_back(&self, ctrl: Box<Control>) {
+        self.0.borrow_mut().ctrl = Some(ctrl);
+    }
+
+    pub fn pos(&self) -> Rect { self.0.borrow().pos.pos }
+
+    pub fn style(&self) -> Rc<Style> { self.0.borrow().style.clone() }
+
+    pub fn set_style(&self, style: Rc<Style>) {
+        self.0.borrow_mut().set_style(style);
+    }
+
+    pub fn parent(&self) -> Option<WidgetRef> {
+        let w = self.0.borrow();
+        if let Some(parent) = &w.parent {
+            Self::from_weak(parent)
+        } else {
+            None
+        }
+    }
+
+    pub fn add(&self, child: WidgetRef) {
+        self.0.borrow_mut().add(child);
+    }
+
+    pub fn set_parent(&self, parent: &WidgetRef) {
+        self.0.borrow_mut().set_parent(parent);
+    }
+
+    pub fn clear(&self, recursive: bool) {
+        self.0.borrow_mut().clear(recursive);
+    }
+}
+
+pub struct WidgetImpl {
     id:             usize,
     pub evc:        Option<EventCore>,
-    parent:         Option<Weak<RefCell<Widget>>>,
-    childs:         Option<Vec<Rc<RefCell<Widget>>>>,
+    parent:         Option<Weak<RefCell<WidgetImpl>>>,
+    childs:         Option<Vec<WidgetRef>>,
     pub ctrl:       Option<Box<Control>>,
-    handle_childs:  Option<Vec<(Rc<RefCell<Widget>>, Rc<RefCell<Widget>>)>>,
+    handle_childs:  Option<Vec<(WidgetRef, WidgetRef)>>,
     pos:            PosInfo,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
@@ -42,7 +160,7 @@ pub struct Widget {
     cache_img:      Option<ImgRef>,
 }
 
-impl Widget {
+impl WidgetImpl {
     pub fn new(style: Rc<Style>) -> Self {
         Self {
             id:             0,
@@ -59,7 +177,7 @@ impl Widget {
         }
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Rc<RefCell<Widget>>, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(WidgetRef, &Event)>) {
         if let Some(evc) = &mut self.evc {
             evc.reg(ev_name, cb);
         }
@@ -136,15 +254,11 @@ impl Widget {
         Rc::new(RefCell::new(Self::new(style)))
     }
 
-    pub fn parent(&mut self) -> Option<Rc<RefCell<Widget>>> {
-        if let Some(parent) = &self.parent {
-            parent.upgrade()
-        } else {
-            None
-        }
+    pub fn parent(&mut self) -> Option<WidgetRef> {
+        self.parent.as_ref().map(|p| WidgetRef::from_weak(p)).flatten()
     }
 
-    pub fn add(&mut self, child: Rc<RefCell<Widget>>) {
+    pub fn add(&mut self, child: WidgetRef) {
         if let Some(childs) = &mut self.childs {
             childs.push(child);
         }
@@ -152,8 +266,8 @@ impl Widget {
         self.notifier.as_mut().map(|n| n.set_tree_changed());
     }
 
-    pub fn set_parent(&mut self, parent: &Rc<RefCell<Widget>>) {
-        self.parent = Some(Rc::downgrade(parent));
+    pub fn set_parent(&mut self, parent: &WidgetRef) {
+        self.parent = Some(Rc::downgrade(&parent.0));
     }
 
     pub fn clear(&mut self, recursive: bool) {
@@ -164,7 +278,7 @@ impl Widget {
         if let Some(childs) = &mut self.childs {
             if recursive {
                 for c in childs.iter_mut() {
-                    c.borrow_mut().clear(recursive);
+                    c.clear(recursive);
                 }
             }
 
@@ -174,12 +288,12 @@ impl Widget {
 }
 
 pub fn widget_draw(
-    widget: &Rc<RefCell<Widget>>,
+    widget: &WidgetRef,
     redraw: &std::collections::HashSet<usize>,
     painter: &mut Painter)
 {
-    let mut ctrl = widget.borrow_mut().ctrl.take();
-    let childs   = widget.borrow_mut().childs.take();
+    let mut ctrl = widget.0.borrow_mut().ctrl.take();
+    let childs   = widget.0.borrow_mut().childs.take();
 
     // TODO: Cache algorithm:
     // - We need
@@ -191,19 +305,19 @@ pub fn widget_draw(
             for c in childs.iter() {
                 widget_draw(c, redraw, painter);
             }
-            widget.borrow_mut().childs = Some(childs);
+            widget.0.borrow_mut().childs = Some(childs);
         }
 
-        widget.borrow_mut().ctrl = Some(ctrl);
+        widget.0.borrow_mut().ctrl = Some(ctrl);
     }
 }
 
-pub fn widget_walk<F: FnMut(&Rc<RefCell<Widget>>, Option<&Rc<RefCell<Widget>>>)>(widget: &Rc<RefCell<Widget>>, mut cb: F) {
+pub fn widget_walk<F: FnMut(&WidgetRef, Option<&WidgetRef>)>(widget: &WidgetRef, mut cb: F) {
     cb(widget, None);
 
     let mut hc = {
         let cur_parent = widget.clone();
-        let mut w = widget.borrow_mut();
+        let mut w = widget.0.borrow_mut();
 
         if let Some(mut hc) = w.handle_childs.take() {
             hc.clear();
@@ -228,5 +342,5 @@ pub fn widget_walk<F: FnMut(&Rc<RefCell<Widget>>, Option<&Rc<RefCell<Widget>>>)>
         hc.clear();
     }
 
-    widget.borrow_mut().handle_childs = hc;
+    widget.0.borrow_mut().handle_childs = hc;
 }

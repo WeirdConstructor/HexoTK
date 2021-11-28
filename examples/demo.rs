@@ -30,36 +30,36 @@ fn main() {
         let style_ref = Rc::new(style);
 
         let mut ui = Box::new(UI::new());
-        let wid = Widget::new_ref(style_ref.clone());
-        wid.borrow_mut().set_direct_ctrl(
+        let wid = WidgetRef::new(style_ref.clone());
+        wid.set_direct_ctrl(
             Control::None, Rect::from(0.0, 0.0, 400.0, 400.0));
 
-        let sub = Widget::new_ref(style_ref.clone());
-        wid.borrow_mut().add(sub.clone());
+        let sub = WidgetRef::new(style_ref.clone());
+        wid.add(sub.clone());
 
-        sub.borrow_mut().set_direct_ctrl(
+        sub.set_direct_ctrl(
             Control::Button { label: Box::new(concurrent_data.clone()) },
             Rect::from(10.0, 20.0, 300.0, 200.0));
 
-        sub.borrow_mut().reg("click", Box::new(move |wid, ev| {
+        sub.reg("click", Box::new(move |wid, ev| {
             if let Ok(mut data) = concurrent_data.lock() {
                 (*data).1 += 1;
             }
             println!("Button clicked!");
         }));
 
-        let sub2 = Widget::new_ref(style_ref);
-        wid.borrow_mut().add(sub2.clone());
+        let sub2 = WidgetRef::new(style_ref);
+        wid.add(sub2.clone());
 
         let data =
             Rc::new(RefCell::new(
                 CloneMutable::new(("Other:".to_string(), 0))));
 
-        sub2.borrow_mut().set_direct_ctrl(
+        sub2.set_direct_ctrl(
             Control::Button { label: Box::new(data.clone()) },
             Rect::from(360.0, 50.0, 200.0, 50.0));
 
-        sub2.borrow_mut().reg("click", Box::new(move |wid, ev| {
+        sub2.reg("click", Box::new(move |wid, ev| {
             (*data.borrow_mut()).1 += 1;
             println!("Button clicked!");
         }));

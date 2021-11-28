@@ -27,7 +27,7 @@ use keyboard_types::{KeyboardEvent, Key};
 pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
-pub use widget::Widget;
+pub use widget::WidgetRef;
 use widget::{widget_draw, widget_walk};
 pub use ui::UI;
 pub use style::Style;
@@ -179,8 +179,7 @@ pub enum Control {
 }
 
 impl Control {
-    pub fn draw(&mut self, widget: &Rc<RefCell<Widget>>, painter: &mut Painter) {
-        let w           = widget.borrow();
+    pub fn draw(&mut self, w: &WidgetRef, painter: &mut Painter) {
         let pos         = w.pos();
         let style       = w.style();
         let is_hovered  = w.is_hovered();
@@ -274,11 +273,10 @@ impl Control {
 
     pub fn handle(
         &mut self,
-        widget: &Rc<RefCell<Widget>>,
+        w: &WidgetRef,
         event: &InputEvent,
         out_events: &mut Vec<(usize, Event)>)
     {
-        let w           = widget.borrow();
         let pos         = w.pos();
         let is_hovered  = w.is_hovered();
 
@@ -460,7 +458,7 @@ pub struct EventCore {
     callbacks:
         std::collections::HashMap<
             String,
-            Option<Vec<Box<dyn Fn(Rc<RefCell<Widget>>, &Event)>>>>,
+            Option<Vec<Box<dyn Fn(WidgetRef, &Event)>>>>,
 }
 
 impl EventCore {
@@ -474,7 +472,7 @@ impl EventCore {
         self.callbacks.clear();
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Rc<RefCell<Widget>>, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(WidgetRef, &Event)>) {
         if let Some(cbs) = self.callbacks.get_mut(ev_name) {
             if let Some(cbs) = cbs { cbs.push(cb); }
         } else {
@@ -482,7 +480,7 @@ impl EventCore {
         }
     }
 
-    pub fn call(&mut self, ev: &Event, widget: &Rc<RefCell<Widget>>) {
+    pub fn call(&mut self, ev: &Event, widget: &WidgetRef) {
         if let Some(cbs) = self.callbacks.get_mut(&ev.name) {
             if let Some(cbs) = cbs {
                 for cb in cbs {
