@@ -29,6 +29,7 @@ use painter::Painter;
 pub use widget::Widget;
 use widget::{widget_draw, widget_walk};
 pub use ui::UI;
+pub use style::Style;
 
 use std::fmt::Debug;
 

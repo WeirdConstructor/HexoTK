@@ -24,12 +24,18 @@ fn main() {
     });
 
     open_window("HexoTK 0.5 Demo", WINDOW_W, WINDOW_H, None, Box::new(|| {
+        let mut style = Style::new();
+        style.font_size = 40.0;
+
+        let style_ref = Rc::new(style);
+
+
         let mut ui = Box::new(UI::new());
-        let wid = Widget::new_ref();
+        let wid = Widget::new_ref(style_ref.clone());
         wid.borrow_mut().set_direct_ctrl(
             Control::None, Rect::from(0.0, 0.0, 400.0, 400.0));
 
-        let sub = Widget::new_ref();
+        let sub = Widget::new_ref(style_ref);
         wid.borrow_mut().add(sub.clone());
 
         sub.borrow_mut().set_direct_ctrl(

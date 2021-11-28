@@ -1,7 +1,7 @@
 use crate::{
     InputEvent, Painter, widget_draw,
     widget_walk, UINotifierRef, Rect,
-    Event
+    Event, Style
 };
 use crate::WindowUI;
 use crate::Widget;
@@ -22,7 +22,7 @@ impl UI {
         Self {
             win_h:    0.0,
             win_w:    0.0,
-            root:     Widget::new_ref(),
+            root:     Widget::new_ref(Rc::new(Style::new())),
             widgets:  Some(vec![]),
             notifier: UINotifierRef::new(),
             zones:    Some(vec![]),

@@ -34,12 +34,12 @@ pub struct Widget {
     pub ctrl:       Option<Box<Control>>,
     handle_childs:  Option<Vec<(Rc<RefCell<Widget>>, Rc<RefCell<Widget>>)>>,
     pos:            PosInfo,
-    style:          Style,
+    style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
 }
 
 impl Widget {
-    pub fn new() -> Self {
+    pub fn new(style: Rc<Style>) -> Self {
         Self {
             id:         0,
             evc:        Some(EventCore::new()),
@@ -48,8 +48,8 @@ impl Widget {
             handle_childs: Some(vec![]),
             ctrl:       None,
             pos:        PosInfo::new(),
-            style:      Style::new(),
             notifier:   None,
+            style,
         }
     }
 
@@ -111,14 +111,17 @@ impl Widget {
         self.pos.pos = pos;
     }
 
-    pub fn style_mut(&mut self) -> &mut Style { &mut self.style }
-
     pub fn pos(&self) -> Rect { self.pos.pos }
 
-    pub fn style(&self) -> &Style { &self.style }
+    pub fn style(&self) -> &Style { &*self.style }
 
-    pub fn new_ref() -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self::new()))
+    pub fn set_style(&mut self, style: Rc<Style>) {
+        self.style = style;
+        self.emit_redraw_required();
+    }
+
+    pub fn new_ref(style: Rc<Style>) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self::new(style)))
     }
 
     pub fn parent(&mut self) -> Option<Rc<RefCell<Widget>>> {
