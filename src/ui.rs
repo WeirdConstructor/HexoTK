@@ -4,7 +4,7 @@ use crate::{
     Event, Style
 };
 use crate::WindowUI;
-use crate::WidgetRef;
+use crate::Widget;
 use crate::widget::WidgetImpl;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
@@ -13,7 +13,7 @@ use std::collections::HashSet;
 pub struct UI {
     win_w:      f32,
     win_h:      f32,
-    root:       WidgetRef,
+    root:       Widget,
     widgets:    Option<Vec<Weak<RefCell<WidgetImpl>>>>,
     notifier:   UINotifierRef,
     zones:      Option<Vec<(Rect, usize)>>,
@@ -25,7 +25,7 @@ impl UI {
         Self {
             win_h:    0.0,
             win_w:    0.0,
-            root:     WidgetRef::new(Rc::new(Style::new())),
+            root:     Widget::new(Rc::new(Style::new())),
             widgets:  Some(vec![]),
             notifier: UINotifierRef::new(),
             zones:    Some(vec![]),
@@ -33,7 +33,7 @@ impl UI {
         }
     }
 
-    pub fn set_root(&mut self, root: WidgetRef) {
+    pub fn set_root(&mut self, root: Widget) {
         self.root = root;
         self.refresh_widget_list();
         self.on_tree_changed();
@@ -70,10 +70,10 @@ impl UI {
         self.notifier.reset_layout_changed();
     }
 
-    pub fn for_each_widget<F: FnMut(WidgetRef, usize)>(&self, mut f: F) {
+    pub fn for_each_widget<F: FnMut(Widget, usize)>(&self, mut f: F) {
         if let Some(widgets) = &self.widgets {
             for (id, w) in widgets.iter().enumerate() {
-                if let Some(w) = WidgetRef::from_weak(w) {
+                if let Some(w) = Widget::from_weak(w) {
                     f(w, id);
                 }
             }
@@ -181,7 +181,7 @@ impl WindowUI for UI {
         for (wid_id, event) in sent_events {
             if let Some(widgets) = &mut self.widgets {
                 if let Some(widget) = widgets.get(wid_id) {
-                    if let Some(widget) = WidgetRef::from_weak(widget) {
+                    if let Some(widget) = Widget::from_weak(widget) {
                         let evc = widget.take_event_core();
 
                         if let Some(mut evc) = evc {

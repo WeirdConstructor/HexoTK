@@ -30,11 +30,11 @@ fn main() {
         let style_ref = Rc::new(style);
 
         let mut ui = Box::new(UI::new());
-        let wid = WidgetRef::new(style_ref.clone());
+        let wid = Widget::new(style_ref.clone());
         wid.set_direct_ctrl(
             Control::None, Rect::from(0.0, 0.0, 400.0, 400.0));
 
-        let sub = WidgetRef::new(style_ref.clone());
+        let sub = Widget::new(style_ref.clone());
         wid.add(sub.clone());
 
         sub.set_direct_ctrl(
@@ -48,7 +48,7 @@ fn main() {
             println!("Button clicked!");
         }));
 
-        let sub2 = WidgetRef::new(style_ref);
+        let sub2 = Widget::new(style_ref);
         wid.add(sub2.clone());
 
         let data =

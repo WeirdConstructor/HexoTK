@@ -28,22 +28,22 @@ impl PosInfo {
 }
 
 #[derive(Clone)]
-pub struct WidgetRef(Rc<RefCell<WidgetImpl>>);
+pub struct Widget(Rc<RefCell<WidgetImpl>>);
 
-impl WidgetRef {
+impl Widget {
     pub fn new(style: Rc<Style>) -> Self {
         Self(Rc::new(RefCell::new(WidgetImpl::new(style))))
     }
 
-    pub fn from_weak(w: &Weak<RefCell<WidgetImpl>>) -> Option<WidgetRef> {
-        w.upgrade().map(|w| WidgetRef(w))
+    pub fn from_weak(w: &Weak<RefCell<WidgetImpl>>) -> Option<Widget> {
+        w.upgrade().map(|w| Widget(w))
     }
 
     pub fn as_weak(&self) -> Weak<RefCell<WidgetImpl>> {
         Rc::downgrade(&self.0)
     }
 
-    pub fn reg(&self, ev_name: &str, cb: Box<dyn Fn(WidgetRef, &Event)>) {
+    pub fn reg(&self, ev_name: &str, cb: Box<dyn Fn(Widget, &Event)>) {
         self.0.borrow_mut().reg(ev_name, cb);
     }
 
@@ -123,7 +123,7 @@ impl WidgetRef {
         self.0.borrow_mut().set_style(style);
     }
 
-    pub fn parent(&self) -> Option<WidgetRef> {
+    pub fn parent(&self) -> Option<Widget> {
         let w = self.0.borrow();
         if let Some(parent) = &w.parent {
             Self::from_weak(parent)
@@ -132,11 +132,11 @@ impl WidgetRef {
         }
     }
 
-    pub fn add(&self, child: WidgetRef) {
+    pub fn add(&self, child: Widget) {
         self.0.borrow_mut().add(child);
     }
 
-    pub fn set_parent(&self, parent: &WidgetRef) {
+    pub fn set_parent(&self, parent: &Widget) {
         self.0.borrow_mut().set_parent(parent);
     }
 
@@ -149,9 +149,9 @@ pub struct WidgetImpl {
     id:             usize,
     pub evc:        Option<EventCore>,
     parent:         Option<Weak<RefCell<WidgetImpl>>>,
-    childs:         Option<Vec<WidgetRef>>,
+    childs:         Option<Vec<Widget>>,
     pub ctrl:       Option<Box<Control>>,
-    handle_childs:  Option<Vec<(WidgetRef, WidgetRef)>>,
+    handle_childs:  Option<Vec<(Widget, Widget)>>,
     pos:            PosInfo,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
@@ -177,7 +177,7 @@ impl WidgetImpl {
         }
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(WidgetRef, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Widget, &Event)>) {
         if let Some(evc) = &mut self.evc {
             evc.reg(ev_name, cb);
         }
@@ -254,11 +254,11 @@ impl WidgetImpl {
         Rc::new(RefCell::new(Self::new(style)))
     }
 
-    pub fn parent(&mut self) -> Option<WidgetRef> {
-        self.parent.as_ref().map(|p| WidgetRef::from_weak(p)).flatten()
+    pub fn parent(&mut self) -> Option<Widget> {
+        self.parent.as_ref().map(|p| Widget::from_weak(p)).flatten()
     }
 
-    pub fn add(&mut self, child: WidgetRef) {
+    pub fn add(&mut self, child: Widget) {
         if let Some(childs) = &mut self.childs {
             childs.push(child);
         }
@@ -266,7 +266,7 @@ impl WidgetImpl {
         self.notifier.as_mut().map(|n| n.set_tree_changed());
     }
 
-    pub fn set_parent(&mut self, parent: &WidgetRef) {
+    pub fn set_parent(&mut self, parent: &Widget) {
         self.parent = Some(Rc::downgrade(&parent.0));
     }
 
@@ -288,7 +288,7 @@ impl WidgetImpl {
 }
 
 pub fn widget_draw(
-    widget: &WidgetRef,
+    widget: &Widget,
     redraw: &std::collections::HashSet<usize>,
     painter: &mut Painter)
 {
@@ -312,7 +312,7 @@ pub fn widget_draw(
     }
 }
 
-pub fn widget_walk<F: FnMut(&WidgetRef, Option<&WidgetRef>)>(widget: &WidgetRef, mut cb: F) {
+pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>)>(widget: &Widget, mut cb: F) {
     cb(widget, None);
 
     let mut hc = {
