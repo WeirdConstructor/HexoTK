@@ -117,6 +117,16 @@ impl WindowUI for UI {
         if notifier.is_layout_changed() {
             self.on_layout_changed();
         }
+
+        if let Some(widgets) = &mut self.widgets {
+            for widget in widgets {
+                if let Some(widget) = widget.upgrade() {
+                    if widget.borrow_mut().check_data_change() {
+                        widget.borrow_mut().emit_redraw_required();
+                    }
+                }
+            }
+        }
     }
 
     fn needs_redraw(&mut self) -> bool { self.notifier.need_redraw() }
@@ -139,8 +149,6 @@ impl WindowUI for UI {
                         }
                     }
                 }
-
-                println!("HOVER: {}", hover_id);
 
                 notifier.set_mouse_pos((*x, *y));
                 notifier.set_hover(hover_id);
@@ -185,7 +193,6 @@ impl WindowUI for UI {
         let notifier = self.notifier.clone();
         notifier.clear_redraw();
 
-        println!("DRAW");
         widget_draw(&self.root, painter);
     }
 

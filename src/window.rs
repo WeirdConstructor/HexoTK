@@ -90,7 +90,6 @@ pub struct GUIWindowHandler {
     ftm:        FrameTimeMeasurement,
     ftm_redraw: FrameTimeMeasurement,
     ui:         Box<dyn WindowUI>,
-    scale:      f32,
     size:       (f32, f32),
     // focused:    bool,
     counter:    usize,
@@ -106,9 +105,7 @@ impl WindowHandler for GUIWindowHandler {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
                 self.ui.handle_input_event(
-                    InputEvent::MousePosition(
-                        p.x as f32 / self.scale,
-                        p.y as f32 / self.scale));
+                    InputEvent::MousePosition(p.x as f32, p.y as f32));
             },
             Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
                 let ev_btn =
@@ -172,15 +169,6 @@ impl WindowHandler for GUIWindowHandler {
                         femtovg::PixelFormat::Rgb8,
                         femtovg::ImageFlags::FLIP_Y).expect("making image buffer");
 
-                let ri = (w as f32) / (h as f32);
-                let rs = (self.size.0 as f32) / (self.size.1 as f32);
-
-                if rs > ri {
-                    self.scale = (w as f32) / (self.size.0 as f32);
-                } else {
-                    self.scale = (h as f32) / (self.size.1 as f32);
-                }
-
                 self.ui.set_window_size(w, h);
             },
             _ => {
@@ -217,7 +205,6 @@ impl WindowHandler for GUIWindowHandler {
             self.canvas.set_render_target(
                 femtovg::RenderTarget::Image(self.img_buf));
             self.canvas.save();
-            self.canvas.scale(self.scale, self.scale);
             self.canvas.clear_rect(
                 0, 0,
                 self.canvas.width() as u32,
@@ -232,7 +219,6 @@ impl WindowHandler for GUIWindowHandler {
                 data:       &mut self.painter_data,
                 font:       self.font,
                 font_mono:  self.font_mono,
-                // scale:      self.scale,
             };
 
             self.ui.draw(painter);
@@ -344,7 +330,6 @@ pub fn open_window(
             img_buf,
             ftm:        FrameTimeMeasurement::new("img"),
             ftm_redraw: FrameTimeMeasurement::new("redraw"),
-            scale:      1.0,
             // focused:    false,
             counter:    0,
             painter_data: PersistPainterData::new(),

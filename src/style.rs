@@ -27,6 +27,20 @@ pub const UI_INACTIVE_CLR         : (f32, f32, f32) = hxclr!(0x6f8782);
 pub const UI_INACTIVE2_CLR        : (f32, f32, f32) = hxclr!(0xa6dbd0);
 
 #[derive(Debug, Clone)]
+pub enum Align {
+    Center,
+    Left,
+    Right,
+}
+
+#[derive(Debug, Clone)]
+pub enum VAlign {
+    Middle,
+    Top,
+    Bottom,
+}
+
+#[derive(Debug, Clone)]
 pub struct Style {
     pub bg_color:               (f32, f32, f32),
     pub border_color:           (f32, f32, f32),
@@ -40,23 +54,29 @@ pub struct Style {
     pub active_shadow_color:    (f32, f32, f32),
     pub active_border_color:    (f32, f32, f32),
     pub active_color:           (f32, f32, f32),
+    pub text_align:             Align,
+    pub text_valign:            VAlign,
+    pub font_size:              f32,
 }
 
 impl Style {
     pub fn new() -> Self {
         Self {
-            bg_color:           UI_BG_CLR,
-            border_color:       UI_BORDER_CLR,
-            color:              UI_PRIM_CLR,
-            border:             UI_BOX_BORD,
-            shadow_offs:        (3.0, 3.0),
-            shadow_color:       UI_PRIM_CLR,
-            hover_shadow_color: UI_SELECT_CLR,
-            hover_border_color: UI_HLIGHT_CLR,
-            hover_color:        UI_HLIGHT_CLR,
-            active_shadow_color: UI_HLIGHT_CLR,
-            active_border_color: UI_SELECT_CLR,
-            active_color:        UI_HLIGHT_CLR,
+            bg_color:               UI_BG_CLR,
+            border_color:           UI_BORDER_CLR,
+            color:                  UI_PRIM_CLR,
+            border:                 UI_BOX_BORD,
+            shadow_offs:            (3.0, 3.0),
+            shadow_color:           UI_PRIM_CLR,
+            hover_shadow_color:     UI_SELECT_CLR,
+            hover_border_color:     UI_HLIGHT_CLR,
+            hover_color:            UI_HLIGHT_CLR,
+            active_shadow_color:    UI_HLIGHT_CLR,
+            active_border_color:    UI_SELECT_CLR,
+            active_color:           UI_HLIGHT_CLR,
+            text_align:             Align::Center,
+            text_valign:            VAlign::Middle,
+            font_size:              12.0,
         }
     }
 }

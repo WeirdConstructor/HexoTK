@@ -98,8 +98,16 @@ impl Widget {
 
     pub fn id(&self) -> usize { self.id }
 
-    pub fn set_direct_ctrl(&mut self, ctrl: Box<Control>, pos: Rect) {
-        self.ctrl = Some(ctrl);
+    pub fn check_data_change(&mut self) -> bool {
+        if let Some(ctrl) = &mut self.ctrl {
+            ctrl.check_change()
+        } else {
+            false
+        }
+    }
+
+    pub fn set_direct_ctrl(&mut self, ctrl: Control, pos: Rect) {
+        self.ctrl = Some(Box::new(ctrl));
         self.pos.pos = pos;
     }
 

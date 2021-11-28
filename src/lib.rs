@@ -32,11 +32,148 @@ pub use ui::UI;
 
 use std::fmt::Debug;
 
-#[derive(Debug, Clone)]
+pub trait Mutable {
+    fn check_change(&mut self) -> bool;
+}
+
+pub trait Text {
+    fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
+        let l = self.fmt_l(buf);
+
+        std::str::from_utf8(&buf[0..l]).unwrap_or("")
+    }
+
+    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize { 0 }
+}
+
+pub struct CloneMutable<T> where T: PartialEq + Clone {
+    old: Option<T>,
+    cur: T,
+}
+
+impl<T> CloneMutable<T> where T: PartialEq + Clone {
+    pub fn new(cur: T) -> Self {
+        Self {
+            old: None,
+            cur,
+        }
+    }
+}
+
+impl<T> std::ops::Deref for CloneMutable<T> where T: PartialEq + Clone {
+    type Target = T;
+    fn deref(&self) -> &T { &self.cur }
+}
+impl<T> std::ops::DerefMut for CloneMutable<T> where T: PartialEq + Clone {
+    fn deref_mut(&mut self) -> &mut T { &mut self.cur }
+}
+
+impl<T> Mutable for CloneMutable<T> where T: PartialEq + Clone {
+    fn check_change(&mut self) -> bool {
+        let change =
+            self.old.as_ref()
+                .map(|o| *o != self.cur)
+                .unwrap_or(true);
+        self.old = Some(self.cur.clone());
+        change
+    }
+}
+
+impl Mutable for String {
+    fn check_change(&mut self) -> bool { false }
+}
+
+impl<T> Mutable for Rc<RefCell<T>> where T: Mutable {
+    fn check_change(&mut self) -> bool { self.borrow_mut().check_change() }
+}
+
+impl<T> Mutable for std::sync::Arc<std::sync::Mutex<T>> where T: Mutable {
+    fn check_change(&mut self) -> bool {
+        if let Ok(mut data) = self.lock() {
+            data.check_change()
+        } else {
+            false
+        }
+    }
+}
+
+
+impl Text for String {
+    fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
+        let b = self.as_bytes();
+        let l = buf.len().min(b.len());
+        buf[0..l].copy_from_slice(&b[0..l]);
+        std::str::from_utf8(&buf[0..l]).unwrap_or("")
+    }
+}
+
+impl<T> Text for Box<T> where T: Text {
+    fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
+        self.fmt(buf)
+    }
+
+    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize {
+        self.fmt_l(buf)
+    }
+}
+
+impl<T> Text for Rc<RefCell<T>> where T: Text {
+    fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
+        self.borrow().fmt(buf)
+    }
+
+    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize {
+        self.borrow().fmt_l(buf)
+    }
+}
+
+impl<T> Text for std::sync::Arc<std::sync::Mutex<T>> where T: Text {
+    fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
+        if let Ok(data) = self.lock() {
+            data.fmt(buf)
+        } else {
+            "<mutexpoison>"
+        }
+    }
+
+    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize {
+        if let Ok(data) = self.lock() {
+            data.fmt_l(buf)
+        } else {
+            0
+        }
+    }
+}
+
+impl<T> Text for CloneMutable<T> where T: Text + PartialEq + Clone {
+    fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
+        (*(*self)).fmt(buf)
+    }
+
+    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize {
+        (*(*self)).fmt_l(buf)
+    }
+}
+
+impl Text for (String, i64) {
+    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize {
+        use std::io::Write;
+        let mut bw = std::io::BufWriter::new(buf);
+
+        match write!(bw, "{} {}", self.0, self.1) {
+            Ok(_) => bw.buffer().len(),
+            _ => 0,
+        }
+    }
+}
+
+pub trait TextMutable: Text + Mutable { }
+impl<T> TextMutable for T where T: Text + Mutable { }
+
 pub enum Control {
     None,
     Rect,
-    Button,
+    Button { label: Box<dyn TextMutable> }
 }
 
 impl Control {
@@ -47,13 +184,13 @@ impl Control {
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();
 
-        println!("DRAW {:?}", pos);
+        //d// println!("DRAW {:?}", pos);
 
         let has_default_style =
             match self {
-                Control::Rect   => { true },
-                Control::Button => { true },
-                Control::None   => { false },
+                Control::Rect          => { true },
+                Control::Button { .. } => { true },
+                Control::None          => { false },
             };
 
 
@@ -66,6 +203,11 @@ impl Control {
             if is_active        { style.active_border_color }
             else if is_hovered  { style.hover_border_color }
             else                { style.border_color };
+
+        let color =
+            if is_active        { style.active_color }
+            else if is_hovered  { style.hover_color }
+            else                { style.color };
 
         if has_default_style {
             if    style.shadow_offs.0 > 0.1
@@ -92,9 +234,30 @@ impl Control {
         }
 
         match self {
-            Control::Rect => { },
-            Control::Button => { },
-            Control::None => { },
+            Control::Rect             => { },
+            Control::Button { label } => {
+                let mut buf : [u8; 128] = [0; 128];
+                let s = label.fmt(&mut buf[..]);
+
+                painter.label(
+                    style.font_size,
+                    0,
+                    color,
+                    pos.x,
+                    pos.y,
+                    pos.w,
+                    pos.h,
+                    s);
+            },
+            Control::None           => { },
+        }
+    }
+
+    pub fn check_change(&mut self) -> bool {
+        match self {
+            Control::None => false,
+            Control::Rect => false,
+            Control::Button { label } => label.check_change(),
         }
     }
 
@@ -110,7 +273,7 @@ impl Control {
 
         match self {
             Control::Rect => { },
-            Control::Button => {
+            Control::Button { .. } => {
                 match event {
                     InputEvent::MouseButtonPressed(b) => {
                         if is_hovered { w.activate(); }
