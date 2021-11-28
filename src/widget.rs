@@ -1,4 +1,5 @@
 use crate::{InputEvent, EventCore, Control, Painter, Rect, UINotifierRef, Event};
+use crate::painter::ImgRef;
 use crate::style::Style;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
@@ -36,19 +37,24 @@ pub struct Widget {
     pos:            PosInfo,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
+
+    cached:         bool,
+    cache_img:      Option<ImgRef>,
 }
 
 impl Widget {
     pub fn new(style: Rc<Style>) -> Self {
         Self {
-            id:         0,
-            evc:        Some(EventCore::new()),
-            parent:     None,
-            childs:     Some(vec![]),
-            handle_childs: Some(vec![]),
-            ctrl:       None,
-            pos:        PosInfo::new(),
-            notifier:   None,
+            id:             0,
+            evc:            Some(EventCore::new()),
+            parent:         None,
+            childs:         Some(vec![]),
+            handle_childs:  Some(vec![]),
+            ctrl:           None,
+            pos:            PosInfo::new(),
+            notifier:       None,
+            cached:         false,
+            cache_img:      None,
             style,
         }
     }
@@ -66,6 +72,12 @@ impl Widget {
     pub fn give_back_event_core(&mut self, evc: EventCore) {
         self.evc = Some(evc);
     }
+
+    pub fn is_cached(&mut self) -> bool { self.cached }
+    pub fn enable_cache(&mut self) { self.cached = true; }
+
+    pub fn take_cache_img(&mut self) -> Option<ImgRef> { self.cache_img.take() }
+    pub fn give_cache_img(&mut self, img: ImgRef) { self.cache_img = Some(img); }
 
     fn emit_layout_change(&self) {
         self.notifier.as_ref().map(|n| n.set_layout_changed());
@@ -161,16 +173,23 @@ impl Widget {
     }
 }
 
-pub fn widget_draw(widget: &Rc<RefCell<Widget>>, painter: &mut Painter) {
+pub fn widget_draw(
+    widget: &Rc<RefCell<Widget>>,
+    redraw: &std::collections::HashSet<usize>,
+    painter: &mut Painter)
+{
     let mut ctrl = widget.borrow_mut().ctrl.take();
     let childs   = widget.borrow_mut().childs.take();
+
+    // TODO: Cache algorithm:
+    // - We need
 
     if let Some(mut ctrl) = ctrl {
         ctrl.draw(widget, painter);
 
         if let Some(childs) = childs {
             for c in childs.iter() {
-                widget_draw(c, painter);
+                widget_draw(c, redraw, painter);
             }
             widget.borrow_mut().childs = Some(childs);
         }

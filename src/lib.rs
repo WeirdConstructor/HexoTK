@@ -21,6 +21,7 @@ mod style;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashSet;
 
 use keyboard_types::{KeyboardEvent, Key};
 pub use window::open_window;
@@ -234,8 +235,14 @@ impl Control {
             painter.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
         }
 
+//        let mut img_ref = None;
+//        if w.is_cached() {
+//            img_ref = w.take_cache_img();
+//        }
+//
         match self {
-            Control::Rect             => { },
+            Control::Rect => { },
+            Control::None => { },
             Control::Button { label } => {
                 let mut buf : [u8; 128] = [0; 128];
                 let s = label.fmt(&mut buf[..]);
@@ -250,8 +257,11 @@ impl Control {
                     pos.h,
                     s);
             },
-            Control::None           => { },
         }
+
+//        if let Some(img_ref) = img_ref {
+//            w.give_cache_img(img_ref);
+//        }
     }
 
     pub fn check_change(&mut self) -> bool {
@@ -302,7 +312,7 @@ pub struct UINotifier {
     pub layout_changed: bool,
     pub hover_id:       usize,
     pub mouse_pos:      (f32, f32),
-    pub redraw:         Vec<usize>,
+    pub redraw:         HashSet<usize>,
     pub active:         Option<usize>,
 }
 
@@ -313,7 +323,7 @@ impl UINotifier {
             layout_changed: false,
             hover_id:       0,
             mouse_pos:      (0.0, 0.0),
-            redraw:         vec![],
+            redraw:         HashSet::new(),
             active:         None,
         }))
     }
@@ -325,6 +335,10 @@ pub struct UINotifierRef(Rc<RefCell<UINotifier>>);
 impl UINotifierRef {
     pub fn new() -> Self {
         Self(UINotifier::new_ref())
+    }
+
+    pub fn swap_redraw(&self, cur_redraw: &mut HashSet<usize>) {
+        std::mem::swap(&mut self.0.borrow_mut().redraw, cur_redraw);
     }
 
     pub fn is_tree_changed(&self) -> bool {
@@ -380,7 +394,7 @@ impl UINotifierRef {
 
     pub fn redraw(&self, id: usize) {
         let mut r = self.0.borrow_mut();
-        r.redraw.push(id)
+        r.redraw.insert(id);
     }
 
     pub fn need_redraw(&self) -> bool {

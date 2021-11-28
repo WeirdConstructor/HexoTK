@@ -7,6 +7,7 @@ use crate::WindowUI;
 use crate::Widget;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
+use std::collections::HashSet;
 
 pub struct UI {
     win_w:      f32,
@@ -15,6 +16,7 @@ pub struct UI {
     widgets:    Option<Vec<Weak<RefCell<Widget>>>>,
     notifier:   UINotifierRef,
     zones:      Option<Vec<(Rect, usize)>>,
+    cur_redraw: HashSet<usize>,
 }
 
 impl UI {
@@ -26,6 +28,7 @@ impl UI {
             widgets:  Some(vec![]),
             notifier: UINotifierRef::new(),
             zones:    Some(vec![]),
+            cur_redraw: HashSet::new(),
         }
     }
 
@@ -191,9 +194,11 @@ impl WindowUI for UI {
 
     fn draw(&mut self, painter: &mut Painter) {
         let notifier = self.notifier.clone();
+        notifier.swap_redraw(&mut self.cur_redraw);
         notifier.clear_redraw();
 
-        widget_draw(&self.root, painter);
+        println!("REDRAW: {:?}", self.cur_redraw);
+        widget_draw(&self.root, &self.cur_redraw, painter);
     }
 
     fn set_window_size(&mut self, w: f32, h: f32) {
