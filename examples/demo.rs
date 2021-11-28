@@ -29,7 +29,6 @@ fn main() {
 
         let style_ref = Rc::new(style);
 
-        let mut ui = Box::new(UI::new());
         let wid = Widget::new(style_ref.clone());
         wid.set_direct_ctrl(
             Control::None, Rect::from(0.0, 0.0, 400.0, 400.0));
@@ -64,6 +63,7 @@ fn main() {
             println!("Button clicked!");
         }));
 
+        let mut ui = Box::new(UI::new());
         ui.set_root(wid);
         ui
     }));
