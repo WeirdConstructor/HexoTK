@@ -40,12 +40,12 @@ fn main() {
             Control::Button { label: Box::new(concurrent_data.clone()) },
             Rect::from(10.0, 20.0, 300.0, 200.0));
 
-        sub.reg("click", Box::new(move |wid, ev| {
+        sub.reg("click", move |wid, ev| {
             if let Ok(mut data) = concurrent_data.lock() {
                 (*data).1 += 1;
             }
             println!("Button clicked!");
-        }));
+        });
 
         let sub2 = Widget::new(style_ref);
         wid.add(sub2.clone());
@@ -58,10 +58,10 @@ fn main() {
             Control::Button { label: Box::new(data.clone()) },
             Rect::from(360.0, 50.0, 200.0, 50.0));
 
-        sub2.reg("click", Box::new(move |wid, ev| {
+        sub2.reg("click", move |wid, ev| {
             (*data.borrow_mut()).1 += 1;
             println!("Button clicked!");
-        }));
+        });
 
         let mut ui = Box::new(UI::new());
         ui.set_root(wid);

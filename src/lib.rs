@@ -180,6 +180,8 @@ pub enum Control {
 
 impl Control {
     pub fn draw(&mut self, w: &Widget, painter: &mut Painter) {
+        println!("     [draw widget id: {}]", w.id());
+
         let pos         = w.pos();
         let style       = w.style();
         let is_hovered  = w.is_hovered();
@@ -458,7 +460,7 @@ pub struct EventCore {
     callbacks:
         std::collections::HashMap<
             String,
-            Option<Vec<Box<dyn Fn(Widget, &Event)>>>>,
+            Option<Vec<Box<dyn FnMut(Widget, &Event)>>>>,
 }
 
 impl EventCore {
@@ -472,7 +474,7 @@ impl EventCore {
         self.callbacks.clear();
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Widget, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(Widget, &Event)>) {
         if let Some(cbs) = self.callbacks.get_mut(ev_name) {
             if let Some(cbs) = cbs { cbs.push(cb); }
         } else {

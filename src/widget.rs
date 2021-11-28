@@ -43,8 +43,8 @@ impl Widget {
         Rc::downgrade(&self.0)
     }
 
-    pub fn reg(&self, ev_name: &str, cb: Box<dyn Fn(Widget, &Event)>) {
-        self.0.borrow_mut().reg(ev_name, cb);
+    pub fn reg<F: 'static + FnMut(Widget, &Event)>(&self, ev_name: &str, cb: F) {
+        self.0.borrow_mut().reg(ev_name, Box::new(cb));
     }
 
     pub fn take_event_core(&self) -> Option<EventCore> {
@@ -177,7 +177,7 @@ impl WidgetImpl {
         }
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Widget, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(Widget, &Event)>) {
         if let Some(evc) = &mut self.evc {
             evc.reg(ev_name, cb);
         }
