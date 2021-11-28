@@ -1,5 +1,6 @@
 use crate::{
     InputEvent, Painter, widget_draw,
+    widget_draw_frame,
     widget_walk, UINotifierRef, Rect,
     Event, Style
 };
@@ -199,8 +200,12 @@ impl WindowUI for UI {
         notifier.swap_redraw(&mut self.cur_redraw);
         notifier.clear_redraw();
 
-        println!("REDRAW: {:?}", self.cur_redraw);
+//        println!("REDRAW: {:?}", self.cur_redraw);
         widget_draw(&self.root, &self.cur_redraw, painter);
+    }
+
+    fn draw_frame(&mut self, painter: &mut Painter) {
+        widget_draw_frame(&self.root, painter);
     }
 
     fn set_window_size(&mut self, w: f32, h: f32) {

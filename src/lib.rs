@@ -28,7 +28,7 @@ pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
-use widget::{widget_draw, widget_walk};
+use widget::{widget_draw, widget_draw_frame, widget_walk};
 pub use ui::UI;
 pub use style::Style;
 
@@ -179,8 +179,11 @@ pub enum Control {
 }
 
 impl Control {
+    pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
+    }
+
     pub fn draw(&mut self, w: &Widget, painter: &mut Painter) {
-        println!("     [draw widget id: {}]", w.id());
+//        println!("     [draw widget id: {}]", w.id());
 
         let pos         = w.pos();
         let style       = w.style();
@@ -500,6 +503,7 @@ pub trait WindowUI {
     fn is_active(&mut self) -> bool;
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut Painter);
+    fn draw_frame(&mut self, painter: &mut Painter);
     fn set_window_size(&mut self, w: f32, h: f32);
 }
 

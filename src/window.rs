@@ -241,6 +241,16 @@ impl WindowHandler for GUIWindowHandler {
         self.canvas.set_render_target(femtovg::RenderTarget::Screen);
         self.canvas.fill_path(&mut path, img_paint);
 
+        {
+            let painter = &mut Painter {
+                canvas:     &mut self.canvas,
+                data:       &mut self.painter_data,
+                font:       self.font,
+                font_mono:  self.font_mono,
+            };
+            self.ui.draw_frame(painter);
+        }
+
         self.canvas.flush();
 
         self.context.swap_buffers();

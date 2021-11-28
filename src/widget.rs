@@ -296,7 +296,6 @@ pub fn widget_draw(
     let childs   = widget.0.borrow_mut().childs.take();
 
     // TODO: Cache algorithm:
-    // - We need
 
     if let Some(mut ctrl) = ctrl {
         ctrl.draw(widget, painter);
@@ -304,6 +303,24 @@ pub fn widget_draw(
         if let Some(childs) = childs {
             for c in childs.iter() {
                 widget_draw(c, redraw, painter);
+            }
+            widget.0.borrow_mut().childs = Some(childs);
+        }
+
+        widget.0.borrow_mut().ctrl = Some(ctrl);
+    }
+}
+
+pub fn widget_draw_frame(widget: &Widget, painter: &mut Painter) {
+    let mut ctrl = widget.0.borrow_mut().ctrl.take();
+    let childs   = widget.0.borrow_mut().childs.take();
+
+    if let Some(mut ctrl) = ctrl {
+        ctrl.draw_frame(widget, painter);
+
+        if let Some(childs) = childs {
+            for c in childs.iter() {
+                widget_draw_frame(c, painter);
             }
             widget.0.borrow_mut().childs = Some(childs);
         }
