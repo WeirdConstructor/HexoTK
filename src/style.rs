@@ -28,19 +28,35 @@ pub const UI_INACTIVE2_CLR        : (f32, f32, f32) = hxclr!(0xa6dbd0);
 
 #[derive(Debug, Clone)]
 pub struct Style {
-    pub bg_color:       (f32, f32, f32),
-    pub border_color:   (f32, f32, f32),
-    pub color:          (f32, f32, f32),
-    pub border:         f32,
+    pub bg_color:               (f32, f32, f32),
+    pub border_color:           (f32, f32, f32),
+    pub color:                  (f32, f32, f32),
+    pub border:                 f32,
+    pub shadow_offs:            (f32, f32),
+    pub shadow_color:           (f32, f32, f32),
+    pub hover_shadow_color:     (f32, f32, f32),
+    pub hover_border_color:     (f32, f32, f32),
+    pub hover_color:            (f32, f32, f32),
+    pub active_shadow_color:    (f32, f32, f32),
+    pub active_border_color:    (f32, f32, f32),
+    pub active_color:           (f32, f32, f32),
 }
 
 impl Style {
     pub fn new() -> Self {
         Self {
-            bg_color:       UI_BG_CLR,
-            border_color:   UI_BORDER_CLR,
-            color:          UI_TXT_CLR,
-            border:         UI_BOX_BORD,
+            bg_color:           UI_BG_CLR,
+            border_color:       UI_BORDER_CLR,
+            color:              UI_PRIM_CLR,
+            border:             UI_BOX_BORD,
+            shadow_offs:        (3.0, 3.0),
+            shadow_color:       UI_PRIM_CLR,
+            hover_shadow_color: UI_SELECT_CLR,
+            hover_border_color: UI_HLIGHT_CLR,
+            hover_color:        UI_HLIGHT_CLR,
+            active_shadow_color: UI_HLIGHT_CLR,
+            active_border_color: UI_SELECT_CLR,
+            active_color:        UI_HLIGHT_CLR,
         }
     }
 }

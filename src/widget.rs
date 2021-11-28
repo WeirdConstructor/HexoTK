@@ -1,4 +1,4 @@
-use crate::{InputEvent, EventCore, Control, Painter, Rect, UINotifier};
+use crate::{InputEvent, EventCore, Control, Painter, Rect, UINotifierRef, Event};
 use crate::style::Style;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
@@ -28,21 +28,21 @@ impl PosInfo {
 
 pub struct Widget {
     id:             usize,
-    pub evc:        EventCore,
+    pub evc:        Option<EventCore>,
     parent:         Option<Weak<RefCell<Widget>>>,
     childs:         Option<Vec<Rc<RefCell<Widget>>>>,
     pub ctrl:       Option<Box<Control>>,
     handle_childs:  Option<Vec<(Rc<RefCell<Widget>>, Rc<RefCell<Widget>>)>>,
     pos:            PosInfo,
     style:          Style,
-    notifier:       Option<Rc<RefCell<UINotifier>>>,
+    notifier:       Option<UINotifierRef>,
 }
 
 impl Widget {
     pub fn new() -> Self {
         Self {
             id:         0,
-            evc:        EventCore::new(),
+            evc:        Some(EventCore::new()),
             parent:     None,
             childs:     Some(vec![]),
             handle_childs: Some(vec![]),
@@ -53,30 +53,47 @@ impl Widget {
         }
     }
 
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn Fn(Rc<RefCell<Widget>>, &Event)>) {
+        if let Some(evc) = &mut self.evc {
+            evc.reg(ev_name, cb);
+        }
+    }
+
+    pub fn take_event_core(&mut self) -> Option<EventCore> {
+        self.evc.take()
+    }
+
+    pub fn give_back_event_core(&mut self, evc: EventCore) {
+        self.evc = Some(evc);
+    }
+
     fn emit_layout_change(&self) {
-        if let Some(notifier) = &self.notifier {
-            notifier.borrow_mut().layout_changed = true;
-        }
+        self.notifier.as_ref().map(|n| n.set_layout_changed());
     }
 
-    fn emit_redraw_required(&self) {
-//        let parent = self.parent.take();
-//
-//        if let Some(parent) = parent {
-//            if let Some(parent) = parent.upgrade() {
-//                parent.emit_redraw_required();
-//            }
-//            self.parent = Some(parent);
-//        }
-
-        if let Some(notifier) = &self.notifier {
-            notifier.borrow_mut().redraw.push(self.id);
-        }
+    pub fn emit_redraw_required(&self) {
+        self.notifier.as_ref().map(|n| n.redraw(self.id));
     }
 
-    pub fn set_notifier(&mut self, not: Rc<RefCell<UINotifier>>, id: usize) {
+    pub fn activate(&self) {
+        self.notifier.as_ref().map(|n| n.activate(self.id));
+    }
+
+    pub fn deactivate(&self) {
+        self.notifier.as_ref().map(|n| n.deactivate(self.id));
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.id == self.notifier.as_ref().map(|n| n.active()).flatten().unwrap_or(0)
+    }
+
+    pub fn set_notifier(&mut self, not: UINotifierRef, id: usize) {
         self.notifier = Some(not);
         self.id = id;
+    }
+
+    pub fn is_hovered(&self) -> bool {
+        self.id == self.notifier.as_ref().map(|n| n.hover()).unwrap_or(0)
     }
 
     pub fn id(&self) -> usize { self.id }
@@ -109,9 +126,7 @@ impl Widget {
             childs.push(child);
         }
 
-        if let Some(notifier) = &self.notifier {
-            notifier.borrow_mut().tree_changed = true;
-        }
+        self.notifier.as_mut().map(|n| n.set_tree_changed());
     }
 
     pub fn set_parent(&mut self, parent: &Rc<RefCell<Widget>>) {
@@ -119,7 +134,7 @@ impl Widget {
     }
 
     pub fn clear(&mut self, recursive: bool) {
-        self.evc.clear();
+        self.evc.as_mut().map(|evc| evc.clear());
         self.ctrl   = None;
         self.parent = None;
 

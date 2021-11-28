@@ -11,8 +11,18 @@ fn main() {
         let mut ui = Box::new(UI::new());
         let wid = Widget::new_ref();
         wid.borrow_mut().set_direct_ctrl(
-            Box::new(Control::Rect),
+            Box::new(Control::None),
+            Rect::from(0.0, 0.0, 400.0, 400.0));
+
+        let sub = Widget::new_ref();
+        wid.borrow_mut().add(sub.clone());
+        sub.borrow_mut().set_direct_ctrl(
+            Box::new(Control::Button),
             Rect::from(10.0, 20.0, 300.0, 200.0));
+
+        sub.borrow_mut().reg("click", Box::new(|wid, ev| {
+            println!("Button clicked!");
+        }));
         ui.set_root(wid);
         ui
     }));
