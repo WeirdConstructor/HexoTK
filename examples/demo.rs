@@ -34,7 +34,7 @@ fn main() {
             Control::None, Rect::from(0.0, 0.0, 400.0, 400.0));
 
         let sub = Widget::new(style_ref.clone());
-//        sub.enable_cache();
+        sub.enable_cache();
         wid.add(sub.clone());
 
         sub.set_direct_ctrl(

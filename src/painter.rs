@@ -70,15 +70,22 @@ impl Drop for ImgRef {
 }
 
 pub struct PersistPainterData {
-    store:      Rc<RefCell<ImageStore>>,
+    render_targets: Vec<femtovg::RenderTarget>,
+    store:          Rc<RefCell<ImageStore>>,
 }
 impl PersistPainterData {
     pub fn new() -> Self {
         Self {
+            render_targets: vec![],
             store: Rc::new(RefCell::new(ImageStore {
                 freed_images: vec![],
             })),
         }
+    }
+
+    pub fn init_render_targets(&mut self, target: femtovg::RenderTarget) {
+        self.render_targets.clear();
+        self.render_targets.push(target);
     }
 
     pub fn cleanup(&self, canvas: &mut Canvas<OpenGl>) {
@@ -127,9 +134,11 @@ impl<'a, 'b> Painter<'a, 'b> {
 
     pub fn start_image(&mut self, image: &ImgRef) {
         println!("start_image {:?}", image.image_id);
+        self.canvas.save();
         self.canvas.set_render_target(
             femtovg::RenderTarget::Image(image.image_id));
-        self.canvas.save();
+        self.data.render_targets.push(
+            femtovg::RenderTarget::Image(image.image_id));
         self.canvas.clear_rect(
             0, 0, image.w as u32, image.h as u32,
             Color::rgbaf(
@@ -140,7 +149,10 @@ impl<'a, 'b> Painter<'a, 'b> {
         println!("finish_image");
         self.canvas.flush();
         self.canvas.restore();
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+        self.data.render_targets.pop();
+        if let Some(rt) = self.data.render_targets.last() {
+            self.canvas.set_render_target(*rt);
+        }
     }
 
     pub fn draw_image(&mut self, image: &ImgRef, screen_x: f32, screen_y: f32) {

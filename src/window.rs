@@ -214,6 +214,9 @@ impl WindowHandler for GUIWindowHandler {
                     self.bg_color.1,
                     self.bg_color.2));
 
+            self.painter_data.init_render_targets(
+                femtovg::RenderTarget::Image(self.img_buf));
+
             let painter = &mut Painter {
                 canvas:     &mut self.canvas,
                 data:       &mut self.painter_data,
