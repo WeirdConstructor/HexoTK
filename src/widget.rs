@@ -254,7 +254,7 @@ impl WidgetImpl {
         Rc::new(RefCell::new(Self::new(style)))
     }
 
-    pub fn parent(&mut self) -> Option<Widget> {
+    pub fn parent(&self) -> Option<Widget> {
         self.parent.as_ref().map(|p| Widget::from_weak(p)).flatten()
     }
 
@@ -294,11 +294,10 @@ pub fn widget_draw(
 {
     let mut ctrl = widget.0.borrow_mut().ctrl.take();
     let childs   = widget.0.borrow_mut().childs.take();
-
-    // TODO: Cache algorithm:
+    let wid_id   = widget.0.borrow().id();
 
     if let Some(mut ctrl) = ctrl {
-        ctrl.draw(widget, painter);
+        ctrl.draw(widget, redraw.contains(&wid_id), painter);
 
         if let Some(childs) = childs {
             for c in childs.iter() {

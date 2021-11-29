@@ -12,36 +12,39 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 
 pub struct UI {
-    win_w:      f32,
-    win_h:      f32,
-    root:       Widget,
-    widgets:    Option<Vec<Weak<RefCell<WidgetImpl>>>>,
-    notifier:   UINotifierRef,
-    zones:      Option<Vec<(Rect, usize)>>,
-    cur_redraw: HashSet<usize>,
+    win_w:              f32,
+    win_h:              f32,
+    root:               Widget,
+    widgets:            Option<Vec<Weak<RefCell<WidgetImpl>>>>,
+    notifier:           UINotifierRef,
+    zones:              Option<Vec<(Rect, usize)>>,
+    cur_redraw:         HashSet<usize>,
+    cur_parent_lookup:  Vec<usize>,
 }
 
 impl UI {
     pub fn new() -> Self {
         Self {
-            win_h:    0.0,
-            win_w:    0.0,
-            root:     Widget::new(Rc::new(Style::new())),
-            widgets:  Some(vec![]),
-            notifier: UINotifierRef::new(),
-            zones:    Some(vec![]),
-            cur_redraw: HashSet::new(),
+            win_h:              0.0,
+            win_w:              0.0,
+            root:               Widget::new(Rc::new(Style::new())),
+            widgets:            Some(vec![]),
+            notifier:           UINotifierRef::new(),
+            zones:              Some(vec![]),
+            cur_redraw:         HashSet::new(),
+            cur_parent_lookup:  vec![],
         }
     }
 
     pub fn set_root(&mut self, root: Widget) {
         self.root = root;
-        self.refresh_widget_list();
         self.on_tree_changed();
     }
 
     pub fn on_tree_changed(&mut self) {
         println!("tree changed");
+        self.refresh_widget_list();
+
         let notifier = self.notifier.clone();
 
         self.for_each_widget_impl(|wid, id| {
@@ -109,11 +112,36 @@ impl UI {
             self.widgets = Some(wids);
         }
     }
+
+    fn mark_parents_redraw(&mut self) {
+        self.notifier.swap_redraw(&mut self.cur_redraw);
+
+        self.cur_parent_lookup.clear();
+
+        for id in self.cur_redraw.iter() {
+            self.cur_parent_lookup.push(*id);
+        }
+
+        while let Some(wid_id) = self.cur_parent_lookup.pop() {
+            if let Some(widgets) = &mut self.widgets {
+                if let Some(wid) = widgets.get(wid_id) {
+                    if let Some(wid) = wid.upgrade() {
+                        if let Some(parent) = wid.borrow().parent() {
+                            let parent_id = parent.id();
+                            self.cur_redraw.insert(parent_id);
+                            self.cur_parent_lookup.push(parent_id);
+                        }
+                    }
+                }
+            }
+        }
+
+        self.notifier.swap_redraw(&mut self.cur_redraw);
+    }
 }
 
 impl WindowUI for UI {
-    fn pre_frame(&mut self) { }
-    fn post_frame(&mut self) {
+    fn pre_frame(&mut self) {
         let notifier = self.notifier.clone();
 
         if notifier.is_tree_changed() {
@@ -133,6 +161,11 @@ impl WindowUI for UI {
                 }
             }
         }
+
+        self.mark_parents_redraw();
+    }
+
+    fn post_frame(&mut self) {
     }
 
     fn needs_redraw(&mut self) -> bool { self.notifier.need_redraw() }
@@ -200,7 +233,7 @@ impl WindowUI for UI {
         notifier.swap_redraw(&mut self.cur_redraw);
         notifier.clear_redraw();
 
-//        println!("REDRAW: {:?}", self.cur_redraw);
+        println!("REDRAW: {:?}", self.cur_redraw);
         widget_draw(&self.root, &self.cur_redraw, painter);
     }
 

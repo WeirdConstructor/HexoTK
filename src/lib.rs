@@ -182,13 +182,14 @@ impl Control {
     pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
     }
 
-    pub fn draw(&mut self, w: &Widget, painter: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
 
         let pos         = w.pos();
         let style       = w.style();
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();
+        let wid_id      = w.id();
 
         //d// println!("DRAW {:?}", pos);
 
@@ -235,37 +236,74 @@ impl Control {
                     pos.w + style.border * 2.0,
                     pos.h + style.border * 2.0);
             }
-
-            painter.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
         }
 
-//        let mut img_ref = None;
-//        if w.is_cached() {
-//            img_ref = w.take_cache_img();
-//        }
-//
-        match self {
-            Control::Rect => { },
-            Control::None => { },
-            Control::Button { label } => {
-                let mut buf : [u8; 128] = [0; 128];
-                let s = label.fmt(&mut buf[..]);
+        let is_cached   = w.is_cached();
+        let mut img_ref = w.take_cache_img();
 
-                painter.label(
-                    style.font_size,
-                    0,
-                    color,
-                    pos.x,
-                    pos.y,
-                    pos.w,
-                    pos.h,
-                    s);
-            },
+        let orig_pos = pos;
+
+        let pos =
+            if is_cached {
+                if redraw {
+                    if let Some(img) = &img_ref {
+                        if    img.w() != pos.w.floor()
+                           || img.h() != pos.h.floor()
+                        {
+                            img_ref = Some(painter.new_image(pos.w, pos.h));
+                        }
+                    } else {
+                        img_ref = Some(painter.new_image(pos.w, pos.h));
+                    }
+//                    img_ref = Some(painter.new_image(pos.w, pos.h));
+
+                    println!("      start img {}", wid_id);
+                    painter.start_image(img_ref.as_ref().unwrap());
+                    Rect { x: 0.0, y: 0.0, w: pos.w, h: pos.h }
+                } else {
+                    pos
+                }
+            } else {
+                pos
+            };
+
+        if !is_cached || redraw {
+            if has_default_style {
+                painter.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
+            }
+
+            match self {
+                Control::Rect => { },
+                Control::None => { },
+                Control::Button { label } => {
+                    let mut buf : [u8; 128] = [0; 128];
+                    let s = label.fmt(&mut buf[..]);
+
+                    painter.label(
+                        style.font_size,
+                        0,
+                        color,
+                        pos.x,
+                        pos.y,
+                        pos.w,
+                        pos.h,
+                        s);
+                },
+            }
         }
 
-//        if let Some(img_ref) = img_ref {
-//            w.give_cache_img(img_ref);
-//        }
+        if let Some(img_ref) = img_ref {
+            if is_cached {
+                if redraw {
+                    println!("      finish img {}", wid_id);
+                    painter.finish_image();
+                }
+            }
+
+            painter.draw_image(&img_ref, orig_pos.x, orig_pos.y);
+            println!("      give img {}", wid_id);
+            w.give_cache_img(img_ref);
+        }
     }
 
     pub fn check_change(&mut self) -> bool {

@@ -54,8 +54,13 @@ pub struct ImageStore {
 pub struct ImgRef {
     store:      Rc<RefCell<ImageStore>>,
     image_id:   ImageId,
-    w:          f64,
-    h:          f64,
+    w:          f32,
+    h:          f32,
+}
+
+impl ImgRef {
+    pub fn w(&self) -> f32 { self.w }
+    pub fn h(&self) -> f32 { self.h }
 }
 
 impl Drop for ImgRef {
@@ -66,15 +71,25 @@ impl Drop for ImgRef {
 
 pub struct PersistPainterData {
     store:      Rc<RefCell<ImageStore>>,
-    offs_stk:   Vec<(f64, f64)>,
 }
 impl PersistPainterData {
     pub fn new() -> Self {
         Self {
-            offs_stk: vec![(0.0, 0.0)],
             store: Rc::new(RefCell::new(ImageStore {
                 freed_images: vec![],
             })),
+        }
+    }
+
+    pub fn cleanup(&self, canvas: &mut Canvas<OpenGl>) {
+        let mut store = self.store.borrow_mut();
+        if !store.freed_images.is_empty() {
+            for img in store.freed_images.iter() {
+                canvas.delete_image(*img);
+                println!("CLEANUP IMAGE!");
+            }
+
+            store.freed_images.clear();
         }
     }
 }
@@ -95,7 +110,8 @@ fn color_paint(color: (f32, f32, f32)) -> femtovg::Paint {
 }
 
 impl<'a, 'b> Painter<'a, 'b> {
-    fn new_image(&mut self, w: f64, h: f64) -> Box<ImgRef> {
+    pub fn new_image(&mut self, w: f32, h: f32) -> ImgRef {
+        println!("new_image w={}, h={}", w, h);
         let image_id =
             self.canvas.create_image_empty(
                 w as usize, h as usize,
@@ -103,30 +119,42 @@ impl<'a, 'b> Painter<'a, 'b> {
                 femtovg::ImageFlags::FLIP_Y)
                 .expect("making image buffer");
 
-        Box::new(ImgRef {
-            store:  self.data.store.clone(),
+        ImgRef {
+            store: self.data.store.clone(),
             w, h, image_id,
-        })
+        }
     }
 
-    fn start_image(&mut self, image: &ImgRef, screen_x: f64, screen_y: f64) {
-        self.data.offs_stk.push((screen_x, screen_y));
+    pub fn start_image(&mut self, image: &ImgRef) {
+        println!("start_image {:?}", image.image_id);
         self.canvas.set_render_target(
-            femtovg::RenderTarget::Image(
-                image.image_id));
+            femtovg::RenderTarget::Image(image.image_id));
+        self.canvas.save();
+        self.canvas.clear_rect(
+            0, 0, image.w as u32, image.h as u32,
+            Color::rgbaf(
+                1.0, 1.0, 1.0, 1.0));
     }
 
-    fn finish_image(&mut self) {
-        self.data.offs_stk.pop();
+    pub fn finish_image(&mut self) {
+        println!("finish_image");
+        self.canvas.flush();
+        self.canvas.restore();
         self.canvas.set_render_target(femtovg::RenderTarget::Screen);
     }
 
-    fn draw_image(&mut self, image: &ImgRef, screen_x: f64, screen_y: f64) {
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+    pub fn draw_image(&mut self, image: &ImgRef, screen_x: f32, screen_y: f32) {
+        println!("draw_image id={:?} x={}, y={}, w={}, h={}",
+            image.image_id,
+            screen_x,
+            screen_y,
+            image.w,
+            image.h);
         let img_paint =
             femtovg::Paint::image(
                 image.image_id,
-                0.0, 0.0,
+                screen_x,
+                screen_y,
                 image.w as f32,
                 image.h as f32,
                 0.0, 1.0);
@@ -135,7 +163,6 @@ impl<'a, 'b> Painter<'a, 'b> {
             screen_x as f32, screen_y as f32,
             image.w as f32,
             image.h as f32);
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
         self.canvas.fill_path(&mut path, img_paint);
     }
 

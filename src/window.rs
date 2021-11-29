@@ -251,6 +251,8 @@ impl WindowHandler for GUIWindowHandler {
             self.ui.draw_frame(painter);
         }
 
+        self.painter_data.cleanup(&mut self.canvas);
+
         self.canvas.flush();
 
         self.context.swap_buffers();
