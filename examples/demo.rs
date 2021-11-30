@@ -30,16 +30,13 @@ fn main() {
         let style_ref = Rc::new(style);
 
         let wid = Widget::new(style_ref.clone());
-        wid.set_direct_ctrl(
-            Control::None, Rect::from(0.0, 0.0, 400.0, 400.0));
 
         let sub = Widget::new(style_ref.clone());
         sub.enable_cache();
         wid.add(sub.clone());
 
-        sub.set_direct_ctrl(
-            Control::Button { label: Box::new(concurrent_data.clone()) },
-            Rect::from(10.0, 20.0, 300.0, 200.0));
+        sub.set_ctrl(
+            Control::Button { label: Box::new(concurrent_data.clone()) });
 
         sub.reg("click", move |wid, ev| {
             if let Ok(mut data) = concurrent_data.lock() {
@@ -48,7 +45,7 @@ fn main() {
             println!("Button clicked!");
         });
 
-        let sub2 = Widget::new(style_ref);
+        let sub2 = Widget::new(style_ref.clone());
         sub2.enable_cache();
         wid.add(sub2.clone());
 
@@ -56,18 +53,39 @@ fn main() {
             Rc::new(RefCell::new(
                 CloneMutable::new(("Other:".to_string(), 0))));
 
-        sub2.set_direct_ctrl(
-            Control::Button { label: Box::new(data.clone()) },
-            Rect::from(360.0, 50.0, 200.0, 50.0));
+        sub2.set_ctrl(Control::Button { label: Box::new(data.clone()) });
 
         sub2.reg("click", move |wid, ev| {
             (*data.borrow_mut()).1 += 1;
             println!("Button clicked!");
         });
 
-        wid.change_layout(|layout| { layout.layout_type = LayoutType::HBox; });
+        let sub3 = Widget::new(style_ref.clone());
+        wid.add(sub3.clone());
+
+        let sub4 = Widget::new(style_ref.clone());
+        wid.add(sub4.clone());
+
+        sub3.set_ctrl(Control::Button { label: Box::new("Test".to_string()) });
+        sub4.set_ctrl(Control::Button { label: Box::new("Test".to_string()) });
+
+        wid.change_layout(|layout| {
+            layout.layout_type = LayoutType::HBox;
+            layout.spacing = Units::Perc(1.0);
+        });
         sub.change_layout(|layout| { layout.width = Units::Perc(50.0); });
-        sub2.change_layout(|layout| { layout.width = Units::Perc(50.0); });
+        sub2.change_layout(|layout| {
+            layout.width     = Units::Perc(25.0);
+            layout.min_width = Units::Px(200.0);
+        });
+        sub3.change_layout(|layout| {
+            layout.width = Units::S(2.0);
+            layout.min_width = Units::Px(50.0);
+        });
+        sub4.change_layout(|layout| {
+            layout.min_width = Units::Px(100.0);
+            layout.width = Units::S(1.0);
+        });
 
         let mut ui = Box::new(UI::new());
         ui.set_root(wid);

@@ -194,7 +194,7 @@ impl Control {
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
 
-        let pos         = w.pos();
+        let pos         = w.inner_pos();
         let style       = w.style();
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();

@@ -66,7 +66,7 @@ impl Style {
             border_color:           UI_BORDER_CLR,
             color:                  UI_PRIM_CLR,
             border:                 UI_BOX_BORD,
-            shadow_offs:            (3.0, 3.0),
+            shadow_offs:            (0.0, 0.0),
             shadow_color:           UI_PRIM_CLR,
             hover_shadow_color:     UI_SELECT_CLR,
             hover_border_color:     UI_HLIGHT_CLR,

@@ -63,11 +63,40 @@ pub enum LayoutType {
 }
 
 #[derive(Debug, Clone)]
+pub struct MarginCalc {
+    lft:  f32,
+    rgt:  f32,
+    top:  f32,
+    bot:  f32,
+    w:    f32,
+    h:    f32,
+}
+
+impl MarginCalc {
+    pub fn from(widget: &WidgetImpl, unit_pos: Rect) -> Self {
+        let border = widget.style.border.round();
+        let layout = &widget.layout;
+
+        let lft = layout.margin_left  .calc(unit_pos.w).round();
+        let rgt = layout.margin_right .calc(unit_pos.w).round();
+        let top = layout.margin_top   .calc(unit_pos.h).round();
+        let bot = layout.margin_bottom.calc(unit_pos.h).round();
+
+        let w = 2.0 * border + lft + rgt;
+        let h = 2.0 * border + top + bot;
+
+        Self { lft, rgt, top, bot, w, h }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Layout {
     pub layout_type:    LayoutType,
     pub visible:        bool,
     pub width:          Units,
     pub height:         Units,
+    pub min_width:      Units,
+    pub min_height:     Units,
     pub pad_left:       Units,
     pub pad_right:      Units,
     pub pad_top:        Units,
@@ -88,18 +117,48 @@ impl Layout {
             visible:        true,
             width:          Units::Perc(100.0),
             height:         Units::Perc(100.0),
-            pad_left:       Units::Px(2.0),
-            pad_right:      Units::Px(2.0),
-            pad_top:        Units::Px(2.0),
-            pad_bottom:     Units::Px(2.0),
-            margin_left:    Units::Px(1.0),
-            margin_right:   Units::Px(1.0),
-            margin_top:     Units::Px(1.0),
-            margin_bottom:  Units::Px(1.0),
-            spacing:        Units::Px(4.0),
+            min_width:      Units::Px(0.0),
+            min_height:     Units::Px(0.0),
+            pad_left:       Units::Px(0.0),
+            pad_right:      Units::Px(0.0),
+            pad_top:        Units::Px(5.0),
+            pad_bottom:     Units::Px(0.0),
+//            pad_left:       Units::Px(2.0),
+//            pad_right:      Units::Px(2.0),
+//            pad_top:        Units::Px(2.0),
+//            pad_bottom:     Units::Px(2.0),
+            margin_left:    Units::Px(0.0),
+            margin_right:   Units::Px(0.0),
+            margin_top:     Units::Px(0.0),
+            margin_bottom:  Units::Px(0.0),
+            spacing:        Units::Px(0.0),
+//            spacing:        Units::Px(0.0),
             align:          Align::Center,
             valign:         VAlign::Middle,
         }
+    }
+
+    pub fn calc_static_width(&self, reference_w: f32) -> f32 {
+        let w     = self.width.calc(reference_w).round();
+        let min_w = self.min_width.calc(reference_w).round();
+        min_w.max(w)
+    }
+
+    pub fn calc_stretch_width(
+        &self, reference_w: f32, rest_w: f32, stretch_reference: f32
+    ) -> Option<f32>
+    {
+        let min_w = self.min_width.calc(reference_w).round();
+
+        let s = self.width.get_stretch()?;
+        let ret =
+            if rest_w > 0.0 && stretch_reference > 0.01 {
+                ((rest_w * s) / stretch_reference).round()
+            } else {
+                0.0
+            };
+
+        Some(ret + min_w)
     }
 }
 
@@ -183,8 +242,8 @@ impl Widget {
         self.0.borrow_mut().check_data_change()
     }
 
-    pub fn set_direct_ctrl(&self, ctrl: Control, pos: Rect) {
-        self.0.borrow_mut().set_direct_ctrl(ctrl, pos)
+    pub fn set_ctrl(&self, ctrl: Control) {
+        self.0.borrow_mut().set_ctrl(ctrl)
     }
 
     pub fn take_ctrl(&self) -> Option<Box<Control>> {
@@ -261,7 +320,7 @@ impl WidgetImpl {
             parent:         None,
             childs:         Some(vec![]),
             handle_childs:  Some(vec![]),
-            ctrl:           None,
+            ctrl:           Some(Box::new(Control::None)),
             pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
             inner_pos:      Rect::from(0.0, 0.0, 0.0, 0.0),
             layout:         Layout::new(),
@@ -321,7 +380,7 @@ impl WidgetImpl {
         let inner_pos =
             Rect {
                 x: pos.x + pad_l,
-                y: pos.x + pad_t,
+                y: pos.y + pad_t,
                 w: pos.w - (pad_l + pad_r),
                 h: pos.h - (pad_t + pad_b),
             };
@@ -333,85 +392,82 @@ impl WidgetImpl {
             LayoutType::VBox => { },
             LayoutType::HBox => {
                 let avail_w = pos.w;
+
+                let spacing = layout.spacing.calc(inner_pos.w);
+
                 if let Some(childs) = &self.childs {
-                    let mut taken_w = 0.0;
                     let mut stretch_sum = 0.0;
 
-//                    let mut max_h = 0.0;
+                    // Calculate the space that is "wasted" on margins and
+                    // borders of the childs, in relation to the inner padded
+                    // space of the HBox widget.
+                    let mut static_w = 0.0;
+                    for (i, child) in childs.iter().enumerate() {
+                        let c = child.0.borrow();
+                        let margin = MarginCalc::from(&c, inner_pos);
+                        static_w += margin.w;
+                        if i > 0 { static_w += spacing; }
+                    }
 
-                    for child in childs.iter() {
+                    let static_rest_w = inner_pos.w - static_w;
+
+                    // Now calculate the space taken by the fixed size
+                    // widgets and the margins of the stretch widgets:
+                    let mut taken_w = 0.0;
+                    for (i, child) in childs.iter().enumerate() {
                         let c            = child.0.borrow();
                         let child_layout = &c.layout;
-                        let border       = c.style.border.round();
 
-                        let margin_l = layout.margin_left  .calc(inner_pos.w).round();
-                        let margin_r = layout.margin_right .calc(inner_pos.w).round();
-                        let margin_t = layout.margin_top   .calc(inner_pos.h).round();
-                        let margin_b = layout.margin_bottom.calc(inner_pos.h).round();
-
-                        let margin_w = 2.0 * border + margin_l + margin_r;
-                        let margin_h = 2.0 * border + margin_t + margin_b;
-
-                        let avail_child_w = inner_pos.w - margin_w;
-                        let avail_child_h = inner_pos.h - margin_h;
+                        let margin = MarginCalc::from(&c, inner_pos);
 
                         if let Some(s) = child_layout.width.get_stretch() {
                             stretch_sum += s;
-                            taken_w     += margin_w;
+                            taken_w     +=
+                                margin.w
+                                + child_layout.min_width.calc(static_rest_w);
                         } else {
                             taken_w +=
-                                margin_w
-                                + child_layout.width.calc(avail_child_w).round();
+                                margin.w
+                                + child_layout.calc_static_width(static_rest_w);
                         }
 
-//                        let h = child_layout.height.calc(avail_child_h);
-//                        max_h = max_h.max(h);
+                        if i > 0 { taken_w += spacing; }
                     }
 
-                    let mut rest_w = inner_pos.w - taken_w;
-
-                    let mut x = inner_pos.x;
+                    let rest_w = inner_pos.w - taken_w;
+                    let mut x  = inner_pos.x;
 
                     for child in childs.iter() {
                         let mut c        = child.0.borrow_mut();
                         let child_layout = &c.layout;
                         let border       = c.style.border.round();
 
-                        let margin_l = layout.margin_left  .calc(inner_pos.w).round();
-                        let margin_r = layout.margin_right .calc(inner_pos.w).round();
-                        let margin_t = layout.margin_top   .calc(inner_pos.h).round();
-                        let margin_b = layout.margin_bottom.calc(inner_pos.h).round();
+                        let margin = MarginCalc::from(&c, inner_pos);
 
-                        let margin_w = 2.0 * border + margin_l + margin_r;
-                        let margin_h = 2.0 * border + margin_t + margin_b;
-
-                        let avail_child_w = inner_pos.w - margin_w;
-                        let avail_child_h = inner_pos.h - margin_h;
+                        let avail_child_h = inner_pos.h - margin.h;
 
                         let cw =
-                            if let Some(s) = child_layout.width.get_stretch() {
-                                if rest_w > 0.0 && stretch_sum > 0.01 {
-                                    ((rest_w * s) / stretch_sum).round()
-                                } else {
-                                    0.0
-                                }
+                            if let Some(s) =
+                                child_layout.calc_stretch_width(
+                                    static_rest_w, rest_w, stretch_sum)
+                            {
+                                s
                             } else {
-                                child_layout.width.calc(avail_child_w).round()
+                                child_layout.calc_static_width(static_rest_w)
                             };
 
                         let ch = child_layout.height.calc(avail_child_h).round();
-
                         let yo = child_layout.valign.calc_offs(ch, avail_child_h);
 
                         let child_pos =
                             Rect {
-                                x: x          + border + margin_l,
-                                y: pos.y + yo + border + margin_t,
+                                x: x          + border + margin.lft,
+                                y: pos.y + yo + border + margin.top,
                                 w: cw,
                                 h: ch
                             };
 
-                        x = child_pos.x + child_pos.w;
+                        x = child_pos.x + child_pos.w + border + margin.rgt + spacing;
 
                         c.relayout(child_pos);
                     }
@@ -461,9 +517,8 @@ impl WidgetImpl {
         }
     }
 
-    pub fn set_direct_ctrl(&mut self, ctrl: Control, pos: Rect) {
+    pub fn set_ctrl(&mut self, ctrl: Control) {
         self.ctrl = Some(Box::new(ctrl));
-        self.pos = pos;
     }
 
     pub fn pos(&self) -> Rect { self.pos }
