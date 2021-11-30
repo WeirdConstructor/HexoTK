@@ -11,21 +11,21 @@ pub enum Align { Left, Right, Center }
 pub enum VAlign { Top, Bottom, Middle }
 
 impl Align {
-    pub fn calc_offs(&self, w: f32, max: f32) -> f32 {
+    pub fn calc_offs(&self, w: f32, rest: f32) -> f32 {
         match self {
             Align::Left   => 0.0,
-            Align::Right  => max - w,
-            Align::Center => ((max - w) * 0.5).round(),
+            Align::Right  => rest,
+            Align::Center => (rest * 0.5).round(),
         }
     }
 }
 
 impl VAlign {
-    pub fn calc_offs(&self, h: f32, max: f32) -> f32 {
+    pub fn calc_offs(&self, h: f32, rest: f32) -> f32 {
         match self {
             VAlign::Top    => 0.0,
-            VAlign::Bottom => max - h,
-            VAlign::Middle => ((max - h) * 0.5).round(),
+            VAlign::Bottom => rest,
+            VAlign::Middle => (rest * 0.5).round(),
         }
     }
 }
@@ -96,7 +96,9 @@ pub struct Layout {
     pub width:          Units,
     pub height:         Units,
     pub min_width:      Units,
+    pub max_width:      Units,
     pub min_height:     Units,
+    pub max_height:     Units,
     pub pad_left:       Units,
     pub pad_right:      Units,
     pub pad_top:        Units,
@@ -118,7 +120,9 @@ impl Layout {
             width:          Units::Perc(100.0),
             height:         Units::Perc(100.0),
             min_width:      Units::Px(0.0),
+            max_width:      Units::Px(0.0),
             min_height:     Units::Px(0.0),
+            max_height:     Units::Px(0.0),
             pad_left:       Units::Px(0.0),
             pad_right:      Units::Px(0.0),
             pad_top:        Units::Px(5.0),
@@ -138,17 +142,40 @@ impl Layout {
         }
     }
 
-    pub fn calc_static_width(&self, reference_w: f32) -> f32 {
+    pub fn calc_static_height(&self, reference_h: f32) -> (f32, f32) {
+        let h     = self.height.calc(reference_h).round();
+        let min_h = self.min_height.calc(reference_h).round();
+        let max_h = self.max_height.calc(reference_h).round();
+
+        let h = min_h.max(h);
+
+        if max_h > 0.1 && h > max_h {
+            (max_h, h - max_h)
+        } else {
+            (h, 0.0)
+        }
+    }
+
+    pub fn calc_static_width(&self, reference_w: f32) -> (f32, f32) {
         let w     = self.width.calc(reference_w).round();
         let min_w = self.min_width.calc(reference_w).round();
-        min_w.max(w)
+        let max_w = self.max_width.calc(reference_w).round();
+
+        let w = min_w.max(w);
+
+        if max_w > 0.1 && w > max_w {
+            (max_w, w - max_w)
+        } else {
+            (w, 0.0)
+        }
     }
 
     pub fn calc_stretch_width(
         &self, reference_w: f32, rest_w: f32, stretch_reference: f32
-    ) -> Option<f32>
+    ) -> Option<(f32, f32)>
     {
         let min_w = self.min_width.calc(reference_w).round();
+        let max_w = self.max_width.calc(reference_w).round();
 
         let s = self.width.get_stretch()?;
         let ret =
@@ -158,7 +185,13 @@ impl Layout {
                 0.0
             };
 
-        Some(ret + min_w)
+        let w = ret + min_w;
+
+        if max_w > 0.1 && w > max_w {
+            Some((max_w, w - max_w))
+        } else {
+            Some((ret + min_w, 0.0))
+        }
     }
 }
 
@@ -422,13 +455,19 @@ impl WidgetImpl {
 
                         if let Some(s) = child_layout.width.get_stretch() {
                             stretch_sum += s;
-                            taken_w     +=
-                                margin.w
-                                + child_layout.min_width.calc(static_rest_w);
-                        } else {
+                            // Stretch takes into account the minimal width
+                            // of the widgets. The goal is, that taken_w
+                            // can be used as basis to calculate the rest
+                            // width that the stretch widgets can distribute
+                            // among each other.
                             taken_w +=
                                 margin.w
-                                + child_layout.calc_static_width(static_rest_w);
+                                + child_layout.min_width.calc(static_rest_w);
+
+                        } else {
+                            let (w, align_w) =
+                                child_layout.calc_static_width(static_rest_w);
+                            taken_w += margin.w + w + align_w;
                         }
 
                         if i > 0 { taken_w += spacing; }
@@ -446,28 +485,31 @@ impl WidgetImpl {
 
                         let avail_child_h = inner_pos.h - margin.h;
 
-                        let cw =
-                            if let Some(s) =
-                                child_layout.calc_stretch_width(
+                        let (cw, align_w) =
+                            child_layout
+                                .calc_stretch_width(
                                     static_rest_w, rest_w, stretch_sum)
-                            {
-                                s
-                            } else {
-                                child_layout.calc_static_width(static_rest_w)
-                            };
+                                .unwrap_or_else(||
+                                    child_layout.calc_static_width(static_rest_w));
 
-                        let ch = child_layout.height.calc(avail_child_h).round();
-                        let yo = child_layout.valign.calc_offs(ch, avail_child_h);
+                        let (ch, align_h) =
+                            child_layout.calc_static_height(avail_child_h);
 
-                        let child_pos =
+                        let mut child_pos =
                             Rect {
-                                x: x          + border + margin.lft,
-                                y: pos.y + yo + border + margin.top,
+                                x: x     + border + margin.lft,
+                                y: pos.y + border + margin.top,
                                 w: cw,
                                 h: ch
                             };
 
-                        x = child_pos.x + child_pos.w + border + margin.rgt + spacing;
+                        x = child_pos.x + cw + align_w + border + margin.rgt + spacing;
+
+                        let y_align_offs = child_layout.valign.calc_offs(ch, align_h);
+                        let x_align_offs = child_layout.align.calc_offs(cw, align_w);
+
+                        child_pos.x += x_align_offs;
+                        child_pos.y += y_align_offs;
 
                         c.relayout(child_pos);
                     }

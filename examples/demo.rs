@@ -66,25 +66,28 @@ fn main() {
         let sub4 = Widget::new(style_ref.clone());
         wid.add(sub4.clone());
 
-        sub3.set_ctrl(Control::Button { label: Box::new("Test".to_string()) });
-        sub4.set_ctrl(Control::Button { label: Box::new("Test".to_string()) });
+        sub3.set_ctrl(Control::Button { label: Box::new("Sub3".to_string()) });
+        sub4.set_ctrl(Control::Button { label: Box::new("Sub4".to_string()) });
 
         wid.change_layout(|layout| {
             layout.layout_type = LayoutType::HBox;
-            layout.spacing = Units::Perc(1.0);
         });
         sub.change_layout(|layout| { layout.width = Units::Perc(50.0); });
         sub2.change_layout(|layout| {
             layout.width     = Units::Perc(25.0);
-            layout.min_width = Units::Px(200.0);
+            layout.min_width = Units::Px(100.0);
+            layout.max_width = Units::Px(300.0);
+            layout.align     = Align::Right;
         });
         sub3.change_layout(|layout| {
-            layout.width = Units::S(2.0);
-            layout.min_width = Units::Px(50.0);
+            layout.width      = Units::S(2.0);
+            layout.min_width  = Units::Px(50.0);
+            layout.max_height = Units::Perc(50.0);
+            layout.valign     = VAlign::Middle;
         });
         sub4.change_layout(|layout| {
             layout.min_width = Units::Px(100.0);
-            layout.width = Units::S(1.0);
+            layout.width     = Units::S(1.0);
         });
 
         let mut ui = Box::new(UI::new());
