@@ -65,6 +65,10 @@ fn main() {
             println!("Button clicked!");
         });
 
+        wid.change_layout(|layout| { layout.layout_type = LayoutType::HBox; });
+        sub.change_layout(|layout| { layout.width = Units::Perc(50.0); });
+        sub2.change_layout(|layout| { layout.width = Units::Perc(50.0); });
+
         let mut ui = Box::new(UI::new());
         ui.set_root(wid);
         ui

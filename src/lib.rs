@@ -29,6 +29,10 @@ pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
 use widget::{widget_draw, widget_draw_frame, widget_walk};
+pub use widget::LayoutType;
+pub use widget::Align;
+pub use widget::VAlign;
+pub use widget::Units;
 pub use ui::UI;
 pub use style::Style;
 
@@ -180,6 +184,11 @@ pub enum Control {
 
 impl Control {
     pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
+        match self {
+            Control::Rect => { },
+            Control::None => { },
+            Control::Button { .. } => { },
+        }
     }
 
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
@@ -325,6 +334,7 @@ impl Control {
 
         match self {
             Control::Rect => { },
+            Control::None => { },
             Control::Button { .. } => {
                 match event {
                     InputEvent::MouseButtonPressed(b) => {
@@ -342,7 +352,6 @@ impl Control {
                     _ => {},
                 }
             },
-            Control::None => { },
         }
     }
 }

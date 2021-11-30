@@ -4,25 +4,101 @@ use crate::style::Style;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 
-// For morphom Cache
-#[derive(Debug, Clone)]
-pub struct PosInfo {
-    pub pos: Rect,
+#[derive(Debug, Clone, Copy)]
+pub enum Align { Left, Right, Center }
 
-    pub left:   f32,
-    pub right:  f32,
-    pub top:    f32,
-    pub bottom: f32,
+#[derive(Debug, Clone, Copy)]
+pub enum VAlign { Top, Bottom, Middle }
+
+impl Align {
+    pub fn calc_offs(&self, w: f32, max: f32) -> f32 {
+        match self {
+            Align::Left   => 0.0,
+            Align::Right  => max - w,
+            Align::Center => ((max - w) * 0.5).round(),
+        }
+    }
 }
 
-impl PosInfo {
+impl VAlign {
+    pub fn calc_offs(&self, h: f32, max: f32) -> f32 {
+        match self {
+            VAlign::Top    => 0.0,
+            VAlign::Bottom => max - h,
+            VAlign::Middle => ((max - h) * 0.5).round(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Units {
+    Px(f32),
+    Perc(f32),
+    S(f32),
+}
+
+impl Units {
+    pub fn calc(&self, len: f32) -> f32 {
+        match self {
+            Units::Px(l)   => *l,
+            Units::Perc(l) => (len * *l) / 100.0,
+            Units::S(l)    => (len * *l) / 100.0,
+        }
+    }
+
+    pub fn get_stretch(&self) -> Option<f32> {
+        if let Units::S(l) = self {
+            Some(*l)
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum LayoutType {
+    None,
+    HBox,
+    VBox,
+}
+
+#[derive(Debug, Clone)]
+pub struct Layout {
+    pub layout_type:    LayoutType,
+    pub visible:        bool,
+    pub width:          Units,
+    pub height:         Units,
+    pub pad_left:       Units,
+    pub pad_right:      Units,
+    pub pad_top:        Units,
+    pub pad_bottom:     Units,
+    pub margin_left:    Units,
+    pub margin_right:   Units,
+    pub margin_top:     Units,
+    pub margin_bottom:  Units,
+    pub spacing:        Units,
+    pub align:          Align,
+    pub valign:         VAlign,
+}
+
+impl Layout {
     pub fn new() -> Self {
         Self {
-            pos:    Rect::from(0.0, 0.0, 0.0, 0.0),
-            left:   0.0,
-            right:  0.0,
-            top:    0.0,
-            bottom: 0.0,
+            layout_type:    LayoutType::None,
+            visible:        true,
+            width:          Units::Perc(100.0),
+            height:         Units::Perc(100.0),
+            pad_left:       Units::Px(2.0),
+            pad_right:      Units::Px(2.0),
+            pad_top:        Units::Px(2.0),
+            pad_bottom:     Units::Px(2.0),
+            margin_left:    Units::Px(1.0),
+            margin_right:   Units::Px(1.0),
+            margin_top:     Units::Px(1.0),
+            margin_bottom:  Units::Px(1.0),
+            spacing:        Units::Px(4.0),
+            align:          Align::Center,
+            valign:         VAlign::Middle,
         }
     }
 }
@@ -67,6 +143,10 @@ impl Widget {
     }
     pub fn give_cache_img(&self, img: ImgRef) {
         self.0.borrow_mut().give_cache_img(img);
+    }
+
+    pub fn relayout(&self, pos: Rect) -> Option<Rect> {
+        self.0.borrow_mut().relayout(pos)
     }
 
     fn emit_layout_change(&self) {
@@ -115,7 +195,9 @@ impl Widget {
         self.0.borrow_mut().ctrl = Some(ctrl);
     }
 
-    pub fn pos(&self) -> Rect { self.0.borrow().pos.pos }
+    pub fn pos(&self) -> Rect { self.0.borrow().pos }
+
+    pub fn inner_pos(&self) -> Rect { self.0.borrow().inner_pos }
 
     pub fn style(&self) -> Rc<Style> { self.0.borrow().style.clone() }
 
@@ -143,6 +225,14 @@ impl Widget {
     pub fn clear(&self, recursive: bool) {
         self.0.borrow_mut().clear(recursive);
     }
+
+    pub fn with_layout<R, F: FnOnce(&Layout) -> R>(&self, f: F) -> R {
+        self.0.borrow().with_layout(f)
+    }
+
+    pub fn change_layout<R, F: FnOnce(&mut Layout) -> R>(&self, f: F) -> R {
+        self.0.borrow_mut().change_layout(f)
+    }
 }
 
 pub struct WidgetImpl {
@@ -152,7 +242,10 @@ pub struct WidgetImpl {
     childs:         Option<Vec<Widget>>,
     pub ctrl:       Option<Box<Control>>,
     handle_childs:  Option<Vec<(Widget, Widget)>>,
-    pos:            PosInfo,
+    pos:            Rect,
+    inner_pos:      Rect,
+    layout:         Layout,
+    layout_tmp:     Vec<Rect>,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
 
@@ -169,7 +262,10 @@ impl WidgetImpl {
             childs:         Some(vec![]),
             handle_childs:  Some(vec![]),
             ctrl:           None,
-            pos:            PosInfo::new(),
+            pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
+            inner_pos:      Rect::from(0.0, 0.0, 0.0, 0.0),
+            layout:         Layout::new(),
+            layout_tmp:     vec![],
             notifier:       None,
             cached:         false,
             cache_img:      None,
@@ -196,6 +292,135 @@ impl WidgetImpl {
 
     pub fn take_cache_img(&mut self) -> Option<ImgRef> { self.cache_img.take() }
     pub fn give_cache_img(&mut self, img: ImgRef) { self.cache_img = Some(img); }
+
+    pub fn with_layout<R, F: FnOnce(&Layout) -> R>(&self, f: F) -> R {
+        f(&self.layout)
+    }
+
+    pub fn change_layout<R, F: FnOnce(&mut Layout) -> R>(&mut self, f: F) -> R {
+        let ret = f(&mut self.layout);
+        self.emit_layout_change();
+        ret
+    }
+
+    pub fn relayout(&mut self, pos: Rect) -> Option<Rect> {
+        let layout = &self.layout;
+        if !layout.visible {
+            self.pos = Rect::from(0.0, 0.0, 0.0, 0.0);
+            return None;
+        }
+
+        self.pos = pos;
+        self.emit_redraw_required();
+
+        let pad_l = layout.pad_left  .calc(pos.w).round();
+        let pad_t = layout.pad_top   .calc(pos.h).round();
+        let pad_r = layout.pad_right .calc(pos.w).round();
+        let pad_b = layout.pad_bottom.calc(pos.h).round();
+
+        let inner_pos =
+            Rect {
+                x: pos.x + pad_l,
+                y: pos.x + pad_t,
+                w: pos.w - (pad_l + pad_r),
+                h: pos.h - (pad_t + pad_b),
+            };
+
+        self.inner_pos = inner_pos;
+
+        match layout.layout_type {
+            LayoutType::None => { },
+            LayoutType::VBox => { },
+            LayoutType::HBox => {
+                let avail_w = pos.w;
+                if let Some(childs) = &self.childs {
+                    let mut taken_w = 0.0;
+                    let mut stretch_sum = 0.0;
+
+//                    let mut max_h = 0.0;
+
+                    for child in childs.iter() {
+                        let c            = child.0.borrow();
+                        let child_layout = &c.layout;
+                        let border       = c.style.border.round();
+
+                        let margin_l = layout.margin_left  .calc(inner_pos.w).round();
+                        let margin_r = layout.margin_right .calc(inner_pos.w).round();
+                        let margin_t = layout.margin_top   .calc(inner_pos.h).round();
+                        let margin_b = layout.margin_bottom.calc(inner_pos.h).round();
+
+                        let margin_w = 2.0 * border + margin_l + margin_r;
+                        let margin_h = 2.0 * border + margin_t + margin_b;
+
+                        let avail_child_w = inner_pos.w - margin_w;
+                        let avail_child_h = inner_pos.h - margin_h;
+
+                        if let Some(s) = child_layout.width.get_stretch() {
+                            stretch_sum += s;
+                            taken_w     += margin_w;
+                        } else {
+                            taken_w +=
+                                margin_w
+                                + child_layout.width.calc(avail_child_w).round();
+                        }
+
+//                        let h = child_layout.height.calc(avail_child_h);
+//                        max_h = max_h.max(h);
+                    }
+
+                    let mut rest_w = inner_pos.w - taken_w;
+
+                    let mut x = inner_pos.x;
+
+                    for child in childs.iter() {
+                        let mut c        = child.0.borrow_mut();
+                        let child_layout = &c.layout;
+                        let border       = c.style.border.round();
+
+                        let margin_l = layout.margin_left  .calc(inner_pos.w).round();
+                        let margin_r = layout.margin_right .calc(inner_pos.w).round();
+                        let margin_t = layout.margin_top   .calc(inner_pos.h).round();
+                        let margin_b = layout.margin_bottom.calc(inner_pos.h).round();
+
+                        let margin_w = 2.0 * border + margin_l + margin_r;
+                        let margin_h = 2.0 * border + margin_t + margin_b;
+
+                        let avail_child_w = inner_pos.w - margin_w;
+                        let avail_child_h = inner_pos.h - margin_h;
+
+                        let cw =
+                            if let Some(s) = child_layout.width.get_stretch() {
+                                if rest_w > 0.0 && stretch_sum > 0.01 {
+                                    ((rest_w * s) / stretch_sum).round()
+                                } else {
+                                    0.0
+                                }
+                            } else {
+                                child_layout.width.calc(avail_child_w).round()
+                            };
+
+                        let ch = child_layout.height.calc(avail_child_h).round();
+
+                        let yo = child_layout.valign.calc_offs(ch, avail_child_h);
+
+                        let child_pos =
+                            Rect {
+                                x: x          + border + margin_l,
+                                y: pos.y + yo + border + margin_t,
+                                w: cw,
+                                h: ch
+                            };
+
+                        x = child_pos.x + child_pos.w;
+
+                        c.relayout(child_pos);
+                    }
+                }
+            },
+        }
+
+        Some(self.pos)
+    }
 
     fn emit_layout_change(&self) {
         self.notifier.as_ref().map(|n| n.set_layout_changed());
@@ -238,15 +463,22 @@ impl WidgetImpl {
 
     pub fn set_direct_ctrl(&mut self, ctrl: Control, pos: Rect) {
         self.ctrl = Some(Box::new(ctrl));
-        self.pos.pos = pos;
+        self.pos = pos;
     }
 
-    pub fn pos(&self) -> Rect { self.pos.pos }
+    pub fn pos(&self) -> Rect { self.pos }
+
+    pub fn inner_pos(&self) -> Rect { self.inner_pos }
 
     pub fn style(&self) -> &Style { &*self.style }
 
     pub fn set_style(&mut self, style: Rc<Style>) {
+        if self.style.border != style.border {
+            self.emit_layout_change();
+        }
+
         self.style = style;
+
         self.emit_redraw_required();
     }
 
@@ -292,6 +524,9 @@ pub fn widget_draw(
     redraw: &std::collections::HashSet<usize>,
     painter: &mut Painter)
 {
+    let visible  = widget.0.borrow().layout.visible;
+    if !visible { return; }
+
     let mut ctrl = widget.0.borrow_mut().ctrl.take();
     let childs   = widget.0.borrow_mut().childs.take();
     let wid_id   = widget.0.borrow().id();

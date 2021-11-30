@@ -148,10 +148,6 @@ impl WindowUI for UI {
             self.on_tree_changed();
         }
 
-        if notifier.is_layout_changed() {
-            self.on_layout_changed();
-        }
-
         if let Some(widgets) = &mut self.widgets {
             for widget in widgets {
                 if let Some(widget) = widget.upgrade() {
@@ -230,6 +226,17 @@ impl WindowUI for UI {
 
     fn draw(&mut self, painter: &mut Painter) {
         let notifier = self.notifier.clone();
+
+        if notifier.is_layout_changed() {
+            self.root.relayout(Rect {
+                x: 0.0,
+                y: 0.0,
+                w: self.win_w,
+                h: self.win_h,
+            });
+            self.on_layout_changed();
+        }
+
         notifier.swap_redraw(&mut self.cur_redraw);
         notifier.clear_redraw();
 
@@ -244,6 +251,7 @@ impl WindowUI for UI {
     fn set_window_size(&mut self, w: f32, h: f32) {
         self.win_w = w;
         self.win_h = h;
+        self.notifier.set_layout_changed();
         self.notifier.redraw(0);
     }
 }
