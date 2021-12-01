@@ -395,6 +395,64 @@ impl WidgetImpl {
         ret
     }
 
+    /// Calculate the space that is "wasted" on margins,
+    /// borders of the childs and spacing between them,
+    /// in relation to the inner padded space of the HBox widget.
+    fn sum_box_child_margins(&self, relation_pos: Rect, width: bool) -> f32 {
+        let spacing =
+            self.layout.spacing.calc(
+                if width { relation_pos.w } else { relation_pos.h });
+
+        if let Some(childs) = &self.childs {
+            let mut sum = 0.0;
+
+            for (i, child) in childs.iter().enumerate() {
+                let c = child.0.borrow();
+
+                let margin = MarginCalc::from(&c, relation_pos);
+
+                if width { sum += margin.w; }
+                else     { sum += margin.h; }
+
+                if i > 0 { sum += spacing; }
+            }
+
+            sum
+        } else {
+            0.0
+        }
+    }
+
+    /// Calculates the minimal size that will be occupied by the children.
+    /// This is neccessary to calculate the available space for stretching
+    /// the childs that stretch.
+    fn sum_box_child_min_size(&self) -> f32 {
+        0.0
+    }
+
+    /// Calculates the stretch sum of the childs that are stretching.
+    fn sum_child_stretch(&self, width: bool) -> f32 {
+        let mut stretch_sum = 0.0;
+
+        if let Some(childs) = &self.childs {
+            for (i, child) in childs.iter().enumerate() {
+                let c            = child.0.borrow();
+                let child_layout = &c.layout;
+
+
+                let units =
+                    if width { child_layout.width }
+                    else     { child_layout.height };
+
+                if let Some(s) = units.get_stretch() {
+                    stretch_sum += s;
+                }
+            }
+        }
+
+        stretch_sum
+    }
+
     pub fn relayout(&mut self, pos: Rect) -> Option<Rect> {
         let layout = &self.layout;
         if !layout.visible {
@@ -428,33 +486,22 @@ impl WidgetImpl {
 
                 let spacing = layout.spacing.calc(inner_pos.w);
 
+                let margin_sum_w  = self.sum_box_child_margins(inner_pos, true);
+                let static_rest_w = inner_pos.w - margin_sum_w;
+
+                let stretch_sum_w = self.sum_child_stretch(true);
+
                 if let Some(childs) = &self.childs {
-                    let mut stretch_sum = 0.0;
-
-                    // Calculate the space that is "wasted" on margins and
-                    // borders of the childs, in relation to the inner padded
-                    // space of the HBox widget.
-                    let mut static_w = 0.0;
-                    for (i, child) in childs.iter().enumerate() {
-                        let c = child.0.borrow();
-                        let margin = MarginCalc::from(&c, inner_pos);
-                        static_w += margin.w;
-                        if i > 0 { static_w += spacing; }
-                    }
-
-                    let static_rest_w = inner_pos.w - static_w;
-
                     // Now calculate the space taken by the fixed size
                     // widgets and the margins of the stretch widgets:
-                    let mut taken_w = 0.0;
+                    let mut taken_w     = 0.0;
                     for (i, child) in childs.iter().enumerate() {
                         let c            = child.0.borrow();
                         let child_layout = &c.layout;
 
                         let margin = MarginCalc::from(&c, inner_pos);
 
-                        if let Some(s) = child_layout.width.get_stretch() {
-                            stretch_sum += s;
+                        if let Some(_) = child_layout.width.get_stretch() {
                             // Stretch takes into account the minimal width
                             // of the widgets. The goal is, that taken_w
                             // can be used as basis to calculate the rest
@@ -488,7 +535,7 @@ impl WidgetImpl {
                         let (cw, align_w) =
                             child_layout
                                 .calc_stretch_width(
-                                    static_rest_w, rest_w, stretch_sum)
+                                    static_rest_w, rest_w, stretch_sum_w)
                                 .unwrap_or_else(||
                                     child_layout.calc_static_width(static_rest_w));
 

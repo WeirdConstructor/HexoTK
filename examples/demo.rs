@@ -72,7 +72,9 @@ fn main() {
         wid.change_layout(|layout| {
             layout.layout_type = LayoutType::HBox;
         });
-        sub.change_layout(|layout| { layout.width = Units::Perc(50.0); });
+        sub.change_layout(|layout| {
+            layout.width = Units::Perc(50.0);
+        });
         sub2.change_layout(|layout| {
             layout.width     = Units::Perc(25.0);
             layout.min_width = Units::Px(70.0);
@@ -86,7 +88,7 @@ fn main() {
             layout.valign     = VAlign::Bottom;
         });
         sub4.change_layout(|layout| {
-            layout.min_width = Units::Px(100.0);
+            layout.min_width = Units::Px(10.0);
             layout.width     = Units::S(1.0);
             layout.max_height = Units::Perc(70.0);
             layout.valign     = VAlign::Top;
