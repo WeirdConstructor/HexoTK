@@ -20,6 +20,7 @@ pub struct UI {
     zones:              Option<Vec<(Rect, usize)>>,
     cur_redraw:         HashSet<usize>,
     cur_parent_lookup:  Vec<usize>,
+    ftm:                crate::window::FrameTimeMeasurement,
 }
 
 impl UI {
@@ -33,6 +34,7 @@ impl UI {
             zones:              Some(vec![]),
             cur_redraw:         HashSet::new(),
             cur_parent_lookup:  vec![],
+            ftm:                crate::window::FrameTimeMeasurement::new("layout"),
         }
     }
 
@@ -58,7 +60,7 @@ impl UI {
     }
 
     pub fn on_layout_changed(&mut self) {
-        println!("layout changed");
+        //d// println!("layout changed");
         let zones = self.zones.take();
 
         if let Some(mut zones) = zones {
@@ -225,6 +227,7 @@ impl WindowUI for UI {
     }
 
     fn draw(&mut self, painter: &mut Painter) {
+        self.ftm.start_measure();
         let notifier = self.notifier.clone();
 
         if notifier.is_layout_changed() {
@@ -239,8 +242,9 @@ impl WindowUI for UI {
 
         notifier.swap_redraw(&mut self.cur_redraw);
         notifier.clear_redraw();
+        self.ftm.end_measure();
 
-        println!("REDRAW: {:?}", self.cur_redraw);
+        //d// println!("REDRAW: {:?}", self.cur_redraw);
         widget_draw(&self.root, &self.cur_redraw, painter);
     }
 

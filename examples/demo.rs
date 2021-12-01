@@ -25,7 +25,7 @@ fn main() {
 
     open_window("HexoTK 0.5 Demo", WINDOW_W, WINDOW_H, None, Box::new(|| {
         let mut style = Style::new();
-        style.font_size = 40.0;
+        style.font_size = 20.0;
 
         let style_ref = Rc::new(style);
 
@@ -75,19 +75,21 @@ fn main() {
         sub.change_layout(|layout| { layout.width = Units::Perc(50.0); });
         sub2.change_layout(|layout| {
             layout.width     = Units::Perc(25.0);
-            layout.min_width = Units::Px(100.0);
-            layout.max_width = Units::Px(300.0);
+            layout.min_width = Units::Px(70.0);
+            layout.max_width = Units::Px(100.0);
             layout.align     = Align::Right;
         });
         sub3.change_layout(|layout| {
             layout.width      = Units::S(2.0);
             layout.min_width  = Units::Px(50.0);
             layout.max_height = Units::Perc(50.0);
-            layout.valign     = VAlign::Middle;
+            layout.valign     = VAlign::Bottom;
         });
         sub4.change_layout(|layout| {
             layout.min_width = Units::Px(100.0);
             layout.width     = Units::S(1.0);
+            layout.max_height = Units::Perc(70.0);
+            layout.valign     = VAlign::Top;
         });
 
         let mut ui = Box::new(UI::new());

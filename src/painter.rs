@@ -93,7 +93,7 @@ impl PersistPainterData {
         if !store.freed_images.is_empty() {
             for img in store.freed_images.iter() {
                 canvas.delete_image(*img);
-                println!("CLEANUP IMAGE!");
+                //d// println!("CLEANUP IMAGE!");
             }
 
             store.freed_images.clear();
@@ -118,7 +118,7 @@ fn color_paint(color: (f32, f32, f32)) -> femtovg::Paint {
 
 impl<'a, 'b> Painter<'a, 'b> {
     pub fn new_image(&mut self, w: f32, h: f32) -> ImgRef {
-        println!("new_image w={}, h={}", w, h);
+        //d// println!("new_image w={}, h={}", w, h);
         let image_id =
             self.canvas.create_image_empty(
                 w as usize, h as usize,
@@ -133,7 +133,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 
     pub fn start_image(&mut self, image: &ImgRef) {
-        println!("start_image {:?}", image.image_id);
+        //d// println!("start_image {:?}", image.image_id);
         self.canvas.save();
         self.canvas.set_render_target(
             femtovg::RenderTarget::Image(image.image_id));
@@ -146,7 +146,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 
     pub fn finish_image(&mut self) {
-        println!("finish_image");
+        //d// println!("finish_image");
         self.canvas.flush();
         self.canvas.restore();
         self.data.render_targets.pop();
@@ -156,12 +156,12 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 
     pub fn draw_image(&mut self, image: &ImgRef, screen_x: f32, screen_y: f32) {
-        println!("draw_image id={:?} x={}, y={}, w={}, h={}",
-            image.image_id,
-            screen_x,
-            screen_y,
-            image.w,
-            image.h);
+        //d// println!("draw_image id={:?} x={}, y={}, w={}, h={}",
+        //d//     image.image_id,
+        //d//     screen_x,
+        //d//     screen_y,
+        //d//     image.w,
+        //d//     image.h);
         let img_paint =
             femtovg::Paint::image(
                 image.image_id,

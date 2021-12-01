@@ -28,7 +28,7 @@ use crate::{InputEvent, MButton, WindowUI};
 use std::rc::Rc;
 use std::cell::RefCell;
 
-struct FrameTimeMeasurement {
+pub struct FrameTimeMeasurement {
     buf: [u128; 240],
     idx: usize,
     cur: Option<std::time::Instant>,
@@ -36,7 +36,7 @@ struct FrameTimeMeasurement {
 }
 
 impl FrameTimeMeasurement {
-    fn new(lbl: &str) -> Self {
+    pub fn new(lbl: &str) -> Self {
         Self {
             buf: [0; 240],
             idx: 0,
@@ -45,11 +45,11 @@ impl FrameTimeMeasurement {
         }
     }
 
-    fn start_measure(&mut self) {
+    pub fn start_measure(&mut self) {
         self.cur = Some(std::time::Instant::now());
     }
 
-    fn end_measure(&mut self) {
+    pub fn end_measure(&mut self) {
         if let Some(cur) = self.cur.take() {
             let dur_microseconds = cur.elapsed().as_micros();
             if (self.idx + 1) >= self.buf.len() {

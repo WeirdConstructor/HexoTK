@@ -266,7 +266,7 @@ impl Control {
                     }
 //                    img_ref = Some(painter.new_image(pos.w, pos.h));
 
-                    println!("      start img {}", wid_id);
+                    //d// println!("      start img {}", wid_id);
                     painter.start_image(img_ref.as_ref().unwrap());
                     Rect { x: 0.0, y: 0.0, w: pos.w, h: pos.h }
                 } else {
@@ -304,13 +304,13 @@ impl Control {
         if let Some(img_ref) = img_ref {
             if is_cached {
                 if redraw {
-                    println!("      finish img {}", wid_id);
+                    //d// println!("      finish img {}", wid_id);
                     painter.finish_image();
                 }
             }
 
             painter.draw_image(&img_ref, orig_pos.x, orig_pos.y);
-            println!("      give img {}", wid_id);
+            //d// println!("      give img {}", wid_id);
             w.give_cache_img(img_ref);
         }
     }
