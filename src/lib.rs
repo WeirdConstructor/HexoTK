@@ -194,7 +194,8 @@ impl Control {
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
 
-        let pos         = w.inner_pos();
+        let pos         = w.pos();
+        let inner_pos   = w.inner_pos();
         let style       = w.style();
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();
@@ -252,7 +253,7 @@ impl Control {
 
         let orig_pos = pos;
 
-        let pos =
+        let (pos, inner_pos) =
             if is_cached {
                 if redraw {
                     if let Some(img) = &img_ref {
@@ -268,12 +269,19 @@ impl Control {
 
                     //d// println!("      start img {}", wid_id);
                     painter.start_image(img_ref.as_ref().unwrap());
-                    Rect { x: 0.0, y: 0.0, w: pos.w, h: pos.h }
+                    let new_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
+                    let (inner_xo, inner_yo) = (
+                        inner_pos.x - pos.x,
+                        inner_pos.y - pos.y
+                    );
+                    let new_inner_pos =
+                        Rect::from(inner_xo, inner_yo, inner_pos.w, inner_pos.h);
+                    (new_pos, new_inner_pos)
                 } else {
-                    pos
+                    (pos, inner_pos)
                 }
             } else {
-                pos
+                (pos, inner_pos)
             };
 
         if !is_cached || redraw {
@@ -292,10 +300,10 @@ impl Control {
                         style.font_size,
                         0,
                         color,
-                        pos.x,
-                        pos.y,
-                        pos.w,
-                        pos.h,
+                        inner_pos.x,
+                        inner_pos.y,
+                        inner_pos.w,
+                        inner_pos.h,
                         s);
                 },
             }

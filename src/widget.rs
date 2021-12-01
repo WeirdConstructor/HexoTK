@@ -125,7 +125,7 @@ impl Layout {
             max_height:     Units::Px(0.0),
             pad_left:       Units::Px(0.0),
             pad_right:      Units::Px(0.0),
-            pad_top:        Units::Px(5.0),
+            pad_top:        Units::Px(1.0),
             pad_bottom:     Units::Px(0.0),
 //            pad_left:       Units::Px(2.0),
 //            pad_right:      Units::Px(2.0),
@@ -170,27 +170,70 @@ impl Layout {
         }
     }
 
-    pub fn calc_stretch_width(
-        &self, reference_w: f32, rest_w: f32, stretch_reference: f32
+    pub fn calc_stretch(
+        &self, perc_reference: f32, rest_px: f32,
+        stretch_reference: f32, width: bool
     ) -> Option<(f32, f32)>
     {
-        let min_w = self.min_width.calc(reference_w).round();
-        let max_w = self.max_width.calc(reference_w).round();
+        let (min, max, nominal) =
+            if width { (self.min_width,  self.max_width,  self.width) }
+            else     { (self.min_height, self.max_height, self.height) };
 
-        let s = self.width.get_stretch()?;
+        let min_px = min.calc(perc_reference).round();
+        let max_px = max.calc(perc_reference).round();
+
+        let s = nominal.get_stretch()?;
         let ret =
-            if rest_w > 0.0 && stretch_reference > 0.01 {
-                ((rest_w * s) / stretch_reference).round()
+            if rest_px > 0.0 && stretch_reference > 0.01 {
+                ((rest_px * s) / stretch_reference).round()
             } else {
                 0.0
             };
 
-        let w = ret + min_w;
+        let px = ret + min_px;
 
-        if max_w > 0.1 && w > max_w {
-            Some((max_w, w - max_w))
+        if max_px > 0.1 && px > max_px {
+            Some((max_px, px - max_px))
         } else {
-            Some((ret + min_w, 0.0))
+            Some((ret + min_px, 0.0))
+        }
+    }
+
+    pub fn apply_align_offs(
+        &self, mut pos: Rect, w: f32, align_w: f32, h: f32, align_h: f32
+    ) -> Rect
+    {
+        let y_align_offs = self.valign.calc_offs(h, align_h);
+        let x_align_offs = self.align.calc_offs(w, align_w);
+
+        pos.x += x_align_offs;
+        pos.y += y_align_offs;
+
+        pos
+    }
+
+
+    /// Calculates the box size of this layout.
+    ///
+    /// * `perc_reference` is the reference for the 100%
+    /// * `stretch_size` is the amount of pixels the child could stretch
+    /// * `stretch_sum` is the sum of all stretch values of the childs.
+    ///
+    /// Returns (px, align_px)  - the actually taken up size and the
+    /// space that is left over for the child to align into.
+    pub fn calc_box_size(
+        &self, perc_reference: f32, stretch_size: f32, stretch_sum: f32,
+        width: bool
+    ) -> (f32, f32)
+    {
+        if width {
+            self.calc_stretch(perc_reference, stretch_size, stretch_sum, true)
+                .unwrap_or_else(||
+                    self.calc_static_width(perc_reference))
+        } else {
+            self.calc_stretch(perc_reference, stretch_size, stretch_sum, false)
+                .unwrap_or_else(||
+                    self.calc_static_height(perc_reference))
         }
     }
 }
@@ -423,13 +466,6 @@ impl WidgetImpl {
         }
     }
 
-    /// Calculates the minimal size that will be occupied by the children.
-    /// This is neccessary to calculate the available space for stretching
-    /// the childs that stretch.
-    fn sum_box_child_min_size(&self) -> f32 {
-        0.0
-    }
-
     /// Calculates the stretch sum of the childs that are stretching.
     fn sum_child_stretch(&self, width: bool) -> f32 {
         let mut stretch_sum = 0.0;
@@ -438,7 +474,6 @@ impl WidgetImpl {
             for (i, child) in childs.iter().enumerate() {
                 let c            = child.0.borrow();
                 let child_layout = &c.layout;
-
 
                 let units =
                     if width { child_layout.width }
@@ -451,6 +486,73 @@ impl WidgetImpl {
         }
 
         stretch_sum
+    }
+
+    fn box_min_size(&self, perc_reference: f32, relation_pos: Rect, width: bool) -> f32 {
+
+        let margin = MarginCalc::from(self, relation_pos);
+
+        let mut min_size =
+            if width { margin.w }
+            else     { margin.h };
+
+        // Stretch takes into account the minimal width/height
+        // of the widgets. The goal is, that min_size
+        // can be used as basis to calculate the rest
+        // width/height that the stretch widgets can distribute
+        // among each other.
+
+        let layout = &self.layout;
+        if width {
+            if let Some(_) = layout.width.get_stretch() {
+                min_size += layout.min_width.calc(perc_reference);
+            } else {
+                let (w, align_w) =
+                    layout.calc_static_width(perc_reference);
+
+                min_size += w + align_w;
+            }
+        } else {
+            if let Some(_) = layout.height.get_stretch() {
+                min_size += layout.min_height.calc(perc_reference);
+            } else {
+                let (h, align_h) =
+                    layout.calc_static_height(perc_reference);
+
+                min_size += h + align_h;
+            }
+        }
+
+        min_size
+    }
+
+    /// Calculates the minimal size that will be occupied by the children.
+    /// This is neccessary to calculate the available space for stretching
+    /// the childs that stretch.
+    ///
+    /// `perc_reference` is decoupled from `relation_pos` for the Units::Perc,
+    /// because the 100% of the childs need to relate to the actually available
+    /// space.
+    fn sum_box_child_min_size(
+        &self, perc_reference: f32, relation_pos: Rect, width: bool
+    ) -> f32
+    {
+        let spacing =
+            self.layout.spacing.calc(
+                if width { relation_pos.w } else { relation_pos.h });
+
+        let mut min_size = 0.0;
+
+        if let Some(childs) = &self.childs {
+            for (i, child) in childs.iter().enumerate() {
+                min_size +=
+                    child.0.borrow().box_min_size(perc_reference, relation_pos, width);
+
+                if i > 0 { min_size += spacing; }
+            }
+        }
+
+        min_size
     }
 
     pub fn relayout(&mut self, pos: Rect) -> Option<Rect> {
@@ -480,85 +582,115 @@ impl WidgetImpl {
 
         match layout.layout_type {
             LayoutType::None => { },
-            LayoutType::VBox => { },
+            LayoutType::VBox => {
+                let avail_h = pos.h;
+
+                let spacing = layout.spacing.calc(inner_pos.h);
+
+                let margin_sum_h = self.sum_box_child_margins(inner_pos, false);
+
+                // The reference size is the size without margins and padding
+                // of the parent that could in theory be allocated to the children.
+                // It defines the 100% for calculating the Units::Perc.
+                let perc_ref_h = inner_pos.h - margin_sum_h;
+
+                let min_child_h =
+                    self.sum_box_child_min_size(perc_ref_h, inner_pos, false);
+                let stretch_h     = inner_pos.h - min_child_h;
+                let stretch_sum_h = self.sum_child_stretch(false);
+
+                if let Some(childs) = &self.childs {
+                    // Now calculate the space taken by the fixed size
+                    // widgets and the margins of the stretch widgets:
+                    let mut y = inner_pos.y;
+
+                    for child in childs.iter() {
+                        let mut c        = child.0.borrow_mut();
+                        let child_layout = &c.layout;
+
+                        let (ch, align_h) =
+                            child_layout.calc_box_size(
+                                perc_ref_h, stretch_h, stretch_sum_h, false);
+
+                        let margin = MarginCalc::from(&c, inner_pos);
+                        let (cw, align_w) =
+                            child_layout.calc_box_size(
+                                inner_pos.w - margin.w, 0.0, 0.0, true);
+
+                        let border = c.style.border.round();
+                        let mut child_pos =
+                            Rect {
+                                x: border + margin.lft,
+                                y: border + margin.top,
+                                w: cw,
+                                h: ch
+                            };
+
+                        let child_pos =
+                            child_layout.apply_align_offs(
+                                child_pos, cw, align_w, ch, align_h);
+
+                        let child_pos = child_pos.offs(inner_pos.x, y);
+
+                        c.relayout(child_pos);
+
+                        y += margin.h + ch + align_h + spacing;
+                    }
+                }
+            },
             LayoutType::HBox => {
                 let avail_w = pos.w;
 
                 let spacing = layout.spacing.calc(inner_pos.w);
 
-                let margin_sum_w  = self.sum_box_child_margins(inner_pos, true);
-                let static_rest_w = inner_pos.w - margin_sum_w;
+                let margin_sum_w = self.sum_box_child_margins(inner_pos, true);
 
+                // The reference size is the size without margins and padding
+                // of the parent that could in theory be allocated to the children.
+                // It defines the 100% for calculating the Units::Perc.
+                let perc_ref_w = inner_pos.w - margin_sum_w;
+
+                let min_child_w =
+                    self.sum_box_child_min_size(perc_ref_w, inner_pos, true);
+                let stretch_w     = inner_pos.w - min_child_w;
                 let stretch_sum_w = self.sum_child_stretch(true);
 
                 if let Some(childs) = &self.childs {
                     // Now calculate the space taken by the fixed size
                     // widgets and the margins of the stretch widgets:
-                    let mut taken_w     = 0.0;
-                    for (i, child) in childs.iter().enumerate() {
-                        let c            = child.0.borrow();
-                        let child_layout = &c.layout;
-
-                        let margin = MarginCalc::from(&c, inner_pos);
-
-                        if let Some(_) = child_layout.width.get_stretch() {
-                            // Stretch takes into account the minimal width
-                            // of the widgets. The goal is, that taken_w
-                            // can be used as basis to calculate the rest
-                            // width that the stretch widgets can distribute
-                            // among each other.
-                            taken_w +=
-                                margin.w
-                                + child_layout.min_width.calc(static_rest_w);
-
-                        } else {
-                            let (w, align_w) =
-                                child_layout.calc_static_width(static_rest_w);
-                            taken_w += margin.w + w + align_w;
-                        }
-
-                        if i > 0 { taken_w += spacing; }
-                    }
-
-                    let rest_w = inner_pos.w - taken_w;
-                    let mut x  = inner_pos.x;
+                    let mut x = inner_pos.x;
 
                     for child in childs.iter() {
                         let mut c        = child.0.borrow_mut();
                         let child_layout = &c.layout;
-                        let border       = c.style.border.round();
-
-                        let margin = MarginCalc::from(&c, inner_pos);
-
-                        let avail_child_h = inner_pos.h - margin.h;
 
                         let (cw, align_w) =
-                            child_layout
-                                .calc_stretch_width(
-                                    static_rest_w, rest_w, stretch_sum_w)
-                                .unwrap_or_else(||
-                                    child_layout.calc_static_width(static_rest_w));
+                            child_layout.calc_box_size(
+                                perc_ref_w, stretch_w, stretch_sum_w, true);
 
+                        let margin = MarginCalc::from(&c, inner_pos);
                         let (ch, align_h) =
-                            child_layout.calc_static_height(avail_child_h);
+                            child_layout.calc_box_size(
+                                inner_pos.h - margin.h, 0.0, 0.0, false);
 
+                        let border = c.style.border.round();
                         let mut child_pos =
                             Rect {
-                                x: x     + border + margin.lft,
-                                y: pos.y + border + margin.top,
+                                x: border + margin.lft,
+                                y: border + margin.top,
                                 w: cw,
                                 h: ch
                             };
 
-                        x = child_pos.x + cw + align_w + border + margin.rgt + spacing;
+                        let child_pos =
+                            child_layout.apply_align_offs(
+                                child_pos, cw, align_w, ch, align_h);
 
-                        let y_align_offs = child_layout.valign.calc_offs(ch, align_h);
-                        let x_align_offs = child_layout.align.calc_offs(cw, align_w);
-
-                        child_pos.x += x_align_offs;
-                        child_pos.y += y_align_offs;
+                        let child_pos = child_pos.offs(x, inner_pos.y);
 
                         c.relayout(child_pos);
+
+                        x += margin.w + cw + align_w + spacing;
                     }
                 }
             },

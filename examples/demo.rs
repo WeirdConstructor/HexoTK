@@ -70,27 +70,36 @@ fn main() {
         sub4.set_ctrl(Control::Button { label: Box::new("Sub4".to_string()) });
 
         wid.change_layout(|layout| {
-            layout.layout_type = LayoutType::HBox;
+            layout.layout_type = LayoutType::VBox;
         });
         sub.change_layout(|layout| {
-            layout.width = Units::Perc(50.0);
+            layout.width = Units::Perc(25.0);
+            layout.margin_left = Units::Perc(75.0);
+            layout.height = Units::Perc(50.0);
+//            layout.align = Align::Right;
+//            layout.pad_left = Units::Perc(25.0);
+//            layout.pad_top  = Units::Perc(50.0);
         });
         sub2.change_layout(|layout| {
-            layout.width     = Units::Perc(25.0);
-            layout.min_width = Units::Px(70.0);
-            layout.max_width = Units::Px(100.0);
+//            layout.width     = Units::Perc(100.0);
+//            layout.max_width = Units::Perc(25.0);
+            layout.height    = Units::Perc(25.0);
             layout.align     = Align::Right;
         });
         sub3.change_layout(|layout| {
-            layout.width      = Units::S(2.0);
-            layout.min_width  = Units::Px(50.0);
+//            layout.width      = Units::Perc(100.0);
+//            layout.max_width  = Units::Perc(50.0);
+            layout.height     = Units::S(2.0);
+//            layout.min_width  = Units::Px(50.0);
             layout.max_height = Units::Perc(50.0);
             layout.valign     = VAlign::Bottom;
+            layout.align      = Align::Right;
         });
         sub4.change_layout(|layout| {
-            layout.min_width = Units::Px(10.0);
-            layout.width     = Units::S(1.0);
-            layout.max_height = Units::Perc(70.0);
+//            layout.width     = Units::S(1.0);
+            layout.height    = Units::S(1.0);
+//            layout.min_width = Units::Px(10.0);
+//            layout.max_height = Units::Perc(70.0);
             layout.valign     = VAlign::Top;
         });
 
