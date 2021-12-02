@@ -67,14 +67,15 @@ fn main() {
         wid.add(sub4.clone());
 
         sub3.set_ctrl(Control::Button { label: Box::new("Sub3".to_string()) });
-        sub4.set_ctrl(Control::Button { label: Box::new("Sub4".to_string()) });
+        sub4.set_ctrl(Control::Button {
+            label: Box::new("Add to Layer2".to_string())
+        });
 
         wid.change_layout(|layout| {
             layout.layout_type = LayoutType::VBox;
         });
         sub.change_layout(|layout| {
-            layout.width = Units::Perc(25.0);
-            layout.margin_left = Units::Perc(75.0);
+            layout.width = Units::Perc(50.0);
             layout.height = Units::Perc(50.0);
 //            layout.align = Align::Right;
 //            layout.pad_left = Units::Perc(25.0);
@@ -104,6 +105,7 @@ fn main() {
         });
 
         let layer2root = Widget::new(style_ref.clone());
+        layer2root.enable_cache();
         layer2root.change_layout(|layout| {
             layout.layout_type = LayoutType::HBox;
             layout.spacing    = Units::Px(2.0);

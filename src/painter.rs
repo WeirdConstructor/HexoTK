@@ -141,8 +141,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             femtovg::RenderTarget::Image(image.image_id));
         self.canvas.clear_rect(
             0, 0, image.w as u32, image.h as u32,
-            Color::rgbaf(
-                1.0, 1.0, 1.0, 1.0));
+            Color::rgbaf(0.0, 0.0, 0.0, 0.0));
     }
 
     pub fn finish_image(&mut self) {
