@@ -34,7 +34,6 @@ impl VAlign {
 pub enum Units {
     Px(f32),
     Perc(f32),
-    S(f32),
 }
 
 impl Units {
@@ -42,19 +41,38 @@ impl Units {
         match self {
             Units::Px(l)   => *l,
             Units::Perc(l) => (len * *l) / 100.0,
-            Units::S(l)    => (len * *l) / 100.0,
-        }
-    }
-
-    pub fn get_stretch(&self) -> Option<f32> {
-        if let Units::S(l) = self {
-            Some(*l)
-        } else {
-            None
         }
     }
 }
 
+/// Layout types for widget childrens.
+///
+///
+/// ## HBox / VBox
+///
+/// Basics about the HBox and VBox layout:
+/// - min_width, max_width and width define the possible horizontal size of the widget.
+/// - min_height, max_height and height define the possible vertical size of the widget.
+/// - pad_left, pad_right, pad_top and pad_bottom define the padding _inside_ the widget
+/// itself.
+/// - margin_left, margin_right, margin_top, margin_bottom define the outer margin of
+/// the widget, it does not count to the widget's size itself.
+/// - The style's `border` attribute is also taken into account and added to the
+/// margin on every side.
+/// - 100% for the [Units] is always based on the space that is allocated for the
+/// widet inside the box. That means, if the widget is allocated 100px by the `expand_w`
+/// attribute but it's min_width is 25px, max_width is 200px and it's
+/// width is 50%, then it will get 50px.
+/// - The align and valign attributes define where the widget is going to be aligned
+/// inside the space it got allocated.
+/// - If `expand_w` (or `expand_h`) is below 0.1, it's minimal size is calculated
+/// and allocated for it.
+/// - Space is not recursively allocated, that means, each widgets minimal/maximal
+/// size is calculated by it's immediate layout and style attributes.
+/// - The vertical space in a HBox or horzontal space in a VBox is allocated
+/// to the child by 100%. That means, the child can align itself accordingly.
+/// 100% in this case relates to the available size inside the parent padding,
+/// minus the border width.
 #[derive(Debug, Clone, Copy)]
 pub enum LayoutType {
     None,
@@ -641,60 +659,60 @@ impl WidgetImpl {
                 }
             },
             LayoutType::HBox => {
-                let avail_w = pos.w;
-
-                let spacing = layout.spacing.calc(inner_pos.w);
-
-                let margin_sum_w = self.sum_box_child_margins(inner_pos, true);
-
-                // The reference size is the size without margins and padding
-                // of the parent that could in theory be allocated to the children.
-                // It defines the 100% for calculating the Units::Perc.
-                let perc_ref_w = inner_pos.w - margin_sum_w;
-
-                let min_child_w =
-                    self.sum_box_child_min_size(perc_ref_w, inner_pos, true);
-                let stretch_w     = inner_pos.w - min_child_w;
-                let stretch_sum_w = self.sum_child_stretch(true);
-
-                if let Some(childs) = &self.childs {
-                    // Now calculate the space taken by the fixed size
-                    // widgets and the margins of the stretch widgets:
-                    let mut x = inner_pos.x;
-
-                    for child in childs.iter() {
-                        let mut c        = child.0.borrow_mut();
-                        let child_layout = &c.layout;
-
-                        let (cw, align_w) =
-                            child_layout.calc_box_size(
-                                perc_ref_w, stretch_w, stretch_sum_w, true);
-
-                        let margin = MarginCalc::from(&c, inner_pos);
-                        let (ch, align_h) =
-                            child_layout.calc_box_size(
-                                inner_pos.h - margin.h, 0.0, 0.0, false);
-
-                        let border = c.style.border.round();
-                        let mut child_pos =
-                            Rect {
-                                x: border + margin.lft,
-                                y: border + margin.top,
-                                w: cw,
-                                h: ch
-                            };
-
-                        let child_pos =
-                            child_layout.apply_align_offs(
-                                child_pos, cw, align_w, ch, align_h);
-
-                        let child_pos = child_pos.offs(x, inner_pos.y);
-
-                        c.relayout(child_pos);
-
-                        x += margin.w + cw + align_w + spacing;
-                    }
-                }
+//                let avail_w = pos.w;
+//
+//                let spacing = layout.spacing.calc(inner_pos.w);
+//
+//                let margin_sum_w = self.sum_box_child_margins(inner_pos, true);
+//
+//                // The reference size is the size without margins and padding
+//                // of the parent that could in theory be allocated to the children.
+//                // It defines the 100% for calculating the Units::Perc.
+//                let perc_ref_w = inner_pos.w - margin_sum_w;
+//
+//                let min_child_w =
+//                    self.sum_box_child_min_size(perc_ref_w, inner_pos, true);
+//                let stretch_w     = inner_pos.w - min_child_w;
+//                let stretch_sum_w = self.sum_child_stretch(true);
+//
+//                if let Some(childs) = &self.childs {
+//                    // Now calculate the space taken by the fixed size
+//                    // widgets and the margins of the stretch widgets:
+//                    let mut x = inner_pos.x;
+//
+//                    for child in childs.iter() {
+//                        let mut c        = child.0.borrow_mut();
+//                        let child_layout = &c.layout;
+//
+//                        let (cw, align_w) =
+//                            child_layout.calc_box_size(
+//                                perc_ref_w, stretch_w, stretch_sum_w, true);
+//
+//                        let margin = MarginCalc::from(&c, inner_pos);
+//                        let (ch, align_h) =
+//                            child_layout.calc_box_size(
+//                                inner_pos.h - margin.h, 0.0, 0.0, false);
+//
+//                        let border = c.style.border.round();
+//                        let mut child_pos =
+//                            Rect {
+//                                x: border + margin.lft,
+//                                y: border + margin.top,
+//                                w: cw,
+//                                h: ch
+//                            };
+//
+//                        let child_pos =
+//                            child_layout.apply_align_offs(
+//                                child_pos, cw, align_w, ch, align_h);
+//
+//                        let child_pos = child_pos.offs(x, inner_pos.y);
+//
+//                        c.relayout(child_pos);
+//
+//                        x += margin.w + cw + align_w + spacing;
+//                    }
+//                }
             },
         }
 

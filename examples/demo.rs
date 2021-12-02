@@ -105,10 +105,10 @@ fn main() {
         });
 
         let layer2root = Widget::new(style_ref.clone());
-        layer2root.enable_cache();
+//        layer2root.enable_cache();
         layer2root.change_layout(|layout| {
             layout.layout_type = LayoutType::HBox;
-            layout.spacing    = Units::Px(2.0);
+//            layout.spacing    = Units::Px(2.0);
             layout.pad_bottom = Units::Px(100.0);
         });
 
