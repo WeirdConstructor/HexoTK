@@ -125,7 +125,7 @@ impl Layout {
             max_height:     Units::Px(0.0),
             pad_left:       Units::Px(0.0),
             pad_right:      Units::Px(0.0),
-            pad_top:        Units::Px(1.0),
+            pad_top:        Units::Px(0.0),
             pad_bottom:     Units::Px(0.0),
 //            pad_left:       Units::Px(2.0),
 //            pad_right:      Units::Px(2.0),
@@ -329,6 +329,8 @@ impl Widget {
     pub fn give_ctrl_back(&self, ctrl: Box<Control>) {
         self.0.borrow_mut().ctrl = Some(ctrl);
     }
+
+    pub fn can_hover(&self) -> bool { self.0.borrow_mut().can_hover() }
 
     pub fn pos(&self) -> Rect { self.0.borrow().pos }
 
@@ -740,6 +742,10 @@ impl WidgetImpl {
 
     pub fn set_ctrl(&mut self, ctrl: Control) {
         self.ctrl = Some(Box::new(ctrl));
+    }
+
+    pub fn can_hover(&self) -> bool {
+        self.ctrl.as_ref().map(|c| c.can_hover()).unwrap_or(false)
     }
 
     pub fn pos(&self) -> Rect { self.pos }

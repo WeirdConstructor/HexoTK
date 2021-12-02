@@ -103,8 +103,50 @@ fn main() {
             layout.valign     = VAlign::Top;
         });
 
+        let layer2root = Widget::new(style_ref.clone());
+        layer2root.change_layout(|layout| {
+            layout.layout_type = LayoutType::HBox;
+            layout.spacing    = Units::Px(2.0);
+            layout.pad_bottom = Units::Px(100.0);
+        });
+
+        let mut cnt = 0;
+        sub4.reg("click", {
+            let layer2root = layer2root.clone();
+            let style_ref  = style_ref.clone();
+
+            move |wid, ev| {
+                cnt += 1;
+                let btn1 = Widget::new(style_ref.clone());
+                btn1.set_ctrl(Control::Button {
+                    label: Box::new(format!("Sub Btn {}", cnt))
+                });
+                btn1.change_layout(|layout| {
+                    layout.width  = Units::S(1.0);
+                    layout.height = Units::Perc(10.0);
+                });
+                layer2root.add(btn1.clone());
+            }
+        });
+
+        let btn1 = Widget::new(style_ref.clone());
+        btn1.set_ctrl(Control::Button {
+            label: Box::new(format!("Lay2 Btn {}", cnt))
+        });
+        btn1.change_layout(|layout| {
+            layout.width  = Units::S(1.0);
+            layout.height = Units::Perc(10.0);
+//                    layout.width  = Units::Perc(10.0);
+//                    layout.height = Units::Perc(10.0);
+        });
+        layer2root.add(btn1.clone());
+
         let mut ui = Box::new(UI::new());
-        ui.set_root(wid);
+        ui.add_layer_root(wid);
+
+        ui.add_layer_root(layer2root.clone());
+
+
         ui
     }));
 }

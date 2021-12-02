@@ -191,6 +191,14 @@ impl Control {
         }
     }
 
+    pub fn can_hover(&self) -> bool {
+        match self {
+            Control::Rect => false,
+            Control::None => false,
+            Control::Button { .. } => true,
+        }
+    }
+
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
 

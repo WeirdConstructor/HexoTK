@@ -14,10 +14,10 @@ use std::collections::HashSet;
 pub struct UI {
     win_w:              f32,
     win_h:              f32,
-    root:               Widget,
+    layers:             Vec<Widget>,
     widgets:            Option<Vec<Weak<RefCell<WidgetImpl>>>>,
     notifier:           UINotifierRef,
-    zones:              Option<Vec<(Rect, usize)>>,
+    zones:              Option<Vec<(Rect, bool, usize)>>,
     cur_redraw:         HashSet<usize>,
     cur_parent_lookup:  Vec<usize>,
     ftm:                crate::window::FrameTimeMeasurement,
@@ -28,7 +28,7 @@ impl UI {
         Self {
             win_h:              0.0,
             win_w:              0.0,
-            root:               Widget::new(Rc::new(Style::new())),
+            layers:             vec![],
             widgets:            Some(vec![]),
             notifier:           UINotifierRef::new(),
             zones:              Some(vec![]),
@@ -38,9 +38,22 @@ impl UI {
         }
     }
 
-    pub fn set_root(&mut self, root: Widget) {
-        self.root = root;
+    pub fn add_layer_root(&mut self, root: Widget) {
+        self.layers.push(root);
         self.on_tree_changed();
+    }
+
+    pub fn relayout(&mut self) {
+        for root in &self.layers {
+            root.relayout(Rect {
+                x: 0.0,
+                y: 0.0,
+                w: self.win_w,
+                h: self.win_h,
+            });
+        }
+
+        self.on_layout_changed();
     }
 
     pub fn on_tree_changed(&mut self) {
@@ -56,7 +69,7 @@ impl UI {
 
         self.notifier.reset_tree_changed();
 
-        self.on_layout_changed();
+        self.relayout();
     }
 
     pub fn on_layout_changed(&mut self) {
@@ -67,7 +80,7 @@ impl UI {
             zones.clear();
 
             self.for_each_widget(|wid, id| {
-                zones.push((wid.pos(), id));
+                zones.push((wid.pos(), wid.can_hover(), id));
             });
 
             self.zones = Some(zones);
@@ -103,13 +116,15 @@ impl UI {
         if let Some(mut wids) = wids {
             wids.clear();
 
-            widget_walk(&self.root, |wid, parent| {
-                if let Some(parent) = parent {
-                    wid.set_parent(parent);
-                }
+            for root in &self.layers {
+                widget_walk(root, |wid, parent| {
+                    if let Some(parent) = parent {
+                        wid.set_parent(parent);
+                    }
 
-                wids.push(wid.as_weak());
-            });
+                    wids.push(wid.as_weak());
+                });
+            }
 
             self.widgets = Some(wids);
         }
@@ -179,7 +194,9 @@ impl WindowUI for UI {
             InputEvent::MousePosition(x, y) => {
                 let mut hover_id = 0;
                 if let Some(zones) = &self.zones {
-                    for (pos, id) in zones.iter() {
+                    for (pos, can_hover, id) in zones.iter() {
+                        if !can_hover { continue; }
+
                         //d// println!("CHECK {:?} in {:?}", (*x, *y), pos);
                         if pos.is_inside(*x, *y) {
                             hover_id = *id;
@@ -231,13 +248,7 @@ impl WindowUI for UI {
         let notifier = self.notifier.clone();
 
         if notifier.is_layout_changed() {
-            self.root.relayout(Rect {
-                x: 0.0,
-                y: 0.0,
-                w: self.win_w,
-                h: self.win_h,
-            });
-            self.on_layout_changed();
+            self.relayout();
         }
 
         notifier.swap_redraw(&mut self.cur_redraw);
@@ -245,11 +256,15 @@ impl WindowUI for UI {
         self.ftm.end_measure();
 
         //d// println!("REDRAW: {:?}", self.cur_redraw);
-        widget_draw(&self.root, &self.cur_redraw, painter);
+        for root in &self.layers {
+            widget_draw(&root, &self.cur_redraw, painter);
+        }
     }
 
     fn draw_frame(&mut self, painter: &mut Painter) {
-        widget_draw_frame(&self.root, painter);
+        for root in &self.layers {
+            widget_draw_frame(root, painter);
+        }
     }
 
     fn set_window_size(&mut self, w: f32, h: f32) {
