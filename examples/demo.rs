@@ -73,35 +73,51 @@ fn main() {
 
         wid.change_layout(|layout| {
             layout.layout_type = LayoutType::VBox;
+            layout.spacing = Units::Px(2.0);
         });
         sub.change_layout(|layout| {
-            layout.width = Units::Perc(50.0);
-            layout.height = Units::Perc(50.0);
+//            layout.width = Units::Perc(50.0);
+//            layout.height = Units::Perc(50.0);
 //            layout.align = Align::Right;
 //            layout.pad_left = Units::Perc(25.0);
 //            layout.pad_top  = Units::Perc(50.0);
+            layout.expand = 0.0;
+//            layout.width = Units::Perc(50.0);
+//            layout.width = Units::Px(100.0);
+//            layout.margin_left = Units::Perc(90.0);
+//            layout.margin_right = Units::Perc(1.0);
+//            layout.margin_top = Units::Perc(10.0);
+//            layout.max_width = Units::Perc(90.0);
+            layout.max_width = Units::Px(200.0);
+//            layout.align = Align::Right;
+            layout.margin_left = Units::Perc(50.0);
+            layout.margin_bottom = Units::Px(2.0);
+            layout.margin_top = Units::Px(2.0);
+            layout.min_height = Units::Px(20.0);
+//            layout.margin_left = Units::Perc(50.0);
+            layout.height = Units::Perc(10.0);
         });
         sub2.change_layout(|layout| {
 //            layout.width     = Units::Perc(100.0);
 //            layout.max_width = Units::Perc(25.0);
-            layout.height    = Units::Perc(25.0);
-            layout.align     = Align::Right;
+//            layout.height    = Units::Perc(25.0);
+//            layout.align     = Align::Right;
         });
         sub3.change_layout(|layout| {
 //            layout.width      = Units::Perc(100.0);
 //            layout.max_width  = Units::Perc(50.0);
-            layout.height     = Units::S(2.0);
+//            layout.height     = Units::S(2.0);
 //            layout.min_width  = Units::Px(50.0);
-            layout.max_height = Units::Perc(50.0);
-            layout.valign     = VAlign::Bottom;
-            layout.align      = Align::Right;
+//            layout.max_height = Units::Perc(50.0);
+//            layout.valign     = VAlign::Bottom;
+//            layout.align      = Align::Right;
         });
         sub4.change_layout(|layout| {
 //            layout.width     = Units::S(1.0);
-            layout.height    = Units::S(1.0);
+//            layout.height    = Units::S(1.0);
 //            layout.min_width = Units::Px(10.0);
 //            layout.max_height = Units::Perc(70.0);
-            layout.valign     = VAlign::Top;
+//            layout.valign     = VAlign::Top;
         });
 
         let layer2root = Widget::new(style_ref.clone());
@@ -109,7 +125,7 @@ fn main() {
         layer2root.change_layout(|layout| {
             layout.layout_type = LayoutType::HBox;
 //            layout.spacing    = Units::Px(2.0);
-            layout.pad_bottom = Units::Px(100.0);
+//            layout.pad_bottom = Units::Px(100.0);
         });
 
         let mut cnt = 0;
@@ -124,8 +140,8 @@ fn main() {
                     label: Box::new(format!("Sub Btn {}", cnt))
                 });
                 btn1.change_layout(|layout| {
-                    layout.width  = Units::S(1.0);
-                    layout.height = Units::Perc(10.0);
+//                    layout.width  = Units::S(1.0);
+//                    layout.height = Units::Perc(10.0);
                 });
                 layer2root.add(btn1.clone());
             }
@@ -136,8 +152,8 @@ fn main() {
             label: Box::new(format!("Lay2 Btn {}", cnt))
         });
         btn1.change_layout(|layout| {
-            layout.width  = Units::S(1.0);
-            layout.height = Units::Perc(10.0);
+//            layout.width  = Units::S(1.0);
+//            layout.height = Units::Perc(10.0);
 //                    layout.width  = Units::Perc(10.0);
 //                    layout.height = Units::Perc(10.0);
         });
@@ -146,7 +162,7 @@ fn main() {
         let mut ui = Box::new(UI::new());
         ui.add_layer_root(wid);
 
-        ui.add_layer_root(layer2root.clone());
+//        ui.add_layer_root(layer2root.clone());
 
 
         ui
