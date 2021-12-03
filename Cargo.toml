@@ -18,6 +18,8 @@ driver=[]
 hexodsp             = { path = "../hexodsp" }
 femtovg            = { git = "https://github.com/femtovg/femtovg" }
 raw-gl-context     = { git = "https://github.com/glowcoil/raw-gl-context" }
+#morphorm           = { git = "https://github.com/geom3trik/morphorm.git" }
+morphorm           = { path = "../morphorm" }
 #baseview           = { git = "https://github.com/WeirdConstructor/baseview.git", branch = "fix_resize_problems" }
 baseview           = { git = "https://github.com/glowcoil/baseview.git", branch = "copy-from-parent" }
 keyboard-types     = { version = "0.5.0", default-features = false }

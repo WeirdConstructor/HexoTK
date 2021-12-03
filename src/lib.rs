@@ -29,10 +29,6 @@ pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
 use widget::{widget_draw, widget_draw_frame, widget_walk};
-pub use widget::LayoutType;
-pub use widget::Align;
-pub use widget::VAlign;
-pub use widget::Units;
 pub use ui::UI;
 pub use style::Style;
 
