@@ -186,7 +186,10 @@ impl Widget {
 
     pub fn can_hover(&self) -> bool { self.0.borrow_mut().can_hover() }
 
-    pub fn set_pos(&self, pos: Rect) { self.0.borrow_mut().pos = pos; }
+    pub fn set_pos(&self, pos: Rect) {
+        self.0.borrow_mut().pos       = pos;
+        self.0.borrow_mut().inner_pos = pos;
+    }
 
     pub fn pos(&self) -> Rect { self.0.borrow().pos }
 

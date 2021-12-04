@@ -72,25 +72,33 @@ fn main() {
         });
 
         wid.change_layout(|layout| {
-            layout.layout_type = LayoutType::Column;
-            layout.min_width = Units::Pixels(100.0);
+//            layout.layout_type = LayoutType::Column;
+//            layout.min_width = Units::Pixels(100.0);
             layout.width = Units::Pixels(100.0);
-            layout.min_height = Units::Pixels(100.0);
+//            layout.min_height = Units::Pixels(100.0);
             layout.height = Units::Pixels(100.0);
         });
         sub.change_layout(|layout| {
+            layout.width = Units::Pixels(100.0);
+            layout.height = Units::Pixels(100.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });
         sub2.change_layout(|layout| {
+            layout.width = Units::Pixels(100.0);
+            layout.height = Units::Pixels(100.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });
         sub3.change_layout(|layout| {
+            layout.width = Units::Pixels(100.0);
+            layout.height = Units::Pixels(100.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });
         sub4.change_layout(|layout| {
+            layout.width = Units::Pixels(100.0);
+            layout.height = Units::Pixels(100.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });

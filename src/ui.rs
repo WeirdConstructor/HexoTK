@@ -196,15 +196,19 @@ impl Cache for LayoutCache {
     }
 
     fn set_child_width_sum(&mut self, node: Self::Item, value: f32) {
+        println!("set[{}] child_width_sum={}", node.id, value);
         self.layouts[node.id].child_width_sum = value;
     }
     fn set_child_height_sum(&mut self, node: Self::Item, value: f32) {
+        println!("set[{}] child_height_sum={}", node.id, value);
         self.layouts[node.id].child_height_sum = value;
     }
     fn set_child_width_max(&mut self, node: Self::Item, value: f32) {
+        println!("set[{}] child_width_max={}", node.id, value);
         self.layouts[node.id].child_width_max = value;
     }
     fn set_child_height_max(&mut self, node: Self::Item, value: f32) {
+        println!("set[{}] child_height_max={}", node.id, value);
         self.layouts[node.id].child_height_max = value;
     }
 
@@ -240,7 +244,7 @@ impl Cache for LayoutCache {
             pos.w = value;
             w.set_pos(pos)
         });
-        println!("set posw={}", value);
+        println!("set[{}] posw={}", node.id, value);
         self.layouts[node.id].width = value;
     }
     fn set_height(&mut self, node: Self::Item, value: f32) {
@@ -249,7 +253,7 @@ impl Cache for LayoutCache {
             pos.h = value;
             w.set_pos(pos)
         });
-        println!("set posh={}", value);
+        println!("set[{}] posh={}", node.id, value);
         self.layouts[node.id].height = value;
     }
     fn set_posx(&mut self, node: Self::Item, value: f32) {
@@ -258,7 +262,7 @@ impl Cache for LayoutCache {
             pos.x = value;
             w.set_pos(pos)
         });
-        println!("set posx={}", value);
+        println!("set[{}] posx={}", node.id, value);
         self.layouts[node.id].posx = value;
     }
     fn set_posy(&mut self, node: Self::Item, value: f32) {
@@ -267,14 +271,16 @@ impl Cache for LayoutCache {
             pos.y = value;
             w.set_pos(pos)
         });
-        println!("set posy={}", value);
+        println!("set[{}] posy={}", node.id, value);
         self.layouts[node.id].posy = value;
     }
 
     fn set_left(&mut self, node: Self::Item, value: f32) {
+        println!("set[{}] left={}", node.id, value);
         self.layouts[node.id].left = value;
     }
     fn set_right(&mut self, node: Self::Item, value: f32) {
+        println!("set[{}] right={}", node.id, value);
         self.layouts[node.id].right = value;
     }
     fn set_top(&mut self, node: Self::Item, value: f32) {
@@ -437,16 +443,20 @@ impl Node<'_> for WidgetId {
         store.borrow().with_layout(self, |l| l.col_span)
     }
     fn border_left(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.border_left)
+        let w = store.borrow().get(self.id)?;
+        Some(Units::Pixels(w.style().border))
     }
     fn border_right(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.border_right)
+        let w = store.borrow().get(self.id)?;
+        Some(Units::Pixels(w.style().border))
     }
     fn border_top(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.border_top)
+        let w = store.borrow().get(self.id)?;
+        Some(Units::Pixels(w.style().border))
     }
     fn border_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.border_bottom)
+        let w = store.borrow().get(self.id)?;
+        Some(Units::Pixels(w.style().border))
     }
 }
 
@@ -617,6 +627,7 @@ impl UI {
                 l.right  = Units::Pixels(0.0);
                 l.width  = Units::Pixels(self.win_w);
                 l.height = Units::Pixels(self.win_h);
+                l.position_type = PositionType::SelfDirected;
             });
             println!("start relayout");
             morphorm::layout(&mut self.layout_cache, &*store, &self.widgets.clone());
