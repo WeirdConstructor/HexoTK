@@ -81,6 +81,7 @@ fn main() {
         sub.change_layout(|layout| {
             layout.width = Units::Pixels(100.0);
             layout.height = Units::Pixels(100.0);
+            layout.bottom = Units::Pixels(6.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });

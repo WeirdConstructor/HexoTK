@@ -207,20 +207,6 @@ impl Control {
         let is_active   = w.is_active();
         let wid_id      = w.id();
 
-//        let pos = Rect {
-//            x: pos.x + style.border,
-//            y: pos.y + style.border,
-//            w: pos.w + 2.0 * style.border,
-//            h: pos.h + 2.0 * style.border,
-//        };
-//
-//        let inner_pos = Rect {
-//            x: inner_pos.x + style.border,
-//            y: inner_pos.y + style.border,
-//            w: inner_pos.w + 2.0 * style.border,
-//            h: inner_pos.h + 2.0 * style.border,
-//        };
-
         //d// println!("DRAW {:?}", pos);
 
         let has_default_style =
