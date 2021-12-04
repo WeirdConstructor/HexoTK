@@ -10,6 +10,7 @@ use crate::widget::WidgetImpl;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 use morphorm::{
     Node, GeometryChanged, Cache, Hierarchy,
@@ -239,48 +240,22 @@ impl Cache for LayoutCache {
     }
 
     fn set_width(&mut self, node: Self::Item, value: f32) {
-        self.store.borrow().get(node.id).map(|w| {
-            let mut pos = w.pos();
-            pos.w = value;
-            w.set_pos(pos)
-        });
-        println!("set[{}] posw={}", node.id, value);
         self.layouts[node.id].width = value;
     }
     fn set_height(&mut self, node: Self::Item, value: f32) {
-        self.store.borrow().get(node.id).map(|w| {
-            let mut pos = w.pos();
-            pos.h = value;
-            w.set_pos(pos)
-        });
-        println!("set[{}] posh={}", node.id, value);
         self.layouts[node.id].height = value;
     }
     fn set_posx(&mut self, node: Self::Item, value: f32) {
-        self.store.borrow().get(node.id).map(|w| {
-            let mut pos = w.pos();
-            pos.x = value;
-            w.set_pos(pos)
-        });
-        println!("set[{}] posx={}", node.id, value);
         self.layouts[node.id].posx = value;
     }
     fn set_posy(&mut self, node: Self::Item, value: f32) {
-        self.store.borrow().get(node.id).map(|w| {
-            let mut pos = w.pos();
-            pos.y = value;
-            w.set_pos(pos)
-        });
-        println!("set[{}] posy={}", node.id, value);
         self.layouts[node.id].posy = value;
     }
 
     fn set_left(&mut self, node: Self::Item, value: f32) {
-        println!("set[{}] left={}", node.id, value);
         self.layouts[node.id].left = value;
     }
     fn set_right(&mut self, node: Self::Item, value: f32) {
-        println!("set[{}] right={}", node.id, value);
         self.layouts[node.id].right = value;
     }
     fn set_top(&mut self, node: Self::Item, value: f32) {
@@ -313,6 +288,12 @@ impl Cache for LayoutCache {
 
 #[derive(Debug, Clone, Copy)]
 pub struct WidgetId { id: usize }
+
+impl WidgetId {
+    pub fn from(id: usize) -> Self {
+        Self { id }
+    }
+}
 
 impl Node<'_> for WidgetId {
     type Data = Rc<RefCell<WidgetStore>>;
@@ -514,7 +495,7 @@ impl WidgetStore {
                 is_first,
                 is_last,
                 parent: parent.map(|p| p.as_weak()),
-                id: WidgetId { id: self.widgets.len() - 1 },
+                id: WidgetId::from(self.widgets.len() - 1),
             });
         });
     }
@@ -531,56 +512,87 @@ impl WidgetStore {
     }
 }
 
-impl<'a> Hierarchy<'a> for WidgetStore {
-    type Item = WidgetId;
-    type DownIter =
-        std::iter::Map<
-            std::slice::Iter<'a, Weak<RefCell<WidgetImpl>>>,
-            fn(&std::rc::Weak<RefCell<WidgetImpl>>) -> WidgetId
-        >;
-    type UpIter =
-        std::iter::Map<
-            std::iter::Rev<std::slice::Iter<'a, Weak<RefCell<WidgetImpl>>>>,
-            fn(&std::rc::Weak<RefCell<WidgetImpl>>) -> WidgetId
-        >;
-    type ChildIter = std::vec::IntoIter<WidgetId>;
+pub struct WidgetTree {
+    store:  Rc<RefCell<WidgetStore>>,
+    widgets: HashMap<usize, (Option<WidgetId>, bool, bool)>,
+    widget_dfs_vec: Vec<WidgetId>,
+}
 
-    fn up_iter(&'a self) -> Self::UpIter {
-        println!("up iter!");
-        self.widgets.iter().rev().map(|w| WidgetId { id: Widget::from_weak(w).unwrap().id() })
-    }
+impl WidgetTree {
+    pub fn from_root(store: Rc<RefCell<WidgetStore>>, root: &Widget) -> Self {
+        let mut widgets = HashMap::new();
+        let mut widget_dfs_vec = vec![];
 
-    fn down_iter(&'a self) -> Self::DownIter {
-        println!("down iter!");
-        self.widgets.iter().map(|w| WidgetId { id: Widget::from_weak(w).unwrap().id() })
-    }
-
-    fn child_iter(&self, node: Self::Item) -> Self::ChildIter {
-        let w = self.widgets.get(node.id).unwrap();
-
-        let mut v = vec![];
-        w.upgrade().unwrap().borrow().for_each_child(|w, _, _| {
-            v.push(WidgetId { id: w.id() });
+        widget_walk(root, |wid, parent, is_first, is_last| {
+            widget_dfs_vec.push(WidgetId::from(wid.id()));
+            widgets.insert(wid.id(), (
+                wid.parent().map(|w| WidgetId::from(w.id())),
+                is_first,
+                is_last,
+            ));
         });
 
-        println!("child iter {:?}!", v);
+        Self {
+            store,
+            widgets,
+            widget_dfs_vec,
+        }
+    }
 
-        v.into_iter()
+    pub fn apply_layout_to_widgets(&self, cache: &LayoutCache) {
+        for id in &self.widget_dfs_vec {
+            let pos = Rect {
+                x: cache.layouts[id.id].posx,
+                y: cache.layouts[id.id].posy,
+                w: cache.layouts[id.id].width,
+                h: cache.layouts[id.id].height,
+            };
+
+            if let Some(widget) = self.store.borrow().get(id.id) {
+                widget.set_pos(pos);
+            }
+        }
+    }
+}
+
+impl<'a> Hierarchy<'a> for WidgetTree {
+    type Item = WidgetId;
+
+
+    fn up_iter<F: FnMut(Self::Item)>(&'a self, mut f: F) {
+        for id in self.widget_dfs_vec.iter().rev() {
+            (f)(*id);
+        }
+    }
+
+    fn down_iter<F: FnMut(Self::Item)>(&'a self, mut f: F) {
+        for id in self.widget_dfs_vec.iter() {
+            (f)(*id);
+        }
+    }
+
+    fn child_iter<F: FnMut(Self::Item)>(&'a self, node: Self::Item, mut f: F) {
+        let w = self.store.borrow().get(node.id).unwrap();
+
+        w.for_each_child(|w, _, _| {
+            (f)(WidgetId::from(w.id()));
+        });
     }
 
     fn parent(&self, node: Self::Item) -> Option<Self::Item> {
-        let w = self.widgets.get(node.id)?;
-        println!("parent of {}", node.id);
-        let parent = w.upgrade()?.borrow().parent()?;
-        Some(WidgetId { id: parent.id() })
+        self.widgets.get(&node.id).map(|(w, _, _)| *w)?
     }
 
     fn is_first_child(&self, node: Self::Item) -> bool {
-        self.hierarchy_nodes[node.id].is_first
+        self.widgets.get(&node.id)
+            .map(|(_, is_first, _)| *is_first)
+            .unwrap_or(false)
     }
 
     fn is_last_child(&self, node: Self::Item) -> bool {
-        self.hierarchy_nodes[node.id].is_last
+        self.widgets.get(&node.id)
+            .map(|(_, _, is_last)| *is_last)
+            .unwrap_or(false)
     }
 }
 
@@ -629,8 +641,17 @@ impl UI {
                 l.height = Units::Pixels(self.win_h);
                 l.position_type = PositionType::SelfDirected;
             });
+
+            let tree =
+                WidgetTree::from_root(
+                    self.widgets.clone(),
+                    &root);
+
             println!("start relayout");
-            morphorm::layout(&mut self.layout_cache, &*store, &self.widgets.clone());
+            morphorm::layout(&mut self.layout_cache, &tree, &self.widgets.clone());
+
+            tree.apply_layout_to_widgets(&self.layout_cache);
+
 //            root.relayout(Rect {
 //                x: 0.0,
 //                y: 0.0,

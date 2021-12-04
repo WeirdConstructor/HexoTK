@@ -100,6 +100,10 @@ impl Widget {
         Self(Rc::new(RefCell::new(WidgetImpl::new(style))))
     }
 
+    pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, mut f: F) {
+        self.0.borrow().for_each_child(f);
+    }
+
     pub fn from_weak(w: &Weak<RefCell<WidgetImpl>>) -> Option<Widget> {
         w.upgrade().map(|w| Widget(w))
     }
@@ -276,11 +280,11 @@ impl WidgetImpl {
         }
     }
 
-    pub fn for_each_child<F: FnMut(&mut WidgetImpl, usize, bool)>(&self, mut f: F) {
+    pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, mut f: F) {
         if let Some(childs) = &self.childs {
             let len = childs.len();
             for (i, w) in childs.iter().enumerate() {
-                f(&mut w.0.borrow_mut(), i, (i + 1) == len)
+                f(&mut w.0.borrow(), i, (i + 1) == len)
             }
         }
     }
