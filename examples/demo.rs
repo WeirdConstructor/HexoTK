@@ -79,27 +79,34 @@ fn main() {
             layout.height = Units::Pixels(100.0);
         });
         sub.change_layout(|layout| {
-            layout.width = Units::Pixels(100.0);
+            layout.width = Units::Stretch(1.0);
             layout.height = Units::Pixels(100.0);
             layout.bottom = Units::Pixels(6.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });
         sub2.change_layout(|layout| {
-            layout.width = Units::Pixels(100.0);
+            layout.width = Units::Stretch(1.0);
+            layout.left = Units::Percentage(50.0);
             layout.height = Units::Pixels(100.0);
+            layout.bottom = Units::Pixels(6.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });
         sub3.change_layout(|layout| {
-            layout.width = Units::Pixels(100.0);
+            layout.width = Units::Percentage(20.0);
+            layout.left = Units::Percentage(40.0);
+            layout.right = Units::Percentage(40.0);
             layout.height = Units::Pixels(100.0);
+            layout.bottom = Units::Pixels(6.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });
         sub4.change_layout(|layout| {
-            layout.width = Units::Pixels(100.0);
+            layout.width = Units::Pixels(200.0);
+            layout.left = Units::Stretch(1.0);
             layout.height = Units::Pixels(100.0);
+            layout.bottom = Units::Pixels(6.0);
 //            layout.width = Units::Pixels(100.0);
 //            layout.height = Units::Pixels(100.0);
         });

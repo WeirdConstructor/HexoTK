@@ -559,11 +559,11 @@ impl<'a> Hierarchy<'a> for WidgetStore {
         let w = self.widgets.get(node.id).unwrap();
 
         let mut v = vec![];
-        w.upgrade().unwrap().borrow().for_each_child(|_, id, _| {
-            v.push(WidgetId { id });
+        w.upgrade().unwrap().borrow().for_each_child(|w, _, _| {
+            v.push(WidgetId { id: w.id() });
         });
 
-        //d// println!("child iter {:?}!", v);
+        println!("child iter {:?}!", v);
 
         v.into_iter()
     }

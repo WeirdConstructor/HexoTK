@@ -187,6 +187,7 @@ impl Widget {
     pub fn can_hover(&self) -> bool { self.0.borrow_mut().can_hover() }
 
     pub fn set_pos(&self, pos: Rect) {
+        self.emit_redraw_required();
         self.0.borrow_mut().pos       = pos;
         self.0.borrow_mut().inner_pos = pos;
     }
