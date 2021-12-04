@@ -16,10 +16,15 @@ use morphorm::{
     PositionType, Units,
 };
 
+struct Layer {
+    root:       Widget,
+    tree:       Option<WidgetTree>,
+}
+
 pub struct UI {
     win_w:              f32,
     win_h:              f32,
-    layers:             Vec<Widget>,
+    layers:             Vec<Layer>,
     widgets:            Rc<RefCell<WidgetStore>>,
     notifier:           UINotifierRef,
     zones:              Option<Vec<(Rect, bool, usize)>>,
@@ -47,28 +52,37 @@ impl UI {
     }
 
     pub fn add_layer_root(&mut self, root: Widget) {
-        self.layers.push(root);
+        self.layers.push(Layer { root, tree: None });
+
         self.on_tree_changed();
     }
 
     pub fn relayout(&mut self) {
         println!("start relayout");
 
-        for root in &self.layers {
-            root.change_layout(|l| {
+        let (win_w, win_h) = (self.win_w, self.win_h);
+
+        for layer in &mut self.layers {
+            layer.root.change_layout(|l| {
                 l.left   = Units::Pixels(0.0);
                 l.right  = Units::Pixels(0.0);
-                l.width  = Units::Pixels(self.win_w);
-                l.height = Units::Pixels(self.win_h);
+                l.width  = Units::Pixels(win_w);
+                l.height = Units::Pixels(win_h);
                 l.position_type = PositionType::SelfDirected;
             });
 
-            let tree =
-                WidgetTree::from_root(
-                    self.widgets.clone(),
-                    &root);
+            if layer.tree.is_none() {
+                layer.tree =
+                    Some(WidgetTree::from_root(
+                        self.widgets.clone(), &layer.root));
+            }
 
-            morphorm::layout(&mut self.layout_cache, &tree, &self.widgets.clone());
+            let tree = layer.tree.as_ref().unwrap();
+
+            morphorm::layout(
+                &mut self.layout_cache,
+                tree,
+                &self.widgets.clone());
 
             tree.apply_layout_to_widgets(&self.layout_cache);
         }
@@ -86,6 +100,10 @@ impl UI {
             wid.set_notifier(notifier.clone(), id);
             notifier.redraw(id);
         });
+
+        for layer in &mut self.layers {
+            layer.tree = None;
+        }
 
         self.notifier.reset_tree_changed();
 
@@ -114,8 +132,8 @@ impl UI {
     fn refresh_widget_list(&mut self) {
         self.widgets.borrow_mut().clear();
 
-        for root in &self.layers {
-            self.widgets.borrow_mut().add_root(root);
+        for layer in &self.layers {
+            self.widgets.borrow_mut().add_root(&layer.root);
         }
 
         self.layout_cache.clear_to_len(self.widgets.borrow().len());
@@ -235,14 +253,14 @@ impl WindowUI for UI {
         self.ftm.end_measure();
 
         //d// println!("REDRAW: {:?}", self.cur_redraw);
-        for root in &self.layers {
-            widget_draw(&root, &self.cur_redraw, painter);
+        for layer in &self.layers {
+            widget_draw(&layer.root, &self.cur_redraw, painter);
         }
     }
 
     fn draw_frame(&mut self, painter: &mut Painter) {
-        for root in &self.layers {
-            widget_draw_frame(root, painter);
+        for layer in &self.layers {
+            widget_draw_frame(&layer.root, painter);
         }
     }
 
