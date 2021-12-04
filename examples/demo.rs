@@ -72,9 +72,8 @@ fn main() {
         });
 
         wid.change_layout(|layout| {
-            layout.width  = Units::Pixels(100.0);
-            layout.height = Units::Pixels(100.0);
         });
+
         sub.change_layout(|layout| {
             layout.width  = Units::Stretch(1.0);
             layout.height = Units::Pixels(100.0);
@@ -97,8 +96,10 @@ fn main() {
         });
 
         let layer2root = Widget::new(style_ref.clone());
-//        layer2root.enable_cache();
+        layer2root.enable_cache();
         layer2root.change_layout(|layout| {
+            layout.layout_type = LayoutType::Row;
+            layout.child_top = Units::Percentage(75.0);
         });
 
         let mut cnt = 0;
@@ -113,6 +114,7 @@ fn main() {
                     label: Box::new(format!("Sub Btn {}", cnt))
                 });
                 btn1.change_layout(|layout| {
+                    layout.max_height = Units::Pixels(40.0);
                 });
                 layer2root.add(btn1.clone());
             }
@@ -123,13 +125,13 @@ fn main() {
             label: Box::new(format!("Lay2 Btn {}", cnt))
         });
         btn1.change_layout(|layout| {
+            layout.max_height = Units::Pixels(40.0);
         });
         layer2root.add(btn1.clone());
 
         let mut ui = Box::new(UI::new());
         ui.add_layer_root(wid);
-
-//        ui.add_layer_root(layer2root.clone());
+        ui.add_layer_root(layer2root.clone());
 
 
         ui

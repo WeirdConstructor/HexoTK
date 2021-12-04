@@ -197,19 +197,15 @@ impl Cache for LayoutCache {
     }
 
     fn set_child_width_sum(&mut self, node: Self::Item, value: f32) {
-        println!("set[{}] child_width_sum={}", node.id, value);
         self.layouts[node.id].child_width_sum = value;
     }
     fn set_child_height_sum(&mut self, node: Self::Item, value: f32) {
-        println!("set[{}] child_height_sum={}", node.id, value);
         self.layouts[node.id].child_height_sum = value;
     }
     fn set_child_width_max(&mut self, node: Self::Item, value: f32) {
-        println!("set[{}] child_width_max={}", node.id, value);
         self.layouts[node.id].child_width_max = value;
     }
     fn set_child_height_max(&mut self, node: Self::Item, value: f32) {
-        println!("set[{}] child_height_max={}", node.id, value);
         self.layouts[node.id].child_height_max = value;
     }
 
@@ -632,8 +628,11 @@ impl UI {
     }
 
     pub fn relayout(&mut self) {
+        println!("start relayout");
+
         for root in &self.layers {
             let store = self.widgets.borrow();
+
             root.change_layout(|l| {
                 l.left   = Units::Pixels(0.0);
                 l.right  = Units::Pixels(0.0);
@@ -647,17 +646,9 @@ impl UI {
                     self.widgets.clone(),
                     &root);
 
-            println!("start relayout");
             morphorm::layout(&mut self.layout_cache, &tree, &self.widgets.clone());
 
             tree.apply_layout_to_widgets(&self.layout_cache);
-
-//            root.relayout(Rect {
-//                x: 0.0,
-//                y: 0.0,
-//                w: self.win_w,
-//                h: self.win_h,
-//            });
         }
 
         self.on_layout_changed();
