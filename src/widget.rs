@@ -4,15 +4,90 @@ use crate::style::Style;
 use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 
+use morphorm::{LayoutType, PositionType, Units};
+
 #[derive(Debug, Clone)]
 pub struct Layout {
-    visible:        bool,
+    pub visible:        bool,
+
+    pub layout_type:   LayoutType,
+    pub position_type: PositionType,
+    pub width:         Units,
+    pub height:        Units,
+    pub min_width:     Units,
+    pub min_height:    Units,
+    pub max_width:     Units,
+    pub max_height:    Units,
+    pub left:          Units,
+    pub right:         Units,
+    pub top:           Units,
+    pub bottom:        Units,
+    pub min_left:      Units,
+    pub max_left:      Units,
+    pub min_right:     Units,
+    pub max_right:     Units,
+    pub min_top:       Units,
+    pub max_top:       Units,
+    pub min_bottom:    Units,
+    pub max_bottom:    Units,
+    pub child_left:    Units,
+    pub child_right:   Units,
+    pub child_top:     Units,
+    pub child_bottom:  Units,
+    pub row_between:   Units,
+    pub col_between:   Units,
+    pub grid_rows:     Vec<Units>,
+    pub grid_cols:     Vec<Units>,
+    pub row_index:     usize,
+    pub col_index:     usize,
+    pub col_span:      usize,
+    pub row_span:      usize,
+    pub border_left:   Units,
+    pub border_right:  Units,
+    pub border_top:    Units,
+    pub border_bottom: Units,
 }
 
 impl Layout {
     pub fn new() -> Self {
         Self {
-            visible:    true,
+            visible:       true,
+            layout_type:   LayoutType::Column,
+            position_type: PositionType::ParentDirected,
+            width:         Units::Stretch(1.0),
+            height:        Units::Stretch(1.0),
+            min_width:     Units::default(),
+            min_height:    Units::default(),
+            max_width:     Units::default(),
+            max_height:    Units::default(),
+            left:          Units::default(),
+            right:         Units::default(),
+            top:           Units::default(),
+            bottom:        Units::default(),
+            min_left:      Units::default(),
+            max_left:      Units::default(),
+            min_right:     Units::default(),
+            max_right:     Units::default(),
+            min_top:       Units::default(),
+            max_top:       Units::default(),
+            min_bottom:    Units::default(),
+            max_bottom:    Units::default(),
+            child_left:    Units::default(),
+            child_right:   Units::default(),
+            child_top:     Units::default(),
+            child_bottom:  Units::default(),
+            row_between:   Units::default(),
+            col_between:   Units::default(),
+            grid_rows:     vec![],
+            grid_cols:     vec![],
+            row_index:     0,
+            col_index:     0,
+            col_span:      1,
+            row_span:      1,
+            border_left:   Units::default(),
+            border_right:  Units::default(),
+            border_top:    Units::default(),
+            border_bottom: Units::default(),
         }
     }
 }
@@ -110,6 +185,8 @@ impl Widget {
     }
 
     pub fn can_hover(&self) -> bool { self.0.borrow_mut().can_hover() }
+
+    pub fn set_pos(&self, pos: Rect) { self.0.borrow_mut().pos = pos; }
 
     pub fn pos(&self) -> Rect { self.0.borrow().pos }
 

@@ -32,6 +32,8 @@ use widget::{widget_draw, widget_draw_frame, widget_walk};
 pub use ui::UI;
 pub use style::Style;
 
+pub use morphorm::{Units, LayoutType, PositionType};
+
 use std::fmt::Debug;
 
 pub trait Mutable {

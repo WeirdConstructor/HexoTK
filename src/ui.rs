@@ -11,12 +11,14 @@ use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 use std::collections::HashSet;
 
-use morphorm::{Node, GeometryChanged, Cache, Hierarchy};
+use morphorm::{
+    Node, GeometryChanged, Cache, Hierarchy,
+    LayoutType, PositionType, Units,
+};
 
+#[derive(Debug, Clone, Copy)]
 pub struct CachedLayout {
     geometry_changed: GeometryChanged,
-
-    visible:          bool,
 
     width:            f32,
     height:           f32,
@@ -53,8 +55,6 @@ impl CachedLayout {
         Self {
             geometry_changed: GeometryChanged::empty(),
 
-            visible:          false,
-
             width:            0.0,
             height:           0.0,
             posx:             0.0,
@@ -89,13 +89,20 @@ impl CachedLayout {
 
 pub struct LayoutCache {
     layouts: Vec<CachedLayout>,
+    store:   Rc<RefCell<WidgetStore>>,
 }
 
 impl LayoutCache {
-    pub fn new() -> Self {
+    pub fn new(store: Rc<RefCell<WidgetStore>>) -> Self {
         Self {
             layouts: vec![],
+            store,
         }
+    }
+
+    pub fn clear_to_len(&mut self, len: usize) {
+        self.layouts.clear();
+        self.layouts.resize_with(len, || CachedLayout::new());
     }
 }
 
@@ -107,7 +114,9 @@ impl Cache for LayoutCache {
     }
 
     fn visible(&self, node: Self::Item) -> bool {
-        self.layouts[node.id].visible
+        self.store.borrow().get(node.id).map(|w| {
+            w.with_layout(|l| l.visible)
+        }).unwrap_or(false)
     }
 
     fn width(&self, node: Self::Item) -> f32 {
@@ -179,7 +188,7 @@ impl Cache for LayoutCache {
     }
 
     fn set_visible(&mut self, node: Self::Item, value: bool) {
-        self.layouts[node.id].visible = value;
+        // nop
     }
 
     fn set_geo_changed(&mut self, node: Self::Item, flag: GeometryChanged, value: bool) {
@@ -226,15 +235,39 @@ impl Cache for LayoutCache {
     }
 
     fn set_width(&mut self, node: Self::Item, value: f32) {
+        self.store.borrow().get(node.id).map(|w| {
+            let mut pos = w.pos();
+            pos.w = value;
+            w.set_pos(pos)
+        });
+        println!("set posw={}", value);
         self.layouts[node.id].width = value;
     }
     fn set_height(&mut self, node: Self::Item, value: f32) {
+        self.store.borrow().get(node.id).map(|w| {
+            let mut pos = w.pos();
+            pos.h = value;
+            w.set_pos(pos)
+        });
+        println!("set posh={}", value);
         self.layouts[node.id].height = value;
     }
     fn set_posx(&mut self, node: Self::Item, value: f32) {
+        self.store.borrow().get(node.id).map(|w| {
+            let mut pos = w.pos();
+            pos.x = value;
+            w.set_pos(pos)
+        });
+        println!("set posx={}", value);
         self.layouts[node.id].posx = value;
     }
     fn set_posy(&mut self, node: Self::Item, value: f32) {
+        self.store.borrow().get(node.id).map(|w| {
+            let mut pos = w.pos();
+            pos.y = value;
+            w.set_pos(pos)
+        });
+        println!("set posy={}", value);
         self.layouts[node.id].posy = value;
     }
 
@@ -277,6 +310,144 @@ pub struct WidgetId { id: usize }
 
 impl Node<'_> for WidgetId {
     type Data = Rc<RefCell<WidgetStore>>;
+
+    fn layout_type(&self, store: &'_ Self::Data) -> Option<LayoutType> {
+        store.borrow().with_layout(self, |l| l.layout_type)
+    }
+
+    fn position_type(&self, store: &'_ Self::Data) -> Option<PositionType> {
+        store.borrow().with_layout(self, |l| l.position_type)
+    }
+
+    fn width(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.width)
+    }
+
+    fn height(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.height)
+    }
+
+    fn min_width(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.min_width)
+    }
+
+    fn min_height(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.min_height)
+    }
+
+    fn max_width(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.max_width)
+    }
+
+    fn max_height(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.max_height)
+    }
+
+    fn left(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.left)
+    }
+
+    fn right(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.right)
+    }
+
+    fn top(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.top)
+    }
+
+    fn bottom(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.bottom)
+    }
+
+    fn min_left(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.min_left)
+    }
+
+    fn max_left(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.max_left)
+    }
+
+    fn min_right(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.min_right)
+    }
+
+    fn max_right(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.max_right)
+    }
+
+    fn min_top(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.min_top)
+    }
+
+    fn max_top(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.max_top)
+    }
+
+    fn min_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.min_bottom)
+    }
+
+    fn max_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.max_bottom)
+    }
+
+    fn child_left(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.child_left)
+    }
+
+    fn child_right(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.child_right)
+    }
+
+    fn child_top(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.child_top)
+    }
+
+    fn child_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.child_bottom)
+    }
+
+    fn row_between(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.row_between)
+    }
+
+    fn col_between(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.col_between)
+    }
+
+    fn grid_rows(&self, store: &'_ Self::Data) -> Option<Vec<Units>> {
+        store.borrow().with_layout(self, |l| l.grid_rows.clone())
+    }
+
+    fn grid_cols(&self, store: &'_ Self::Data) -> Option<Vec<Units>> {
+        store.borrow().with_layout(self, |l| l.grid_cols.clone())
+    }
+
+    fn row_index(&self, store: &'_ Self::Data) -> Option<usize> {
+        store.borrow().with_layout(self, |l| l.row_index)
+    }
+
+    fn col_index(&self, store: &'_ Self::Data) -> Option<usize> {
+        store.borrow().with_layout(self, |l| l.col_index)
+    }
+    fn row_span(&self, store: &'_ Self::Data) -> Option<usize> {
+        store.borrow().with_layout(self, |l| l.row_span)
+    }
+    fn col_span(&self, store: &'_ Self::Data) -> Option<usize> {
+        store.borrow().with_layout(self, |l| l.col_span)
+    }
+    fn border_left(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.border_left)
+    }
+    fn border_right(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.border_right)
+    }
+    fn border_top(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.border_top)
+    }
+    fn border_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
+        store.borrow().with_layout(self, |l| l.border_bottom)
+    }
 }
 
 pub struct HierarchyNode {
@@ -315,6 +486,7 @@ impl WidgetStore {
         }
     }
 
+    pub fn len(&self) -> usize { self.widgets.len() }
 
     pub fn clear(&mut self) {
         self.widgets.clear();
@@ -341,6 +513,12 @@ impl WidgetStore {
         let wid = self.widgets.get(id)?;
         Widget::from_weak(wid)
     }
+
+    pub fn with_layout<R, F: FnOnce(&crate::widget::Layout) -> R>(&self, id: &WidgetId, f: F)
+        -> Option<R>
+    {
+        self.get(id.id).map(|w| w.with_layout(f))
+    }
 }
 
 impl<'a> Hierarchy<'a> for WidgetStore {
@@ -358,10 +536,12 @@ impl<'a> Hierarchy<'a> for WidgetStore {
     type ChildIter = std::vec::IntoIter<WidgetId>;
 
     fn up_iter(&'a self) -> Self::UpIter {
+        println!("up iter!");
         self.widgets.iter().rev().map(|w| WidgetId { id: Widget::from_weak(w).unwrap().id() })
     }
 
     fn down_iter(&'a self) -> Self::DownIter {
+        println!("down iter!");
         self.widgets.iter().map(|w| WidgetId { id: Widget::from_weak(w).unwrap().id() })
     }
 
@@ -373,11 +553,16 @@ impl<'a> Hierarchy<'a> for WidgetStore {
             v.push(WidgetId { id });
         });
 
+        //d// println!("child iter {:?}!", v);
+
         v.into_iter()
     }
 
     fn parent(&self, node: Self::Item) -> Option<Self::Item> {
-        None
+        let w = self.widgets.get(node.id)?;
+        println!("parent of {}", node.id);
+        let parent = w.upgrade()?.borrow().parent()?;
+        Some(WidgetId { id: parent.id() })
     }
 
     fn is_first_child(&self, node: Self::Item) -> bool {
@@ -398,20 +583,23 @@ pub struct UI {
     zones:              Option<Vec<(Rect, bool, usize)>>,
     cur_redraw:         HashSet<usize>,
     cur_parent_lookup:  Vec<usize>,
+    layout_cache:       LayoutCache,
     ftm:                crate::window::FrameTimeMeasurement,
 }
 
 impl UI {
     pub fn new() -> Self {
+        let store = Rc::new(RefCell::new(WidgetStore::new()));
         Self {
             win_h:              0.0,
             win_w:              0.0,
             layers:             vec![],
-            widgets:            Rc::new(RefCell::new(WidgetStore::new())),
+            widgets:            store.clone(),
             notifier:           UINotifierRef::new(),
             zones:              Some(vec![]),
             cur_redraw:         HashSet::new(),
             cur_parent_lookup:  vec![],
+            layout_cache:       LayoutCache::new(store),
             ftm:                crate::window::FrameTimeMeasurement::new("layout"),
         }
     }
@@ -423,12 +611,21 @@ impl UI {
 
     pub fn relayout(&mut self) {
         for root in &self.layers {
-            root.relayout(Rect {
-                x: 0.0,
-                y: 0.0,
-                w: self.win_w,
-                h: self.win_h,
+            let store = self.widgets.borrow();
+            root.change_layout(|l| {
+                l.left   = Units::Pixels(0.0);
+                l.right  = Units::Pixels(0.0);
+                l.width  = Units::Pixels(self.win_w);
+                l.height = Units::Pixels(self.win_h);
             });
+            println!("start relayout");
+            morphorm::layout(&mut self.layout_cache, &*store, &self.widgets.clone());
+//            root.relayout(Rect {
+//                x: 0.0,
+//                y: 0.0,
+//                w: self.win_w,
+//                h: self.win_h,
+//            });
         }
 
         self.on_layout_changed();
@@ -475,6 +672,8 @@ impl UI {
         for root in &self.layers {
             self.widgets.borrow_mut().add_root(root);
         }
+
+        self.layout_cache.clear_to_len(self.widgets.borrow().len());
     }
 
     fn mark_parents_redraw(&mut self) {
