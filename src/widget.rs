@@ -1,4 +1,4 @@
-use crate::{InputEvent, EventCore, Control, Painter, Rect, UINotifierRef, Event};
+use crate::{EventCore, Control, Painter, Rect, UINotifierRef, Event};
 use crate::painter::ImgRef;
 use crate::style::Style;
 use std::rc::{Weak, Rc};
@@ -100,7 +100,7 @@ impl Widget {
         Self(Rc::new(RefCell::new(WidgetImpl::new(style))))
     }
 
-    pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, mut f: F) {
+    pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, f: F) {
         self.0.borrow().for_each_child(f);
     }
 
@@ -142,6 +142,7 @@ impl Widget {
         self.0.borrow_mut().relayout(pos)
     }
 
+    #[allow(unused)]
     fn emit_layout_change(&self) {
         self.0.borrow_mut().emit_layout_change();
     }
@@ -246,7 +247,6 @@ pub struct WidgetImpl {
     pos:            Rect,
     inner_pos:      Rect,
     layout:         Layout,
-    layout_tmp:     Vec<Rect>,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
 
@@ -272,7 +272,6 @@ impl WidgetImpl {
             pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
             inner_pos:      Rect::from(0.0, 0.0, 0.0, 0.0),
             layout:         Layout::new(),
-            layout_tmp:     vec![],
             notifier:       None,
             cached:         false,
             cache_img:      None,
@@ -432,9 +431,9 @@ pub fn widget_draw(
     let visible  = widget.0.borrow().layout.visible;
     if !visible { return; }
 
-    let mut ctrl = widget.0.borrow_mut().ctrl.take();
-    let childs   = widget.0.borrow_mut().childs.take();
-    let wid_id   = widget.0.borrow().id();
+    let ctrl   = widget.0.borrow_mut().ctrl.take();
+    let childs = widget.0.borrow_mut().childs.take();
+    let wid_id = widget.0.borrow().id();
 
     if let Some(mut ctrl) = ctrl {
         ctrl.draw(widget, redraw.contains(&wid_id), painter);
@@ -451,8 +450,8 @@ pub fn widget_draw(
 }
 
 pub fn widget_draw_frame(widget: &Widget, painter: &mut Painter) {
-    let mut ctrl = widget.0.borrow_mut().ctrl.take();
-    let childs   = widget.0.borrow_mut().childs.take();
+    let ctrl   = widget.0.borrow_mut().ctrl.take();
+    let childs = widget.0.borrow_mut().childs.take();
 
     if let Some(mut ctrl) = ctrl {
         ctrl.draw_frame(widget, painter);

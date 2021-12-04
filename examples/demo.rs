@@ -11,7 +11,7 @@ fn main() {
         Arc::new(Mutex::new(CloneMutable::new(
             ("Count:".to_string(), 0))));
 
-    let t = std::thread::spawn({
+    std::thread::spawn({
         let data = concurrent_data.clone();
         move || {
             loop {
@@ -38,7 +38,7 @@ fn main() {
         sub.set_ctrl(
             Control::Button { label: Box::new(concurrent_data.clone()) });
 
-        sub.reg("click", move |wid, ev| {
+        sub.reg("click", move |_wid, _ev| {
             if let Ok(mut data) = concurrent_data.lock() {
                 (*data).1 += 1;
             }
@@ -55,7 +55,7 @@ fn main() {
 
         sub2.set_ctrl(Control::Button { label: Box::new(data.clone()) });
 
-        sub2.reg("click", move |wid, ev| {
+        sub2.reg("click", move |_wid, _ev| {
             (*data.borrow_mut()).1 += 1;
             println!("Button clicked!");
         });
@@ -71,8 +71,8 @@ fn main() {
             label: Box::new("Add to Layer2".to_string())
         });
 
-        wid.change_layout(|layout| {
-        });
+//        wid.change_layout(|layout| {
+//        });
 
         sub.change_layout(|layout| {
             layout.width  = Units::Stretch(1.0);
@@ -107,7 +107,7 @@ fn main() {
             let layer2root = layer2root.clone();
             let style_ref  = style_ref.clone();
 
-            move |wid, ev| {
+            move |_wid, _ev| {
                 cnt += 1;
                 let btn1 = Widget::new(style_ref.clone());
                 btn1.set_ctrl(Control::Button {

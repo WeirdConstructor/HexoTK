@@ -26,6 +26,7 @@ macro_rules! hxclr {
     }
 }
 
+#[allow(unused)]
 pub fn darken_clr(depth: u32, clr: (f32, f32, f32)) -> (f32, f32, f32) {
     if depth == 0 { return clr; }
     ((clr.0 * (1.0 / (1.2_f32).powf(depth as f32))).clamp(0.0, 1.0),
@@ -33,6 +34,7 @@ pub fn darken_clr(depth: u32, clr: (f32, f32, f32)) -> (f32, f32, f32) {
      (clr.2 * (1.0 / (1.2_f32).powf(depth as f32))).clamp(0.0, 1.0))
 }
 
+#[allow(unused)]
 pub fn lighten_clr(depth: u32, clr: (f32, f32, f32)) -> (f32, f32, f32) {
     if depth == 0 { return clr; }
     ((clr.0 * (1.2_f32).powf(depth as f32)).clamp(0.0, 1.0),
@@ -430,6 +432,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 }
 
+#[allow(unused)]
 pub fn calc_font_size_from_text(
     p: &mut Painter,
     txt: &str,

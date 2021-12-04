@@ -2,33 +2,26 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-//pub mod widgets;
-//pub mod components;
-//pub mod constants;
-//
-//mod driver;
-//mod ui;
-//#[allow(clippy::type_complexity)]
 mod widget;
 mod ui;
 mod window;
 mod rect;
 mod painter;
+#[allow(unused)]
 mod style;
-//#[allow(clippy::type_complexity)]
-//#[allow(clippy::too_many_arguments)]
-//mod femtovg_painter;
+mod layout;
+mod widget_store;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashSet;
 
-use keyboard_types::{KeyboardEvent, Key};
+use keyboard_types::{KeyboardEvent}; // Key
 pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
-use widget::{widget_draw, widget_draw_frame, widget_walk};
+use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
 pub use style::Style;
 
@@ -47,7 +40,7 @@ pub trait Text {
         std::str::from_utf8(&buf[0..l]).unwrap_or("")
     }
 
-    fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize { 0 }
+    fn fmt_l<'a>(&self, _buf: &'a mut [u8]) -> usize { 0 }
 }
 
 pub struct CloneMutable<T> where T: PartialEq + Clone {
@@ -113,11 +106,11 @@ impl Text for String {
 
 impl<T> Text for Box<T> where T: Text {
     fn fmt<'a>(&self, buf: &'a mut [u8]) -> &'a str {
-        self.fmt(buf)
+        (**self).fmt(buf)
     }
 
     fn fmt_l<'a>(&self, buf: &'a mut [u8]) -> usize {
-        self.fmt_l(buf)
+        (**self).fmt_l(buf)
     }
 }
 
@@ -181,7 +174,7 @@ pub enum Control {
 }
 
 impl Control {
-    pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
+    pub fn draw_frame(&mut self, _w: &Widget, _painter: &mut Painter) {
         match self {
             Control::Rect => { },
             Control::None => { },
@@ -205,7 +198,6 @@ impl Control {
         let style       = w.style();
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();
-        let wid_id      = w.id();
 
         //d// println!("DRAW {:?}", pos);
 
@@ -343,18 +335,17 @@ impl Control {
         event: &InputEvent,
         out_events: &mut Vec<(usize, Event)>)
     {
-        let pos         = w.pos();
-        let is_hovered  = w.is_hovered();
+        let is_hovered = w.is_hovered();
 
         match self {
             Control::Rect => { },
             Control::None => { },
             Control::Button { .. } => {
                 match event {
-                    InputEvent::MouseButtonPressed(b) => {
+                    InputEvent::MouseButtonPressed(_button) => {
                         if is_hovered { w.activate(); }
                     },
-                    InputEvent::MouseButtonReleased(b) => {
+                    InputEvent::MouseButtonReleased(_button) => {
                         if w.is_active() {
                             out_events.push((w.id(), Event {
                                 name: "click".to_string(),
@@ -406,12 +397,12 @@ impl UINotifierRef {
     }
 
     pub fn is_tree_changed(&self) -> bool {
-        let mut r = self.0.borrow_mut();
+        let r = self.0.borrow_mut();
         r.tree_changed
     }
 
     pub fn is_layout_changed(&self) -> bool {
-        let mut r = self.0.borrow_mut();
+        let r = self.0.borrow_mut();
         r.layout_changed
     }
 
@@ -437,7 +428,7 @@ impl UINotifierRef {
 
 
     pub fn mouse_pos(&self) -> (f32, f32) {
-        let mut r = self.0.borrow_mut();
+        let r = self.0.borrow_mut();
         r.mouse_pos
     }
 
@@ -452,7 +443,7 @@ impl UINotifierRef {
     }
 
     pub fn hover(&self) -> usize {
-        let mut r = self.0.borrow_mut();
+        let r = self.0.borrow_mut();
         r.hover_id
     }
 
@@ -462,7 +453,7 @@ impl UINotifierRef {
     }
 
     pub fn need_redraw(&self) -> bool {
-        let mut r = self.0.borrow_mut();
+        let r = self.0.borrow_mut();
         !r.redraw.is_empty()
     }
 
@@ -503,7 +494,7 @@ impl UINotifierRef {
     }
 
     pub fn active(&self) -> Option<usize> {
-        let mut r = self.0.borrow_mut();
+        let r = self.0.borrow_mut();
         r.active
     }
 }

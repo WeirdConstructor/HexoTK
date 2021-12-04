@@ -20,6 +20,15 @@ impl Rect {
         Self { x, y, w, h }
     }
 
+    pub fn round(&self) -> Self {
+        Self {
+            x: self.x.round(),
+            y: self.y.round(),
+            w: self.w.round(),
+            h: self.h.round(),
+        }
+    }
+
     pub fn floor(&self) -> Self {
         Self {
             x: self.x.floor(),

@@ -10,7 +10,6 @@ use femtovg::{
     Color,
 };
 
-use crate::Rect;
 use crate::painter::{Painter, PersistPainterData};
 
 use raw_gl_context::{GlContext, GlConfig, Profile};
@@ -24,9 +23,6 @@ use baseview::{
 };
 
 use crate::{InputEvent, MButton, WindowUI};
-
-use std::rc::Rc;
-use std::cell::RefCell;
 
 pub struct FrameTimeMeasurement {
     buf: [u128; 240],
@@ -90,7 +86,7 @@ pub struct GUIWindowHandler {
     ftm:        FrameTimeMeasurement,
     ftm_redraw: FrameTimeMeasurement,
     ui:         Box<dyn WindowUI>,
-    size:       (f32, f32),
+    // size:       (f32, f32),
     // focused:    bool,
     counter:    usize,
 
@@ -316,6 +312,7 @@ pub fn open_window(
         context.make_current();
         gl::load_with(|symbol| context.get_proc_address(symbol) as *const _);
 
+        #[allow(deprecated)]
         let renderer =
             OpenGl::new(|symbol| context.get_proc_address(symbol) as *const _)
                 .expect("Cannot create renderer");
@@ -337,7 +334,7 @@ pub fn open_window(
 
         GUIWindowHandler {
             ui,
-            size: (window_width as f32, window_height as f32),
+            // size: (window_width as f32, window_height as f32),
             context,
             canvas,
             font,
