@@ -224,6 +224,15 @@ impl Control {
             else if is_hovered  { style.hover_color }
             else                { style.color };
 
+        let is_cached   = w.is_cached();
+        let mut img_ref = w.take_cache_img();
+
+        let orig_pos = pos;
+
+        let inner_pos =
+            if has_default_style { inner_pos.shrink(style.border, style.border) }
+            else { inner_pos };
+
         if has_default_style {
             if    style.shadow_offs.0 > 0.1
                || style.shadow_offs.1 > 0.1
@@ -231,25 +240,11 @@ impl Control {
                 let (xo, yo) = style.shadow_offs;
                 painter.rect_fill(
                     shadow_color,
-                    pos.x + style.border + xo,
-                    pos.y + style.border + yo,
+                    pos.x + xo,
+                    pos.y + yo,
                     pos.w, pos.h);
             }
-
-            if style.border > 0.1 {
-                painter.rect_fill(
-                    border_color,
-                    pos.x - style.border,
-                    pos.y - style.border,
-                    pos.w + style.border * 2.0,
-                    pos.h + style.border * 2.0);
-            }
         }
-
-        let is_cached   = w.is_cached();
-        let mut img_ref = w.take_cache_img();
-
-        let orig_pos = pos;
 
         let (pos, inner_pos) =
             if is_cached {
@@ -284,7 +279,11 @@ impl Control {
 
         if !is_cached || redraw {
             if has_default_style {
-                painter.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
+                if style.border > 0.1 {
+                    painter.rect_fill(border_color, pos.x, pos.y, pos.w, pos.h);
+                }
+
+                painter.rect_fill(style.bg_color, inner_pos.x, inner_pos.y, inner_pos.w, inner_pos.h);
             }
 
             match self {
