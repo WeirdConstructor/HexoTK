@@ -11,6 +11,7 @@ mod painter;
 mod style;
 mod layout;
 mod widget_store;
+mod widgets;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -507,7 +508,8 @@ pub struct Event {
 
 #[derive(Debug, Clone)]
 pub enum EvPayload {
-    None
+    None,
+    WichTextCommand { line: usize, frag: usize, cmd: String },
 }
 
 pub struct EventCore {

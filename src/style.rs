@@ -57,10 +57,33 @@ pub struct Style {
     pub text_align:             Align,
     pub text_valign:            VAlign,
     pub font_size:              f32,
+    pub colors:                 Vec<(f32, f32, f32)>,
 }
 
 impl Style {
     pub fn new() -> Self {
+        let colors = vec![
+            hxclr!(0x922f93), // 0
+            hxclr!(0x862b37),
+            hxclr!(0xb45745),
+            hxclr!(0x835933),
+            hxclr!(0xa69b64),
+            hxclr!(0xbec8a6),
+            hxclr!(0x346c38), // 6
+            hxclr!(0x1fb349),
+            hxclr!(0x4cdb80),
+            hxclr!(0x59bca3),
+            hxclr!(0x228f9d),
+            hxclr!(0x03b5e7),
+            hxclr!(0x3b5eca), // 12
+            hxclr!(0x594fa1),
+            hxclr!(0xc2b2eb),
+            hxclr!(0xac70fa),
+            hxclr!(0x9850a9),
+            hxclr!(0xdc4fc1), // 17
+            hxclr!(0x03fdcb), // 18
+        ];
+
         Self {
             bg_color:               UI_BG_CLR,
             border_color:           UI_BORDER_CLR,
@@ -77,6 +100,11 @@ impl Style {
             text_align:             Align::Center,
             text_valign:            VAlign::Middle,
             font_size:              12.0,
+            colors,
         }
+    }
+
+    pub fn color_by_idx(&self, idx: usize) -> (f32, f32, f32) {
+        self.colors[idx % self.colors.len()]
     }
 }
