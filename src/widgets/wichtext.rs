@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use std::str::Chars;
 use std::iter::Peekable;
 
-pub trait WichTextData: crate::Mutable {
+pub trait WichTextData {
     /// The text of WichText. If you change this, you need to increase
     /// the [WichTextData::text_generation] to let WichText reparse it.
     fn text(&self) -> String;
@@ -40,6 +40,9 @@ pub trait WichTextData: crate::Mutable {
 
     /// Retrieve the graph data source for the given `key`.
     fn data_source(&self, key: &str) -> Option<Rc<dyn WichTextDataSource>>;
+
+    /// Check if anything of this data changed and it should be redrawn.
+    fn check_change(&self) -> bool;
 }
 
 pub trait WichTextDataSource {
@@ -81,6 +84,12 @@ impl WichTextSimpleDataStore {
             data_sources:   HashMap::new(),
             changed:        false,
         })))
+    }
+
+    pub fn set_text(&self, text: String) {
+        self.0.borrow_mut().text = text;
+        self.0.borrow_mut().text_gen += 1;
+        self.0.borrow_mut().changed = true;
     }
 }
 
@@ -129,10 +138,8 @@ impl WichTextData for WichTextSimpleDataStore {
             None
         }
     }
-}
 
-impl crate::Mutable for WichTextSimpleDataStore {
-    fn check_change(&mut self) -> bool {
+    fn check_change(&self) -> bool {
         let mut ch_borrow = self.0.borrow_mut();
         let is_changed = ch_borrow.changed;
         ch_borrow.changed = false;
@@ -588,7 +595,7 @@ impl WichText {
 
     }
 
-    pub fn data_mut(&mut self) -> &mut Rc<dyn WichTextData> { &mut self.data }
+    pub fn data(&self) -> &Rc<dyn WichTextData> { &self.data }
 
 //    pub fn on_value<F>(mut self, on_value: F) -> Self
 //    where
@@ -870,31 +877,36 @@ impl WichText {
     pub fn handle(
         &mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>)
     {
+        let is_hovered = w.is_hovered();
+
         match event {
             InputEvent::MouseButtonPressed(btn) => {
                 let (x, y) = self.mouse_pos;
 
-                if *btn == MButton::Middle {
-                    self.pan_pos = Some((x, y));
-                    w.activate();
+                if is_hovered {
+                    if *btn == MButton::Middle {
+                        self.pan_pos = Some((x, y));
+                        w.activate();
 
-                } else {
-                    self.active = self.find_frag_idx_at(x, y);
+                    } else {
+                        self.active = self.find_frag_idx_at(x, y);
 
-                    if let Some((line, frag)) = self.active {
-                        if let Some(FragType::Value { key }) =
-                            self.get(line, frag).map(|f| &f.typ)
-                        {
-                            let s = self.data.knob_step(&key);
-                            let v = self.data.knob_value(&key);
+                        if let Some((line, frag)) = self.active {
+                            if let Some(FragType::Value { key }) =
+                                self.get(line, frag).map(|f| &f.typ)
+                            {
+                                let s = self.data.knob_step(&key);
+                                let v = self.data.knob_value(&key);
 
-                            self.drag = Some((x, y, s, v, v, key.to_string()));
-                            w.activate();
+                                self.drag =
+                                    Some((x, y, s, v, v, key.to_string()));
+                                w.activate();
+                            }
                         }
                     }
-                }
 
-                w.emit_redraw_required();
+                    w.emit_redraw_required();
+                }
             },
             InputEvent::MouseButtonReleased(btn) => {
                 if w.is_active() {
@@ -944,40 +956,45 @@ impl WichText {
                 }
             },
             InputEvent::MouseWheel(scroll) => {
-                if self.pan_pos.is_none() {
-                    self.scroll = self.clamp_scroll(0.0, *scroll * 50.0);
-                }
+                if is_hovered {
+                    if self.pan_pos.is_none() {
+                        self.scroll = self.clamp_scroll(0.0, *scroll * 50.0);
+                    }
 
-                w.emit_redraw_required();
+                    w.emit_redraw_required();
+                }
             },
             InputEvent::MousePosition(x, y) => {
                 self.mouse_pos = (*x, *y);
 
-                let old_hover = self.hover;
-                self.hover = self.find_frag_idx_at(*x, *y);
+                if is_hovered {
+                    let old_hover = self.hover;
+                    self.hover = self.find_frag_idx_at(*x, *y);
 
-                let d_val = self.drag_val(*y);
+                    let d_val = self.drag_val(*y);
 
-                if let Some((_ox, _oy, _step, _val, tmp, _key)) =
-                    self.drag.as_mut()
-                {
-                    *tmp = d_val;
+                    if let Some((_ox, _oy, _step, _val, tmp, _key)) =
+                        self.drag.as_mut()
+                    {
+                        *tmp = d_val;
 
-                    w.emit_redraw_required();
-                }
+                        w.emit_redraw_required();
+                    }
 
-                if self.pan_pos.is_some() {
-                    w.emit_redraw_required();
+                    if self.pan_pos.is_some() {
+                        w.emit_redraw_required();
 
-                } else if old_hover != self.hover {
-                    w.emit_redraw_required();
+                    } else if old_hover != self.hover {
+                        w.emit_redraw_required();
+                    }
                 }
             },
             _ => {},
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, redraw: bool, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, p: &mut Painter) {
+        println!("DRAW WT({}): {:?}", w.id(), pos);
         p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
 
         let pos = pos.floor();

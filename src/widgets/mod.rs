@@ -1,3 +1,3 @@
 mod wichtext;
 
-pub use wichtext::WichText;
+pub use wichtext::{WichText, WichTextSimpleDataStore};

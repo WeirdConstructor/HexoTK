@@ -26,6 +26,9 @@ use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
 pub use style::Style;
 
+pub use widgets::WichText;
+pub use widgets::WichTextSimpleDataStore;
+
 pub use morphorm::{Units, LayoutType, PositionType};
 
 use std::fmt::Debug;
@@ -171,7 +174,8 @@ impl<T> TextMutable for T where T: Text + Mutable { }
 pub enum Control {
     None,
     Rect,
-    Button { label: Box<dyn TextMutable> }
+    Button { label: Box<dyn TextMutable> },
+    WichText { wt: Box<WichText> },
 }
 
 impl Control {
@@ -179,7 +183,8 @@ impl Control {
         match self {
             Control::Rect => { },
             Control::None => { },
-            Control::Button { .. } => { },
+            Control::Button   { .. } => { },
+            Control::WichText { .. } => { },
         }
     }
 
@@ -187,7 +192,8 @@ impl Control {
         match self {
             Control::Rect => false,
             Control::None => false,
-            Control::Button { .. } => true,
+            Control::Button   { .. } => true,
+            Control::WichText { .. } => true,
         }
     }
 
@@ -204,9 +210,10 @@ impl Control {
 
         let has_default_style =
             match self {
-                Control::Rect          => { true },
-                Control::Button { .. } => { true },
-                Control::None          => { false },
+                Control::Rect            => { true },
+                Control::Button   { .. } => { true },
+                Control::WichText { .. } => { true },
+                Control::None            => { false },
             };
 
 
@@ -304,10 +311,14 @@ impl Control {
                         inner_pos.h,
                         s);
                 },
+                Control::WichText { wt } => {
+                    wt.draw(w, &style, inner_pos, painter);
+                },
             }
         }
 
         if let Some(img_ref) = img_ref {
+        println!("REF");
             if is_cached {
                 if redraw {
                     //d// println!("      finish img {}", wid_id);
@@ -326,6 +337,7 @@ impl Control {
             Control::None => false,
             Control::Rect => false,
             Control::Button { label } => label.check_change(),
+            Control::WichText { wt }  => wt.data().check_change(),
         }
     }
 
@@ -356,6 +368,9 @@ impl Control {
                     },
                     _ => {},
                 }
+            },
+            Control::WichText { wt } => {
+                wt.handle(w, event, out_events);
             },
         }
     }
