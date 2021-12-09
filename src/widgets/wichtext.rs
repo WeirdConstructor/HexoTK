@@ -967,26 +967,24 @@ impl WichText {
             InputEvent::MousePosition(x, y) => {
                 self.mouse_pos = (*x, *y);
 
-                if is_hovered {
-                    let old_hover = self.hover;
-                    self.hover = self.find_frag_idx_at(*x, *y);
+                let old_hover = self.hover;
+                self.hover = self.find_frag_idx_at(*x, *y);
 
-                    let d_val = self.drag_val(*y);
+                let d_val = self.drag_val(*y);
 
-                    if let Some((_ox, _oy, _step, _val, tmp, _key)) =
-                        self.drag.as_mut()
-                    {
-                        *tmp = d_val;
+                if let Some((_ox, _oy, _step, _val, tmp, _key)) =
+                    self.drag.as_mut()
+                {
+                    *tmp = d_val;
 
-                        w.emit_redraw_required();
-                    }
+                    w.emit_redraw_required();
+                }
 
-                    if self.pan_pos.is_some() {
-                        w.emit_redraw_required();
+                if self.pan_pos.is_some() {
+                    w.emit_redraw_required();
 
-                    } else if old_hover != self.hover {
-                        w.emit_redraw_required();
-                    }
+                } else if old_hover != self.hover {
+                    w.emit_redraw_required();
                 }
             },
             _ => {},
@@ -994,7 +992,7 @@ impl WichText {
     }
 
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, p: &mut Painter) {
-        println!("DRAW WT({}): {:?}", w.id(), pos);
+        p.clip_region(pos.x, pos.y, pos.w, pos.h);
         p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
 
         let pos = pos.floor();
@@ -1069,7 +1067,7 @@ impl WichText {
 
                 if (frag_pos.y + frag_pos.h) < 0.0 {
                     continue;
-                } else if frag_pos.y > self.render.1 {
+                } else if frag_pos.y > (pos.y + self.render.1) {
                     continue;
                 }
 
@@ -1122,5 +1120,7 @@ impl WichText {
                 scroll_box.w - 4.0,
                 scroll_marker_h - 3.0);
         }
+
+        p.reset_clip_region();
     }
 }

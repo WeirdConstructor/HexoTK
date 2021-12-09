@@ -268,7 +268,7 @@ impl Control {
                     }
 //                    img_ref = Some(painter.new_image(pos.w, pos.h));
 
-                    //d// println!("      start img {}", wid_id);
+                    //d// println!("      start img {} ({}:{})", w.id(), pos.w, pos.h);
                     painter.start_image(img_ref.as_ref().unwrap());
                     let new_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
                     let (inner_xo, inner_yo) = (
@@ -318,7 +318,6 @@ impl Control {
         }
 
         if let Some(img_ref) = img_ref {
-        println!("REF");
             if is_cached {
                 if redraw {
                     //d// println!("      finish img {}", wid_id);

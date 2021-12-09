@@ -85,6 +85,7 @@ impl UI {
                 &self.widgets.clone());
 
             tree.apply_layout_to_widgets(&self.layout_cache);
+            layer.root.set_pos(Rect::from(0.0, 0.0, win_w, win_h));
         }
 
         self.on_layout_changed();

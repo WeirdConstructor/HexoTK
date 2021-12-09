@@ -91,6 +91,7 @@ impl WidgetTree {
     pub fn apply_layout_to_widgets(&self, cache: &LayoutCache) {
         for id in &self.widget_dfs_vec {
             let pos = cache.get_widget_rect_by_id(id).round();
+            println!("apply_layout[{}] = {:?}", id.id(), pos);
 
             if let Some(widget) = self.store.borrow().get(id.id()) {
                 widget.set_pos(pos);

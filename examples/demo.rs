@@ -100,16 +100,16 @@ fn main() {
         layer2root.change_layout(|layout| {
             layout.layout_type = LayoutType::Row;
 //            layout.child_top = Units::Percentage(75.0);
-            layout.child_top = Units::Percentage(49.0);
+//            layout.child_top = Units::Percentage(49.0);
         });
 
         let wtd = Rc::new(WichTextSimpleDataStore::new());
         let wt = WichText::new(wtd.clone());
         let wtwid = Widget::new(style_ref.clone());
-//        wtwid.enable_cache();
+        wtwid.enable_cache();
         wtwid.set_ctrl(Control::WichText { wt: Box::new(wt) });
 
-        wtd.set_text("Foobar\n\nLololol".to_string());
+        wtd.set_text("Foobar\n\nLololol\nfiuewhfiu wiufhwei\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf".to_string());
 
         let mut cnt = 0;
         sub4.reg("click", {
