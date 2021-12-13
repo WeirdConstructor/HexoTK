@@ -8,7 +8,7 @@ mod window;
 mod rect;
 mod painter;
 #[allow(unused)]
-mod style;
+pub mod style;
 mod layout;
 mod widget_store;
 mod widgets;
@@ -26,6 +26,7 @@ use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
 pub use style::Style;
 
+pub use widgets::Entry;
 pub use widgets::WichText;
 pub use widgets::WichTextSimpleDataStore;
 
@@ -174,8 +175,9 @@ impl<T> TextMutable for T where T: Text + Mutable { }
 pub enum Control {
     None,
     Rect,
-    Button { label: Box<dyn TextMutable> },
-    WichText { wt: Box<WichText> },
+    Button   { label: Box<dyn TextMutable> },
+    WichText { wt:    Box<WichText> },
+    Entry    { entry: Box<Entry> },
 }
 
 impl Control {
@@ -185,6 +187,7 @@ impl Control {
             Control::None => { },
             Control::Button   { .. } => { },
             Control::WichText { .. } => { },
+            Control::Entry    { .. } => { },
         }
     }
 
@@ -194,6 +197,7 @@ impl Control {
             Control::None => false,
             Control::Button   { .. } => true,
             Control::WichText { .. } => true,
+            Control::Entry    { .. } => true,
         }
     }
 
@@ -213,6 +217,7 @@ impl Control {
                 Control::Rect            => { true },
                 Control::Button   { .. } => { true },
                 Control::WichText { .. } => { true },
+                Control::Entry    { .. } => { true },
                 Control::None            => { false },
             };
 
@@ -311,6 +316,9 @@ impl Control {
                         inner_pos.h,
                         s);
                 },
+                Control::Entry { entry } => {
+                    entry.draw(w, &style, inner_pos, painter);
+                },
                 Control::WichText { wt } => {
                     wt.draw(w, &style, inner_pos, painter);
                 },
@@ -335,8 +343,9 @@ impl Control {
         match self {
             Control::None => false,
             Control::Rect => false,
-            Control::Button { label } => label.check_change(),
-            Control::WichText { wt }  => wt.data().check_change(),
+            Control::Button { label }   => label.check_change(),
+            Control::WichText { wt }    => wt.data().check_change(),
+            Control::Entry    { entry } => entry.check_change(),
         }
     }
 
@@ -367,6 +376,9 @@ impl Control {
                     },
                     _ => {},
                 }
+            },
+            Control::Entry { entry } => {
+                entry.handle(w, event, out_events);
             },
             Control::WichText { wt } => {
                 wt.handle(w, event, out_events);

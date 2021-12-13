@@ -103,13 +103,17 @@ fn main() {
 //            layout.child_top = Units::Percentage(49.0);
         });
 
+        let mut wstyle = Style::new();
+        wstyle.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+        wstyle.font_size = 15.0;
+
         let wtd = Rc::new(WichTextSimpleDataStore::new());
         let wt = WichText::new(wtd.clone());
-        let wtwid = Widget::new(style_ref.clone());
+        let wtwid = Widget::new(Rc::new(wstyle));
         wtwid.enable_cache();
         wtwid.set_ctrl(Control::WichText { wt: Box::new(wt) });
 
-        wtd.set_text("Foobar\n\nLololol\nfiuewhfiu wiufhwei\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf".to_string());
+        wtd.set_text("WichText Widget is Back!\n\nLololol\n[c15:fiuewhfiu wiufhwei]\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf".to_string());
 
         let mut cnt = 0;
         sub4.reg("click", {
@@ -136,6 +140,12 @@ fn main() {
         btn1.change_layout(|layout| {
             layout.max_height = Units::Pixels(40.0);
         });
+
+        let entry = Widget::new(style_ref.clone());
+        entry.set_ctrl(Control::Entry {
+            entry: Box::new(Entry::new()),
+        });
+        layer2root.add(entry);
         layer2root.add(wtwid);
 //        layer2root.add(btn1);
 

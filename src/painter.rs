@@ -318,6 +318,16 @@ impl<'a, 'b> Painter<'a, 'b> {
         self.canvas.fill_path(&mut p, paint);
     }
 
+    pub fn stroke(&mut self, width: f32, color: (f32, f32, f32),
+                  segments: &[(f32, f32)],
+                  closed: bool)
+    {
+        self.path_stroke(
+            width, color,
+            &mut segments.iter().copied(),
+            closed);
+    }
+
     pub fn path_stroke(&mut self, width: f32, color: (f32, f32, f32),
                    segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
                    closed: bool)

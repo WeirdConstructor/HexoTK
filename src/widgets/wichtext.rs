@@ -1,12 +1,10 @@
 // Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
-// This file is a part of HexoDSP. Released under GPL-3.0-or-later.
+// This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
 use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
 use crate::painter::*;
 use crate::rect::*;
-
-use femtovg::FontId;
 
 use std::rc::Rc;
 use std::cell::RefCell;
