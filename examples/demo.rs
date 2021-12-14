@@ -29,6 +29,12 @@ fn main() {
 
         let style_ref = Rc::new(style);
 
+        let new_txt_btn = { let style_ref = style_ref.clone(); Box::new(move |txt: &str| {
+            let btn1 = Widget::new(style_ref.clone());
+            btn1.set_ctrl(Control::Button { label: Box::new(txt.to_string()) });
+            btn1
+        }) };
+
         let wid = Widget::new(style_ref.clone());
 
         let sub = Widget::new(style_ref.clone());
@@ -165,51 +171,13 @@ fn main() {
         col.add(entry);
         col.add(btn1);
         layer2root.add(col);
-//        layer2root.add(wtwid);
+        layer2root.add(wtwid);
 
         let mut ui = Box::new(UI::new());
 //        ui.add_layer_root(wid);
-//        ui.add_layer_root(layer2root.clone());
+        ui.add_layer_root(layer2root.clone());
 //        ui.add_layer_root(col);
 
-        let new_txt_btn = { let style_ref = style_ref.clone(); Box::new(move |txt: &str| {
-            let btn1 = Widget::new(style_ref.clone());
-            btn1.set_ctrl(Control::Button { label: Box::new(txt.to_string()) });
-            btn1
-        }) };
-
-        let row = Widget::new(style_ref.clone());
-        row.change_layout(|layout| {
-            layout.layout_type = LayoutType::Row;
-        });
-
-        let col = Widget::new(style_ref.clone());
-        col.change_layout(|layout| {
-            layout.layout_type = LayoutType::Column;
-            layout.width = Units::Percentage(50.0);
-        });
-
-        let btn2 = new_txt_btn("Text 2");
-        let btn3 = new_txt_btn("Text 2");
-
-        let btn1 = new_txt_btn("Text 1");
-        btn1.change_layout(|layout| {
-            layout.width = Units::Percentage(50.0);
-        });
-
-        col.add(btn2.clone());
-        col.add(btn3.clone());
-
-        row.add(col.clone());
-        row.add(btn1.clone());
-        ui.add_layer_root(row.clone());
-
-
-        println!("row : {}", row.id());
-        println!("col : {}", col.id());
-        println!("btn1: {}", btn1.id());
-        println!("btn2: {}", btn2.id());
-        println!("btn3: {}", btn3.id());
 
         ui
     }));

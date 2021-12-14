@@ -91,6 +91,7 @@ impl Entry {
     }
 
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, p: &mut Painter) {
+        p.clip_region(pos.x, pos.y, pos.w, pos.h);
         let is_hovered = w.is_hovered();
         let is_active  = w.is_active();
 
@@ -104,16 +105,23 @@ impl Entry {
 
         let y = ((pos.h - fh) * 0.5).round();
 
+        let mut xo    = 0.0;
+        while (cur_start_x + xo) > 0.75 * pos.w {
+            xo -= pos.w * 0.25;
+        }
+        xo = xo.round();
+
         p.label_mono(
             style.font_size, -1, style.color,
-            pos.x, pos.y + y, pos.w, fh,
+            pos.x + xo, pos.y + y, pos.w, fh,
             &self.data);
 
         p.stroke(
             1.0, color, &[
-                ((pos.x + cur_start_x).round() + 0.5, pos.y + y),
-                ((pos.x + cur_start_x).round() + 0.5, pos.y + y + fh),
+                ((pos.x + cur_start_x + xo).round() + 0.5, pos.y + y),
+                ((pos.x + cur_start_x + xo).round() + 0.5, pos.y + y + fh),
             ], false);
+        p.reset_clip_region();
     }
 
     pub fn handle(
