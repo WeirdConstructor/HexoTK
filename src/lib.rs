@@ -29,6 +29,8 @@ pub use style::Style;
 pub use widgets::Entry;
 pub use widgets::WichText;
 pub use widgets::WichTextSimpleDataStore;
+pub use widgets::EditableText;
+pub use widgets::TextField;
 
 pub use morphorm::{Units, LayoutType, PositionType};
 
@@ -343,7 +345,7 @@ impl Control {
         match self {
             Control::None => false,
             Control::Rect => false,
-            Control::Button { label }   => label.check_change(),
+            Control::Button   { label } => label.check_change(),
             Control::WichText { wt }    => wt.data().check_change(),
             Control::Entry    { entry } => entry.check_change(),
         }
@@ -498,10 +500,9 @@ impl UINotifierRef {
             if old_active_id != id {
                 self.redraw(old_active_id);
             }
-        } else {
-            let mut r = self.0.borrow_mut();
-            r.active = Some(id);
         }
+
+        self.0.borrow_mut().active = Some(id);
 
         self.redraw(id);
     }
@@ -536,6 +537,7 @@ pub struct Event {
 pub enum EvPayload {
     None,
     WichTextCommand { line: usize, frag: usize, cmd: String },
+    Text(String),
 }
 
 pub struct EventCore {

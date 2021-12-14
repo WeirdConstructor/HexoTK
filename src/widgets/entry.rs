@@ -2,13 +2,58 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
+use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
 use keyboard_types::{KeyboardEvent, Key};
 
 use crate::painter::*;
 use crate::rect::*;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
+pub trait EditableText : Mutable {
+    fn update(&self, changed: String);
+    fn get(&self) -> String;
+}
+
+#[derive(Debug, Clone)]
+pub struct TextField(Rc<RefCell<(String, bool)>>);
+
+impl TextField {
+    pub fn new() -> Self {
+        Self(Rc::new(RefCell::new((String::from(""), false))))
+    }
+
+    pub fn set(&self, new: String) {
+        let mut tf = self.0.borrow_mut();
+        tf.0 = new;
+        tf.1 = true;
+    }
+}
+
+impl Mutable for TextField {
+    fn check_change(&mut self) -> bool {
+        let mut tf = self.0.borrow_mut();
+        let changed = tf.1;
+        tf.1 = false;
+        changed
+    }
+}
+
+impl EditableText for TextField {
+    fn update(&self, changed: String) {
+        let mut tf = self.0.borrow_mut();
+        tf.0 = changed;
+    }
+
+    fn get(&self) -> String {
+        let mut tf = self.0.borrow_mut();
+        tf.0.clone()
+    }
+}
+
 pub struct Entry {
+    update_text: Box<dyn EditableText>,
     data:        String,
     pre_string:  String,
     post_string: String,
@@ -17,20 +62,29 @@ pub struct Entry {
 }
 
 impl Entry {
-    pub fn new() -> Self {
+    pub fn new(update_text: Box<dyn EditableText>) -> Self {
         Self {
-            data:        String::from("Test 123"),
-            pre_string:  String::from("Test"),
-            post_string: String::from(" 123"),
-            cursor:      4,
+            update_text,
+            data:        String::from(""),
+            pre_string:  String::from(""),
+            post_string: String::from(""),
+            cursor:      0,
             mouse_pos:   (0.0, 0.0),
         }
     }
 
     pub fn check_change(&mut self) -> bool {
-        false
+        if self.update_text.check_change() {
+            self.data = self.update_text.get();
+            self.cursor = self.data.len();
+            self.update_cursor();
+
+            true
+        } else {
+            false
+        }
     }
-    
+
     fn update_cursor(&mut self) {
         self.pre_string  = self.data.chars().take(self.cursor).collect();
         self.post_string = self.data.chars().skip(self.cursor).collect();
@@ -48,15 +102,17 @@ impl Entry {
             else if is_hovered  { style.hover_color }
             else                { style.color };
 
+        let y = ((pos.h - fh) * 0.5).round();
+
         p.label_mono(
             style.font_size, -1, style.color,
-            pos.x, pos.y, pos.w, fh,
+            pos.x, pos.y + y, pos.w, fh,
             &self.data);
 
         p.stroke(
             1.0, color, &[
-                ((pos.x + cur_start_x).round() + 0.5, pos.y),
-                ((pos.x + cur_start_x).round() + 0.5, pos.y + fh),
+                ((pos.x + cur_start_x).round() + 0.5, pos.y + y),
+                ((pos.x + cur_start_x).round() + 0.5, pos.y + y + fh),
             ], false);
     }
 
@@ -66,14 +122,9 @@ impl Entry {
         let is_hovered = w.is_hovered();
         let is_active  = w.is_active();
 
-//      out_events.push((w.id(), Event {
-//          name: "click".to_string(),
-//          data: EvPayload::WichTextCommand {
-//              line, frag, cmd,
-//          },
-//      }));
         println!("EV: {:?}", event);
 
+        let mut changed = false;
 
         match event {
             InputEvent::KeyPressed(key) => {
@@ -85,6 +136,7 @@ impl Entry {
                     Key::Character(s) => {
                         self.data =
                             self.pre_string.clone() + &s + &self.post_string;
+                        changed = true;
                         self.cursor += 1;
                         self.update_cursor();
                         w.emit_redraw_required();
@@ -104,6 +156,7 @@ impl Entry {
                             let spre : String =
                                 self.pre_string
                                     .chars().take(self.cursor - 1).collect();
+                            changed = true;
                             self.data = spre + &self.post_string;
                             self.cursor -= 1;
                             self.update_cursor();
@@ -114,6 +167,7 @@ impl Entry {
                         if self.cursor < len {
                             let spost : String =
                                 self.post_string.chars().skip(1).collect();
+                            changed = true;
                             self.data = self.pre_string.clone() + &spost;
                             self.update_cursor();
                             w.emit_redraw_required();
@@ -160,6 +214,13 @@ impl Entry {
                 self.mouse_pos = (*x, *y);
             },
             _ => {},
+        }
+
+        if changed {
+            self.update_text.update(self.data.clone());
+            out_events.push((w.id(), Event {
+                name: "changed".to_string(),
+                data: EvPayload::Text(self.data.clone()) }));
         }
     }
 }

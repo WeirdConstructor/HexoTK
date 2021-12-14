@@ -133,6 +133,14 @@ fn main() {
             }
         });
 
+        let col = Widget::new(style_ref.clone());
+        col.change_layout(|layout| {
+            layout.layout_type = LayoutType::Column;
+//            layout.width  = Units::Pixels(200.0);
+//            layout.height = Units::Pixels(200.0);
+        });
+
+        let etf = TextField::new();
         let btn1 = Widget::new(style_ref.clone());
         btn1.set_ctrl(Control::Button {
             label: Box::new(format!("Lay2 Btn {}", cnt))
@@ -140,19 +148,60 @@ fn main() {
         btn1.change_layout(|layout| {
             layout.max_height = Units::Pixels(40.0);
         });
+        btn1.reg("click", {
+            let mut counter = 0;
+            let etf = etf.clone();
+            move |_wid, _ev| {
+                etf.set(format!("{} {}", etf.get(), counter));
+                counter += 1;
+            }
+        });
 
         let entry = Widget::new(style_ref.clone());
         entry.set_ctrl(Control::Entry {
-            entry: Box::new(Entry::new()),
+            entry: Box::new(Entry::new(Box::new(etf))),
         });
-        layer2root.add(entry);
-        layer2root.add(wtwid);
-//        layer2root.add(btn1);
+        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
+        col.add(entry);
+        col.add(btn1);
+        layer2root.add(col);
+//        layer2root.add(wtwid);
 
         let mut ui = Box::new(UI::new());
 //        ui.add_layer_root(wid);
-        ui.add_layer_root(layer2root.clone());
+//        ui.add_layer_root(layer2root.clone());
+//        ui.add_layer_root(col);
 
+        let new_txt_btn = { let style_ref = style_ref.clone(); Box::new(move |txt: &str| {
+            let btn1 = Widget::new(style_ref.clone());
+            btn1.set_ctrl(Control::Button { label: Box::new(txt.to_string()) });
+            btn1
+        }) };
+
+        let row = Widget::new(style_ref.clone());
+        row.change_layout(|layout| {
+            layout.layout_type = LayoutType::Row;
+        });
+
+        let col = Widget::new(style_ref.clone());
+        col.change_layout(|layout| {
+            layout.layout_type = LayoutType::Column;
+            layout.width = Units::Percentage(50.0);
+        });
+
+        let btn2 = new_txt_btn("Text 2");
+        col.add(btn2.clone());
+        let btn3 = new_txt_btn("Text 2");
+        col.add(btn3.clone());
+
+        let btn1 = new_txt_btn("Text 1");
+        btn1.change_layout(|layout| {
+            layout.width = Units::Percentage(50.0);
+        });
+
+        row.add(col);
+        row.add(btn1.clone());
+        ui.add_layer_root(row);
 
         ui
     }));
