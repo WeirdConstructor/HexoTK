@@ -467,36 +467,17 @@ pub fn widget_draw_frame(widget: &Widget, painter: &mut Painter) {
     }
 }
 
-pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, mut cb: F) {
-    cb(widget, None, true, true);
+pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, parent: Option<&Widget>, mut cb: &mut F, is_first: bool, is_last: bool) {
+    cb(widget, parent, is_first, is_last);
 
-    let mut hc = {
-        let cur_parent = widget.clone();
-        let mut w = widget.0.borrow_mut();
-
-        if let Some(mut hc) = w.handle_childs.take() {
-            hc.clear();
-
-            if let Some(childs) = &w.childs {
-                let len = childs.len();
-                for (i, c) in childs.iter().enumerate() {
-                    hc.push((c.clone(), cur_parent.clone(), i == 0, (i + 1) == len));
-                }
-            }
-
-            Some(hc)
-        } else {
-            None
+    if let Some(childs) = &widget.0.borrow().childs {
+        let len = childs.len();
+        for (i, c) in childs.iter().enumerate() {
+            widget_walk_impl(&c, Some(&widget), cb, i == 0, (i + 1) == len)
         }
-    };
-
-    if let Some(hc) = &mut hc {
-        for (c, p, is_first, is_last) in hc.iter() {
-            cb(c, Some(p), *is_first, *is_last);
-        }
-
-        hc.clear();
     }
+}
 
-    widget.0.borrow_mut().handle_childs = hc;
+pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, mut cb: F) {
+    widget_walk_impl(widget, None, &mut cb, true, true);
 }

@@ -190,18 +190,26 @@ fn main() {
         });
 
         let btn2 = new_txt_btn("Text 2");
-        col.add(btn2.clone());
         let btn3 = new_txt_btn("Text 2");
-        col.add(btn3.clone());
 
         let btn1 = new_txt_btn("Text 1");
         btn1.change_layout(|layout| {
             layout.width = Units::Percentage(50.0);
         });
 
-        row.add(col);
+        col.add(btn2.clone());
+        col.add(btn3.clone());
+
+        row.add(col.clone());
         row.add(btn1.clone());
-        ui.add_layer_root(row);
+        ui.add_layer_root(row.clone());
+
+
+        println!("row : {}", row.id());
+        println!("col : {}", col.id());
+        println!("btn1: {}", btn1.id());
+        println!("btn2: {}", btn2.id());
+        println!("btn3: {}", btn3.id());
 
         ui
     }));
