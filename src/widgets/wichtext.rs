@@ -881,6 +881,13 @@ impl WichText {
         &mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>)
     {
         let is_hovered = w.is_hovered();
+        let is_active  = w.is_active();
+
+        if !is_active {
+            self.active  = None;
+            self.drag    = None;
+            self.pan_pos = None;
+        }
 
         match event {
             InputEvent::MouseButtonPressed(btn) => {
@@ -914,7 +921,7 @@ impl WichText {
                 }
             },
             InputEvent::MouseButtonReleased(btn) => {
-                if w.is_active() {
+                if is_active {
                     let (x, y) = self.mouse_pos;
 
                     let cur = self.find_frag_idx_at(x, y);
