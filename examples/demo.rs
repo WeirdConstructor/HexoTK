@@ -122,7 +122,16 @@ fn main() {
         wtwid.enable_cache();
         wtwid.set_ctrl(Control::WichText { wt: Box::new(wt) });
 
-        wtd.set_text("WichText Widget is Back!\n\nLololol\n[c15:fiuewhfiu wiufhwei]\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf\nHere a value: [h40avK:Test]\nAnd a graph: [h30gXXX:Graph 1]".to_string());
+        wtwid.reg("click", |_wid, ev| {
+            match &ev.data {
+                EvPayload::WichTextCommand { cmd, .. } => {
+                    println!("CLICK ON: {:?}", cmd);
+                },
+                _ => {},
+            }
+        });
+
+        wtd.set_text("WichText Widget is Back!\n\nLololol\n[c15:fiuewhfiu wiufhwei]\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf\nHere a value: [h40avK:Test] [a:Click Here!]\nAnd a graph: [h30gXXX:Graph 1]".to_string());
 
         let mut cnt = 0;
         sub4.reg("click", {

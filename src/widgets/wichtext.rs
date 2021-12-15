@@ -904,8 +904,9 @@ impl WichText {
 
                                 self.drag =
                                     Some((x, y, s, v, v, key.to_string()));
-                                w.activate();
                             }
+
+                            w.activate();
                         }
                     }
 
