@@ -114,12 +114,15 @@ fn main() {
         wstyle.font_size = 15.0;
 
         let wtd = Rc::new(WichTextSimpleDataStore::new());
+        wtd.set_data_source("XXX", Rc::new(vec![
+            0.0, 0.1, 0.11, 0.2, 0.4, 0.1, 0.9, 0.8, 0.4, 0.0
+        ]));
         let wt = WichText::new(wtd.clone());
         let wtwid = Widget::new(Rc::new(wstyle));
         wtwid.enable_cache();
         wtwid.set_ctrl(Control::WichText { wt: Box::new(wt) });
 
-        wtd.set_text("WichText Widget is Back!\n\nLololol\n[c15:fiuewhfiu wiufhwei]\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf".to_string());
+        wtd.set_text("WichText Widget is Back!\n\nLololol\n[c15:fiuewhfiu wiufhwei]\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf\nHere a value: [h40avK:Test]\nAnd a graph: [h30gXXX:Graph 1]".to_string());
 
         let mut cnt = 0;
         sub4.reg("click", {

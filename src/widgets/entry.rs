@@ -90,7 +90,7 @@ impl Entry {
         self.post_string = self.data.chars().skip(self.cursor).collect();
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, _real_pos: Rect, p: &mut Painter) {
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
         let is_hovered = w.is_hovered();
         let is_active  = w.is_active();

@@ -248,6 +248,8 @@ impl Control {
             if has_default_style { inner_pos.shrink(style.border, style.border) }
             else { inner_pos };
 
+        let orig_inner_pos = inner_pos;
+
         if has_default_style {
             if    style.shadow_offs.0 > 0.1
                || style.shadow_offs.1 > 0.1
@@ -319,10 +321,10 @@ impl Control {
                         s);
                 },
                 Control::Entry { entry } => {
-                    entry.draw(w, &style, inner_pos, painter);
+                    entry.draw(w, &style, inner_pos, orig_inner_pos, painter);
                 },
                 Control::WichText { wt } => {
-                    wt.draw(w, &style, inner_pos, painter);
+                    wt.draw(w, &style, inner_pos, orig_inner_pos, painter);
                 },
             }
         }

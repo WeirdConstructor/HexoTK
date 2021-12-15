@@ -84,6 +84,11 @@ impl WichTextSimpleDataStore {
         })))
     }
 
+    pub fn set_data_source(&self, key: &str, source: Rc<Vec<f32>>) {
+        self.0.borrow_mut().data_sources.insert(key.to_string(), source);
+        self.0.borrow_mut().changed = true;
+    }
+
     pub fn set_text(&self, text: String) {
         self.0.borrow_mut().text = text;
         self.0.borrow_mut().text_gen += 1;
@@ -890,6 +895,7 @@ impl WichText {
                         self.active = self.find_frag_idx_at(x, y);
 
                         if let Some((line, frag)) = self.active {
+                            println!("FRAG ACT:{},{}", line, frag);
                             if let Some(FragType::Value { key }) =
                                 self.get(line, frag).map(|f| &f.typ)
                             {
@@ -989,7 +995,10 @@ impl WichText {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        let real_offs_x = real_pos.x - pos.x;
+        let real_offs_y = real_pos.y - pos.y;
+
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
         p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
 
@@ -1054,6 +1063,8 @@ impl WichText {
                         VAlign::Bottom => line_h - frag.height_px,
                     };
 
+                //d// println!("FRAG: x={}, fx={}", pos.x, frag.x);
+
                 let frag_pos = Rect {
                     x: pos.x + frag.x,
                     y: pos.y + line_y + valign_offs + scroll_y,
@@ -1093,7 +1104,10 @@ impl WichText {
                     style.bg_color, color, color2, orig_color);
 
                 if frag.is_active {
-                    self.zones.push((frag_pos, line_idx, frag_idx));
+                    self.zones.push((
+                        frag_pos.offs(real_offs_x, real_offs_y),
+                        line_idx,
+                        frag_idx));
                 }
             }
         }
