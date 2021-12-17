@@ -24,7 +24,7 @@ use painter::Painter;
 pub use widget::Widget;
 use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
-pub use style::Style;
+pub use style::{Style, Align, VAlign};
 
 pub use widgets::Entry;
 pub use widgets::WichText;
@@ -178,6 +178,7 @@ pub enum Control {
     None,
     Rect,
     Button   { label: Box<dyn TextMutable> },
+    Label    { label: Box<dyn TextMutable> },
     WichText { wt:    Box<WichText> },
     Entry    { entry: Box<Entry> },
 }
@@ -188,6 +189,7 @@ impl Control {
             Control::Rect => { },
             Control::None => { },
             Control::Button   { .. } => { },
+            Control::Label    { .. } => { },
             Control::WichText { .. } => { },
             Control::Entry    { .. } => { },
         }
@@ -197,6 +199,7 @@ impl Control {
         match self {
             Control::Rect => false,
             Control::None => false,
+            Control::Label    { .. } => false,
             Control::Button   { .. } => true,
             Control::WichText { .. } => true,
             Control::Entry    { .. } => true,
@@ -217,6 +220,7 @@ impl Control {
         let has_default_style =
             match self {
                 Control::Rect            => { true },
+                Control::Label    { .. } => { true },
                 Control::Button   { .. } => { true },
                 Control::WichText { .. } => { true },
                 Control::Entry    { .. } => { true },
@@ -303,16 +307,25 @@ impl Control {
                 painter.rect_fill(style.bg_color, inner_pos.x, inner_pos.y, inner_pos.w, inner_pos.h);
             }
 
+            let inner_pos = style.apply_padding(inner_pos);
+
             match self {
                 Control::Rect => { },
                 Control::None => { },
-                Control::Button { label } => {
+                Control::Button { label } | Control::Label { label } => {
                     let mut buf : [u8; 128] = [0; 128];
                     let s = label.fmt(&mut buf[..]);
 
+                    let align =
+                        match style.text_align {
+                            style::Align::Left   => -1,
+                            style::Align::Center => 0,
+                            style::Align::Right  => 1,
+                        };
+
                     painter.label(
                         style.font_size,
-                        0,
+                        align,
                         color,
                         inner_pos.x,
                         inner_pos.y,
@@ -348,6 +361,7 @@ impl Control {
             Control::None => false,
             Control::Rect => false,
             Control::Button   { label } => label.check_change(),
+            Control::Label    { label } => label.check_change(),
             Control::WichText { wt }    => wt.data().check_change(),
             Control::Entry    { entry } => entry.check_change(),
         }
@@ -362,8 +376,9 @@ impl Control {
         let is_hovered = w.is_hovered();
 
         match self {
-            Control::Rect => { },
-            Control::None => { },
+            Control::Rect  => { },
+            Control::None  => { },
+            Control::Label { .. } => { },
             Control::Button { .. } => {
                 match event {
                     InputEvent::MouseButtonPressed(_button) => {

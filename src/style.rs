@@ -1,4 +1,7 @@
 use crate::hxclr;
+use crate::Rect;
+
+use std::rc::Rc;
 
 pub const UI_BOX_H          : f32 = 200.0;
 pub const UI_BOX_BORD       : f32 =   3.0;
@@ -46,6 +49,10 @@ pub struct Style {
     pub border_color:           (f32, f32, f32),
     pub color:                  (f32, f32, f32),
     pub border:                 f32,
+    pub pad_left:               f32,
+    pub pad_right:              f32,
+    pub pad_top:                f32,
+    pub pad_bottom:             f32,
     pub shadow_offs:            (f32, f32),
     pub shadow_color:           (f32, f32, f32),
     pub hover_shadow_color:     (f32, f32, f32),
@@ -89,6 +96,10 @@ impl Style {
             border_color:           UI_BORDER_CLR,
             color:                  UI_PRIM_CLR,
             border:                 UI_BOX_BORD,
+            pad_left:               0.0,
+            pad_right:              0.0,
+            pad_top:                0.0,
+            pad_bottom:             0.0,
             shadow_offs:            (0.0, 0.0),
             shadow_color:           UI_PRIM_CLR,
             hover_shadow_color:     UI_SELECT_CLR,
@@ -102,6 +113,21 @@ impl Style {
             font_size:              12.0,
             colors,
         }
+    }
+
+    pub fn apply_padding(&self, pos: Rect) -> Rect {
+        Rect {
+            x: pos.x + self.pad_left,
+            y: pos.y + self.pad_top,
+            w: pos.w - (self.pad_left + self.pad_right),
+            h: pos.h - (self.pad_top  + self.pad_bottom),
+        }
+    }
+
+    pub fn with_style_clone<F: FnOnce(&mut Style)>(&self, f: F) -> Rc<Self> {
+        let mut clone = self.clone();
+        f(&mut clone);
+        Rc::new(clone)
     }
 
     pub fn color_by_idx(&self, idx: usize) -> (f32, f32, f32) {

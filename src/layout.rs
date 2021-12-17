@@ -424,19 +424,23 @@ impl Node<'_> for WidgetId {
     }
     fn border_left(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
-        Some(Units::Pixels(w.style().border))
+        let style = w.style();
+        Some(Units::Pixels(style.border + style.pad_left))
     }
     fn border_right(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
-        Some(Units::Pixels(w.style().border))
+        let style = w.style();
+        Some(Units::Pixels(style.border + style.pad_right))
     }
     fn border_top(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
-        Some(Units::Pixels(w.style().border))
+        let style = w.style();
+        Some(Units::Pixels(style.border + style.pad_top))
     }
     fn border_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
-        Some(Units::Pixels(w.style().border))
+        let style = w.style();
+        Some(Units::Pixels(style.border + style.pad_bottom))
     }
 }
 

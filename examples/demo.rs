@@ -112,6 +112,7 @@ fn main() {
         let mut wstyle = Style::new();
         wstyle.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
         wstyle.font_size = 15.0;
+        wstyle.pad_left = 15.0;
 
         let wtd = Rc::new(WichTextSimpleDataStore::new());
         wtd.set_data_source("XXX", Rc::new(vec![
@@ -175,6 +176,19 @@ fn main() {
             }
         });
 
+        let lbl1 = Widget::new(
+            style_ref.with_style_clone(|style| {
+                style.border     = 0.0;
+                style.pad_left   = 5.0;
+                style.text_align = Align::Left;
+            }));
+        lbl1.set_ctrl(Control::Label {
+            label: Box::new(format!("LBL Xyz:"))
+        });
+        lbl1.change_layout(|layout| {
+            layout.max_height = Units::Pixels(40.0);
+        });
+
         let entry = Widget::new(style_ref.clone());
         entry.set_ctrl(Control::Entry {
             entry: Box::new(Entry::new(Box::new(etf))),
@@ -182,6 +196,7 @@ fn main() {
         entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
         col.add(entry);
         col.add(btn1);
+        col.add(lbl1);
         layer2root.add(col);
         layer2root.add(wtwid);
 
