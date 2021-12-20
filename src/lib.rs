@@ -323,8 +323,12 @@ impl Control {
                             style::Align::Right  => 1,
                         };
 
+                    let fs =
+                        painter::calc_font_size_from_text(
+                            painter, s, style.font_size, inner_pos.w);
+
                     painter.label(
-                        style.font_size,
+                        fs,
                         align,
                         color,
                         inner_pos.x,

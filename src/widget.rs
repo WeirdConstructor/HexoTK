@@ -220,6 +220,14 @@ impl Widget {
         self.0.borrow_mut().add(child);
     }
 
+    pub fn remove_childs(&self) {
+        self.0.borrow_mut().remove_childs();
+    }
+
+    pub fn remove_child(&self, child: Widget) {
+        self.0.borrow_mut().remove_child(child);
+    }
+
     pub fn set_parent(&self, parent: &Widget) {
         self.0.borrow_mut().set_parent(parent);
     }
@@ -400,6 +408,46 @@ impl WidgetImpl {
         }
 
         self.notifier.as_mut().map(|n| n.set_tree_changed());
+    }
+
+    pub fn remove_childs(&mut self) {
+        if let Some(childs) = &mut self.childs {
+            if !childs.is_empty() {
+                for c in childs.iter() {
+                    c.0.borrow_mut().parent = None;
+                }
+
+                childs.clear();
+
+                self.notifier.as_mut().map(|n| n.set_tree_changed());
+            }
+        }
+    }
+
+    pub fn remove_child(&mut self, child: Widget) {
+        let child_addr = child.0.as_ptr();
+
+        if let Some(childs) = &mut self.childs {
+            let mut idx   = None;
+            let mut child = None;
+
+            for (i, c) in childs.iter().enumerate() {
+                if std::ptr::eq(c.0.as_ptr(), child_addr) {
+                    idx   = Some(i);
+                    child = Some(c.clone());
+                    break;
+                }
+            }
+
+            if let Some(child) = child {
+                child.0.borrow_mut().parent = None;
+            }
+
+            if let Some(idx) = idx {
+                childs.remove(idx);
+                self.notifier.as_mut().map(|n| n.set_tree_changed());
+            }
+        }
     }
 
     pub fn set_parent(&mut self, parent: &Widget) {

@@ -451,7 +451,12 @@ pub fn calc_font_size_from_text(
 ) -> f32
 {
     while p.text_width(max_fs, false, txt) > max_width {
-        max_fs *= 0.9;
+        let step = (max_fs * 0.1).max(0.1);
+        max_fs -= step;
+
+        if max_fs < 1.0 {
+            break;
+        }
     }
 
     max_fs

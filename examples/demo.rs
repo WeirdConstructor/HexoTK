@@ -159,23 +159,6 @@ fn main() {
 //            layout.height = Units::Pixels(200.0);
         });
 
-        let etf = TextField::new();
-        let btn1 = Widget::new(style_ref.clone());
-        btn1.set_ctrl(Control::Button {
-            label: Box::new(format!("Lay2 Btn {}", cnt))
-        });
-        btn1.change_layout(|layout| {
-            layout.max_height = Units::Pixels(40.0);
-        });
-        btn1.reg("click", {
-            let mut counter = 0;
-            let etf = etf.clone();
-            move |_wid, _ev| {
-                etf.set(format!("{} {}", etf.get(), counter));
-                counter += 1;
-            }
-        });
-
         let lbl1 = Widget::new(
             style_ref.with_style_clone(|style| {
                 style.border     = 0.0;
@@ -187,6 +170,35 @@ fn main() {
         });
         lbl1.change_layout(|layout| {
             layout.max_height = Units::Pixels(40.0);
+        });
+
+        let etf = TextField::new();
+        let btn1 = Widget::new(style_ref.clone());
+        btn1.set_ctrl(Control::Button {
+            label: Box::new(format!("Lay2 Btn {}", cnt))
+        });
+        btn1.change_layout(|layout| {
+            layout.max_height = Units::Pixels(40.0);
+        });
+        btn1.reg("click", {
+            let mut counter = 0;
+            let etf = etf.clone();
+            let lbl = lbl1.clone();
+            let col = col.clone();
+            move |_wid, _ev| {
+                if let Some(par) = lbl.parent() {
+                    par.remove_child(lbl.clone());
+                } else {
+                    col.add(lbl.clone());
+                }
+
+                etf.set(format!("{} {}", etf.get(), counter));
+                counter += 1;
+
+                if counter > 5 {
+                    col.remove_childs();
+                }
+            }
         });
 
         let entry = Widget::new(style_ref.clone());
