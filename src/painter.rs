@@ -422,7 +422,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         if let Ok(metr) = self.canvas.measure_font(paint) {
             metr.height()
         } else {
-            UI_ELEM_TXT_H as f32
+            UI_ELEM_TXT_DEFAULT_H as f32
         }
     }
 
@@ -462,4 +462,4 @@ pub fn calc_font_size_from_text(
     max_fs
 }
 
-pub const UI_ELEM_TXT_H : f32 =  16.0;
+pub const UI_ELEM_TXT_DEFAULT_H : f32 =  16.0;

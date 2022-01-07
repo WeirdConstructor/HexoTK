@@ -3,7 +3,7 @@
 // See README.md and COPYING for details.
 
 use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
-use keyboard_types::{KeyboardEvent, Key};
+use keyboard_types::Key;
 
 use crate::painter::*;
 use crate::rect::*;

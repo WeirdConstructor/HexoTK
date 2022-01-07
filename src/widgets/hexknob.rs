@@ -3,9 +3,9 @@
 // See README.md and COPYING for details.
 
 use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
-use keyboard_types::{KeyboardEvent, Key};
+use keyboard_types::Key;
 
-use crate::ui::*;
+use super::ModifierTracker;
 
 use crate::style::*;
 
@@ -424,8 +424,9 @@ pub trait ParamModel {
 }
 
 pub struct DummyParamModel {
-    value: f32,
-    modamt: Option<f32>,
+    value:      f32,
+    modamt:     Option<f32>,
+    changed:    bool,
 }
 
 impl DummyParamModel {
@@ -433,7 +434,12 @@ impl DummyParamModel {
         Self {
             value: 0.25,
             modamt: Some(0.25),
+            changed: true,
         }
+    }
+
+    pub fn mark_changed(&mut self) {
+        self.changed = true;
     }
 }
 
@@ -510,6 +516,12 @@ impl ParamModel for DummyParamModel {
             Err(_) => 0,
         }
     }
+
+    fn check_change(&mut self) -> bool {
+        let c = self.changed;
+        self.changed = false;
+        c
+    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
@@ -544,7 +556,8 @@ struct HexValueDrag {
 
 impl HexValueDrag {
     fn from_state(
-        model: &mut dyn ParamModel, btn: MButton, zone: HexKnobZone)
+        modkeys: &ModifierTracker, model: &mut dyn ParamModel,
+        btn: MButton, zone: HexKnobZone)
     -> Option<Self>
     {
         let is_modamt = MButton::Right == btn.into();
@@ -562,7 +575,7 @@ impl HexValueDrag {
             };
 
         let res =
-            if state.modifiers.ctrl { ChangeRes::Free }
+            if modkeys.ctrl { ChangeRes::Free }
             else { res };
 
         Some(Self {
@@ -574,10 +587,10 @@ impl HexValueDrag {
             res,
             is_modamt,
             pre_fine_delta: 0.0,
-            fine_key:       state.modifiers.shift,
+            fine_key:       modkeys.shift,
             mouse_start: (
-                state.mouse.cursorx,
-                state.mouse.cursory
+                modkeys.mouse.x,
+                modkeys.mouse.y
             ),
         })
     }
@@ -661,6 +674,7 @@ pub struct HexKnob {
     hover:      Option<HexKnobZone>,
     drag:       Option<HexValueDrag>,
     real_pos:   Rect,
+    modkeys:    ModifierTracker,
 }
 
 impl HexKnob {
@@ -675,6 +689,7 @@ impl HexKnob {
             hover:      None,
             drag:       None,
             real_pos:   Rect::from(0.0, 0.0, 0.0, 0.0),
+            modkeys:    ModifierTracker::new(),
         }
     }
 }
@@ -705,52 +720,43 @@ impl HexKnob {
     }
 
     pub fn check_change(&self) -> bool {
-        self.model.check_change();
+        self.model.borrow_mut().check_change()
     }
 
     pub fn handle(
         &mut self, w: &Widget, event: &InputEvent,
         out_events: &mut Vec<(usize, Event)>)
     {
+        self.modkeys.handle(event);
+
         let is_hovered = w.is_hovered();
         let is_active  = w.is_active();
 
         let mut model = self.model.borrow_mut();
 
         match event {
-            InputEvent::MouseDoubleClick(btn) => {
-                match btn {
-                    MButton::Left => {
-                        model.set_default();
-                        self.drag = None;
-                        w.emit_redraw_required();
-                    },
-                    _ => {
-                    },
-                }
-            },
-              InputEvent::MouseDown(MButton::Left)
-            | InputEvent::MouseDown(MButton::Right) => {
+              InputEvent::MouseButtonPressed(MButton::Left)
+            | InputEvent::MouseButtonPressed(MButton::Right) => {
                 let btn =
-                    if let InputEvent::MouseDown(btn) = event {
+                    if let InputEvent::MouseButtonPressed(btn) = event {
                         *btn
                     } else {
                         MButton::Left
                     };
 
-                if btn == MButton::Right && state.modifiers.ctrl {
-                    // Handled by MouseUp!
+                if btn == MButton::Right && self.modkeys.ctrl {
+                    // Handled by MouseButtonReleased!
                     return;
                 }
 
                 if let Some(zone) =
                     self.cursor_zone(
-                        state, entity,
-                        state.mouse.cursorx,
-                        state.mouse.cursory)
+                        self.modkeys.mouse.x,
+                        self.modkeys.mouse.y)
                 {
                     if let Some(mut hvd) =
-                        HexValueDrag::from_state(&mut *model, btn, zone)
+                        HexValueDrag::from_state(
+                            &self.modkeys, &mut *model, btn, zone)
                     {
                         hvd.start(&mut *model);
                         self.drag = Some(hvd);
@@ -759,17 +765,14 @@ impl HexKnob {
                     }
                 }
 
-                state.capture(entity);
-                state.focused = entity;
+                w.activate();
             },
-            InputEvent::MouseUp(MButton::Middle) => {
+            InputEvent::MouseButtonReleased(MButton::Middle) => {
                 model.set_default();
                 w.emit_redraw_required();
             },
-            InputEvent::MouseUp(btn) => {
-                state.release(entity);
-
-                if *btn == MButton::Right && state.modifiers.ctrl {
+            InputEvent::MouseButtonReleased(btn) => {
+                if *btn == MButton::Right && self.modkeys.ctrl {
                     out_events.push((w.id(), Event {
                         name: "context_menu_open".to_string(),
                         data: EvPayload::Pos { x: 0.0, y: 0.0 }}));
@@ -780,21 +783,27 @@ impl HexKnob {
                 if let Some(mut hvd) = self.drag.take() {
                     hvd.end(
                         &mut *model,
-                        state.mouse.cursorx,
-                        state.mouse.cursory);
+                        self.modkeys.mouse.x,
+                        self.modkeys.mouse.y);
 
                     w.emit_redraw_required();
                 }
+
+                if *btn == MButton::Left || *btn == MButton::Right {
+                    if w.is_active() {
+                        w.deactivate();
+                    }
+                }
             },
-            InputEvent::MouseMove(x, y) => {
+            InputEvent::MousePosition(x, y) => {
                 let old_hover = self.hover;
-                self.hover    = self.cursor_zone(state, entity, *x, *y);
+                self.hover    = self.cursor_zone(*x, *y);
 
                 if let Some(ref mut hvd) = self.drag {
                     hvd.change(
                         &mut *model,
-                        state.mouse.cursorx,
-                        state.mouse.cursory);
+                        self.modkeys.mouse.x,
+                        self.modkeys.mouse.y);
 
                     w.emit_redraw_required();
 
@@ -802,16 +811,15 @@ impl HexKnob {
                     w.emit_redraw_required();
                 }
             },
-            InputEvent::MouseScroll(_x, y) => {
+            InputEvent::MouseWheel(y) => {
                 if let Some(zone) =
                     self.cursor_zone(
-                        state, entity,
-                        state.mouse.cursorx,
-                        state.mouse.cursory)
+                        self.modkeys.mouse.x,
+                        self.modkeys.mouse.y)
                 {
                     if let Some(mut hvd) =
                         HexValueDrag::from_state(
-                            state, &mut *model, MButton::Left, zone)
+                            &self.modkeys, &mut *model, MButton::Left, zone)
                     {
                         hvd.start(&mut *model);
                         hvd.wheel(&mut *model, *y);
@@ -821,21 +829,21 @@ impl HexKnob {
                 }
             },
             InputEvent::KeyPressed(key) => {
-                if    Key::Shift == *key {
+                if    Key::Shift == key.key {
                     if let Some(ref mut hvd) = self.drag {
                         hvd.enable_fine_key(
                             &mut *model,
-                            state.mouse.cursorx,
-                            state.mouse.cursory);
+                            self.modkeys.mouse.x,
+                            self.modkeys.mouse.y);
                     }
                 }
-                else if Key::ControlLeft == *key
+                else if Key::Control == key.key
                 {
                     if let Some(ref mut hvd) = self.drag {
                         hvd.set_fine_res(
                             &mut *model,
-                            state.mouse.cursorx,
-                            state.mouse.cursory);
+                            self.modkeys.mouse.x,
+                            self.modkeys.mouse.y);
                     }
                 }
             },
@@ -927,8 +935,8 @@ impl HexKnob {
 
         let zone_hover =
             if let Some(hvd) = &self.drag { Some(hvd.zone) }
-            else if state.hovered == entity { self.hover }
-            else { None };
+            else if is_hovered            { self.hover }
+            else                          { None };
 
         let hover      = zone_hover == Some(HexKnobZone::Coarse);
         let fine_hover = zone_hover == Some(HexKnobZone::Fine);

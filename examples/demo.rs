@@ -113,6 +113,7 @@ fn main() {
         wstyle.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
         wstyle.font_size = 15.0;
         wstyle.pad_left = 15.0;
+        wstyle.pad_top = 15.0;
 
         let wtd = Rc::new(WichTextSimpleDataStore::new());
         wtd.set_data_source("XXX", Rc::new(vec![
@@ -201,6 +202,15 @@ fn main() {
             }
         });
 
+        let knob = Widget::new(style_ref.clone());
+        let param =
+            Rc::new(RefCell::new(
+                hexotk::DummyParamModel::new()));
+        knob.set_ctrl(Control::HexKnob {
+            knob: Box::new(HexKnob::new(param.clone())),
+        });
+
+
         let entry = Widget::new(style_ref.clone());
         entry.set_ctrl(Control::Entry {
             entry: Box::new(Entry::new(Box::new(etf))),
@@ -209,6 +219,7 @@ fn main() {
         col.add(entry);
         col.add(btn1);
         col.add(lbl1);
+        col.add(knob);
         layer2root.add(col);
         layer2root.add(wtwid);
 

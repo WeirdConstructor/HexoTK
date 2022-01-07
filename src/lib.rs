@@ -28,6 +28,7 @@ pub use style::{Style, Align, VAlign};
 
 pub use widgets::Entry;
 pub use widgets::WichText;
+pub use widgets::{HexKnob, ParamModel, DummyParamModel};
 pub use widgets::WichTextSimpleDataStore;
 pub use widgets::EditableText;
 pub use widgets::TextField;
@@ -181,7 +182,7 @@ pub enum Control {
     Label    { label: Box<dyn TextMutable> },
     WichText { wt:    Box<WichText> },
     Entry    { entry: Box<Entry> },
-//    HexKnob  { knob:  Box<i32> },
+    HexKnob  { knob:  Box<HexKnob> },
 }
 
 impl Control {
@@ -193,7 +194,7 @@ impl Control {
             Control::Label    { .. } => { },
             Control::WichText { .. } => { },
             Control::Entry    { .. } => { },
-//            Control::HexKnob  { .. } => { },
+            Control::HexKnob  { .. } => { },
         }
     }
 
@@ -205,7 +206,7 @@ impl Control {
             Control::Button   { .. } => true,
             Control::WichText { .. } => true,
             Control::Entry    { .. } => true,
-//            Control::HexKnob  { .. } => true,
+            Control::HexKnob  { .. } => true,
         }
     }
 
@@ -227,7 +228,7 @@ impl Control {
                 Control::Button   { .. } => { true },
                 Control::WichText { .. } => { true },
                 Control::Entry    { .. } => { true },
-//                Control::HexKnob  { .. } => { true },
+                Control::HexKnob  { .. } => { true },
                 Control::None            => { false },
             };
 
@@ -347,9 +348,9 @@ impl Control {
                 Control::WichText { wt } => {
                     wt.draw(w, &style, inner_pos, orig_inner_pos, painter);
                 },
-//                Control::HexKnob { knob } => {
-//                    knob.draw(w, &style, inner_pos, orig_inner_pos, painter);
-//                },
+                Control::HexKnob { knob } => {
+                    knob.draw(w, &style, inner_pos, orig_inner_pos, painter);
+                },
             }
         }
 
@@ -375,7 +376,7 @@ impl Control {
             Control::Label    { label } => label.check_change(),
             Control::WichText { wt }    => wt.data().check_change(),
             Control::Entry    { entry } => entry.check_change(),
-//            Control::HexKnob  { knob }  => knob.check_change(),
+            Control::HexKnob  { knob }  => knob.check_change(),
         }
     }
 
@@ -411,9 +412,9 @@ impl Control {
             Control::Entry { entry } => {
                 entry.handle(w, event, out_events);
             },
-//            Control::HexKnob { knob } => {
-//                knob.handle(w, event, out_events);
-//            },
+            Control::HexKnob { knob } => {
+                knob.handle(w, event, out_events);
+            },
             Control::WichText { wt } => {
                 wt.handle(w, event, out_events);
             },
