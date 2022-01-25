@@ -1,5 +1,5 @@
 // Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
-// This file is a part of HexoSynth. Released under GPL-3.0-or-later.
+// This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
 use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
@@ -11,8 +11,6 @@ use crate::style::*;
 
 use crate::painter::*;
 use crate::rect::*;
-
-use femtovg::FontId;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -665,8 +663,6 @@ impl HexValueDrag {
 }
 
 pub struct HexKnob {
-    font:       Option<FontId>,
-    font_mono:  Option<FontId>,
     lbl_buf:    [u8; 15],
     model:      Rc<RefCell<dyn ParamModel>>,
     size:       f32,
@@ -681,8 +677,6 @@ impl HexKnob {
     pub fn new(model: Rc<RefCell<dyn ParamModel>>) -> Self {
         HexKnob {
             model,
-            font:       None,
-            font_mono:  None,
             lbl_buf:    [0; 15],
             size:       28.0,
             knob:       Knob::new(28.0, UI_BG_KNOB_STROKE, 12.0, 9.0, UI_ELEM_TXT_H),

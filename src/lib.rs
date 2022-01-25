@@ -29,6 +29,7 @@ pub use style::{Style, Align, VAlign};
 pub use widgets::Entry;
 pub use widgets::WichText;
 pub use widgets::{HexKnob, ParamModel, DummyParamModel};
+pub use widgets::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge};
 pub use widgets::WichTextSimpleDataStore;
 pub use widgets::EditableText;
 pub use widgets::TextField;
@@ -183,6 +184,7 @@ pub enum Control {
     WichText { wt:    Box<WichText> },
     Entry    { entry: Box<Entry> },
     HexKnob  { knob:  Box<HexKnob> },
+    HexGrid  { grid:  Box<HexGrid> },
 }
 
 impl Control {
@@ -195,6 +197,7 @@ impl Control {
             Control::WichText { .. } => { },
             Control::Entry    { .. } => { },
             Control::HexKnob  { .. } => { },
+            Control::HexGrid  { .. } => { },
         }
     }
 
@@ -207,6 +210,7 @@ impl Control {
             Control::WichText { .. } => true,
             Control::Entry    { .. } => true,
             Control::HexKnob  { .. } => true,
+            Control::HexGrid  { .. } => true,
         }
     }
 
@@ -229,6 +233,7 @@ impl Control {
                 Control::WichText { .. } => { true },
                 Control::Entry    { .. } => { true },
                 Control::HexKnob  { .. } => { true },
+                Control::HexGrid  { .. } => { true },
                 Control::None            => { false },
             };
 
@@ -351,6 +356,9 @@ impl Control {
                 Control::HexKnob { knob } => {
                     knob.draw(w, &style, inner_pos, orig_inner_pos, painter);
                 },
+                Control::HexGrid { grid } => {
+                    grid.draw(w, &style, inner_pos, orig_inner_pos, painter);
+                },
             }
         }
 
@@ -377,6 +385,7 @@ impl Control {
             Control::WichText { wt }    => wt.data().check_change(),
             Control::Entry    { entry } => entry.check_change(),
             Control::HexKnob  { knob }  => knob.check_change(),
+            Control::HexGrid  { grid }  => grid.check_change(),
         }
     }
 
@@ -414,6 +423,9 @@ impl Control {
             },
             Control::HexKnob { knob } => {
                 knob.handle(w, event, out_events);
+            },
+            Control::HexGrid { grid } => {
+                grid.handle(w, event, out_events);
             },
             Control::WichText { wt } => {
                 wt.handle(w, event, out_events);

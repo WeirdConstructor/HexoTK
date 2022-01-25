@@ -1,10 +1,12 @@
 mod wichtext;
 mod entry;
 mod hexknob;
+mod hexgrid;
 
 pub use wichtext::{WichText, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
 pub use hexknob::{ParamModel, DummyParamModel, HexKnob};
+pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge};
 
 use keyboard_types::Key;
 

@@ -3,8 +3,25 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
-const WINDOW_W : i32 = 720;
+const WINDOW_W : i32 = 1020;
 const WINDOW_H : i32 = 720;
+
+pub struct TestGrid {
+}
+
+impl HexGridModel for TestGrid {
+    fn width(&self) -> usize { 10 }
+    fn height(&self) -> usize { 10 }
+    fn cell_visible(&self, _x: usize, _y: usize) -> bool { true }
+    fn cell_empty(&self, _x: usize, _y: usize) -> bool { false }
+    fn cell_color(&self, _x: usize, _y: usize) -> u8 { 0 }
+    fn cell_label<'a>(&self, _x: usize, _y: usize, _out: &'a mut [u8])
+        -> Option<HexCell<'a>> { None }
+    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8])
+        -> Option<(&'a str, HexEdge)> { None }
+//    fn cell_click(&mut self, x: usize, y: usize, btn: MButton) { }
+//    fn cell_drag(&mut self, x: usize, y: usize, x2: usize, y2: usize, btn: MButton) { }
+}
 
 fn main() {
     let concurrent_data =
@@ -210,6 +227,12 @@ fn main() {
             knob: Box::new(HexKnob::new(param.clone())),
         });
 
+        let hexmodel = Rc::new(RefCell::new(TestGrid { }));
+        let hexgrid = Widget::new(style_ref.clone());
+        hexgrid.set_ctrl(Control::HexGrid {
+            grid: Box::new(HexGrid::new(hexmodel)),
+        });
+//        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
 
         let entry = Widget::new(style_ref.clone());
         entry.set_ctrl(Control::Entry {
@@ -222,6 +245,7 @@ fn main() {
         col.add(knob);
         layer2root.add(col);
         layer2root.add(wtwid);
+        layer2root.add(hexgrid);
 
         let mut ui = Box::new(UI::new());
 //        ui.add_layer_root(wid);
