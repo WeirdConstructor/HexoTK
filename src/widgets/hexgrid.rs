@@ -15,14 +15,6 @@ use crate::rect::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-//use crate::ui::*;
-//
-//use tuix::*;
-//use femtovg::FontId;
-//
-//use std::rc::Rc;
-//use std::cell::RefCell;
-
 macro_rules! hxclr {
     ($i: expr) => {
         (

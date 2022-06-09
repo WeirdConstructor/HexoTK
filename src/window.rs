@@ -293,7 +293,7 @@ pub fn open_window(
 
     let window_create_fun = move |win: &mut Window| {
         let context =
-            GlContext::create(
+            unsafe { GlContext::create(
                 win,
                 GlConfig {
                     version:       (3, 2),
@@ -308,13 +308,13 @@ pub fn open_window(
                     srgb:          true,
                     double_buffer: true,
                     vsync:         true,
-                }).expect("GL context to be creatable");
-        context.make_current();
+                }) }.expect("GL context to be creatable");
+        unsafe { context.make_current(); }
         gl::load_with(|symbol| context.get_proc_address(symbol) as *const _);
 
         #[allow(deprecated)]
         let renderer =
-            OpenGl::new(|symbol| context.get_proc_address(symbol) as *const _)
+            unsafe { OpenGl::new_from_function(|symbol| context.get_proc_address(symbol) as *const _) }
                 .expect("Cannot create renderer");
 
         let mut canvas = Canvas::new(renderer).expect("Cannot create canvas");

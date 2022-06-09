@@ -14,6 +14,7 @@ default=[]
 driver=[]
 
 [dependencies]
+winit              = { version = "0.26.1", features = ["x11"] }
 hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
 #hexodsp             = { path = "../hexodsp" }
 femtovg            = { git = "https://github.com/femtovg/femtovg" }
@@ -25,4 +26,4 @@ baseview           = { git = "https://github.com/glowcoil/baseview.git", branch 
 keyboard-types     = { version = "0.5.0", default-features = false }
 raw-window-handle  = "0.3"
 gl                 = "0.14.0"
-#glutin             = "0.24.1"
+glutin             = { version = "0.28.0", features = ["x11"] }
