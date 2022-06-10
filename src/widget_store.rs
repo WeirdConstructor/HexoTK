@@ -54,10 +54,10 @@ impl WidgetStore {
         Widget::from_weak(wid)
     }
 
-    pub fn with_layout<R, F: FnOnce(&crate::widget::Layout) -> R>(&self, id: &WidgetId, f: F)
+    pub fn with_layout<R, F: FnOnce(&crate::widget::Layout) -> Option<R>>(&self, id: &WidgetId, f: F)
         -> Option<R>
     {
-        self.get(id.id()).map(|w| w.with_layout(f))
+        self.get(id.id()).map(|w| w.with_layout(f)).flatten()
     }
 }
 

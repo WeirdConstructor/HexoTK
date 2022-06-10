@@ -98,30 +98,30 @@ fn main() {
 //        });
 
         sub.change_layout(|layout| {
-            layout.width  = Units::Stretch(1.0);
-            layout.height = Units::Pixels(100.0);
+            layout.width  = Some(Units::Stretch(1.0));
+            layout.height = Some(Units::Pixels(100.0));
         });
         sub2.change_layout(|layout| {
-            layout.width  = Units::Stretch(1.0);
-            layout.left   = Units::Percentage(50.0);
-            layout.height = Units::Pixels(100.0);
+            layout.width  = Some(Units::Stretch(1.0));
+            layout.left   = Some(Units::Percentage(50.0));
+            layout.height = Some(Units::Pixels(100.0));
         });
         sub3.change_layout(|layout| {
-            layout.width  = Units::Percentage(20.0);
-            layout.left   = Units::Percentage(40.0);
-            layout.right  = Units::Percentage(40.0);
-            layout.height = Units::Pixels(100.0);
+            layout.width  = Some(Units::Percentage(20.0));
+            layout.left   = Some(Units::Percentage(40.0));
+            layout.right  = Some(Units::Percentage(40.0));
+            layout.height = Some(Units::Pixels(100.0));
         });
         sub4.change_layout(|layout| {
-            layout.width  = Units::Pixels(200.0);
-            layout.left   = Units::Stretch(1.0);
-            layout.height = Units::Pixels(100.0);
+            layout.width  = Some(Units::Pixels(200.0));
+            layout.left   = Some(Units::Stretch(1.0));
+            layout.height = Some(Units::Pixels(100.0));
         });
 
         let layer2root = Widget::new(style_ref.clone());
         layer2root.enable_cache();
         layer2root.change_layout(|layout| {
-            layout.layout_type = LayoutType::Row;
+            layout.layout_type = Some(LayoutType::Row);
 //            layout.child_top = Units::Percentage(75.0);
 //            layout.child_top = Units::Percentage(49.0);
         });
@@ -164,7 +164,7 @@ fn main() {
                     label: Box::new(format!("Sub Btn {}", cnt))
                 });
                 btn1.change_layout(|layout| {
-                    layout.max_height = Units::Pixels(40.0);
+                    layout.max_height = Some(Units::Pixels(40.0));
                 });
                 layer2root.add(btn1.clone());
             }
@@ -172,7 +172,7 @@ fn main() {
 
         let col = Widget::new(style_ref.clone());
         col.change_layout(|layout| {
-            layout.layout_type = LayoutType::Column;
+            layout.layout_type = Some(LayoutType::Column);
 //            layout.width  = Units::Pixels(200.0);
 //            layout.height = Units::Pixels(200.0);
         });
@@ -187,7 +187,7 @@ fn main() {
             label: Box::new(format!("LBL Xyz:"))
         });
         lbl1.change_layout(|layout| {
-            layout.max_height = Units::Pixels(40.0);
+            layout.max_height = Some(Units::Pixels(40.0));
         });
 
         let etf = TextField::new();
@@ -196,7 +196,7 @@ fn main() {
             label: Box::new(format!("Lay2 Btn {}", cnt))
         });
         btn1.change_layout(|layout| {
-            layout.max_height = Units::Pixels(40.0);
+            layout.max_height = Some(Units::Pixels(40.0));
         });
         btn1.reg("click", {
             let mut counter = 0;
@@ -238,7 +238,7 @@ fn main() {
         entry.set_ctrl(Control::Entry {
             entry: Box::new(Entry::new(Box::new(etf))),
         });
-        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
+        entry.change_layout(|layout| layout.max_height = Some(Units::Pixels(40.0)));
         col.add(entry);
         col.add(btn1);
         col.add(lbl1);

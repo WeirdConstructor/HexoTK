@@ -122,10 +122,12 @@ impl Cache for LayoutCache {
     }
 
     fn width(&self, node: Self::Item) -> f32 {
+        println!("WIDTH {}={}", node.id, self.layouts[node.id].width);
         self.layouts[node.id].width
     }
 
     fn height(&self, node: Self::Item) -> f32 {
+        println!("HEIGHT {}={}", node.id, self.layouts[node.id].height);
         self.layouts[node.id].height
     }
 
@@ -151,9 +153,11 @@ impl Cache for LayoutCache {
     }
 
     fn new_width(&self, node: Self::Item) -> f32 {
+        println!("NEW WIDTH {}={}", node.id, self.layouts[node.id].new_width);
         self.layouts[node.id].new_width
     }
     fn new_height(&self, node: Self::Item) -> f32 {
+        println!("NEW HEIGHT {}={}", node.id, self.layouts[node.id].new_height);
         self.layouts[node.id].new_height
     }
 
@@ -198,15 +202,19 @@ impl Cache for LayoutCache {
     }
 
     fn set_child_width_sum(&mut self, node: Self::Item, value: f32) {
+        println!("CHILD W SUM {} = {}", node.id, value);
         self.layouts[node.id].child_width_sum = value;
     }
     fn set_child_height_sum(&mut self, node: Self::Item, value: f32) {
+        println!("CHILD H SUM {} = {}", node.id, value);
         self.layouts[node.id].child_height_sum = value;
     }
     fn set_child_width_max(&mut self, node: Self::Item, value: f32) {
+        println!("CHILD W MAX {} = {}", node.id, value);
         self.layouts[node.id].child_width_max = value;
     }
     fn set_child_height_max(&mut self, node: Self::Item, value: f32) {
+        println!("CHILD H MAX {} = {}", node.id, value);
         self.layouts[node.id].child_height_max = value;
     }
 
@@ -263,9 +271,11 @@ impl Cache for LayoutCache {
     }
 
     fn set_new_width(&mut self, node: Self::Item, value: f32) {
+        println!("SET NEW WIDTH {} = {}", node.id, value);
         self.layouts[node.id].new_width = value;
     }
     fn set_new_height(&mut self, node: Self::Item, value: f32) {
+        println!("SET NEW HEIGHT {} = {}", node.id, value);
         self.layouts[node.id].new_height = value;
     }
 
