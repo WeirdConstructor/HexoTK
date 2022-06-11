@@ -112,7 +112,7 @@ impl Widget {
         Rc::downgrade(&self.0)
     }
 
-    pub fn reg<F: 'static + FnMut(Widget, &Event)>(&self, ev_name: &str, cb: F) {
+    pub fn reg<F: 'static + FnMut(&mut std::any::Any, Widget, &Event)>(&self, ev_name: &str, cb: F) {
         self.0.borrow_mut().reg(ev_name, Box::new(cb));
     }
 
@@ -296,7 +296,7 @@ impl WidgetImpl {
         }
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(Widget, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut std::any::Any, Widget, &Event)>) {
         if let Some(evc) = &mut self.evc {
             evc.reg(ev_name, cb);
         }

@@ -61,7 +61,7 @@ fn main() {
         sub.set_ctrl(
             Control::Button { label: Box::new(concurrent_data.clone()) });
 
-        sub.reg("click", move |_wid, _ev| {
+        sub.reg("click", move |_ctx, _wid, _ev| {
             if let Ok(mut data) = concurrent_data.lock() {
                 (*data).1 += 1;
             }
@@ -78,7 +78,7 @@ fn main() {
 
         sub2.set_ctrl(Control::Button { label: Box::new(data.clone()) });
 
-        sub2.reg("click", move |_wid, _ev| {
+        sub2.reg("click", move |_ctx, _wid, _ev| {
             (*data.borrow_mut()).1 += 1;
             println!("Button clicked!");
         });
@@ -141,7 +141,7 @@ fn main() {
         wtwid.enable_cache();
         wtwid.set_ctrl(Control::WichText { wt: Box::new(wt) });
 
-        wtwid.reg("click", |_wid, ev| {
+        wtwid.reg("click", |_ctx, _wid, ev| {
             match &ev.data {
                 EvPayload::WichTextCommand { cmd, .. } => {
                     println!("CLICK ON: {:?}", cmd);
@@ -157,7 +157,7 @@ fn main() {
             let layer2root = layer2root.clone();
             let style_ref  = style_ref.clone();
 
-            move |_wid, _ev| {
+            move |_ctx, _wid, _ev| {
                 cnt += 1;
                 let btn1 = Widget::new(style_ref.clone());
                 btn1.set_ctrl(Control::Button {
@@ -203,7 +203,7 @@ fn main() {
             let etf = etf.clone();
             let lbl = lbl1.clone();
             let col = col.clone();
-            move |_wid, _ev| {
+            move |_ctx, _wid, _ev| {
                 if let Some(par) = lbl.parent() {
                     par.remove_child(lbl.clone());
                 } else {
@@ -247,7 +247,7 @@ fn main() {
         layer2root.add(wtwid);
         layer2root.add(hexgrid);
 
-        let mut ui = Box::new(UI::new());
+        let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
 //        ui.add_layer_root(wid);
         ui.add_layer_root(layer2root.clone());
 //        ui.add_layer_root(col);

@@ -590,7 +590,7 @@ pub struct EventCore {
     callbacks:
         std::collections::HashMap<
             String,
-            Option<Vec<Box<dyn FnMut(Widget, &Event)>>>>,
+            Option<Vec<Box<dyn FnMut(&mut std::any::Any, Widget, &Event)>>>>,
 }
 
 impl EventCore {
@@ -604,7 +604,7 @@ impl EventCore {
         self.callbacks.clear();
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(Widget, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut std::any::Any, Widget, &Event)>) {
         if let Some(cbs) = self.callbacks.get_mut(ev_name) {
             if let Some(cbs) = cbs { cbs.push(cb); }
         } else {
@@ -612,11 +612,11 @@ impl EventCore {
         }
     }
 
-    pub fn call(&mut self, ev: &Event, widget: &Widget) {
+    pub fn call(&mut self, ctx: &mut std::any::Any, ev: &Event, widget: &Widget) {
         if let Some(cbs) = self.callbacks.get_mut(&ev.name) {
             if let Some(cbs) = cbs {
                 for cb in cbs {
-                    (*cb)(widget.clone(), ev);
+                    (*cb)(ctx, widget.clone(), ev);
                 }
             }
         }

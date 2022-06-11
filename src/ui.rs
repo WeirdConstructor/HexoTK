@@ -32,10 +32,11 @@ pub struct UI {
     cur_parent_lookup:  Vec<usize>,
     layout_cache:       LayoutCache,
     ftm:                crate::window::FrameTimeMeasurement,
+    ctx:                Rc<RefCell<std::any::Any>>,
 }
 
 impl UI {
-    pub fn new() -> Self {
+    pub fn new(ctx: Rc<RefCell<std::any::Any>>) -> Self {
         let store = Rc::new(RefCell::new(WidgetStore::new()));
         Self {
             win_h:              0.0,
@@ -48,6 +49,7 @@ impl UI {
             cur_parent_lookup:  vec![],
             layout_cache:       LayoutCache::new(store),
             ftm:                crate::window::FrameTimeMeasurement::new("layout"),
+            ctx,
         }
     }
 
@@ -229,12 +231,15 @@ impl WindowUI for UI {
             }
         });
 
+        let ctx = self.ctx.clone();
+
         for (wid_id, event) in sent_events {
             if let Some(widget) = self.widgets.borrow().get(wid_id) {
                 let evc = widget.take_event_core();
 
+
                 if let Some(mut evc) = evc {
-                    evc.call(&event, &widget);
+                    evc.call(&mut *(ctx.borrow_mut()), &event, &widget);
                     widget.give_back_event_core(evc);
                 }
             }
