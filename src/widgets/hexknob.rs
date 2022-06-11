@@ -728,9 +728,15 @@ impl HexKnob {
 
         let mut model = self.model.borrow_mut();
 
+        println!("EV HANDLE KNOB: {:?} hov={}, act={}", event, is_hovered, is_active);
+
         match event {
               InputEvent::MouseButtonPressed(MButton::Left)
             | InputEvent::MouseButtonPressed(MButton::Right) => {
+                if !is_hovered {
+                    return;
+                }
+
                 let btn =
                     if let InputEvent::MouseButtonPressed(btn) = event {
                         *btn

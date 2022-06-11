@@ -204,6 +204,7 @@ fn main() {
             let lbl = lbl1.clone();
             let col = col.clone();
             move |_ctx, _wid, _ev| {
+                println!("FOOOOOOOOOOOOOOOOOO");
                 if let Some(par) = lbl.parent() {
                     par.remove_child(lbl.clone());
                 } else {
@@ -239,6 +240,11 @@ fn main() {
             entry: Box::new(Entry::new(Box::new(etf))),
         });
         entry.change_layout(|layout| layout.max_height = Some(Units::Pixels(40.0)));
+        entry.reg("changed", {
+            move |_ctx, _wid, _ev| {
+                println!("CHANGED ENTRY!");
+            }
+        });
         col.add(entry);
         col.add(btn1);
         col.add(lbl1);
