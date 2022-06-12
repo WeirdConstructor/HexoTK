@@ -28,8 +28,8 @@ pub use style::{Style, Align, VAlign};
 
 pub use widgets::Entry;
 pub use widgets::WichText;
-pub use widgets::{HexKnob, ParamModel, DummyParamModel};
-pub use widgets::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge};
+pub use widgets::{HexKnob, ParamModel, DummyParamModel, ChangeRes};
+pub use widgets::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 pub use widgets::WichTextSimpleDataStore;
 pub use widgets::EditableText;
 pub use widgets::TextField;
@@ -39,7 +39,7 @@ pub use morphorm::{Units, LayoutType, PositionType};
 use std::fmt::Debug;
 
 pub trait Mutable {
-    fn check_change(&mut self) -> bool;
+    fn get_generation(&mut self) -> u64;
 }
 
 pub trait Text {
@@ -53,6 +53,7 @@ pub trait Text {
 }
 
 pub struct CloneMutable<T> where T: PartialEq + Clone {
+    generation: u64,
     old: Option<T>,
     cur: T,
 }
@@ -60,6 +61,7 @@ pub struct CloneMutable<T> where T: PartialEq + Clone {
 impl<T> CloneMutable<T> where T: PartialEq + Clone {
     pub fn new(cur: T) -> Self {
         Self {
+            generation: 0,
             old: None,
             cur,
         }
@@ -75,30 +77,34 @@ impl<T> std::ops::DerefMut for CloneMutable<T> where T: PartialEq + Clone {
 }
 
 impl<T> Mutable for CloneMutable<T> where T: PartialEq + Clone {
-    fn check_change(&mut self) -> bool {
+    fn get_generation(&mut self) -> u64 {
         let change =
             self.old.as_ref()
                 .map(|o| *o != self.cur)
                 .unwrap_or(true);
-        self.old = Some(self.cur.clone());
-        change
+        if change {
+            self.old = Some(self.cur.clone());
+            self.generation += 1;
+        }
+
+        self.generation
     }
 }
 
 impl Mutable for String {
-    fn check_change(&mut self) -> bool { false }
+    fn get_generation(&mut self) -> u64 { 0 }
 }
 
 impl<T> Mutable for Rc<RefCell<T>> where T: Mutable {
-    fn check_change(&mut self) -> bool { self.borrow_mut().check_change() }
+    fn get_generation(&mut self) -> u64 { self.borrow_mut().get_generation() }
 }
 
 impl<T> Mutable for std::sync::Arc<std::sync::Mutex<T>> where T: Mutable {
-    fn check_change(&mut self) -> bool {
+    fn get_generation(&mut self) -> u64 {
         if let Ok(mut data) = self.lock() {
-            data.check_change()
+            data.get_generation()
         } else {
-            false
+            0
         }
     }
 }
@@ -317,7 +323,11 @@ impl Control {
                 painter.rect_fill(style.bg_color, inner_pos.x, inner_pos.y, inner_pos.w, inner_pos.h);
             }
 
-            let inner_pos = style.apply_padding(inner_pos);
+            // We need to apply also padding to the original inner position, or else
+            // the widget will compensate the padding away by comparing these two
+            // positions!
+            let orig_inner_pos = style.apply_padding(orig_inner_pos);
+            let inner_pos      = style.apply_padding(inner_pos);
 
             match self {
                 Control::Rect => { },
@@ -376,16 +386,16 @@ impl Control {
         }
     }
 
-    pub fn check_change(&mut self) -> bool {
+    pub fn get_generation(&mut self) -> u64 {
         match self {
-            Control::None => false,
-            Control::Rect => false,
-            Control::Button   { label } => label.check_change(),
-            Control::Label    { label } => label.check_change(),
-            Control::WichText { wt }    => wt.data().check_change(),
-            Control::Entry    { entry } => entry.check_change(),
-            Control::HexKnob  { knob }  => knob.check_change(),
-            Control::HexGrid  { grid }  => grid.check_change(),
+            Control::None => 0,
+            Control::Rect => 0,
+            Control::Button   { label } => label.get_generation(),
+            Control::Label    { label } => label.get_generation(),
+            Control::WichText { wt }    => wt.data().get_generation(),
+            Control::Entry    { entry } => entry.get_generation(),
+            Control::HexKnob  { knob }  => knob.get_generation(),
+            Control::HexGrid  { grid }  => grid.get_generation(),
         }
     }
 

@@ -173,7 +173,7 @@ impl WindowUI for UI {
             self.on_tree_changed();
         }
 
-        self.widgets.borrow().for_each_widget(|wid, _id| {
+        self.widgets.borrow().for_each_widget(|wid, id| {
             if wid.check_data_change() {
                 wid.emit_redraw_required();
             }
@@ -183,6 +183,7 @@ impl WindowUI for UI {
     }
 
     fn post_frame(&mut self) {
+
     }
 
     fn needs_redraw(&mut self) -> bool { self.notifier.need_redraw() }

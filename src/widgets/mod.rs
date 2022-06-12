@@ -5,8 +5,8 @@ mod hexgrid;
 
 pub use wichtext::{WichText, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
-pub use hexknob::{ParamModel, DummyParamModel, HexKnob};
-pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge};
+pub use hexknob::{ParamModel, DummyParamModel, HexKnob, ChangeRes};
+pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 
 use keyboard_types::Key;
 

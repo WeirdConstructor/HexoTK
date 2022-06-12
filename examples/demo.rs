@@ -19,6 +19,7 @@ impl HexGridModel for TestGrid {
         -> Option<HexCell<'a>> { None }
     fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8])
         -> Option<(&'a str, HexEdge)> { None }
+    fn get_generation(&self) -> u64 { 1 }
 //    fn cell_click(&mut self, x: usize, y: usize, btn: MButton) { }
 //    fn cell_drag(&mut self, x: usize, y: usize, x2: usize, y2: usize, btn: MButton) { }
 }
@@ -60,6 +61,8 @@ fn main() {
 
         sub.set_ctrl(
             Control::Button { label: Box::new(concurrent_data.clone()) });
+
+        let ccdata = concurrent_data.clone();
 
         sub.reg("click", move |_ctx, _wid, _ev| {
             if let Ok(mut data) = concurrent_data.lock() {
@@ -150,7 +153,7 @@ fn main() {
             }
         });
 
-        wtd.set_text("WichText Widget is Back!\n\nLololol\n[c15:fiuewhfiu wiufhwei]\nfewfuwefewifw\n fuiei fwi wei fewi fwei\nfeiwgureirege\nfuweifuewifewiuf\nHere a value: [h40avK:Test] [a:Click Here!]\nAnd a graph: [h30gXXX:Graph 1]".to_string());
+        wtd.set_text("XXX\n[a:Click Here!]".to_string());
 
         let mut cnt = 0;
         sub4.reg("click", {
@@ -191,6 +194,16 @@ fn main() {
         });
 
         let etf = TextField::new();
+        let btn0 = Widget::new(style_ref.clone());
+        btn0.enable_cache();
+        btn0.set_ctrl(Control::Button {
+            label: Box::new(ccdata.clone())
+        });
+        let btn2 = Widget::new(style_ref.clone());
+        btn2.enable_cache();
+        btn2.set_ctrl(Control::Button {
+            label: Box::new(ccdata)
+        });
         let btn1 = Widget::new(style_ref.clone());
         btn1.set_ctrl(Control::Button {
             label: Box::new(format!("Lay2 Btn {}", cnt))
@@ -204,7 +217,6 @@ fn main() {
             let lbl = lbl1.clone();
             let col = col.clone();
             move |_ctx, _wid, _ev| {
-                println!("FOOOOOOOOOOOOOOOOOO");
                 if let Some(par) = lbl.parent() {
                     par.remove_child(lbl.clone());
                 } else {
@@ -220,7 +232,8 @@ fn main() {
             }
         });
 
-        let knob = Widget::new(style_ref.clone());
+        let knob = Widget::new(
+            style_ref.with_style_clone(|style| { style.pad_top = 20.0; style.pad_left = 30.0; }));
         let param =
             Rc::new(RefCell::new(
                 hexotk::DummyParamModel::new()));
@@ -229,7 +242,8 @@ fn main() {
         });
 
         let hexmodel = Rc::new(RefCell::new(TestGrid { }));
-        let hexgrid = Widget::new(style_ref.clone());
+        let hexgrid = Widget::new(
+            style_ref.with_style_clone(|style| { style.pad_top = 20.0; }));
         hexgrid.set_ctrl(Control::HexGrid {
             grid: Box::new(HexGrid::new(hexmodel)),
         });
@@ -246,12 +260,14 @@ fn main() {
             }
         });
         col.add(entry);
+        col.add(btn0);
+        col.add(btn2);
         col.add(btn1);
         col.add(lbl1);
-        col.add(knob);
         layer2root.add(col);
-        layer2root.add(wtwid);
         layer2root.add(hexgrid);
+        layer2root.add(wtwid);
+        layer2root.add(knob);
 
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
 //        ui.add_layer_root(wid);

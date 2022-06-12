@@ -416,15 +416,16 @@ pub trait ParamModel {
     fn change(&mut self, v: f32, res: ChangeRes);
     fn change_end(&mut self, v: f32, res: ChangeRes);
 
-    /// Should return `true` if the internal value changed by some
-    /// other component than the HexKnob.
-    fn check_change(&mut self) -> bool;
+    /// Should return the generation counter for the internal data.
+    /// The generation counter should increase for every change on the data.
+    /// This is used by the widget to determine whether they need to be redrawn.
+    fn get_generation(&mut self) -> u64;
 }
 
 pub struct DummyParamModel {
     value:      f32,
     modamt:     Option<f32>,
-    changed:    bool,
+    generation: u64,
 }
 
 impl DummyParamModel {
@@ -432,12 +433,12 @@ impl DummyParamModel {
         Self {
             value: 0.25,
             modamt: Some(0.25),
-            changed: true,
+            generation: 0,
         }
     }
 
     pub fn mark_changed(&mut self) {
-        self.changed = true;
+        self.generation += 1;
     }
 }
 
@@ -515,10 +516,8 @@ impl ParamModel for DummyParamModel {
         }
     }
 
-    fn check_change(&mut self) -> bool {
-        let c = self.changed;
-        self.changed = false;
-        c
+    fn get_generation(&mut self) -> u64 {
+        self.generation
     }
 }
 
@@ -670,6 +669,7 @@ pub struct HexKnob {
     hover:      Option<HexKnobZone>,
     drag:       Option<HexValueDrag>,
     real_pos:   Rect,
+    circle_mid: (f32, f32),
     modkeys:    ModifierTracker,
 }
 
@@ -682,6 +682,7 @@ impl HexKnob {
             knob:       Knob::new(28.0, UI_BG_KNOB_STROKE, 12.0, 9.0, UI_ELEM_TXT_H),
             hover:      None,
             drag:       None,
+            circle_mid: (0.0, 0.0),
             real_pos:   Rect::from(0.0, 0.0, 0.0, 0.0),
             modkeys:    ModifierTracker::new(),
         }
@@ -698,9 +699,9 @@ impl HexKnob {
         );
 
         let coarse = Rect::from_tpl(self.knob.get_coarse_rect());
-        let coarse = coarse.offs(xo, yo);
+        let coarse = coarse.offs(self.circle_mid.0, self.circle_mid.1);
         let fine   = Rect::from_tpl(self.knob.get_fine_rect());
-        let fine   = fine.offs(xo, yo);
+        let fine   = fine.offs(self.circle_mid.0, self.circle_mid.1);
 
         if coarse.is_inside(x, y) {
             return Some(HexKnobZone::Coarse);
@@ -713,8 +714,8 @@ impl HexKnob {
         None
     }
 
-    pub fn check_change(&self) -> bool {
-        self.model.borrow_mut().check_change()
+    pub fn get_generation(&mut self) -> u64 {
+        self.model.borrow_mut().get_generation()
     }
 
     pub fn handle(
@@ -796,9 +797,6 @@ impl HexKnob {
                 }
             },
             InputEvent::MousePosition(x, y) => {
-                let old_hover = self.hover;
-                self.hover    = self.cursor_zone(*x, *y);
-
                 if let Some(ref mut hvd) = self.drag {
                     hvd.change(
                         &mut *model,
@@ -807,11 +805,24 @@ impl HexKnob {
 
                     w.emit_redraw_required();
 
-                } else if old_hover != self.hover {
+                }
+
+                if !is_hovered {
+                    return;
+                }
+
+                let old_hover = self.hover;
+                self.hover    = self.cursor_zone(*x, *y);
+
+                if old_hover != self.hover {
                     w.emit_redraw_required();
                 }
             },
             InputEvent::MouseWheel(y) => {
+                if !is_hovered {
+                    return;
+                }
+
                 if let Some(zone) =
                     self.cursor_zone(
                         self.modkeys.mouse.x,
@@ -886,6 +897,12 @@ impl HexKnob {
 
         let yo = yo - (UI_ELEM_TXT_H * factor).round() * 0.5;
         let yo = yo.floor();
+
+        self.circle_mid = (
+            (self.real_pos.x + self.real_pos.w / 2.0).round(),
+            ((self.real_pos.y + self.real_pos.h / 2.0).round()
+             - (UI_ELEM_TXT_H * factor).round() * 0.5).floor()
+        );
 
         if size != self.size {
             self.size = size;

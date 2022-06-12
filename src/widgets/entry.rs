@@ -17,26 +17,24 @@ pub trait EditableText : Mutable {
 }
 
 #[derive(Debug, Clone)]
-pub struct TextField(Rc<RefCell<(String, bool)>>);
+pub struct TextField(Rc<RefCell<(String, u64)>>);
 
 impl TextField {
     pub fn new() -> Self {
-        Self(Rc::new(RefCell::new((String::from(""), false))))
+        Self(Rc::new(RefCell::new((String::from(""), 0))))
     }
 
     pub fn set(&self, new: String) {
         let mut tf = self.0.borrow_mut();
         tf.0 = new;
-        tf.1 = true;
+        tf.1 += 1;
     }
 }
 
 impl Mutable for TextField {
-    fn check_change(&mut self) -> bool {
+    fn get_generation(&mut self) -> u64 {
         let mut tf = self.0.borrow_mut();
-        let changed = tf.1;
-        tf.1 = false;
-        changed
+        tf.1
     }
 }
 
@@ -55,6 +53,7 @@ impl EditableText for TextField {
 pub struct Entry {
     update_text: Box<dyn EditableText>,
     data:        String,
+    data_gen:    u64,
     pre_string:  String,
     post_string: String,
     cursor:      usize,
@@ -66,6 +65,7 @@ impl Entry {
         Self {
             update_text,
             data:        String::from(""),
+            data_gen:    0,
             pre_string:  String::from(""),
             post_string: String::from(""),
             cursor:      0,
@@ -73,16 +73,17 @@ impl Entry {
         }
     }
 
-    pub fn check_change(&mut self) -> bool {
-        if self.update_text.check_change() {
+    pub fn get_generation(&mut self) -> u64 {
+        let cur_data_gen = self.update_text.get_generation();
+
+        if cur_data_gen != self.data_gen {
             self.data = self.update_text.get();
             self.cursor = self.data.len();
             self.update_cursor();
-
-            true
-        } else {
-            false
+            self.data_gen = cur_data_gen;
         }
+
+        cur_data_gen
     }
 
     fn update_cursor(&mut self) {

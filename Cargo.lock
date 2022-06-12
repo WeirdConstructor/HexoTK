@@ -469,7 +469,6 @@ dependencies = [
 [[package]]
 name = "hexodsp"
 version = "0.1.0"
-source = "git+https://github.com/WeirdConstructor/HexoDSP.git#74068fae1c873c6363484a98c68552df674db2cb"
 dependencies = [
  "hound",
  "lazy_static",

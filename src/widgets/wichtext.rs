@@ -21,6 +21,11 @@ pub trait WichTextData {
     /// [WichTextData::text].
     fn text_generation(&self) -> usize;
 
+    /// A generic data generation counter (that also includes the knob values,
+    /// and not just the [text_generation]), to let the widget check if anything
+    /// of this data changed and whether it should be redrawn.
+    fn get_generation(&self) -> u64;
+
     /// Change the knobs normalized value to `v`.
     fn knob_set(&self, key: &str, v: f32);
     /// Retrieve the knobs normalized value in the range 0.0 to 1.0.
@@ -38,9 +43,6 @@ pub trait WichTextData {
 
     /// Retrieve the graph data source for the given `key`.
     fn data_source(&self, key: &str) -> Option<Rc<dyn WichTextDataSource>>;
-
-    /// Check if anything of this data changed and it should be redrawn.
-    fn check_change(&self) -> bool;
 }
 
 pub trait WichTextDataSource {
@@ -67,7 +69,7 @@ struct WichTextSimpleDataStoreImpl {
     knobs:          HashMap<String, f32>,
     data_sources:   HashMap<String, Rc<Vec<f32>>>,
 
-    changed:        bool,
+    generation:     u64,
 }
 
 #[derive(Debug, Clone)]
@@ -80,19 +82,19 @@ impl WichTextSimpleDataStore {
             text_gen:       0,
             knobs:          HashMap::new(),
             data_sources:   HashMap::new(),
-            changed:        false,
+            generation:     0,
         })))
     }
 
     pub fn set_data_source(&self, key: &str, source: Rc<Vec<f32>>) {
         self.0.borrow_mut().data_sources.insert(key.to_string(), source);
-        self.0.borrow_mut().changed = true;
+        self.0.borrow_mut().generation += 1;
     }
 
     pub fn set_text(&self, text: String) {
         self.0.borrow_mut().text = text;
         self.0.borrow_mut().text_gen += 1;
-        self.0.borrow_mut().changed = true;
+        self.0.borrow_mut().generation += 1;
     }
 }
 
@@ -108,7 +110,7 @@ impl WichTextData for WichTextSimpleDataStore {
             bor.knobs.insert(key.to_string(), v);
         }
 
-        bor.changed = true;
+        bor.generation += 1;
     }
 
     fn knob_value(&self, key: &str) -> f32 {
@@ -142,11 +144,9 @@ impl WichTextData for WichTextSimpleDataStore {
         }
     }
 
-    fn check_change(&self) -> bool {
+    fn get_generation(&self) -> u64 {
         let mut ch_borrow = self.0.borrow_mut();
-        let is_changed = ch_borrow.changed;
-        ch_borrow.changed = false;
-        is_changed
+        ch_borrow.generation
     }
 }
 
@@ -1006,6 +1006,8 @@ impl WichText {
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let real_offs_x = real_pos.x - pos.x;
         let real_offs_y = real_pos.y - pos.y;
+        println!("DRAW WICHT: pos={:?}, real_pos={:?}", pos, real_pos);
+        println!("DRAW WICHT xoffs={}, yoffs={}", real_offs_x, real_offs_y);
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
         p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);

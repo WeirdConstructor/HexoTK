@@ -257,6 +257,7 @@ pub struct WidgetImpl {
     layout:         Layout,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
+    data_gen:       u64,
 
     cached:         bool,
     cache_img:      Option<ImgRef>,
@@ -277,6 +278,7 @@ impl WidgetImpl {
             childs:         Some(vec![]),
             handle_childs:  Some(vec![]),
             ctrl:           Some(Box::new(Control::None)),
+            data_gen:       0,
             pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
             inner_pos:      Rect::from(0.0, 0.0, 0.0, 0.0),
             layout:         Layout::new(),
@@ -364,7 +366,10 @@ impl WidgetImpl {
 
     pub fn check_data_change(&mut self) -> bool {
         if let Some(ctrl) = &mut self.ctrl {
-            ctrl.check_change()
+            let current_data_gen = ctrl.get_generation();
+            let has_changed = self.data_gen != current_data_gen;
+            self.data_gen = current_data_gen;
+            has_changed
         } else {
             false
         }

@@ -158,6 +158,8 @@ pub trait HexGridModel {
     fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8])
         -> Option<(&'a str, HexEdge)>;
 
+    fn get_generation(&self) -> u64;
+
 //    fn cell_click(&mut self, x: usize, y: usize, btn: MButton);
 //    fn cell_drag(&mut self, x: usize, y: usize, x2: usize, y2: usize, btn: MButton);
 }
@@ -577,9 +579,8 @@ impl HexGrid {
         }
     }
 
-    pub fn check_change(&mut self) -> bool {
-        // TODO
-        false
+    pub fn get_generation(&mut self) -> u64 {
+        self.model.borrow().get_generation()
     }
 
 //    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
