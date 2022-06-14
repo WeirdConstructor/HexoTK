@@ -12,8 +12,6 @@ use femtovg::{
 
 use crate::painter::{Painter, PersistPainterData};
 
-use raw_gl_context::{GlContext, GlConfig, Profile};
-
 use raw_window_handle::RawWindowHandle;
 
 use baseview::{
@@ -78,7 +76,6 @@ impl FrameTimeMeasurement {
 }
 
 pub struct GUIWindowHandler {
-    context:    GlContext,
     canvas:     Canvas<OpenGl>,
     font:       FontId,
     font_mono:  FontId,
@@ -175,7 +172,7 @@ impl WindowHandler for GUIWindowHandler {
         EventStatus::Captured
     }
 
-    fn on_frame(&mut self, _win: &mut Window) {
+    fn on_frame(&mut self, win: &mut Window) {
         let quiet = false; // self.driver.borrow().be_quiet();
 
         self.counter += 1;
@@ -254,7 +251,7 @@ impl WindowHandler for GUIWindowHandler {
 
         self.canvas.flush();
 
-        self.context.swap_buffers();
+        win.gl_context().unwrap().swap_buffers();
 
         if redraw && !quiet {
             self.ftm.end_measure();
@@ -286,29 +283,14 @@ pub fn open_window(
     //d// println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {
-            title:  title.to_string(),
-            size:   Size::new(window_width as f64, window_height as f64),
-            scale:  WindowScalePolicy::ScaleFactor(1.0),
+            title:     title.to_string(),
+            size:      Size::new(window_width as f64, window_height as f64),
+            scale:     WindowScalePolicy::ScaleFactor(1.0),
+            gl_config: Some(baseview::gl::GlConfig::default()),
         };
 
     let window_create_fun = move |win: &mut Window| {
-        let context =
-            unsafe { GlContext::create(
-                win,
-                GlConfig {
-                    version:       (3, 2),
-                    profile:       Profile::Core,
-                    red_bits:      8,
-                    blue_bits:     8,
-                    green_bits:    8,
-                    alpha_bits:    0,
-                    depth_bits:    24,
-                    stencil_bits:  8,
-                    samples:       None,
-                    srgb:          true,
-                    double_buffer: true,
-                    vsync:         true,
-                }) }.expect("GL context to be creatable");
+        let context = win.gl_context().unwrap();
         unsafe { context.make_current(); }
         gl::load_with(|symbol| context.get_proc_address(symbol) as *const _);
 
@@ -335,7 +317,6 @@ pub fn open_window(
         GUIWindowHandler {
             ui,
             // size: (window_width as f32, window_height as f32),
-            context,
             canvas,
             font,
             font_mono,
@@ -351,8 +332,8 @@ pub fn open_window(
 
     if let Some(parent) = parent {
         let swhh = StupidWindowHandleHolder { handle: parent };
-        Window::open_parented(&swhh, options, window_create_fun)
+        Window::open_parented(&swhh, options, window_create_fun);
     } else {
-        Window::open_blocking(options, window_create_fun)
+        Window::open_blocking(options, window_create_fun);
     }
 }

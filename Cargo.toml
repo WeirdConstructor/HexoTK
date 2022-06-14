@@ -22,8 +22,8 @@ raw-gl-context     = { git = "https://github.com/glowcoil/raw-gl-context" }
 #morphorm           = { git = "https://github.com/geom3trik/morphorm.git" }
 morphorm           = { path = "../morphorm" }
 #baseview           = { git = "https://github.com/WeirdConstructor/baseview.git", branch = "fix_resize_problems" }
-baseview           = { git = "https://github.com/glowcoil/baseview.git", branch = "copy-from-parent" }
-keyboard-types     = { version = "0.5.0", default-features = false }
-raw-window-handle  = "0.3"
+baseview           = { git = "https://github.com/RustAudio/baseview.git", features = ["opengl"] }
+keyboard-types     = { version = "0.6.1", default-features = false }
+raw-window-handle  = "0.4.2"
 gl                 = "0.14.0"
 glutin             = { version = "0.28.0", features = ["x11"] }
