@@ -804,7 +804,6 @@ impl HexKnob {
                         self.modkeys.mouse.y);
 
                     w.emit_redraw_required();
-
                 }
 
                 if !is_hovered {

@@ -416,11 +416,11 @@ impl Control {
                     InputEvent::MouseButtonPressed(_button) => {
                         if is_hovered { w.activate(); }
                     },
-                    InputEvent::MouseButtonReleased(_button) => {
+                    InputEvent::MouseButtonReleased(button) => {
                         if w.is_active() {
                             out_events.push((w.id(), Event {
                                 name: "click".to_string(),
-                                data: EvPayload::None,
+                                data: EvPayload::Button(*button),
                             }));
                             w.deactivate();
                         }
@@ -592,6 +592,19 @@ pub struct Event {
 pub enum EvPayload {
     None,
     WichTextCommand { line: usize, frag: usize, cmd: String },
+    HexGridClick {
+        x: usize,
+        y: usize,
+        button: MButton,
+    },
+    HexGridDrag {
+        x_src: usize,
+        y_src: usize,
+        x_dst: usize,
+        y_dst: usize,
+        button: MButton,
+    },
+    Button(MButton),
     Text(String),
     Pos { x: f32, y: f32 },
 }

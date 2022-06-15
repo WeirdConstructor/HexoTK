@@ -330,9 +330,6 @@ pub struct HexGrid {
     real_pos:       Rect,
     mouse:          (f32, f32),
     mouse_state:    Option<(MButton, f32, f32)>,
-
-    on_click:     Option<Box<dyn Fn(&mut Self, usize, usize, MButton)>>,
-    on_cell_drag: Option<Box<dyn Fn(&mut Self, usize, usize, usize, usize, MButton)>>,
 }
 
 impl HexGrid {
@@ -354,8 +351,6 @@ impl HexGrid {
             real_pos:           Rect::from(0.0, 0.0, 0.0, 0.0),
             mouse:              (0.0, 0.0),
             mouse_state:        None,
-            on_click:           None,
-            on_cell_drag:       None,
             model,
         }
     }
@@ -402,24 +397,6 @@ impl HexGrid {
              + self.tmp_shift_offs.map(|o| o.1).unwrap_or(0.0)).round();
 
         self.mouse_to_tile(x - pos.x - shift_x, y - pos.y - shift_y)
-    }
-
-    pub fn on_click<F>(mut self, on_click: F) -> Self
-    where
-        F: 'static + Fn(&mut Self, usize, usize, MButton),
-    {
-        self.on_click = Some(Box::new(on_click));
-
-        self
-    }
-
-    pub fn on_cell_drag<F>(mut self, on_cell_drag: F) -> Self
-    where
-        F: 'static + Fn(&mut Self, usize, usize, usize, usize, MButton),
-    {
-        self.on_cell_drag = Some(Box::new(on_cell_drag));
-
-        self
     }
 }
 
@@ -472,14 +449,13 @@ impl HexGrid {
                             if    cur_tile_pos.0 >= 0
                                && cur_tile_pos.1 >= 0
                             {
-                                if let Some(callback) = self.on_click.take() {
-                                    (callback)(
-                                        self,
-                                        cur_tile_pos.0 as usize,
-                                        cur_tile_pos.1 as usize,
-                                        *btn);
-                                    self.on_click = Some(callback);
-                                }
+                                out_events.push((w.id(), Event {
+                                    name: "click".to_string(),
+                                    data: EvPayload::HexGridClick {
+                                        x: cur_tile_pos.0 as usize,
+                                        y: cur_tile_pos.1 as usize,
+                                        button: *btn,
+                                    } }));
                             }
 
                         } else {
@@ -488,16 +464,15 @@ impl HexGrid {
                                && start_tile_pos.0 >= 0
                                && start_tile_pos.1 >= 0
                             {
-                                if let Some(callback) = self.on_cell_drag.take() {
-                                    (callback)(
-                                        self,
-                                        start_tile_pos.0 as usize,
-                                        start_tile_pos.1 as usize,
-                                        cur_tile_pos.0 as usize,
-                                        cur_tile_pos.1 as usize,
-                                        *btn);
-                                    self.on_cell_drag = Some(callback);
-                                }
+                                out_events.push((w.id(), Event {
+                                    name: "drag".to_string(),
+                                    data: EvPayload::HexGridDrag {
+                                        x_src: start_tile_pos.0 as usize,
+                                        y_src: start_tile_pos.1 as usize,
+                                        x_dst: cur_tile_pos.0 as usize,
+                                        y_dst: cur_tile_pos.1 as usize,
+                                        button: *btn,
+                                    } }));
                             }
                         }
 
