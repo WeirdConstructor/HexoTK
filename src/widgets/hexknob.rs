@@ -768,9 +768,19 @@ impl HexKnob {
 
                 w.activate();
             },
+            InputEvent::MouseButtonPressed(MButton::Middle) => {
+                if !is_hovered {
+                    return;
+                }
+                w.activate();
+            },
             InputEvent::MouseButtonReleased(MButton::Middle) => {
-                model.set_default();
-                w.emit_redraw_required();
+                if w.is_active() {
+                    model.set_default();
+                    w.emit_redraw_required();
+
+                    w.deactivate();
+                }
             },
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Right && self.modkeys.ctrl {
