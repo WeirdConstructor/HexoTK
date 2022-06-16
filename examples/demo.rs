@@ -44,6 +44,10 @@ fn main() {
     open_window("HexoTK 0.5 Demo", WINDOW_W, WINDOW_H, None, Box::new(|| {
         let mut style = Style::new();
         style.font_size = 20.0;
+//        style.border_style = BorderStyle::Hex { offset: 10.0 };
+//        style.border = 4.0;
+        style.border_style = BorderStyle::Bevel { corner_offsets: (5.0, 10.0, 20.0, 2.0) };
+        style.shadow_offs = (-3.0, 3.0);
 
         let style_ref = Rc::new(style);
 
@@ -89,7 +93,10 @@ fn main() {
         let sub3 = Widget::new(style_ref.clone());
         wid.add(sub3.clone());
 
-        let sub4 = Widget::new(style_ref.clone());
+
+        let sub4 = Widget::new(style_ref.with_style_clone(|style| {
+            style.border_style = BorderStyle::Hex { offset: 10.0 };
+        }));
         wid.add(sub4.clone());
 
         sub3.set_ctrl(Control::Button { label: Box::new("Sub3".to_string()) });
@@ -186,6 +193,10 @@ fn main() {
                 style.pad_left   = 5.0;
                 style.text_align = Align::Left;
             }));
+        lbl1.change_layout(|layout| {
+            layout.top    = Some(Units::Pixels(4.0));
+            layout.bottom = Some(Units::Pixels(4.0));
+        });
         lbl1.set_ctrl(Control::Label {
             label: Box::new(format!("LBL Xyz:"))
         });
@@ -199,7 +210,17 @@ fn main() {
         btn0.set_ctrl(Control::Button {
             label: Box::new(ccdata.clone())
         });
-        let btn2 = Widget::new(style_ref.clone());
+        btn0.change_layout(|layout| {
+            layout.top    = Some(Units::Pixels(4.0));
+            layout.bottom = Some(Units::Pixels(4.0));
+        });
+        let btn2 = Widget::new(style_ref.with_style_clone(|style| {
+            style.border_style = BorderStyle::Hex { offset: 10.0 };
+        }));
+        btn2.change_layout(|layout| {
+            layout.top    = Some(Units::Pixels(4.0));
+            layout.bottom = Some(Units::Pixels(4.0));
+        });
         btn2.enable_cache();
         btn2.set_ctrl(Control::Button {
             label: Box::new(ccdata)

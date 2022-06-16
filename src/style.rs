@@ -44,9 +44,17 @@ pub enum VAlign {
 }
 
 #[derive(Debug, Clone)]
+pub enum BorderStyle {
+    Rect,
+    Hex   { offset: f32 },
+    Bevel { corner_offsets: (f32, f32, f32, f32) },
+}
+
+#[derive(Debug, Clone)]
 pub struct Style {
     pub bg_color:               (f32, f32, f32),
     pub border_color:           (f32, f32, f32),
+    pub border_style:           BorderStyle,
     pub color:                  (f32, f32, f32),
     pub border:                 f32,
     pub pad_left:               f32,
@@ -96,6 +104,7 @@ impl Style {
             border_color:           UI_BORDER_CLR,
             color:                  UI_PRIM_CLR,
             border:                 UI_BOX_BORD,
+            border_style:           BorderStyle::Rect,
             pad_left:               0.0,
             pad_right:              0.0,
             pad_top:                0.0,

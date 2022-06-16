@@ -336,10 +336,11 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 
     #[allow(dead_code)]
-    pub fn path_stroke_rot(&mut self, width: f32, color: (f32, f32, f32),
-                       rot: f32, x: f32, y: f32, xo: f32, yo: f32,
-                       segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
-                       closed: bool) {
+    pub fn path_stroke_rot(
+        &mut self, width: f32, color: (f32, f32, f32),
+        rot: f32, x: f32, y: f32, xo: f32, yo: f32,
+        segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
+        closed: bool) {
 
         self.canvas.save();
         let rot = rot.to_radians();
@@ -353,7 +354,11 @@ impl<'a, 'b> Painter<'a, 'b> {
         self.canvas.restore();
     }
 
-    pub fn path_fill(&mut self, color: (f32, f32, f32), segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>, closed: bool) {
+    pub fn path_fill(
+        &mut self, color: (f32, f32, f32),
+        segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
+        closed: bool)
+    {
         let mut p = femtovg::Path::new();
         let paint = color_paint(color);
 
@@ -382,9 +387,10 @@ impl<'a, 'b> Painter<'a, 'b> {
             closed);
     }
 
-    pub fn path_stroke(&mut self, width: f32, color: (f32, f32, f32),
-                   segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
-                   closed: bool)
+    pub fn path_stroke(
+        &mut self, width: f32, color: (f32, f32, f32),
+        segments: &mut dyn std::iter::Iterator<Item = (f32, f32)>,
+        closed: bool)
     {
         let mut p = femtovg::Path::new();
         let mut paint = color_paint(color);

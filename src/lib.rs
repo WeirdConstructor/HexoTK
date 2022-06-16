@@ -26,7 +26,7 @@ use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
 pub use ui::FrameScript;
 pub use ui::TestDriver;
-pub use style::{Style, Align, VAlign};
+pub use style::{Style, Align, VAlign, BorderStyle};
 
 pub use widgets::Entry;
 pub use widgets::WichText;
@@ -195,6 +195,37 @@ pub enum Control {
     HexGrid  { grid:  Box<HexGrid> },
 }
 
+fn bevel_points(pos: Rect, corner_offsets: (f32, f32, f32, f32)) -> [(f32, f32); 8] {
+    let x     = pos.x;
+    let y     = pos.y;
+    let y_max = pos.y + pos.h;
+    let x_max = pos.x + pos.w;
+    let (o_tl, o_tr, o_bl, o_br) = corner_offsets;
+
+    [
+        (x,                        y + o_tl),
+        (x + o_tl,                 y),
+        (x_max - o_tr,             y),
+        (x_max,                    y + o_tr),
+        (x_max,                    y_max - o_br),
+        (x_max - o_br,             y_max),
+        (x + o_bl,                 y_max),
+        (x,                        y_max - o_bl),
+    ]
+}
+
+fn hex_points(pos: Rect, offset: f32) -> [(f32, f32); 6] {
+    let ymid = (pos.y + pos.h / 2.0).round();
+    [
+        (pos.x,                    ymid),
+        (pos.x + offset,           pos.y),
+        (pos.x + (pos.w - offset), pos.y),
+        (pos.x + pos.w,            ymid),
+        (pos.x + (pos.w - offset), pos.y + pos.h),
+        (pos.x + offset,           pos.y + pos.h),
+    ]
+}
+
 impl Control {
     pub fn draw_frame(&mut self, _w: &Widget, _painter: &mut Painter) {
         match self {
@@ -267,8 +298,24 @@ impl Control {
         let orig_pos = pos;
 
         let inner_pos =
-            if has_default_style { inner_pos.shrink(style.border, style.border) }
-            else { inner_pos };
+            if has_default_style {
+                match style.border_style {
+                    BorderStyle::Rect => {
+                        inner_pos.shrink(style.border, style.border)
+                    }
+                    BorderStyle::Hex { offset } => {
+                        inner_pos.shrink(offset * 2.0, style.border)
+                    }
+                    BorderStyle::Bevel { corner_offsets } => {
+                        let max =
+                            corner_offsets.0.max(
+                                corner_offsets.1.max(
+                                    corner_offsets.2.max(
+                                        corner_offsets.3)));
+                        inner_pos.shrink(style.border + max, style.border)
+                    }
+                }
+            } else { inner_pos };
 
         let orig_inner_pos = inner_pos;
 
@@ -277,11 +324,31 @@ impl Control {
                || style.shadow_offs.1 > 0.1
             {
                 let (xo, yo) = style.shadow_offs;
-                painter.rect_fill(
-                    shadow_color,
-                    pos.x + xo,
-                    pos.y + yo,
-                    pos.w, pos.h);
+
+                match style.border_style {
+                    BorderStyle::Rect => {
+                        painter.rect_fill(
+                            shadow_color,
+                            pos.x + xo,
+                            pos.y + yo,
+                            pos.w, pos.h);
+                    }
+                    BorderStyle::Hex { offset } => {
+                        let points = hex_points(pos, offset);
+                        painter.path_fill(
+                            shadow_color,
+                            &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
+                            true);
+                    }
+                    BorderStyle::Bevel { corner_offsets } => {
+                        let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
+                        let points = bevel_points(pos, corner_offsets);
+                        painter.path_fill(
+                            shadow_color,
+                            &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
+                            true);
+                    }
+                }
             }
         }
 
@@ -318,11 +385,50 @@ impl Control {
 
         if !is_cached || redraw {
             if has_default_style {
-                if style.border > 0.1 {
-                    painter.rect_fill(border_color, pos.x, pos.y, pos.w, pos.h);
-                }
+                match style.border_style {
+                    BorderStyle::Rect => {
+                        if style.border > 0.1 {
+                            painter.rect_fill(
+                                border_color, pos.x, pos.y, pos.w, pos.h);
+                        }
 
-                painter.rect_fill(style.bg_color, inner_pos.x, inner_pos.y, inner_pos.w, inner_pos.h);
+                        painter.rect_fill(
+                            style.bg_color,
+                            inner_pos.x, inner_pos.y,
+                            inner_pos.w, inner_pos.h);
+                    }
+                    BorderStyle::Bevel { corner_offsets } => {
+                        let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
+                        let points = bevel_points(pos, corner_offsets);
+                        painter.path_fill(
+                            style.bg_color,
+                            &mut points.iter().copied(),
+                            true);
+                        painter.path_stroke(
+                            style.border, border_color,
+                            &mut points.iter().copied(),
+                            true);
+                    }
+                    BorderStyle::Hex { offset } => {
+                        let points = hex_points(pos, offset);
+                        painter.path_fill(
+                            border_color,
+                            &mut points.iter().copied(),
+                            true);
+                        let points2 = [
+                            (points[0].0 + style.border, points[0].1),
+                            (points[1].0 + style.border, points[1].1 + style.border),
+                            (points[2].0 - style.border, points[2].1 + style.border),
+                            (points[3].0 - style.border, points[3].1),
+                            (points[4].0 - style.border, points[4].1 - style.border),
+                            (points[5].0 + style.border, points[5].1 - style.border),
+                        ];
+                        painter.path_fill(
+                            style.bg_color,
+                            &mut points2.iter().copied(),
+                            true);
+                    }
+                }
             }
 
             // We need to apply also padding to the original inner position, or else
