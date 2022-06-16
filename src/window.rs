@@ -211,10 +211,11 @@ impl WindowHandler for GUIWindowHandler {
                 femtovg::RenderTarget::Image(self.img_buf));
 
             let painter = &mut Painter {
-                canvas:     &mut self.canvas,
-                data:       &mut self.painter_data,
-                font:       self.font,
-                font_mono:  self.font_mono,
+                canvas:      &mut self.canvas,
+                data:        &mut self.painter_data,
+                font:        self.font,
+                font_mono:   self.font_mono,
+                lbl_collect: None,
             };
 
             self.ui.draw(painter);
@@ -239,10 +240,11 @@ impl WindowHandler for GUIWindowHandler {
 
         {
             let painter = &mut Painter {
-                canvas:     &mut self.canvas,
-                data:       &mut self.painter_data,
-                font:       self.font,
-                font_mono:  self.font_mono,
+                canvas:      &mut self.canvas,
+                data:        &mut self.painter_data,
+                font:        self.font,
+                font_mono:   self.font_mono,
+                lbl_collect: None,
             };
             self.ui.draw_frame(painter);
         }

@@ -91,7 +91,9 @@ impl Entry {
         self.post_string = self.data.chars().skip(self.cursor).collect();
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, _real_pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        let real_offs = (real_pos.x - pos.x, real_pos.y - pos.y);
+
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
         let is_hovered = w.is_hovered();
         let is_active  = w.is_active();
@@ -112,10 +114,13 @@ impl Entry {
         }
         xo = xo.round();
 
+        let mut dbg = LblDebugTag::from_id(w.id());
+
         p.label_mono(
             style.font_size, -1, style.color,
             pos.x + xo, pos.y + y, pos.w, fh,
-            &self.data);
+            &self.data,
+            dbg.offs_src(real_offs, "text"));
 
         p.stroke(
             1.0, color, &[

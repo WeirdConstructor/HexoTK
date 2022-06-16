@@ -165,17 +165,17 @@ impl Knob {
          self.line_w * 1.0)
     }
 
-    pub fn draw_name(&self, p: &mut Painter, x: f32, y: f32, s: &str) {
+    pub fn draw_name(&self, p: &mut Painter, x: f32, y: f32, s: &str, dbg: &mut LblDebugTag) {
         let r = self.get_label_rect();
         p.label(
             self.font_size_lbl, 0, UI_TXT_KNOB_CLR,
-            x + r.0, y + r.1, r.2, r.3, s);
+            x + r.0, y + r.1, r.2, r.3, s, dbg);
     }
 
     #[allow(clippy::too_many_arguments)]
     pub fn draw_value_label(
         &self, double: bool, first: bool, p: &mut Painter,
-        x: f32, y: f32, highlight: HLStyle, s: &str
+        x: f32, y: f32, highlight: HLStyle, s: &str, dbg: &mut LblDebugTag
     ) {
         let r = self.get_value_rect(double);
 
@@ -205,7 +205,8 @@ impl Knob {
             x + r.0 + light_font_offs,
             y + r.1,
             r.2 - some_right_padding,
-            r.3, s);
+            r.3, s,
+            dbg);
     }
 
     pub fn draw_mod_arc(
@@ -874,6 +875,9 @@ impl HexKnob {
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect,
                 real_pos: Rect, p: &mut Painter)
     {
+        let mut dbg = LblDebugTag::from_id(w.id());
+        dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
+
         self.real_pos = real_pos;
 
         let is_hovered = w.is_hovered();
@@ -1027,19 +1031,23 @@ impl HexKnob {
         if !no_value_label {
             let len = model.fmt(&mut self.lbl_buf[..]);
             let val_s = std::str::from_utf8(&self.lbl_buf[0..len]).unwrap();
-            self.knob.draw_value_label(modamt.is_some(), true, p, xo, yo, highlight, val_s);
+            self.knob.draw_value_label(
+                modamt.is_some(), true, p, xo, yo, highlight,
+                val_s, dbg.source("value"));
 
             if modamt.is_some() {
                 let len = model.fmt_mod(&mut self.lbl_buf[..]);
                 let val_s = std::str::from_utf8(&self.lbl_buf[0..len]).unwrap();
-                self.knob.draw_value_label(true, false, p, xo, yo, highlight, val_s);
+                self.knob.draw_value_label(
+                    true, false, p, xo, yo, highlight,
+                    val_s, dbg.source("modamt"));
             }
         }
 
         let len = model.fmt_norm(&mut self.lbl_buf[..]);
         let val_s = std::str::from_utf8(&self.lbl_buf[0..len]).unwrap();
         // + 2.0 for the marker cube, to space it from the minus sign.
-        self.knob.draw_name(p, xo + 2.0, yo, &val_s);
+        self.knob.draw_name(p, xo + 2.0, yo, &val_s, dbg.source("name"));
     }
 }
 

@@ -234,6 +234,7 @@ fn main() {
 
         let knob = Widget::new(
             style_ref.with_style_clone(|style| { style.pad_top = 20.0; style.pad_left = 30.0; }));
+        knob.enable_cache();
         let param =
             Rc::new(RefCell::new(
                 hexotk::DummyParamModel::new()));
@@ -270,6 +271,7 @@ fn main() {
         layer2root.add(knob);
 
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
+        ui.push_frame_script(FrameScript::new());
 //        ui.add_layer_root(wid);
         ui.add_layer_root(layer2root.clone());
 //        ui.add_layer_root(col);

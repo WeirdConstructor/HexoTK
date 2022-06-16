@@ -103,11 +103,58 @@ impl PersistPainterData {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct LblDebugTag {
+    wid_id:   usize,
+    x:        i32,
+    y:        i32,
+    offs_x:   f32,
+    offs_y:   f32,
+    source:   &'static str,
+}
+
+impl LblDebugTag {
+    pub fn new(wid_id: usize, x: i32, y: i32, source: &'static str) -> Self {
+        Self { wid_id, x, y, offs_x: 0.0, offs_y: 0.0, source }
+    }
+
+    pub fn from_id(wid_id: usize) -> Self {
+        Self { wid_id, x: 0, y: 0, offs_x: 0.0, offs_y: 0.0, source: "?" }
+    }
+
+    pub fn info(&self) -> (usize, &'static str, (i32, i32)) {
+        (self.wid_id, self.source, (self.x, self.y))
+    }
+
+    pub fn set_logic_pos(&mut self, x: i32, y: i32) {
+        self.x = x;
+        self.y = y;
+    }
+
+    pub fn set_offs(&mut self, offs: (f32, f32)) {
+        self.offs_x = offs.0;
+        self.offs_y = offs.1;
+    }
+
+    pub fn offs_src(&mut self, offs: (f32, f32), src: &'static str) -> &mut Self {
+        self.offs_x = offs.0;
+        self.offs_y = offs.1;
+        self.source = src;
+        self
+    }
+
+    pub fn source(&mut self, src: &'static str) -> &mut Self {
+        self.source   = src;
+        self
+    }
+}
+
 pub struct Painter<'a, 'b> {
-    pub canvas:     &'a mut Canvas<OpenGl>,
-    pub data:       &'b mut PersistPainterData,
-    pub font:       FontId,
-    pub font_mono:  FontId,
+    pub canvas:         &'a mut Canvas<OpenGl>,
+    pub data:           &'b mut PersistPainterData,
+    pub lbl_collect:    Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>,
+    pub font:           FontId,
+    pub font_mono:      FontId,
 }
 
 fn color_paint(color: (f32, f32, f32)) -> femtovg::Paint {
@@ -119,6 +166,14 @@ fn color_paint(color: (f32, f32, f32)) -> femtovg::Paint {
 }
 
 impl<'a, 'b> Painter<'a, 'b> {
+    pub fn start_label_collector(&mut self) {
+        self.lbl_collect = Some(vec![]);
+    }
+
+    pub fn get_label_collection(&mut self) -> Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>> {
+        self.lbl_collect.take()
+    }
+
     pub fn new_image(&mut self, w: f32, h: f32) -> ImgRef {
         //d// println!("new_image w={}, h={}", w, h);
         let image_id =
@@ -183,7 +238,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     fn label_with_font(
         &mut self, size: f32, align: i8, rot: f32, color: (f32, f32, f32),
         x: f32, y: f32, xoi: f32, yoi: f32, w: f32, h: f32,
-        text: &str, font: FontId)
+        text: &str, font: FontId, dbg: &LblDebugTag)
     {
         let mut paint = color_paint(color);
         paint.set_font(&[font]);
@@ -213,31 +268,30 @@ impl<'a, 'b> Painter<'a, 'b> {
 //        let mut p = femtovg::Path::new();
 //        p.rect(x as f32, y as f32, w as f32, h as f32);
 //        self.canvas.stroke_path(&mut p, paint);
-        match align {
-            -1 => {
-                paint.set_text_align(femtovg::Align::Left);
-                let _ =
-                    self.canvas.fill_text(
-                        x as f32,
-                        (y + h / 2.0).round() as f32,
-                        text, paint);
-            },
-            0  => {
-                paint.set_text_align(femtovg::Align::Center);
-                let _ =
-                    self.canvas.fill_text(
-                        (x + (w / 2.0)) as f32,
-                        (y + h / 2.0).round() as f32,
-                        text, paint);
-            },
-            _  => {
-                paint.set_text_align(femtovg::Align::Right);
-                let _ =
-                    self.canvas.fill_text(
-                        (x + w) as f32,
-                        (y + h / 2.0).round() as f32,
-                        text, paint);
-            },
+        let (rx, ry) =
+            match align {
+                -1 => {
+                    paint.set_text_align(femtovg::Align::Left);
+                    (x as f32,
+                     (y + h / 2.0).round() as f32)
+                },
+                0  => {
+                    paint.set_text_align(femtovg::Align::Center);
+                    ((x + (w / 2.0)) as f32,
+                     (y + h / 2.0).round() as f32)
+                },
+                _  => {
+                    paint.set_text_align(femtovg::Align::Right);
+                    ((x + w) as f32,
+                     (y + h / 2.0).round() as f32)
+                },
+            };
+
+        let _ = self.canvas.fill_text(rx, ry, text, paint);
+
+        if let Some(collector) = &mut self.lbl_collect {
+            collector.push(
+                (*dbg, (rx + dbg.offs_x, ry + dbg.offs_y, w, h, text.to_string())));
         }
 
 //        let mut p = femtovg::Path::new();
@@ -384,16 +438,16 @@ impl<'a, 'b> Painter<'a, 'b> {
         self.canvas.stroke_path(&mut pth, paint);
     }
 
-    pub fn label(&mut self, size: f32, align: i8, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32, text: &str) {
-        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font);
+    pub fn label(&mut self, size: f32, align: i8, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32, text: &str, dbg: &LblDebugTag) {
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font, dbg);
     }
 
-    pub fn label_rot(&mut self, size: f32, align: i8, rot: f32, color: (f32, f32, f32), x: f32, y: f32, xo: f32, yo: f32, w: f32, h: f32, text: &str) {
-        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font);
+    pub fn label_rot(&mut self, size: f32, align: i8, rot: f32, color: (f32, f32, f32), x: f32, y: f32, xo: f32, yo: f32, w: f32, h: f32, text: &str, dbg: &LblDebugTag) {
+        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font, dbg);
     }
 
-    pub fn label_mono(&mut self, size: f32, align: i8, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32, text: &str) {
-        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono);
+    pub fn label_mono(&mut self, size: f32, align: i8, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32, text: &str, dbg: &LblDebugTag) {
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font_mono, dbg);
     }
 
     pub fn text_width(&mut self, size: f32, mono: bool, text: &str) -> f32 {

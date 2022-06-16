@@ -3,11 +3,13 @@ use crate::{
     widget_draw_frame,
     UINotifierRef, Rect, Event
 };
+use crate::painter::LblDebugTag;
 use crate::WindowUI;
 use crate::Widget;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashSet;
+use std::collections::HashMap;
 
 use crate::layout::LayoutCache;
 use crate::widget_store::{WidgetStore, WidgetTree};
@@ -21,6 +23,57 @@ struct Layer {
     tree:       Option<WidgetTree>,
 }
 
+#[derive(Debug)]
+pub struct WidgetFeedback {
+    labels: Option<Vec<(usize, &'static str, (i32, i32), Rect, String)>>,
+}
+
+pub struct FeedbackCollector {
+    injected_events: Vec<InputEvent>,
+    widgets:         HashMap<usize, WidgetFeedback>,
+}
+
+impl FeedbackCollector {
+    pub fn new() -> Self {
+        Self {
+            injected_events: vec![],
+            widgets:         HashMap::new(),
+        }
+    }
+
+    pub fn apply_labels(
+        &mut self, lbl_collection: Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>)
+    {
+        if let Some(coll) = lbl_collection {
+            for item in coll {
+                let info       = item.0.info();
+                let label_info = (
+                    info.0,
+                    info.1,
+                    info.2,
+                    Rect::from(item.1.0, item.1.1, item.1.2, item.1.3),
+                    item.1.4
+                );
+                println!("FEEDBACK: {:?}", label_info);
+            }
+        }
+    }
+}
+
+enum FScriptStep {
+    Callback(Box<Fn(&mut std::any::Any, Box<FeedbackCollector>) -> Box<FeedbackCollector>>),
+}
+
+pub struct FrameScript {
+    queue:  Vec<FScriptStep>,
+}
+
+impl FrameScript {
+    pub fn new() -> Self {
+        Self { queue: vec![] }
+    }
+}
+
 pub struct UI {
     win_w:              f32,
     win_h:              f32,
@@ -32,6 +85,9 @@ pub struct UI {
     cur_parent_lookup:  Vec<usize>,
     layout_cache:       LayoutCache,
     ftm:                crate::window::FrameTimeMeasurement,
+    fb:                 Option<Box<FeedbackCollector>>,
+    scripts:            Option<Vec<FrameScript>>,
+    cur_script:         Option<FrameScript>,
     ctx:                Rc<RefCell<std::any::Any>>,
 }
 
@@ -49,6 +105,9 @@ impl UI {
             cur_parent_lookup:  vec![],
             layout_cache:       LayoutCache::new(store),
             ftm:                crate::window::FrameTimeMeasurement::new("layout"),
+            fb:                 None,
+            scripts:            None,
+            cur_script:         None,
             ctx,
         }
     }
@@ -129,6 +188,18 @@ impl UI {
 
         self.notifier.reset_layout_changed();
     }
+
+    pub fn push_frame_script(&mut self, script: FrameScript) {
+        if self.fb.is_none() {
+            self.fb = Some(Box::new(FeedbackCollector::new()));
+        }
+
+        if let Some(scripts) = &mut self.scripts {
+            scripts.push(script);
+        } else {
+            self.scripts = Some(vec![script]);
+        }
+    }
 }
 
 impl UI {
@@ -183,7 +254,45 @@ impl WindowUI for UI {
     }
 
     fn post_frame(&mut self) {
+        if let Some(fb) = self.fb.take() {
+            let ctx = self.ctx.clone();
 
+            let mut fb_ret =
+                if let Some(mut script) = self.cur_script.take() {
+                    if !script.queue.is_empty() {
+                        let step = script.queue.remove(0);
+
+                        let fb_ret =
+                            match step {
+                                FScriptStep::Callback(cb) => {
+                                    (*cb)(&mut *(ctx.borrow_mut()), fb)
+                                },
+                            };
+
+                        self.cur_script = Some(script);
+
+                        fb_ret
+                    } else {
+                        fb
+                    }
+
+                } else {
+                    fb
+                };
+
+            if let Some(scripts) = &mut self.scripts {
+                if self.cur_script.is_none() && !scripts.is_empty() {
+                    self.cur_script = Some(scripts.remove(0));
+                }
+            }
+
+            for ev in fb_ret.injected_events.iter() {
+                self.handle_input_event(ev.clone());
+            }
+            fb_ret.injected_events.clear();
+
+            self.fb = Some(fb_ret);
+        }
     }
 
     fn needs_redraw(&mut self) -> bool { self.notifier.need_redraw() }
@@ -251,6 +360,10 @@ impl WindowUI for UI {
         self.ftm.start_measure();
         let notifier = self.notifier.clone();
 
+        if self.fb.is_some() {
+            painter.start_label_collector();
+        }
+
         if notifier.is_layout_changed() {
             self.relayout();
         }
@@ -262,6 +375,10 @@ impl WindowUI for UI {
         //d// println!("REDRAW: {:?}", self.cur_redraw);
         for layer in &self.layers {
             widget_draw(&layer.root, &self.cur_redraw, painter);
+        }
+
+        if let Some(fb) = &mut self.fb {
+            fb.apply_labels(painter.get_label_collection());
         }
     }
 

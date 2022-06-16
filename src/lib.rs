@@ -24,6 +24,7 @@ use painter::Painter;
 pub use widget::Widget;
 use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
+pub use ui::FrameScript;
 pub use style::{Style, Align, VAlign};
 
 pub use widgets::Entry;
@@ -347,6 +348,11 @@ impl Control {
                         painter::calc_font_size_from_text(
                             painter, s, style.font_size, inner_pos.w);
 
+                    let mut dbg = painter::LblDebugTag::from_id(w.id());
+                    dbg.set_offs(
+                        (orig_inner_pos.x - inner_pos.x,
+                         orig_inner_pos.y - inner_pos.y));
+
                     painter.label(
                         fs,
                         align,
@@ -355,7 +361,8 @@ impl Control {
                         inner_pos.y,
                         inner_pos.w,
                         inner_pos.h,
-                        s);
+                        s,
+                        dbg.source("label"));
                 },
                 Control::Entry { entry } => {
                     entry.draw(w, &style, inner_pos, orig_inner_pos, painter);

@@ -215,8 +215,8 @@ fn draw_arrow(p: &mut Painter, clr: (f32, f32, f32), x: f32, y: f32, xo: f32, yo
         true);
 }
 
-fn draw_hexagon<F: Fn(&mut Painter, HexDecorPos, (f32, f32, f32))>(p: &mut Painter,
-    size: f32, line: f32, x: f32, y: f32, clr: (f32, f32, f32), decor_fun: F) {
+fn draw_hexagon<F: FnMut(&mut Painter, HexDecorPos, (f32, f32, f32))>(p: &mut Painter,
+    size: f32, line: f32, x: f32, y: f32, clr: (f32, f32, f32), mut decor_fun: F) {
 
     let (w, h) = hex_size2wh(size);
 
@@ -565,6 +565,9 @@ impl HexGrid {
         let is_hovered = w.is_hovered();
         let is_active  = w.is_active();
 
+        let mut dbg = LblDebugTag::from_id(w.id());
+        dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
+
         self.real_pos = real_pos;
 
         let size = self.tile_size * self.scale;
@@ -588,6 +591,8 @@ impl HexGrid {
                 let y =
                     if xi % 2 == 0 { yi as f32 - 0.5 }
                     else           { yi as f32 };
+
+                dbg.set_logic_pos(xi as i32, yi as i32);
 
                 let xo = x * 0.75 * w + size;
                 let yo = (1.00 + y) * h;
@@ -696,7 +701,7 @@ impl HexGrid {
                                         x - 0.5 * sz.0,
                                         y - 0.5 * th,
                                         sz.0, th, name_lbl,
-                                        );
+                                        dbg.source("cell_name"));
                                 }
 
                                 if let Some(num_lbl) = lbl_it.next() {
@@ -705,7 +710,7 @@ impl HexGrid {
                                         x - 0.5 * sz.0,
                                         y - 0.5 * th + y_inc,
                                         sz.0, th, num_lbl,
-                                        );
+                                        dbg.source("cell_num"));
                                 }
 
                                 if let Some(led) = led {
@@ -726,7 +731,7 @@ impl HexGrid {
                                     x - 0.5 * sz.0,
                                     y - 1.0,
                                     sz.0, th, s,
-                                    );
+                                    dbg.source("cell_top"));
                             }
                         },
                         HexDecorPos::Bottom(x, y) => {
@@ -736,7 +741,7 @@ impl HexGrid {
                                     x - 0.5 * sz.0,
                                     y - th,
                                     sz.0, th, s,
-                                    );
+                                    dbg.source("cell_bottom"));
 
                                 et.draw(p, self.scale, x, y, 90.0);
                             }
@@ -750,7 +755,7 @@ impl HexGrid {
                                     0.0,
                                     (0.5 * th2).floor() + 2.0,
                                     sz.0, th2, s,
-                                    );
+                                    dbg.source("cell_top_left"));
                             }
                         },
                         HexDecorPos::TopRight(x, y) => {
@@ -762,7 +767,7 @@ impl HexGrid {
                                     0.0,
                                     (0.5 * th2).floor() + 2.0,
                                     sz.0, th2, s,
-                                    );
+                                    dbg.source("cell_top_right"));
 
                                 et.draw(p, self.scale, x, y, -30.0);
                             }
@@ -776,7 +781,7 @@ impl HexGrid {
                                     0.0,
                                     -(0.5 * th2).floor() - 2.0,
                                     sz.0, th2, s,
-                                    );
+                                    dbg.source("cell_bottom_left"));
                             }
                         },
                         HexDecorPos::BotRight(x, y) => {
@@ -788,7 +793,7 @@ impl HexGrid {
                                     0.0,
                                     -(0.5 * th2).floor() - 2.0,
                                     sz.0, th2, s,
-                                    );
+                                    dbg.source("cell_bottom_right"));
 
                                 et.draw(p, self.scale, x, y, 30.0);
                             }

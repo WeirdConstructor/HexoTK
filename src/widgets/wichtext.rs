@@ -258,7 +258,8 @@ impl WTFragment {
         bg_clr:     (f32, f32, f32),
         color:      (f32, f32, f32),
         color2:     (f32, f32, f32),
-        orig_color: (f32, f32, f32))
+        orig_color: (f32, f32, f32),
+        dbg:        &mut LblDebugTag)
     {
         match &self.typ {
             FragType::Graph { key } => {
@@ -292,7 +293,8 @@ impl WTFragment {
                     pos.y + graph_h,
                     graph_w,
                     self.ext_size_px.1,
-                    &self.text);
+                    &self.text,
+                    dbg.source("graph_lbl"));
 
             },
             FragType::Value { key } => {
@@ -339,7 +341,8 @@ impl WTFragment {
                     pos.y + knob_h,
                     pos.w - 3.0,
                     self.ext_size_px.1,
-                    val_s);
+                    val_s,
+                    dbg.source("value"));
 
                 p.label_mono(
                     self.font_size,
@@ -348,7 +351,8 @@ impl WTFragment {
                     pos.x,
                     pos.y + knob_h + self.ext_size_px.1,
                     pos.w, self.ext_size_px.1,
-                    &self.text);
+                    &self.text,
+                    dbg.source("value_label"));
 
             },
             FragType::Text => {
@@ -357,7 +361,8 @@ impl WTFragment {
                     -1,
                     color,
                     pos.x, pos.y, pos.w, pos.h,
-                    &self.text);
+                    &self.text,
+                    dbg.source("text"));
             }
         }
     }
@@ -490,7 +495,7 @@ impl DataSource {
         self.point_cache.clear();
         self.cache_graph_size = graph_size;
 
-        println!("REDRAW POINTS {:?}", graph_size);
+        //d// println!("REDRAW POINTS {:?}", graph_size);
 
         if self.source.samples() > 0 {
             let xd =
@@ -1006,8 +1011,12 @@ impl WichText {
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let real_offs_x = real_pos.x - pos.x;
         let real_offs_y = real_pos.y - pos.y;
-        println!("DRAW WICHT: pos={:?}, real_pos={:?}", pos, real_pos);
-        println!("DRAW WICHT xoffs={}, yoffs={}", real_offs_x, real_offs_y);
+
+        let mut dbg = LblDebugTag::from_id(w.id());
+        dbg.set_offs((real_offs_x, real_offs_y));
+
+        //d// println!("DRAW WICHT: pos={:?}, real_pos={:?}", pos, real_pos);
+        //d// println!("DRAW WICHT xoffs={}, yoffs={}", real_offs_x, real_offs_y);
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
         p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
@@ -1073,6 +1082,8 @@ impl WichText {
                         VAlign::Bottom => line_h - frag.height_px,
                     };
 
+                dbg.set_logic_pos(line_idx as i32, frag_idx as i32);
+
                 //d// println!("FRAG: x={}, fx={}", pos.x, frag.x);
 
                 let frag_pos = Rect {
@@ -1111,7 +1122,8 @@ impl WichText {
                     &mut self.data_sources,
                     &fetch_value,
                     frag_pos,
-                    style.bg_color, color, color2, orig_color);
+                    style.bg_color, color, color2, orig_color,
+                    &mut dbg);
 
                 if frag.is_active {
                     self.zones.push((
