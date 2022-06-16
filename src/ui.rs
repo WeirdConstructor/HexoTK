@@ -28,12 +28,12 @@ pub struct WidgetFeedback {
     labels: Option<Vec<(usize, &'static str, (i32, i32), Rect, String)>>,
 }
 
-pub struct FeedbackCollector {
+pub struct TestDriver {
     injected_events: Vec<InputEvent>,
     widgets:         HashMap<usize, WidgetFeedback>,
 }
 
-impl FeedbackCollector {
+impl TestDriver {
     pub fn new() -> Self {
         Self {
             injected_events: vec![],
@@ -61,7 +61,7 @@ impl FeedbackCollector {
 }
 
 enum FScriptStep {
-    Callback(Box<Fn(&mut std::any::Any, Box<FeedbackCollector>) -> Box<FeedbackCollector>>),
+    Callback(Box<Fn(&mut std::any::Any, Box<TestDriver>) -> Box<TestDriver>>),
 }
 
 pub struct FrameScript {
@@ -71,6 +71,13 @@ pub struct FrameScript {
 impl FrameScript {
     pub fn new() -> Self {
         Self { queue: vec![] }
+    }
+
+    pub fn push_cb(
+        &mut self,
+        cb: Box<Fn(&mut std::any::Any, Box<TestDriver>) -> Box<TestDriver>>)
+    {
+        self.queue.push(FScriptStep::Callback(cb));
     }
 }
 
@@ -85,7 +92,7 @@ pub struct UI {
     cur_parent_lookup:  Vec<usize>,
     layout_cache:       LayoutCache,
     ftm:                crate::window::FrameTimeMeasurement,
-    fb:                 Option<Box<FeedbackCollector>>,
+    fb:                 Option<Box<TestDriver>>,
     scripts:            Option<Vec<FrameScript>>,
     cur_script:         Option<FrameScript>,
     ctx:                Rc<RefCell<std::any::Any>>,
@@ -191,7 +198,7 @@ impl UI {
 
     pub fn push_frame_script(&mut self, script: FrameScript) {
         if self.fb.is_none() {
-            self.fb = Some(Box::new(FeedbackCollector::new()));
+            self.fb = Some(Box::new(TestDriver::new()));
         }
 
         if let Some(scripts) = &mut self.scripts {

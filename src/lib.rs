@@ -25,6 +25,7 @@ pub use widget::Widget;
 use widget::{widget_draw, widget_draw_frame};
 pub use ui::UI;
 pub use ui::FrameScript;
+pub use ui::TestDriver;
 pub use style::{Style, Align, VAlign};
 
 pub use widgets::Entry;
