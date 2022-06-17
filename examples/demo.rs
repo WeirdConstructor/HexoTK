@@ -235,7 +235,20 @@ fn main() {
         btn2.set_ctrl(Control::Button {
             label: Box::new(ccdata.clone())
         });
+        let dw = Widget::new(style_ref.clone());
+        dw.set_ctrl(crate::Control::Button { label: Box::new(ccdata.clone()) });
+        dw.change_layout(|layout| {
+            layout.position_type = Some(PositionType::SelfDirected);
+            layout.left = Some(Units::Pixels(700.0));
+            layout.top = Some(Units::Pixels(200.0));
+            layout.width = Some(Units::Pixels(400.0));
+            layout.height = Some(Units::Pixels(100.0));
+        });
+
         let drag_wid = Widget::new(style_ref.clone());
+//        drag_wid.change_layout(|layout| {
+//            layout.visible = false;
+//        });
         drag_wid.set_ctrl(crate::Control::Button { label: Box::new(ccdata) });
         drag_wid.set_pos(Rect { x: 0.0, y: 0.0, w: 130.0, h: 50.0 });
         btn2.set_drag_widget(drag_wid);
@@ -249,8 +262,6 @@ fn main() {
                 println!("DRAG EV HexGrid: {:?}", ev);
             }
         });
-
-
 
         let btn1 = Widget::new(style_ref.clone());
         btn1.set_ctrl(Control::Button {
@@ -287,7 +298,10 @@ fn main() {
         cont.add(btn2);
 
         let knob = Widget::new(
-            style_ref.with_style_clone(|style| { style.pad_top = 20.0; style.pad_left = 30.0; }));
+            style_ref.with_style_clone(|style| {
+                style.pad_top = 20.0;
+                style.pad_left = 30.0;
+            }));
         knob.enable_cache();
         let param =
             Rc::new(RefCell::new(
@@ -316,7 +330,7 @@ fn main() {
         hexgrid.reg("drop", {
             move |_ctx, _wid, ev| {
                 if let EvPayload::HexGridDropData { x, y, data: rc } = &ev.data {
-                        println!("DROP EV HexGrid ({},{}): {:?}", x, y, rc);
+                    println!("DROP EV HexGrid ({},{}): {:?}", x, y, rc);
                     if let Some(d) = rc.borrow().as_ref().downcast_ref::<usize>() {
                         println!("XXXX DROP EV HexGrid: {:?}", d);
                     }
@@ -354,10 +368,14 @@ fn main() {
         layer2root.add(wtwid_row);
         layer2root.add(knob);
 
+        let root3 = Widget::new(style_ref.clone());
+        root3.add(dw);
+
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
         ui.push_frame_script(FrameScript::new());
 //        ui.add_layer_root(wid);
         ui.add_layer_root(layer2root.clone());
+        ui.add_layer_root(root3);
 //        ui.add_layer_root(col);
 
 

@@ -173,7 +173,7 @@ impl UI {
         for layer in &mut self.layers {
             layer.root.change_layout(|l| {
                 l.left   = Some(Units::Pixels(0.0));
-                l.right  = Some(Units::Pixels(0.0));
+                l.top    = Some(Units::Pixels(0.0));
                 l.width  = Some(Units::Pixels(win_w));
                 l.height = Some(Units::Pixels(win_h));
                 l.position_type = Some(PositionType::SelfDirected);
