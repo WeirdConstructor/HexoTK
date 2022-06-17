@@ -120,6 +120,13 @@ impl Widget {
         self.0.borrow_mut().take_event_core()
     }
 
+    pub fn set_drag_widget(&self, wid: Widget) {
+        self.0.borrow_mut().set_drag_widget(wid);
+    }
+    pub fn drag_widget(&self) -> Option<Widget> {
+        self.0.borrow().drag_widget()
+    }
+
     pub fn give_back_event_core(&self, evc: EventCore) {
         self.0.borrow_mut().give_back_event_core(evc)
     }
@@ -258,6 +265,7 @@ pub struct WidgetImpl {
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
     data_gen:       u64,
+    drag_widget:    Option<Widget>,
 
     cached:         bool,
     cache_img:      Option<ImgRef>,
@@ -283,6 +291,7 @@ impl WidgetImpl {
             inner_pos:      Rect::from(0.0, 0.0, 0.0, 0.0),
             layout:         Layout::new(),
             notifier:       None,
+            drag_widget:    None,
             cached:         false,
             cache_img:      None,
             style,
@@ -310,6 +319,13 @@ impl WidgetImpl {
 
     pub fn give_back_event_core(&mut self, evc: EventCore) {
         self.evc = Some(evc);
+    }
+
+    pub fn set_drag_widget(&mut self, wid: Widget) {
+        self.drag_widget = Some(wid);
+    }
+    pub fn drag_widget(&self) -> Option<Widget> {
+        self.drag_widget.clone()
     }
 
     pub fn is_cached(&mut self) -> bool { self.cached }

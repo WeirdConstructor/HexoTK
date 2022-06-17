@@ -230,8 +230,12 @@ fn main() {
         });
         btn2.enable_cache();
         btn2.set_ctrl(Control::Button {
-            label: Box::new(ccdata)
+            label: Box::new(ccdata.clone())
         });
+        let drag_wid = Widget::new(style_ref.clone());
+        drag_wid.set_ctrl(crate::Control::Button { label: Box::new(ccdata) });
+        btn2.set_drag_widget(drag_wid);
+
         btn2.reg("drag", {
             move |_ctx, _wid, ev| {
                 if let EvPayload::UserData(rc) = &ev.data {

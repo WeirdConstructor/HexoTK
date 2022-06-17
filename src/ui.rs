@@ -91,15 +91,12 @@ pub struct DragState {
     last_query_id:  usize,
     query_accept:   bool,
     pos:            (f32, f32),
-    widget:         Widget,
+    widget:         Option<Widget>,
     userdata:       Option<Rc<RefCell<Box<dyn std::any::Any>>>>,
 }
 
 impl DragState {
     fn new() -> Self {
-        let widget = Widget::new(Rc::new(crate::Style::new()));
-        widget.set_ctrl(crate::Control::Button { label: Box::new("foo".to_string()) });
-
         Self {
             button_pressed: false,
             started:        false,
@@ -108,7 +105,7 @@ impl DragState {
             hover_id:       0,
             pos:            (0.0, 0.0),
             userdata:       None,
-            widget,
+            widget:         None,
         }
     }
 
@@ -286,10 +283,17 @@ impl UI {
     }
 
     fn handle_drag_mouse_move(&mut self, x: f32, y: f32, hover_id: &mut usize) {
+
         if    self.drag.button_pressed
            && !self.drag.started
            && self.drag.hover_id != *hover_id
         {
+            // the starting case, the mouse button was just pressed, but it did
+            // not yet hover a new widget and dragging is not started yet.
+
+            // first query the widget if it supports dragging at all.
+            // for this the widget needs to set the drag UserData to something
+            // else than Option<()> None.
             let sentinel : Option<()> = None;
             let sentinel : Box<dyn std::any::Any> = Box::new(sentinel);
             let userdata = Rc::new(RefCell::new(sentinel));
@@ -318,27 +322,45 @@ impl UI {
                 self.drag.reset();
 
             } else {
+                // If the widget actually has something to drag, note that down here:
                 self.drag.userdata = Some(userdata);
                 self.drag.pos = (x, y);
                 self.drag.started = true;
+
+                // the drag widget is positioned and marked for a redraw
                 let pos = Rect {
                     x: self.drag.pos.0,
                     y: self.drag.pos.1,
                     w: 100.0,
                     h: 40.0,
                 };
-                self.drag.widget.set_pos(pos);
-                self.notifier.redraw(self.drag.widget.id());
+                if let Some(drag_widget) = &self.drag.widget {
+                    drag_widget.set_pos(pos);
+                    self.notifier.redraw(drag_widget.id());
+                }
+
                 println!("DRAG START {} (=>{})!", self.drag.hover_id, *hover_id);
             }
         }
         else if self.drag.started && self.drag.hover_id == *hover_id {
+            // The drag gesture gets back to the origin widget of the drag
+            // this resets the drag and it will/needs to be restarted next
+            // time the cursor leaves the widget.
             self.drag.started = false;
-            self.notifier.redraw(self.drag.widget.id());
+            if let Some(drag_widget) = &self.drag.widget {
+                self.notifier.redraw(drag_widget.id());
+            }
         }
         else if self.drag.started {
+            // This case handles if the user actually drags something.
+            // We need to query the (currently) hovered widget if it
+            // can accept dropping what we drag at all.
 
             if self.drag.last_query_id != *hover_id {
+                // The widget we hover is different from the most recent
+                // widget we query again. For this we pass a shared reference
+                // for a flag to the widget "drop_query" event handler.
+
                 let ev = &self.drop_query_ev;
                 if let EvPayload::DropAccept(rc) = &ev.data {
                     *rc.borrow_mut() = false;
@@ -359,19 +381,23 @@ impl UI {
                 }
             }
 
-            if !self.drag.query_accept {
-                *hover_id = self.drag.widget.id();
-            }
-
             self.drag.pos = (x, y);
-            self.notifier.redraw(self.drag.widget.id());
-            let pos = Rect {
-                x: self.drag.pos.0,
-                y: self.drag.pos.1,
-                w: 100.0,
-                h: 40.0,
-            };
-            self.drag.widget.set_pos(pos);
+
+            // Update the drag widget position and mark for redraw:
+            if let Some(drag_widget) = &self.drag.widget {
+
+                // if the queries widget does not accept dropping, signal
+                // this by setting the hover widget to he drag widget at the
+                // mouse cursor:
+                if !self.drag.query_accept {
+                    *hover_id = drag_widget.id();
+                }
+
+                let mut pos = drag_widget.pos();
+                pos.x = self.drag.pos.0;
+                pos.y = self.drag.pos.1;
+                drag_widget.set_pos(pos);
+            }
         }
     }
 }
@@ -449,14 +475,22 @@ impl WindowUI for UI {
         match &event {
             InputEvent::MouseButtonPressed(btn) => {
                 if *btn == MButton::Left {
-                    self.drag.button_pressed = true;
-                    self.drag.hover_id = notifier.hover();
-                    self.drag.widget.set_notifier(notifier.clone(), 9999991999);
+                    let drag_hover_id = notifier.hover();
+                    if let Some(widget) =
+                        self.widgets.borrow().get(drag_hover_id)
+                    {
+                        if let Some(widget) = widget.drag_widget() {
+                            self.drag.button_pressed = true;
+                            self.drag.hover_id       = drag_hover_id;
+
+                            widget.set_notifier(notifier.clone(), 9999991999);
+                            self.drag.widget = Some(widget);
+                        }
+                    }
                 }
             }
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Left {
-                    self.drag.button_pressed = true;
                     let hov_id = notifier.hover();
                     if self.drag.started && self.drag.hover_id != hov_id {
                         println!("DROP! {} on {}", self.drag.hover_id, hov_id);
@@ -476,7 +510,10 @@ impl WindowUI for UI {
                         }
                     }
                     self.drag.reset();
-                    notifier.redraw(self.drag.widget.id());
+
+                    if let Some(widget) = &self.drag.widget {
+                        notifier.redraw(widget.id());
+                    }
                 }
             }
             InputEvent::MousePosition(x, y) => {
@@ -545,8 +582,10 @@ impl WindowUI for UI {
             widget_draw(&layer.root, &self.cur_redraw, painter);
         }
 
-        if self.drag.started {
-            widget_draw(&self.drag.widget, &self.cur_redraw, painter);
+        if let Some(drag_widget) = &self.drag.widget {
+            if self.drag.started {
+                widget_draw(drag_widget, &self.cur_redraw, painter);
+            }
         }
 
         if let Some(fb) = &mut self.fb {
