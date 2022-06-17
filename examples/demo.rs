@@ -220,6 +220,9 @@ fn main() {
             layout.bottom = Some(Units::Pixels(4.0));
             layout.left   = Some(Units::Pixels(4.0));
         });
+
+
+
         let btn2 = Widget::new(style_ref.with_style_clone(|style| {
             style.border_style = BorderStyle::Hex { offset: 30.0 };
         }));
@@ -234,6 +237,7 @@ fn main() {
         });
         let drag_wid = Widget::new(style_ref.clone());
         drag_wid.set_ctrl(crate::Control::Button { label: Box::new(ccdata) });
+        drag_wid.set_pos(Rect { x: 0.0, y: 0.0, w: 130.0, h: 50.0 });
         btn2.set_drag_widget(drag_wid);
 
         btn2.reg("drag", {
@@ -245,6 +249,9 @@ fn main() {
                 println!("DRAG EV HexGrid: {:?}", ev);
             }
         });
+
+
+
         let btn1 = Widget::new(style_ref.clone());
         btn1.set_ctrl(Control::Button {
             label: Box::new(format!("Lay2 Btn {}", cnt))
@@ -316,9 +323,12 @@ fn main() {
                 }
             }
         });
-//        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
+
+
+
 
         let entry = Widget::new(style_ref.clone());
+//        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
         entry.set_ctrl(Control::Entry {
             entry: Box::new(Entry::new(Box::new(etf))),
         });

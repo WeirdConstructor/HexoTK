@@ -282,8 +282,52 @@ impl UI {
         self.notifier.swap_redraw(&mut self.cur_redraw);
     }
 
-    fn handle_drag_mouse_move(&mut self, x: f32, y: f32, hover_id: &mut usize) {
+    fn handle_drag_mouse_pressed(&mut self) {
+        let drag_hover_id = self.notifier.hover();
+        if let Some(widget) =
+            self.widgets.borrow().get(drag_hover_id)
+        {
+            if let Some(widget) = widget.drag_widget() {
+                self.drag.button_pressed = true;
+                self.drag.hover_id       = drag_hover_id;
 
+                widget.set_notifier(self.notifier.clone(), 9999991999);
+                self.drag.widget = Some(widget);
+            }
+        }
+    }
+
+    fn handle_drag_mouse_released(&mut self) {
+        let hov_id = self.notifier.hover();
+        if self.drag.started && self.drag.hover_id != hov_id {
+            //d// println!("DROP! {} on {}", self.drag.hover_id, hov_id);
+            if let Some(ud) = &self.drag.userdata  {
+                if let Some(widget) =
+                    self.widgets.borrow().get(hov_id)
+                {
+                    let ev = Event {
+                        name: "drop".to_string(),
+                        data: EvPayload::UserData(ud.clone()),
+                    };
+                    let ev =
+                        widget_annotate_drop_event(
+                            &widget, self.drag.pos, ev);
+
+                    if let Some(widget) = self.widgets.borrow().get(hov_id) {
+                        widget_handle_event(
+                            &widget, &mut *(self.ctx.borrow_mut()), &ev);
+                    }
+                }
+            }
+        }
+        self.drag.reset();
+
+        if let Some(widget) = &self.drag.widget {
+            self.notifier.redraw(widget.id());
+        }
+    }
+
+    fn handle_drag_mouse_move(&mut self, x: f32, y: f32, hover_id: &mut usize) {
         if    self.drag.button_pressed
            && !self.drag.started
            && self.drag.hover_id != *hover_id
@@ -327,19 +371,16 @@ impl UI {
                 self.drag.pos = (x, y);
                 self.drag.started = true;
 
-                // the drag widget is positioned and marked for a redraw
-                let pos = Rect {
-                    x: self.drag.pos.0,
-                    y: self.drag.pos.1,
-                    w: 100.0,
-                    h: 40.0,
-                };
                 if let Some(drag_widget) = &self.drag.widget {
+                    // the drag widget is positioned and marked for a redraw
+                    let mut pos = drag_widget.pos();
+                    pos.x = self.drag.pos.0;
+                    pos.y = self.drag.pos.1;
                     drag_widget.set_pos(pos);
                     self.notifier.redraw(drag_widget.id());
                 }
 
-                println!("DRAG START {} (=>{})!", self.drag.hover_id, *hover_id);
+                //d// println!("DRAG START {} (=>{})!", self.drag.hover_id, *hover_id);
             }
         }
         else if self.drag.started && self.drag.hover_id == *hover_id {
@@ -475,45 +516,12 @@ impl WindowUI for UI {
         match &event {
             InputEvent::MouseButtonPressed(btn) => {
                 if *btn == MButton::Left {
-                    let drag_hover_id = notifier.hover();
-                    if let Some(widget) =
-                        self.widgets.borrow().get(drag_hover_id)
-                    {
-                        if let Some(widget) = widget.drag_widget() {
-                            self.drag.button_pressed = true;
-                            self.drag.hover_id       = drag_hover_id;
-
-                            widget.set_notifier(notifier.clone(), 9999991999);
-                            self.drag.widget = Some(widget);
-                        }
-                    }
+                    self.handle_drag_mouse_pressed();
                 }
             }
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Left {
-                    let hov_id = notifier.hover();
-                    if self.drag.started && self.drag.hover_id != hov_id {
-                        println!("DROP! {} on {}", self.drag.hover_id, hov_id);
-                        if let Some(ud) = &self.drag.userdata  {
-                            if let Some(widget) =
-                                self.widgets.borrow().get(hov_id)
-                            {
-                                let ev = Event {
-                                    name: "drop".to_string(),
-                                    data: EvPayload::UserData(ud.clone()),
-                                };
-                                let ev =
-                                    widget_annotate_drop_event(
-                                        &widget, self.drag.pos, ev);
-                                sent_events.push((hov_id, ev));
-                            }
-                        }
-                    }
-                    self.drag.reset();
-
-                    if let Some(widget) = &self.drag.widget {
-                        notifier.redraw(widget.id());
-                    }
+                    self.handle_drag_mouse_released();
                 }
             }
             InputEvent::MousePosition(x, y) => {
