@@ -1,7 +1,9 @@
 use crate::{
     InputEvent, Painter, widget_draw,
+    UINotifierRef, Rect, Event, EvPayload, MButton,
     widget_draw_frame,
-    UINotifierRef, Rect, Event, MButton
+    widget_annotate_drop_event,
+    widget_handle_event,
 };
 use crate::painter::LblDebugTag;
 use crate::WindowUI;
@@ -47,7 +49,7 @@ impl TestDriver {
         if let Some(coll) = lbl_collection {
             for item in coll {
                 let info       = item.0.info();
-                let label_info = (
+                let _label_info = (
                     info.0,
                     info.1,
                     info.2,
@@ -61,7 +63,7 @@ impl TestDriver {
 }
 
 enum FScriptStep {
-    Callback(Box<Fn(&mut std::any::Any, Box<TestDriver>) -> Box<TestDriver>>),
+    Callback(Box<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>) -> Box<TestDriver>>),
 }
 
 pub struct FrameScript {
@@ -75,7 +77,7 @@ impl FrameScript {
 
     pub fn push_cb(
         &mut self,
-        cb: Box<Fn(&mut std::any::Any, Box<TestDriver>) -> Box<TestDriver>>)
+        cb: Box<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>) -> Box<TestDriver>>)
     {
         self.queue.push(FScriptStep::Callback(cb));
     }
@@ -88,6 +90,7 @@ pub struct DragState {
     hover_id:       usize,
     pos:            (f32, f32),
     widget:         Widget,
+    userdata:       Option<Rc<RefCell<Box<dyn std::any::Any>>>>,
 }
 
 impl DragState {
@@ -101,6 +104,7 @@ impl DragState {
             started:        false,
             hover_id:       0,
             pos:            (0.0, 0.0),
+            userdata:       None,
             widget,
         }
     }
@@ -125,11 +129,11 @@ pub struct UI {
     scripts:            Option<Vec<FrameScript>>,
     cur_script:         Option<FrameScript>,
     drag:               DragState,
-    ctx:                Rc<RefCell<std::any::Any>>,
+    ctx:                Rc<RefCell<dyn std::any::Any>>,
 }
 
 impl UI {
-    pub fn new(ctx: Rc<RefCell<std::any::Any>>) -> Self {
+    pub fn new(ctx: Rc<RefCell<dyn std::any::Any>>) -> Self {
         let store = Rc::new(RefCell::new(WidgetStore::new()));
         Self {
             win_h:              0.0,
@@ -282,7 +286,7 @@ impl WindowUI for UI {
             self.on_tree_changed();
         }
 
-        self.widgets.borrow().for_each_widget(|wid, id| {
+        self.widgets.borrow().for_each_widget(|wid, _id| {
             if wid.check_data_change() {
                 wid.emit_redraw_required();
             }
@@ -342,6 +346,8 @@ impl WindowUI for UI {
 
         let old_hover = notifier.hover();
 
+        let mut sent_events : Vec<(usize, Event)> = vec![];
+
         match &event {
             InputEvent::MouseButtonPressed(btn) => {
                 if *btn == MButton::Left {
@@ -352,8 +358,23 @@ impl WindowUI for UI {
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Left {
                     self.drag.button_pressed = true;
-                    if self.drag.started && self.drag.hover_id != notifier.hover() {
-                        println!("DROP! {} on {}", self.drag.hover_id, notifier.hover());
+                    let hov_id = notifier.hover();
+                    if self.drag.started && self.drag.hover_id != hov_id {
+                        println!("DROP! {} on {}", self.drag.hover_id, hov_id);
+                        if let Some(ud) = &self.drag.userdata  {
+                            if let Some(widget) =
+                                self.widgets.borrow().get(hov_id)
+                            {
+                                let ev = Event {
+                                    name: "drop".to_string(),
+                                    data: EvPayload::UserData(ud.clone()),
+                                };
+                                let ev =
+                                    widget_annotate_drop_event(
+                                        &widget, self.drag.pos, ev);
+                                sent_events.push((hov_id, ev));
+                            }
+                        }
                     }
                     self.drag.reset();
                     notifier.redraw(self.drag.widget.id());
@@ -376,17 +397,48 @@ impl WindowUI for UI {
                    && !self.drag.started
                    && self.drag.hover_id != hover_id
                 {
-                    self.drag.pos = (*x, *y);
-                    self.drag.started = true;
-                    let pos = Rect {
-                        x: self.drag.pos.0,
-                        y: self.drag.pos.1,
-                        w: 100.0,
-                        h: 40.0,
-                    };
-                    self.drag.widget.set_pos(pos);
-                    notifier.redraw(self.drag.widget.id());
-                    println!("DRAG START {} (=>{})!", self.drag.hover_id, hover_id);
+                    let sentinel : Option<()> = None;
+                    let sentinel : Box<dyn std::any::Any> = Box::new(sentinel);
+                    let userdata = Rc::new(RefCell::new(sentinel));
+                    if let Some(widget) = self.widgets.borrow().get(self.drag.hover_id) {
+                        widget_handle_event(
+                            &widget, &mut *(self.ctx.borrow_mut()), &Event {
+                                name: "drag".to_string(),
+                                data: EvPayload::UserData(userdata.clone()),
+                            });
+                    }
+
+                    let mut cancel_drag = false;
+
+                    {
+                        let ud = userdata.clone();
+                        let ud = ud.borrow();
+
+                        if let Some(opt) = ud.downcast_ref::<Option<()>>() {
+                            if opt.is_none() {
+                                cancel_drag = true;
+                            }
+                        }
+                    }
+
+                    if cancel_drag {
+                        self.drag.reset();
+
+                    } else {
+                        self.drag.userdata = Some(userdata);
+                        self.drag.pos = (*x, *y);
+                        self.drag.started = true;
+                        let pos = Rect {
+                            x: self.drag.pos.0,
+                            y: self.drag.pos.1,
+                            w: 100.0,
+                            h: 40.0,
+                        };
+                        self.drag.widget.set_pos(pos);
+                        notifier.redraw(self.drag.widget.id());
+                        println!("DRAG START {} (=>{})!", self.drag.hover_id, hover_id);
+                    }
+
                 }
                 else if self.drag.started && self.drag.hover_id == hover_id {
                     self.drag.started = false;
@@ -415,7 +467,6 @@ impl WindowUI for UI {
             notifier.redraw(notifier.hover());
         }
 
-        let mut sent_events : Vec<(usize, Event)> = vec![];
 
         self.widgets.borrow().for_each_widget(|wid, _id| {
             let ctrl = wid.take_ctrl();
@@ -431,13 +482,7 @@ impl WindowUI for UI {
 
         for (wid_id, event) in sent_events {
             if let Some(widget) = self.widgets.borrow().get(wid_id) {
-                let evc = widget.take_event_core();
-
-
-                if let Some(mut evc) = evc {
-                    evc.call(&mut *(ctx.borrow_mut()), &event, &widget);
-                    widget.give_back_event_core(evc);
-                }
+                widget_handle_event(&widget, &mut *(ctx.borrow_mut()), &event);
             }
         }
     }

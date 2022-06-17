@@ -112,7 +112,7 @@ impl Widget {
         Rc::downgrade(&self.0)
     }
 
-    pub fn reg<F: 'static + FnMut(&mut std::any::Any, Widget, &Event)>(&self, ev_name: &str, cb: F) {
+    pub fn reg<F: 'static + FnMut(&mut dyn std::any::Any, Widget, &Event)>(&self, ev_name: &str, cb: F) {
         self.0.borrow_mut().reg(ev_name, Box::new(cb));
     }
 
@@ -302,7 +302,7 @@ impl WidgetImpl {
         }
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut std::any::Any, Widget, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>) {
         if let Some(evc) = &mut self.evc {
             evc.reg(ev_name, cb);
         }
@@ -528,7 +528,19 @@ pub fn widget_draw_frame(widget: &Widget, painter: &mut Painter) {
     }
 }
 
-pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, parent: Option<&Widget>, mut cb: &mut F, is_first: bool, is_last: bool) {
+pub fn widget_annotate_drop_event(widget: &Widget, mouse_pos: (f32, f32), ev: Event) -> Event {
+    let ctrl   = widget.0.borrow_mut().ctrl.take();
+
+    if let Some(mut ctrl) = ctrl {
+        let ret = ctrl.annotate_drop_event(mouse_pos, ev);
+        widget.0.borrow_mut().ctrl = Some(ctrl);
+        ret
+    } else {
+        ev
+    }
+}
+
+pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, parent: Option<&Widget>, cb: &mut F, is_first: bool, is_last: bool) {
     cb(widget, parent, is_first, is_last);
 
     if let Some(childs) = &widget.0.borrow().childs {

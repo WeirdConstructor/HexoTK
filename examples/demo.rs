@@ -232,6 +232,15 @@ fn main() {
         btn2.set_ctrl(Control::Button {
             label: Box::new(ccdata)
         });
+        btn2.reg("drag", {
+            move |_ctx, _wid, ev| {
+                if let EvPayload::UserData(rc) = &ev.data {
+                    let data : Box<dyn std::any::Any> = Box::new(10_usize);
+                    *rc.borrow_mut() = data;
+                }
+                println!("DRAG EV HexGrid: {:?}", ev);
+            }
+        });
         let btn1 = Widget::new(style_ref.clone());
         btn1.set_ctrl(Control::Button {
             label: Box::new(format!("Lay2 Btn {}", cnt))
@@ -284,6 +293,16 @@ fn main() {
             }));
         hexgrid.set_ctrl(Control::HexGrid {
             grid: Box::new(HexGrid::new(hexmodel)),
+        });
+        hexgrid.reg("drop", {
+            move |_ctx, _wid, ev| {
+                if let EvPayload::HexGridDropData { x, y, data: rc } = &ev.data {
+                        println!("DROP EV HexGrid ({},{}): {:?}", x, y, rc);
+                    if let Some(d) = rc.borrow().as_ref().downcast_ref::<usize>() {
+                        println!("XXXX DROP EV HexGrid: {:?}", d);
+                    }
+                }
+            }
         });
 //        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
 

@@ -2,10 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
-use keyboard_types::Key;
-
-use super::ModifierTracker;
+use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
 
 use crate::style::*;
 
@@ -411,7 +408,6 @@ impl HexGrid {
         out_events: &mut Vec<(usize, Event)>)
     {
         let is_hovered = w.is_hovered();
-        let is_active  = w.is_active();
 
         match event {
             InputEvent::MouseButtonPressed(btn) => {
@@ -505,7 +501,7 @@ impl HexGrid {
                     self.hover_pos = self.get_mouse_tile_pos(*x, *y);
 
                     // For left & right mouse clicks:
-                    if let Some((_, mx, my)) = self.mouse_state {
+                    if let Some((_, _mx, _my)) = self.mouse_state {
                         let cur_tile_pos = self.get_mouse_tile_pos(*x, *y);
 
                         if let Some(start_tile_pos) = self.start_tile_pos {
@@ -559,11 +555,10 @@ impl HexGrid {
     }
 
 //    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect,
+    pub fn draw(&mut self, w: &Widget, _style: &Style, pos: Rect,
                 real_pos: Rect, p: &mut Painter)
     {
         let is_hovered = w.is_hovered();
-        let is_active  = w.is_active();
 
         let mut dbg = LblDebugTag::from_id(w.id());
         dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
@@ -806,5 +801,21 @@ impl HexGrid {
         }
 
         p.reset_clip_region();
+    }
+
+    pub fn annotate_drop_event(&mut self, mouse_pos: (f32, f32), ev: Event) -> Event {
+        let cur_tile_pos = self.get_mouse_tile_pos(mouse_pos.0, mouse_pos.1);
+        if let EvPayload::UserData(data) = ev.data {
+            Event {
+                name: ev.name,
+                data: EvPayload::HexGridDropData {
+                    x: cur_tile_pos.0 as usize,
+                    y: cur_tile_pos.1 as usize,
+                    data: data,
+                },
+            }
+        } else {
+            ev
+        }
     }
 }

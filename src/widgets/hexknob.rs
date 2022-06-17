@@ -2,7 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
+use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
 use keyboard_types::Key;
 
 use super::ModifierTracker;
@@ -692,13 +692,6 @@ impl HexKnob {
 
 impl HexKnob {
     pub fn cursor_zone(&self, x: f32, y: f32) -> Option<HexKnobZone> {
-        let pos = self.real_pos;
-
-        let (xo, yo) = (
-            (pos.x + pos.w / 2.0).round(),
-            (pos.y + pos.h / 2.0).round()
-        );
-
         let coarse = Rect::from_tpl(self.knob.get_coarse_rect());
         let coarse = coarse.offs(self.circle_mid.0, self.circle_mid.1);
         let fine   = Rect::from_tpl(self.knob.get_fine_rect());
@@ -726,7 +719,6 @@ impl HexKnob {
         self.modkeys.handle(event);
 
         let is_hovered = w.is_hovered();
-        let is_active  = w.is_active();
 
         let mut model = self.model.borrow_mut();
 
@@ -872,7 +864,7 @@ impl HexKnob {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect,
+    pub fn draw(&mut self, w: &Widget, _style: &Style, pos: Rect,
                 real_pos: Rect, p: &mut Painter)
     {
         let mut dbg = LblDebugTag::from_id(w.id());
@@ -881,7 +873,6 @@ impl HexKnob {
         self.real_pos = real_pos;
 
         let is_hovered = w.is_hovered();
-        let is_active  = w.is_active();
 
         let (xo, yo) = (
             (pos.x + pos.w / 2.0).round(),

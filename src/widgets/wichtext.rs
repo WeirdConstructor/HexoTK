@@ -117,10 +117,10 @@ impl WichTextData for WichTextSimpleDataStore {
         self.0.borrow().knobs.get(key).copied().unwrap_or(0.0)
     }
 
-    fn knob_clamp(&self, key: &str, v: f32) -> f32 { v.clamp(0.0, 1.0) }
-    fn knob_map_ui_range(&self, key: &str, v: f32) -> f32 { v.clamp(0.0, 1.0) }
-    fn knob_step(&self, key: &str) -> f32 { 0.05 }
-    fn knob_fmt(&self, key: &str, v: f32, buf: &mut [u8]) -> usize {
+    fn knob_clamp(&self, _key: &str, v: f32) -> f32 { v.clamp(0.0, 1.0) }
+    fn knob_map_ui_range(&self, _key: &str, v: f32) -> f32 { v.clamp(0.0, 1.0) }
+    fn knob_step(&self, _key: &str) -> f32 { 0.05 }
+    fn knob_fmt(&self, _key: &str, v: f32, buf: &mut [u8]) -> usize {
         use std::io::Write;
         let mut bw = std::io::BufWriter::new(buf);
 
@@ -145,8 +145,7 @@ impl WichTextData for WichTextSimpleDataStore {
     }
 
     fn get_generation(&self) -> u64 {
-        let mut ch_borrow = self.0.borrow_mut();
-        ch_borrow.generation
+        self.0.borrow().generation
     }
 }
 
@@ -790,7 +789,7 @@ impl WichText {
                         WTFragment::new(cur_font_size)));
             }
 
-            let default_font_h = p.font_height(cur_font_size, true);
+            //let default_font_h = p.font_height(cur_font_size, true);
             let line_h = frag_line.finish(align, wordwrap, cur_y);
             self.lines.push(frag_line);
 

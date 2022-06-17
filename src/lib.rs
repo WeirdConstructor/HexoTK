@@ -22,7 +22,7 @@ pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
-use widget::{widget_draw, widget_draw_frame};
+use widget::{widget_draw, widget_draw_frame, widget_annotate_drop_event};
 pub use ui::UI;
 pub use ui::FrameScript;
 pub use ui::TestDriver;
@@ -278,6 +278,21 @@ impl Control {
             Control::Entry    { .. } => true,
             Control::HexKnob  { .. } => true,
             Control::HexGrid  { .. } => true,
+        }
+    }
+
+    pub fn annotate_drop_event(&mut self, mouse_pos: (f32, f32), ev: Event) -> Event {
+        match self {
+            Control::Rect
+            | Control::None
+            | Control::Label    { .. }
+            | Control::Button   { .. }
+            | Control::WichText { .. }
+            | Control::Entry    { .. }
+            | Control::HexKnob  { .. } => ev,
+            Control::HexGrid { grid } => {
+                grid.annotate_drop_event(mouse_pos, ev)
+            }
         }
     }
 
@@ -744,6 +759,12 @@ pub enum EvPayload {
         y_dst: usize,
         button: MButton,
     },
+    HexGridDropData {
+        x: usize,
+        y: usize,
+        data: Rc<RefCell<Box<dyn std::any::Any>>>,
+    },
+    UserData(Rc<RefCell<Box<dyn std::any::Any>>>),
     Button(MButton),
     Text(String),
     Pos { x: f32, y: f32 },
@@ -753,7 +774,7 @@ pub struct EventCore {
     callbacks:
         std::collections::HashMap<
             String,
-            Option<Vec<Box<dyn FnMut(&mut std::any::Any, Widget, &Event)>>>>,
+            Option<Vec<Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>>>>,
 }
 
 impl EventCore {
@@ -767,7 +788,7 @@ impl EventCore {
         self.callbacks.clear();
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut std::any::Any, Widget, &Event)>) {
+    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>) {
         if let Some(cbs) = self.callbacks.get_mut(ev_name) {
             if let Some(cbs) = cbs { cbs.push(cb); }
         } else {
@@ -775,7 +796,7 @@ impl EventCore {
         }
     }
 
-    pub fn call(&mut self, ctx: &mut std::any::Any, ev: &Event, widget: &Widget) {
+    pub fn call(&mut self, ctx: &mut dyn std::any::Any, ev: &Event, widget: &Widget) {
         if let Some(cbs) = self.callbacks.get_mut(&ev.name) {
             if let Some(cbs) = cbs {
                 for cb in cbs {
@@ -783,6 +804,15 @@ impl EventCore {
                 }
             }
         }
+    }
+}
+
+pub(crate) fn widget_handle_event(widget: &Widget, ctx: &mut dyn std::any::Any, ev: &Event) {
+    let evc = widget.take_event_core();
+
+    if let Some(mut evc) = evc {
+        evc.call(ctx, ev, widget);
+        widget.give_back_event_core(evc);
     }
 }
 

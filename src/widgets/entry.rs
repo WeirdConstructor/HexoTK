@@ -33,7 +33,7 @@ impl TextField {
 
 impl Mutable for TextField {
     fn get_generation(&mut self) -> u64 {
-        let mut tf = self.0.borrow_mut();
+        let tf = self.0.borrow_mut();
         tf.1
     }
 }
@@ -45,7 +45,7 @@ impl EditableText for TextField {
     }
 
     fn get(&self) -> String {
-        let mut tf = self.0.borrow_mut();
+        let tf = self.0.borrow_mut();
         tf.0.clone()
     }
 }
@@ -205,8 +205,6 @@ impl Entry {
                 }
             },
             InputEvent::MouseButtonPressed(btn) => {
-                let (x, y) = self.mouse_pos;
-
                 if is_hovered {
                     if *btn == MButton::Left {
                         w.activate();
@@ -214,15 +212,15 @@ impl Entry {
                     }
                 }
             },
-            InputEvent::MouseButtonReleased(btn) => {
-                if w.is_active() {
-                    let (x, y) = self.mouse_pos;
-
-                    if *btn == MButton::Left {
-//                        w.deactivate();
-//                        w.emit_redraw_required();
-                    }
-                }
+            InputEvent::MouseButtonReleased(_btn) => {
+//                if w.is_active() {
+//                    let (x, y) = self.mouse_pos;
+//
+//                    if *btn == MButton::Left {
+////                        w.deactivate();
+////                        w.emit_redraw_required();
+//                    }
+//                }
             },
             InputEvent::MousePosition(x, y) => {
                 self.mouse_pos = (*x, *y);
