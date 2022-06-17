@@ -604,24 +604,6 @@ impl WichText {
 
     pub fn data(&self) -> &Rc<dyn WichTextData> { &self.data }
 
-//    pub fn on_value<F>(mut self, on_value: F) -> Self
-//    where
-//        F: 'static + Fn(&mut Self, &mut State, Entity, usize, usize, &str, f32),
-//    {
-//        self.on_value = Some(Box::new(on_value));
-//
-//        self
-//    }
-//
-//    pub fn on_hover<F>(mut self, on_hover: F) -> Self
-//    where
-//        F: 'static + Fn(&mut Self, &mut State, Entity, bool, usize),
-//    {
-//        self.on_hover = Some(Box::new(on_hover));
-//
-//        self
-//    }
-
     fn parse(&mut self, style_font_size: f32, p: &mut Painter, text: &str) {
         self.lines.clear();
 
@@ -1008,6 +990,8 @@ impl WichText {
     }
 
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        let is_hovered = w.is_hovered();
+
         let real_offs_x = real_pos.x - pos.x;
         let real_offs_y = real_pos.y - pos.y;
 
@@ -1106,10 +1090,15 @@ impl WichText {
                 let color2 = style.color_by_idx(frag.color2);
 
                 if (self.active == self.hover || frag.typ.is_value())
-                   && self.active == Some((line_idx, frag_idx)) {
+                   && self.active == Some((line_idx, frag_idx))
+                   && is_hovered
+               {
                     color = style.active_border_color;
 
-                } else if self.hover == Some((line_idx, frag_idx)) {
+                } else if
+                       self.hover == Some((line_idx, frag_idx))
+                    && is_hovered
+                {
                     p.rect_fill(
                         color, frag_pos.x, frag_pos.y, frag_pos.w, frag_pos.h);
                     color = style.bg_color;

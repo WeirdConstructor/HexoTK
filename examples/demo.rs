@@ -294,6 +294,14 @@ fn main() {
         hexgrid.set_ctrl(Control::HexGrid {
             grid: Box::new(HexGrid::new(hexmodel)),
         });
+        hexgrid.reg("drop_query", {
+            move |_ctx, _wid, ev| {
+                println!("Drop Accept query!");
+                if let EvPayload::DropAccept(rc) = &ev.data {
+                    *rc.borrow_mut() = true;
+                }
+            }
+        });
         hexgrid.reg("drop", {
             move |_ctx, _wid, ev| {
                 if let EvPayload::HexGridDropData { x, y, data: rc } = &ev.data {

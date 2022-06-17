@@ -764,6 +764,7 @@ pub enum EvPayload {
         y: usize,
         data: Rc<RefCell<Box<dyn std::any::Any>>>,
     },
+    DropAccept(Rc<RefCell<bool>>),
     UserData(Rc<RefCell<Box<dyn std::any::Any>>>),
     Button(MButton),
     Text(String),

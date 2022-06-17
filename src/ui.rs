@@ -88,6 +88,8 @@ pub struct DragState {
     button_pressed: bool,
     started:        bool,
     hover_id:       usize,
+    last_query_id:  usize,
+    query_accept:   bool,
     pos:            (f32, f32),
     widget:         Widget,
     userdata:       Option<Rc<RefCell<Box<dyn std::any::Any>>>>,
@@ -96,12 +98,13 @@ pub struct DragState {
 impl DragState {
     fn new() -> Self {
         let widget = Widget::new(Rc::new(crate::Style::new()));
-        widget.set_fixed_id(9999991999);
         widget.set_ctrl(crate::Control::Button { label: Box::new("foo".to_string()) });
 
         Self {
             button_pressed: false,
             started:        false,
+            last_query_id:  0,
+            query_accept:   false,
             hover_id:       0,
             pos:            (0.0, 0.0),
             userdata:       None,
@@ -129,6 +132,7 @@ pub struct UI {
     scripts:            Option<Vec<FrameScript>>,
     cur_script:         Option<FrameScript>,
     drag:               DragState,
+    drop_query_ev:      Event,
     ctx:                Rc<RefCell<dyn std::any::Any>>,
 }
 
@@ -150,6 +154,10 @@ impl UI {
             scripts:            None,
             cur_script:         None,
             drag:               DragState::new(),
+            drop_query_ev: Event {
+                name: "drop_query".to_string(),
+                data: EvPayload::DropAccept(Rc::new(RefCell::new(false))),
+            },
             ctx,
         }
     }
@@ -276,6 +284,96 @@ impl UI {
 
         self.notifier.swap_redraw(&mut self.cur_redraw);
     }
+
+    fn handle_drag_mouse_move(&mut self, x: f32, y: f32, hover_id: &mut usize) {
+        if    self.drag.button_pressed
+           && !self.drag.started
+           && self.drag.hover_id != *hover_id
+        {
+            let sentinel : Option<()> = None;
+            let sentinel : Box<dyn std::any::Any> = Box::new(sentinel);
+            let userdata = Rc::new(RefCell::new(sentinel));
+            if let Some(widget) = self.widgets.borrow().get(self.drag.hover_id) {
+                widget_handle_event(
+                    &widget, &mut *(self.ctx.borrow_mut()), &Event {
+                        name: "drag".to_string(),
+                        data: EvPayload::UserData(userdata.clone()),
+                    });
+            }
+
+            let mut cancel_drag = false;
+
+            {
+                let ud = userdata.clone();
+                let ud = ud.borrow();
+
+                if let Some(opt) = ud.downcast_ref::<Option<()>>() {
+                    if opt.is_none() {
+                        cancel_drag = true;
+                    }
+                }
+            }
+
+            if cancel_drag {
+                self.drag.reset();
+
+            } else {
+                self.drag.userdata = Some(userdata);
+                self.drag.pos = (x, y);
+                self.drag.started = true;
+                let pos = Rect {
+                    x: self.drag.pos.0,
+                    y: self.drag.pos.1,
+                    w: 100.0,
+                    h: 40.0,
+                };
+                self.drag.widget.set_pos(pos);
+                self.notifier.redraw(self.drag.widget.id());
+                println!("DRAG START {} (=>{})!", self.drag.hover_id, *hover_id);
+            }
+        }
+        else if self.drag.started && self.drag.hover_id == *hover_id {
+            self.drag.started = false;
+            self.notifier.redraw(self.drag.widget.id());
+        }
+        else if self.drag.started {
+
+            if self.drag.last_query_id != *hover_id {
+                let ev = &self.drop_query_ev;
+                if let EvPayload::DropAccept(rc) = &ev.data {
+                    *rc.borrow_mut() = false;
+                }
+
+                if let Some(widget) = self.widgets.borrow().get(*hover_id) {
+                    widget_handle_event(
+                        &widget, &mut *(self.ctx.borrow_mut()), ev);
+                }
+
+                self.drag.last_query_id = *hover_id;
+                self.drag.query_accept = false;
+
+                if let EvPayload::DropAccept(rc) = &ev.data {
+                    if *rc.borrow_mut() {
+                        self.drag.query_accept = true;
+                    }
+                }
+            }
+
+            if !self.drag.query_accept {
+                *hover_id = self.drag.widget.id();
+            }
+
+            self.drag.pos = (x, y);
+            self.notifier.redraw(self.drag.widget.id());
+            let pos = Rect {
+                x: self.drag.pos.0,
+                y: self.drag.pos.1,
+                w: 100.0,
+                h: 40.0,
+            };
+            self.drag.widget.set_pos(pos);
+        }
+    }
 }
 
 impl WindowUI for UI {
@@ -353,6 +451,7 @@ impl WindowUI for UI {
                 if *btn == MButton::Left {
                     self.drag.button_pressed = true;
                     self.drag.hover_id = notifier.hover();
+                    self.drag.widget.set_notifier(notifier.clone(), 9999991999);
                 }
             }
             InputEvent::MouseButtonReleased(btn) => {
@@ -393,68 +492,7 @@ impl WindowUI for UI {
                     }
                 }
 
-                if    self.drag.button_pressed
-                   && !self.drag.started
-                   && self.drag.hover_id != hover_id
-                {
-                    let sentinel : Option<()> = None;
-                    let sentinel : Box<dyn std::any::Any> = Box::new(sentinel);
-                    let userdata = Rc::new(RefCell::new(sentinel));
-                    if let Some(widget) = self.widgets.borrow().get(self.drag.hover_id) {
-                        widget_handle_event(
-                            &widget, &mut *(self.ctx.borrow_mut()), &Event {
-                                name: "drag".to_string(),
-                                data: EvPayload::UserData(userdata.clone()),
-                            });
-                    }
-
-                    let mut cancel_drag = false;
-
-                    {
-                        let ud = userdata.clone();
-                        let ud = ud.borrow();
-
-                        if let Some(opt) = ud.downcast_ref::<Option<()>>() {
-                            if opt.is_none() {
-                                cancel_drag = true;
-                            }
-                        }
-                    }
-
-                    if cancel_drag {
-                        self.drag.reset();
-
-                    } else {
-                        self.drag.userdata = Some(userdata);
-                        self.drag.pos = (*x, *y);
-                        self.drag.started = true;
-                        let pos = Rect {
-                            x: self.drag.pos.0,
-                            y: self.drag.pos.1,
-                            w: 100.0,
-                            h: 40.0,
-                        };
-                        self.drag.widget.set_pos(pos);
-                        notifier.redraw(self.drag.widget.id());
-                        println!("DRAG START {} (=>{})!", self.drag.hover_id, hover_id);
-                    }
-
-                }
-                else if self.drag.started && self.drag.hover_id == hover_id {
-                    self.drag.started = false;
-                    notifier.redraw(self.drag.widget.id());
-                }
-                else if self.drag.started {
-                    self.drag.pos = (*x, *y);
-                    notifier.redraw(self.drag.widget.id());
-                    let pos = Rect {
-                        x: self.drag.pos.0,
-                        y: self.drag.pos.1,
-                        w: 100.0,
-                        h: 40.0,
-                    };
-                    self.drag.widget.set_pos(pos);
-                }
+                self.handle_drag_mouse_move(*x, *y, &mut hover_id);
 
                 notifier.set_mouse_pos((*x, *y));
                 notifier.set_hover(hover_id);
@@ -466,7 +504,6 @@ impl WindowUI for UI {
             notifier.redraw(old_hover);
             notifier.redraw(notifier.hover());
         }
-
 
         self.widgets.borrow().for_each_widget(|wid, _id| {
             let ctrl = wid.take_ctrl();
