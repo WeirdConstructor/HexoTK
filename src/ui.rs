@@ -1,7 +1,7 @@
 use crate::{
     InputEvent, Painter, widget_draw,
     widget_draw_frame,
-    UINotifierRef, Rect, Event
+    UINotifierRef, Rect, Event, MButton
 };
 use crate::painter::LblDebugTag;
 use crate::WindowUI;
@@ -54,7 +54,7 @@ impl TestDriver {
                     Rect::from(item.1.0, item.1.1, item.1.2, item.1.3),
                     item.1.4
                 );
-                println!("FEEDBACK: {:?}", label_info);
+                //d// println!("FEEDBACK: {:?}", label_info);
             }
         }
     }
@@ -81,6 +81,35 @@ impl FrameScript {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct DragState {
+    button_pressed: bool,
+    started:        bool,
+    hover_id:       usize,
+    pos:            (f32, f32),
+    widget:         Widget,
+}
+
+impl DragState {
+    fn new() -> Self {
+        let widget = Widget::new(Rc::new(crate::Style::new()));
+        widget.set_fixed_id(9999991999);
+        widget.set_ctrl(crate::Control::Button { label: Box::new("foo".to_string()) });
+
+        Self {
+            button_pressed: false,
+            started:        false,
+            hover_id:       0,
+            pos:            (0.0, 0.0),
+            widget,
+        }
+    }
+
+    fn reset(&mut self) {
+        *self = Self::new();
+    }
+}
+
 pub struct UI {
     win_w:              f32,
     win_h:              f32,
@@ -95,6 +124,7 @@ pub struct UI {
     fb:                 Option<Box<TestDriver>>,
     scripts:            Option<Vec<FrameScript>>,
     cur_script:         Option<FrameScript>,
+    drag:               DragState,
     ctx:                Rc<RefCell<std::any::Any>>,
 }
 
@@ -115,6 +145,7 @@ impl UI {
             fb:                 None,
             scripts:            None,
             cur_script:         None,
+            drag:               DragState::new(),
             ctx,
         }
     }
@@ -312,6 +343,22 @@ impl WindowUI for UI {
         let old_hover = notifier.hover();
 
         match &event {
+            InputEvent::MouseButtonPressed(btn) => {
+                if *btn == MButton::Left {
+                    self.drag.button_pressed = true;
+                    self.drag.hover_id = notifier.hover();
+                }
+            }
+            InputEvent::MouseButtonReleased(btn) => {
+                if *btn == MButton::Left {
+                    self.drag.button_pressed = true;
+                    if self.drag.started && self.drag.hover_id != notifier.hover() {
+                        println!("DROP! {} on {}", self.drag.hover_id, notifier.hover());
+                    }
+                    self.drag.reset();
+                    notifier.redraw(self.drag.widget.id());
+                }
+            }
             InputEvent::MousePosition(x, y) => {
                 let mut hover_id = 0;
                 if let Some(zones) = &self.zones {
@@ -323,6 +370,38 @@ impl WindowUI for UI {
                             hover_id = *id;
                         }
                     }
+                }
+
+                if    self.drag.button_pressed
+                   && !self.drag.started
+                   && self.drag.hover_id != hover_id
+                {
+                    self.drag.pos = (*x, *y);
+                    self.drag.started = true;
+                    let pos = Rect {
+                        x: self.drag.pos.0,
+                        y: self.drag.pos.1,
+                        w: 100.0,
+                        h: 40.0,
+                    };
+                    self.drag.widget.set_pos(pos);
+                    notifier.redraw(self.drag.widget.id());
+                    println!("DRAG START {} (=>{})!", self.drag.hover_id, hover_id);
+                }
+                else if self.drag.started && self.drag.hover_id == hover_id {
+                    self.drag.started = false;
+                    notifier.redraw(self.drag.widget.id());
+                }
+                else if self.drag.started {
+                    self.drag.pos = (*x, *y);
+                    notifier.redraw(self.drag.widget.id());
+                    let pos = Rect {
+                        x: self.drag.pos.0,
+                        y: self.drag.pos.1,
+                        w: 100.0,
+                        h: 40.0,
+                    };
+                    self.drag.widget.set_pos(pos);
                 }
 
                 notifier.set_mouse_pos((*x, *y));
@@ -371,7 +450,6 @@ impl WindowUI for UI {
             painter.start_label_collector();
         }
 
-
         if notifier.is_layout_changed() {
             self.relayout();
         }
@@ -383,6 +461,10 @@ impl WindowUI for UI {
         //d// println!("REDRAW: {:?}", self.cur_redraw);
         for layer in &self.layers {
             widget_draw(&layer.root, &self.cur_redraw, painter);
+        }
+
+        if self.drag.started {
+            widget_draw(&self.drag.widget, &self.cur_redraw, painter);
         }
 
         if let Some(fb) = &mut self.fb {

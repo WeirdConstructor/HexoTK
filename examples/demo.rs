@@ -221,7 +221,7 @@ fn main() {
             layout.left   = Some(Units::Pixels(4.0));
         });
         let btn2 = Widget::new(style_ref.with_style_clone(|style| {
-            style.border_style = BorderStyle::Hex { offset: 10.0 };
+            style.border_style = BorderStyle::Hex { offset: 30.0 };
         }));
         btn2.change_layout(|layout| {
             layout.top    = Some(Units::Pixels(4.0));

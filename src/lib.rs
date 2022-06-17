@@ -438,22 +438,15 @@ impl Control {
                             true);
                     }
                     BorderStyle::Hex { offset } => {
+                        let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
                         let points = hex_points(pos, offset);
                         painter.path_fill(
-                            border_color,
+                            style.bg_color,
                             &mut points.iter().copied(),
                             true);
-                        let points2 = [
-                            (points[0].0 + style.border, points[0].1),
-                            (points[1].0 + style.border, points[1].1 + style.border),
-                            (points[2].0 - style.border, points[2].1 + style.border),
-                            (points[3].0 - style.border, points[3].1),
-                            (points[4].0 - style.border, points[4].1 - style.border),
-                            (points[5].0 + style.border, points[5].1 - style.border),
-                        ];
-                        painter.path_fill(
-                            style.bg_color,
-                            &mut points2.iter().copied(),
+                        painter.path_stroke(
+                            style.border, border_color,
+                            &mut points.iter().copied(),
                             true);
                     }
                 }
@@ -562,11 +555,13 @@ impl Control {
                         if is_hovered { w.activate(); }
                     },
                     InputEvent::MouseButtonReleased(button) => {
-                        if w.is_active() {
+                        if w.is_active() && is_hovered {
                             out_events.push((w.id(), Event {
                                 name: "click".to_string(),
                                 data: EvPayload::Button(*button),
                             }));
+                        }
+                        if w.is_active() {
                             w.deactivate();
                         }
                     },

@@ -730,7 +730,7 @@ impl HexKnob {
 
         let mut model = self.model.borrow_mut();
 
-        println!("EV HANDLE KNOB: {:?} hov={}, act={}", event, is_hovered, is_active);
+        //d// println!("EV HANDLE KNOB: {:?} hov={}, act={}", event, is_hovered, is_active);
 
         match event {
               InputEvent::MouseButtonPressed(MButton::Left)

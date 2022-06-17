@@ -163,6 +163,10 @@ impl Widget {
         self.0.borrow_mut().is_active()
     }
 
+    pub fn set_fixed_id(&self, id: usize) {
+        self.0.borrow_mut().set_fixed_id(id);
+    }
+
     pub fn set_notifier(&self, not: UINotifierRef, id: usize) {
         self.0.borrow_mut().set_notifier(not, id)
     }
@@ -351,6 +355,10 @@ impl WidgetImpl {
 
     pub fn is_active(&self) -> bool {
         self.id == self.notifier.as_ref().map(|n| n.active()).flatten().unwrap_or(0)
+    }
+
+    pub fn set_fixed_id(&mut self, id: usize) {
+        self.id = id;
     }
 
     pub fn set_notifier(&mut self, not: UINotifierRef, id: usize) {
