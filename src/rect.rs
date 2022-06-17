@@ -20,6 +20,15 @@ impl Rect {
         Self { x, y, w, h }
     }
 
+    pub fn clip_wh(&self) -> Self {
+        Self {
+            x: self.x,
+            y: self.y,
+            w: self.w.max(0.0),
+            h: self.h.max(0.0),
+        }
+    }
+
     pub fn round(&self) -> Self {
         Self {
             x: self.x.round(),

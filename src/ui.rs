@@ -371,6 +371,7 @@ impl WindowUI for UI {
             painter.start_label_collector();
         }
 
+
         if notifier.is_layout_changed() {
             self.relayout();
         }

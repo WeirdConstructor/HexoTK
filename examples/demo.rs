@@ -131,7 +131,7 @@ fn main() {
         let layer2root = Widget::new(style_ref.clone());
         layer2root.enable_cache();
         layer2root.change_layout(|layout| {
-            layout.layout_type = Some(LayoutType::Row);
+            layout.layout_type = Some(LayoutType::Column);
 //            layout.child_top = Units::Percentage(75.0);
 //            layout.child_top = Units::Percentage(49.0);
         });
@@ -204,6 +204,11 @@ fn main() {
             layout.max_height = Some(Units::Pixels(40.0));
         });
 
+        let cont = Widget::new(style_ref.clone());
+        cont.change_layout(|layout| {
+            layout.layout_type = Some(LayoutType::Row);
+        });
+
         let etf = TextField::new();
         let btn0 = Widget::new(style_ref.clone());
         btn0.enable_cache();
@@ -213,6 +218,7 @@ fn main() {
         btn0.change_layout(|layout| {
             layout.top    = Some(Units::Pixels(4.0));
             layout.bottom = Some(Units::Pixels(4.0));
+            layout.left   = Some(Units::Pixels(4.0));
         });
         let btn2 = Widget::new(style_ref.with_style_clone(|style| {
             style.border_style = BorderStyle::Hex { offset: 10.0 };
@@ -220,6 +226,7 @@ fn main() {
         btn2.change_layout(|layout| {
             layout.top    = Some(Units::Pixels(4.0));
             layout.bottom = Some(Units::Pixels(4.0));
+            layout.left   = Some(Units::Pixels(4.0));
         });
         btn2.enable_cache();
         btn2.set_ctrl(Control::Button {
@@ -230,7 +237,9 @@ fn main() {
             label: Box::new(format!("Lay2 Btn {}", cnt))
         });
         btn1.change_layout(|layout| {
-            layout.max_height = Some(Units::Pixels(40.0));
+            layout.top    = Some(Units::Pixels(4.0));
+            layout.bottom = Some(Units::Pixels(4.0));
+            layout.left   = Some(Units::Pixels(4.0));
         });
         btn1.reg("click", {
             let mut counter = 0;
@@ -253,6 +262,10 @@ fn main() {
             }
         });
 
+        cont.add(btn0);
+        cont.add(btn1);
+        cont.add(btn2);
+
         let knob = Widget::new(
             style_ref.with_style_clone(|style| { style.pad_top = 20.0; style.pad_left = 30.0; }));
         knob.enable_cache();
@@ -265,7 +278,10 @@ fn main() {
 
         let hexmodel = Rc::new(RefCell::new(TestGrid { }));
         let hexgrid = Widget::new(
-            style_ref.with_style_clone(|style| { style.pad_top = 20.0; }));
+            style_ref.with_style_clone(|style| {
+                style.pad_top = 20.0;
+                style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+            }));
         hexgrid.set_ctrl(Control::HexGrid {
             grid: Box::new(HexGrid::new(hexmodel)),
         });
@@ -282,13 +298,19 @@ fn main() {
             }
         });
         col.add(entry);
-        col.add(btn0);
-        col.add(btn2);
-        col.add(btn1);
+        col.add(cont);
         col.add(lbl1);
+
+        let wtwid_row = Widget::new(style_ref.clone());
+        wtwid_row.add(hexgrid);
+        wtwid_row.add(wtwid);
+        wtwid_row.change_layout(|layout| {
+            layout.layout_type = Some(LayoutType::Row);
+            layout.height = Some(Units::Percentage(60.0));
+        });
+
         layer2root.add(col);
-        layer2root.add(hexgrid);
-        layer2root.add(wtwid);
+        layer2root.add(wtwid_row);
         layer2root.add(knob);
 
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));

@@ -195,12 +195,35 @@ pub enum Control {
     HexGrid  { grid:  Box<HexGrid> },
 }
 
+impl std::fmt::Debug for Control {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Control::None => write!(f, "Ctrl::None"),
+            Control::Rect => write!(f, "Ctrl::Rect"),
+            Control::Button   { .. } => write!(f, "Ctrl::Button"),
+            Control::Label    { .. } => write!(f, "Ctrl::Label"),
+            Control::WichText { .. } => write!(f, "Ctrl::WichText"),
+            Control::Entry    { .. } => write!(f, "Ctrl::Entry"),
+            Control::HexKnob  { .. } => write!(f, "Ctrl::HexKnob"),
+            Control::HexGrid  { .. } => write!(f, "Ctrl::HexGrid"),
+        }
+    }
+}
+
 fn bevel_points(pos: Rect, corner_offsets: (f32, f32, f32, f32)) -> [(f32, f32); 8] {
     let x     = pos.x;
     let y     = pos.y;
     let y_max = pos.y + pos.h;
     let x_max = pos.x + pos.w;
     let (o_tl, o_tr, o_bl, o_br) = corner_offsets;
+
+    let hh = (pos.h / 2.0).round();
+    let hw = (pos.w / 2.0).round();
+
+    let o_tl = o_tl.min(hh).min(hw);
+    let o_tr = o_tr.min(hh).min(hw);
+    let o_bl = o_bl.min(hh).min(hw);
+    let o_br = o_br.min(hh).min(hw);
 
     [
         (x,                        y + o_tl),
@@ -216,6 +239,11 @@ fn bevel_points(pos: Rect, corner_offsets: (f32, f32, f32, f32)) -> [(f32, f32);
 
 fn hex_points(pos: Rect, offset: f32) -> [(f32, f32); 6] {
     let ymid = (pos.y + pos.h / 2.0).round();
+
+    let hh = (pos.h / 2.0).round();
+    let hw = (pos.w / 2.0).round();
+    let offset = offset.min(hh).min(hw);
+
     [
         (pos.x,                    ymid),
         (pos.x + offset,           pos.y),
@@ -436,6 +464,9 @@ impl Control {
             // positions!
             let orig_inner_pos = style.apply_padding(orig_inner_pos);
             let inner_pos      = style.apply_padding(inner_pos);
+
+            let inner_pos      = inner_pos.clip_wh();
+            let orig_inner_pos = orig_inner_pos.clip_wh();
 
             match self {
                 Control::Rect => { },
