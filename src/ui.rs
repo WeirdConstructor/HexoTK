@@ -51,9 +51,17 @@ impl Layer {
             if popup_pos.x + offs_x < 0.0 { offs_x = 0.0 - popup_pos.x; }
             if popup_pos.y + offs_y < 0.0 { offs_y = 0.0 - popup_pos.y; }
 
+            let wid_pos = wid.pos().offs(offs_x, offs_y);
+            wid.set_pos(wid_pos);
+            wid.change_layout_silent(|layout| {
+                layout.left = Some(Units::Pixels(wid_pos.x));
+                layout.top  = Some(Units::Pixels(wid_pos.y));
+            });
+
             widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
                 let pos = wid.pos();
-                wid.set_pos(pos.offs(offs_x, offs_y));
+                let pos = pos.offs(offs_x, offs_y);
+                wid.set_pos(pos);
             });
         }
     }
@@ -764,6 +772,7 @@ impl WindowUI for UI {
     fn set_window_size(&mut self, w: f32, h: f32) {
         self.win_w = w;
         self.win_h = h;
+        self.do_auto_hide(None);
         self.notifier.set_layout_changed();
         self.notifier.redraw(0);
     }

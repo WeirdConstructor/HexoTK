@@ -251,6 +251,10 @@ impl Widget {
         self.0.borrow_mut().change_layout(f)
     }
 
+    pub(crate) fn change_layout_silent<R, F: FnOnce(&mut Layout) -> R>(&self, f: F) -> R {
+        self.0.borrow_mut().change_layout_silent(f)
+    }
+
     pub fn is_visible(&self) -> bool {
         if let Some(parent) = self.parent() {
             parent.is_visible() && self.with_layout(|layout| layout.visible)
@@ -373,6 +377,10 @@ impl WidgetImpl {
         let ret = f(&mut self.layout);
         self.emit_layout_change();
         ret
+    }
+
+    pub(crate) fn change_layout_silent<R, F: FnOnce(&mut Layout) -> R>(&mut self, f: F) -> R {
+        f(&mut self.layout)
     }
 
     pub fn relayout(&mut self, pos: Rect) -> Option<Rect> {
