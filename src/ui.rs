@@ -171,6 +171,8 @@ pub struct UI {
     cur_script:         Option<FrameScript>,
     drag:               DragState,
     drop_query_ev:      Event,
+    hover_ev:           Event,
+    last_hover_id:      usize,
     auto_hide_queue:    Vec<(usize, HashSet<usize>)>,
     ctx:                Rc<RefCell<dyn std::any::Any>>,
 }
@@ -197,6 +199,11 @@ impl UI {
             drop_query_ev: Event {
                 name: "drop_query".to_string(),
                 data: EvPayload::DropAccept(Rc::new(RefCell::new(false))),
+            },
+            last_hover_id: 0,
+            hover_ev: Event {
+                name: "hover".to_string(),
+                data: EvPayload::None,
             },
             ctx,
         }
@@ -700,9 +707,20 @@ impl WindowUI for UI {
             _ => {},
         }
 
-        if old_hover != notifier.hover() {
+        let new_hover_id = notifier.hover();
+
+        if old_hover != new_hover_id {
             notifier.redraw(old_hover);
-            notifier.redraw(notifier.hover());
+            notifier.redraw(new_hover_id);
+        }
+
+        let ctx = self.ctx.clone();
+
+        if self.last_hover_id != new_hover_id {
+            self.last_hover_id = new_hover_id;
+            if let Some(widget) = self.widgets.borrow().get(new_hover_id) {
+                widget_handle_event(&widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
+            }
         }
 
         self.widgets.borrow().for_each_widget(|wid, _id| {
@@ -715,7 +733,6 @@ impl WindowUI for UI {
             }
         });
 
-        let ctx = self.ctx.clone();
 
         for (wid_id, event) in sent_events {
             if let Some(widget) = self.widgets.borrow().get(wid_id) {

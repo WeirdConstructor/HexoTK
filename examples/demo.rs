@@ -220,6 +220,12 @@ fn main() {
             layout.bottom = Some(Units::Pixels(4.0));
             layout.left   = Some(Units::Pixels(4.0));
         });
+        btn0.reg("hover", |_ctx, _wid, _ev| {
+            println!("HOVER BTN0");
+        });
+        layer2root.reg("hover", |_ctx, _wid, _ev| {
+            println!("HOVER L2 ROOT");
+        });
 
 
 
