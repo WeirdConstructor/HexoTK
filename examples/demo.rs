@@ -269,7 +269,7 @@ fn main() {
 
         for dw_x in [dw_x1, dw_x2, dw_x3] {
             dw_x.change_layout(dw_x_layout);
-            dw_x.reg("click", move |_ctx, wid, _ev| println!("FOOFEOFEO")); // wid.parent().unwrap().hide());
+            dw_x.reg("click", move |_ctx, wid, _ev| println!("Test Click"));
             dw.add(dw_x);
         }
 
