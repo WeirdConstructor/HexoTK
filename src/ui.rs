@@ -15,7 +15,9 @@ use std::collections::HashMap;
 
 use crate::layout::LayoutCache;
 use crate::widget_store::{WidgetStore, WidgetTree};
+use crate::widget::widget_walk;
 
+use keyboard_types::Key;
 use morphorm::{
     PositionType, Units,
 };
@@ -27,7 +29,9 @@ struct Layer {
 }
 
 impl Layer {
-    fn handle_popup_positioning_after_layout(&mut self, win_w: f32, win_h: f32, mouse_pos: (f32, f32)) {
+    fn handle_popup_positioning_after_layout(
+        &mut self, win_w: f32, win_h: f32, mouse_pos: (f32, f32))
+    {
         while let Some((wid, pos)) = self.popups.pop() {
             let dest_pos =
                 match pos {
@@ -47,7 +51,7 @@ impl Layer {
             if popup_pos.x + offs_x < 0.0 { offs_x = 0.0 - popup_pos.x; }
             if popup_pos.y + offs_y < 0.0 { offs_y = 0.0 - popup_pos.y; }
 
-            crate::widget::widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
+            widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
                 let pos = wid.pos();
                 wid.set_pos(pos.offs(offs_x, offs_y));
             });
@@ -160,6 +164,7 @@ pub struct UI {
     cur_script:         Option<FrameScript>,
     drag:               DragState,
     drop_query_ev:      Event,
+    auto_hide_queue:    Vec<(usize, HashSet<usize>)>,
     ctx:                Rc<RefCell<dyn std::any::Any>>,
 }
 
@@ -181,6 +186,7 @@ impl UI {
             scripts:            None,
             cur_script:         None,
             drag:               DragState::new(),
+            auto_hide_queue:    vec![],
             drop_query_ev: Event {
                 name: "drop_query".to_string(),
                 data: EvPayload::DropAccept(Rc::new(RefCell::new(false))),
@@ -238,10 +244,31 @@ impl UI {
 
         let notifier = self.notifier.clone();
 
+        let mut auto_hide_queue = vec![];
+
+        let mut auto_hide_widgets = vec![];
+
         self.widgets.borrow().for_each_widget_impl(|wid, id| {
+            if wid.wants_auto_hide() {
+                auto_hide_widgets.push(id);
+            }
             wid.set_notifier(notifier.clone(), id);
             notifier.redraw(id);
         });
+
+        for auto_hide_id in auto_hide_widgets {
+            if let Some(wid) = self.widgets.borrow().get(auto_hide_id) {
+                let mut subtree_set = HashSet::new();
+                subtree_set.insert(wid.id());
+                widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
+                    subtree_set.insert(wid.id());
+                });
+                auto_hide_queue.push((wid.id(), subtree_set));
+            }
+        }
+
+
+        self.auto_hide_queue = auto_hide_queue;
 
         for layer in &mut self.layers {
             layer.tree = None;
@@ -261,7 +288,6 @@ impl UI {
 
             self.widgets.borrow().for_each_widget(|wid, id| {
                 if wid.is_visible() {
-                    println!("WID ZONE {} => {:?}", id, wid.pos());
                     zones.push((wid.pos(), wid.can_hover(), id));
                 }
             });
@@ -517,6 +543,39 @@ impl UI {
         }
     }
 
+    fn do_auto_hide_if_not_inside(&mut self, pos: (f32, f32)) {
+        for (wid_id, subtree) in self.auto_hide_queue.iter() {
+            if let Some(wid) = self.widgets.borrow().get(*wid_id) {
+                if wid.is_visible() {
+                    if !wid.pos().is_inside(pos.0, pos.1) {
+                        wid.hide();
+                        self.notifier.redraw(*wid_id);
+                    }
+                }
+            }
+        }
+    }
+
+    fn do_auto_hide(&mut self, active_wid_id: Option<usize>) {
+        //d// println!("DO AUTO HIDE {:?}", active_wid_id);
+        for (wid_id, subtree) in self.auto_hide_queue.iter() {
+            if let Some(active_wid_id) = active_wid_id {
+                // Ignore if the active widget is a sub widget of the auto_hide widget!
+                //d// println!("check autohide {} {:?} {:?}", wid_id, active_wid_id, subtree);
+                if subtree.get(&active_wid_id).is_some() {
+                    //d// println!("SKIP AUTO HIDE!?");
+                    continue;
+                }
+            }
+
+            if let Some(wid) = self.widgets.borrow().get(*wid_id) {
+                if wid.is_visible() {
+                    wid.hide();
+                    self.notifier.redraw(*wid_id);
+                }
+            }
+        }
+    }
 }
 
 impl WindowUI for UI {
@@ -587,7 +646,8 @@ impl WindowUI for UI {
     fn handle_input_event(&mut self, event: InputEvent) {
         let notifier = self.notifier.clone();
 
-        let old_hover = notifier.hover();
+        let old_hover  = notifier.hover();
+        let old_active = notifier.active();
 
         let mut sent_events : Vec<(usize, Event)> = vec![];
 
@@ -601,6 +661,8 @@ impl WindowUI for UI {
                 if *btn == MButton::Left {
                     self.handle_drag_mouse_released();
                 }
+
+                self.do_auto_hide_if_not_inside(notifier.mouse_pos());
             }
             InputEvent::MousePosition(x, y) => {
                 let mut hover_id = 0;
@@ -620,6 +682,14 @@ impl WindowUI for UI {
                 notifier.set_mouse_pos((*x, *y));
                 notifier.set_hover(hover_id);
             },
+            InputEvent::KeyPressed(key) => {
+                match &key.key {
+                    Key::Escape => {
+                        self.do_auto_hide(None);
+                    }
+                    _ => {}
+                }
+            }
             _ => {},
         }
 
@@ -643,6 +713,12 @@ impl WindowUI for UI {
         for (wid_id, event) in sent_events {
             if let Some(widget) = self.widgets.borrow().get(wid_id) {
                 widget_handle_event(&widget, &mut *(ctx.borrow_mut()), &event);
+            }
+        }
+
+        if old_active != notifier.active() {
+            if notifier.active().is_some() {
+                self.do_auto_hide(notifier.active());
             }
         }
     }

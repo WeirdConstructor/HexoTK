@@ -240,7 +240,7 @@ fn main() {
             style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
             style.border_style = BorderStyle::Rect;
         }));
-        dw.set_ctrl(Control::Rect);
+//        dw.set_ctrl(Control::Rect);
         dw.change_layout(|layout| {
             layout.position_type = Some(PositionType::SelfDirected);
             layout.layout_type   = Some(LayoutType::Column);
@@ -269,15 +269,16 @@ fn main() {
 
         for dw_x in [dw_x1, dw_x2, dw_x3] {
             dw_x.change_layout(dw_x_layout);
-            dw_x.reg("click", move |_ctx, wid, _ev| wid.parent().unwrap().hide());
+            dw_x.reg("click", move |_ctx, wid, _ev| println!("FOOFEOFEO")); // wid.parent().unwrap().hide());
             dw.add(dw_x);
         }
+
+        dw.auto_hide();
 
         btn2.reg("click", {
             let dw = dw.clone();
             move |_ctx, _wid, ev| { dw.popup_at(PopupPos::MousePos); }
         });
-
 
         let drag_wid = Widget::new(style_ref.clone());
 //        drag_wid.change_layout(|layout| {

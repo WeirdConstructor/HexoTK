@@ -267,6 +267,15 @@ impl Widget {
         self.0.borrow_mut().change_layout(|layout| layout.visible = false);
     }
 
+    pub fn auto_hide(&self) {
+        self.0.borrow_mut().auto_hide = true;
+        self.0.borrow_mut().notifier.as_mut().map(|n| n.set_tree_changed());
+    }
+
+    pub fn wants_auto_hide(&self) -> bool {
+        self.0.borrow_mut().wants_auto_hide()
+    }
+
     pub fn popup_at(&self, pos: PopupPos) {
         self.0.borrow().popup_at(pos)
     }
@@ -286,6 +295,7 @@ pub struct WidgetImpl {
     notifier:       Option<UINotifierRef>,
     data_gen:       u64,
     drag_widget:    Option<Widget>,
+    auto_hide:      bool,
 
     cached:         bool,
     cache_img:      Option<ImgRef>,
@@ -314,6 +324,7 @@ impl WidgetImpl {
             drag_widget:    None,
             cached:         false,
             cache_img:      None,
+            auto_hide:      false,
             style,
         }
     }
@@ -494,6 +505,8 @@ impl WidgetImpl {
             }
         }
     }
+
+    pub fn wants_auto_hide(&self) -> bool { self.auto_hide }
 
     pub fn set_parent(&mut self, parent: &Widget) {
         self.parent = Some(Rc::downgrade(&parent.0));
