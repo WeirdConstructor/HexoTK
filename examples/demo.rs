@@ -235,15 +235,49 @@ fn main() {
         btn2.set_ctrl(Control::Button {
             label: Box::new(ccdata.clone())
         });
-        let dw = Widget::new(style_ref.clone());
-        dw.set_ctrl(crate::Control::Button { label: Box::new(ccdata.clone()) });
+
+        let dw = Widget::new(style_ref.with_style_clone(|style| {
+            style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+            style.border_style = BorderStyle::Rect;
+        }));
+        dw.set_ctrl(Control::Rect);
         dw.change_layout(|layout| {
             layout.position_type = Some(PositionType::SelfDirected);
-            layout.left = Some(Units::Pixels(700.0));
-            layout.top = Some(Units::Pixels(200.0));
-            layout.width = Some(Units::Pixels(400.0));
-            layout.height = Some(Units::Pixels(100.0));
+            layout.layout_type   = Some(LayoutType::Column);
+            layout.width         = Some(Units::Auto);
+            layout.height        = Some(Units::Auto);
+            layout.visible       = false;
         });
+
+        let dw_style = style_ref.with_style_clone(|style| {
+            style.border_style = BorderStyle::Bevel {
+                corner_offsets: (10.0, 0.0, 0.0, 0.0),
+            };
+        });
+
+        let dw_x1 = Widget::new(dw_style.clone());
+        let dw_x2 = Widget::new(dw_style.clone());
+        let dw_x3 = Widget::new(dw_style.clone());
+        dw_x1.set_ctrl(crate::Control::Button { label: Box::new("Test1".to_string()) });
+        dw_x2.set_ctrl(crate::Control::Button { label: Box::new("Test ABC".to_string()) });
+        dw_x3.set_ctrl(crate::Control::Button { label: Box::new("Super Synth Hexo".to_string()) });
+
+        let dw_x_layout = |layout: &mut hexotk::Layout| {
+            layout.width  = Some(Units::Pixels(200.0));
+            layout.height = Some(Units::Pixels(50.0));
+        };
+
+        for dw_x in [dw_x1, dw_x2, dw_x3] {
+            dw_x.change_layout(dw_x_layout);
+            dw_x.reg("click", move |_ctx, wid, _ev| wid.parent().unwrap().hide());
+            dw.add(dw_x);
+        }
+
+        btn2.reg("click", {
+            let dw = dw.clone();
+            move |_ctx, _wid, ev| { dw.popup_at(PopupPos::MousePos); }
+        });
+
 
         let drag_wid = Widget::new(style_ref.clone());
 //        drag_wid.change_layout(|layout| {
@@ -370,6 +404,7 @@ fn main() {
 
         let root3 = Widget::new(style_ref.clone());
         root3.add(dw);
+
 
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
         ui.push_frame_script(FrameScript::new());

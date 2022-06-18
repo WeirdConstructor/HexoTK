@@ -1,6 +1,6 @@
 use crate::{
     InputEvent, Painter, widget_draw,
-    UINotifierRef, Rect, Event, EvPayload, MButton,
+    UINotifierRef, Rect, Event, EvPayload, MButton, PopupPos,
     widget_draw_frame,
     widget_annotate_drop_event,
     widget_handle_event,
@@ -23,6 +23,36 @@ use morphorm::{
 struct Layer {
     root:       Widget,
     tree:       Option<WidgetTree>,
+    popups:     Vec<(Widget, PopupPos)>,
+}
+
+impl Layer {
+    fn handle_popup_positioning_after_layout(&mut self, win_w: f32, win_h: f32, mouse_pos: (f32, f32)) {
+        while let Some((wid, pos)) = self.popups.pop() {
+            let dest_pos =
+                match pos {
+                    PopupPos::MousePos => mouse_pos,
+                };
+
+            let mut popup_pos = wid.pos();
+
+            let (mut offs_x, mut offs_y) = (
+                dest_pos.0 - popup_pos.x,
+                dest_pos.1 - popup_pos.y
+            );
+            let overhang_x = (popup_pos.x + popup_pos.w + offs_x) - win_w;
+            let overhang_y = (popup_pos.y + popup_pos.h + offs_y) - win_h;
+            if overhang_x > 0.0 { offs_x -= overhang_x; }
+            if overhang_y > 0.0 { offs_y -= overhang_y; }
+            if popup_pos.x + offs_x < 0.0 { offs_x = 0.0 - popup_pos.x; }
+            if popup_pos.y + offs_y < 0.0 { offs_y = 0.0 - popup_pos.y; }
+
+            crate::widget::widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
+                let pos = wid.pos();
+                wid.set_pos(pos.offs(offs_x, offs_y));
+            });
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -160,7 +190,7 @@ impl UI {
     }
 
     pub fn add_layer_root(&mut self, root: Widget) {
-        self.layers.push(Layer { root, tree: None });
+        self.layers.push(Layer { root, tree: None, popups: vec![] });
 
         self.on_tree_changed();
     }
@@ -194,6 +224,9 @@ impl UI {
 
             tree.apply_layout_to_widgets(&self.layout_cache);
             layer.root.set_pos(Rect::from(0.0, 0.0, win_w, win_h));
+
+            let mouse_pos = self.notifier.mouse_pos();
+            layer.handle_popup_positioning_after_layout(win_w, win_h, mouse_pos);
         }
 
         self.on_layout_changed();
@@ -220,14 +253,17 @@ impl UI {
     }
 
     pub fn on_layout_changed(&mut self) {
-        //d// println!("layout changed");
+        println!("layout changed");
         let zones = self.zones.take();
 
         if let Some(mut zones) = zones {
             zones.clear();
 
             self.widgets.borrow().for_each_widget(|wid, id| {
-                zones.push((wid.pos(), wid.can_hover(), id));
+                if wid.is_visible() {
+                    println!("WID ZONE {} => {:?}", id, wid.pos());
+                    zones.push((wid.pos(), wid.can_hover(), id));
+                }
             });
 
             self.zones = Some(zones);
@@ -246,6 +282,16 @@ impl UI {
         } else {
             self.scripts = Some(vec![script]);
         }
+    }
+
+    fn find_layer_by_root_id(&mut self, root_widget_id: usize) -> Option<&mut Layer> {
+        for layer in &mut self.layers {
+            if layer.root.id() == root_widget_id {
+                return Some(layer);
+            }
+        }
+
+        None
     }
 }
 
@@ -441,11 +487,43 @@ impl UI {
             }
         }
     }
+
+    fn deposit_popups_in_layers(&mut self) {
+        while let Some((wid_id, pos)) = self.notifier.pop_popup() {
+            let mut root_wid = None;
+            let mut orig_wid = None;
+
+            if let Some(wid) = self.widgets.borrow().get(wid_id) {
+                orig_wid = Some(wid.clone());
+
+                let mut cur_wid = wid.clone();
+                while let Some(parent) = cur_wid.parent() {
+                    cur_wid = parent;
+                }
+
+                root_wid = Some(cur_wid);
+            }
+
+            if let Some(root_wid) = root_wid {
+                let wid = orig_wid.expect("orig_wid set when root_wid was found!");
+                wid.show();
+                let orig_pos = wid.pos();
+                wid.set_pos(Rect { x: 0.0, y: 0.0, w: orig_pos.w, h: orig_pos.h });
+
+                if let Some(layer) = self.find_layer_by_root_id(root_wid.id()) {
+                    layer.popups.push((wid, pos));
+                }
+            }
+        }
+    }
+
 }
 
 impl WindowUI for UI {
     fn pre_frame(&mut self) {
         let notifier = self.notifier.clone();
+
+        self.deposit_popups_in_layers();
 
         if notifier.is_tree_changed() {
             self.on_tree_changed();

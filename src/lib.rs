@@ -27,6 +27,7 @@ pub use ui::UI;
 pub use ui::FrameScript;
 pub use ui::TestDriver;
 pub use style::{Style, Align, VAlign, BorderStyle};
+pub use widget::Layout;
 
 pub use widgets::Entry;
 pub use widgets::WichText;
@@ -210,7 +211,7 @@ impl std::fmt::Debug for Control {
     }
 }
 
-fn bevel_points(pos: Rect, corner_offsets: (f32, f32, f32, f32)) -> [(f32, f32); 8] {
+fn bevel_points(pos: Rect, corner_offsets: (f32, f32, f32, f32), inp: &mut [(f32, f32); 8]) -> &[(f32, f32)] {
     let x     = pos.x;
     let y     = pos.y;
     let y_max = pos.y + pos.h;
@@ -225,16 +226,62 @@ fn bevel_points(pos: Rect, corner_offsets: (f32, f32, f32, f32)) -> [(f32, f32);
     let o_bl = o_bl.min(hh).min(hw);
     let o_br = o_br.min(hh).min(hw);
 
-    [
-        (x,                        y + o_tl),
-        (x + o_tl,                 y),
-        (x_max - o_tr,             y),
-        (x_max,                    y + o_tr),
-        (x_max,                    y_max - o_br),
-        (x_max - o_br,             y_max),
-        (x + o_bl,                 y_max),
-        (x,                        y_max - o_bl),
-    ]
+    let min_offs = 1.0;
+
+    let mut len = 0;
+
+    if o_tl >= min_offs {
+        inp[len] = (x,        y + o_tl);
+        len += 1;
+        inp[len] = (x + o_tl, y);
+        len += 1;
+    } else {
+        inp[len] = (x,        y);
+        len += 1;
+    }
+
+    if o_tr >= min_offs {
+        inp[len] = (x_max - o_tr, y);
+        len += 1;
+        inp[len] = (x_max,        y + o_tr);
+        len += 1;
+    } else {
+        inp[len] = (x_max,        y);
+        len += 1;
+    }
+
+    if o_br >= min_offs {
+        inp[len] = (x_max,        y_max - o_br);
+        len += 1;
+        inp[len] = (x_max - o_br, y_max);
+        len += 1;
+    } else {
+        inp[len] = (x_max,        y_max);
+        len += 1;
+    }
+
+    if o_bl >= min_offs {
+        inp[len] = (x + o_bl, y_max);
+        len += 1;
+        inp[len] = (x,        y_max - o_bl);
+        len += 1;
+    } else {
+        inp[len] = (x,        y_max);
+        len += 1;
+    }
+
+    &inp[0..len]
+
+//    [
+//        (x,                        y + o_tl),
+//        (x + o_tl,                 y),
+//        (x_max - o_tr,             y),
+//        (x_max,                    y + o_tr),
+//        (x_max,                    y_max - o_br),
+//        (x_max - o_br,             y_max),
+//        (x + o_bl,                 y_max),
+//        (x,                        y_max - o_bl),
+//    ]
 }
 
 fn hex_points(pos: Rect, offset: f32) -> [(f32, f32); 6] {
@@ -385,7 +432,8 @@ impl Control {
                     }
                     BorderStyle::Bevel { corner_offsets } => {
                         let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
-                        let points = bevel_points(pos, corner_offsets);
+                        let mut pt_buf = [(0.0, 0.0); 8];
+                        let points = bevel_points(pos, corner_offsets, &mut pt_buf);
                         painter.path_fill(
                             shadow_color,
                             &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
@@ -442,7 +490,8 @@ impl Control {
                     }
                     BorderStyle::Bevel { corner_offsets } => {
                         let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
-                        let points = bevel_points(pos, corner_offsets);
+                        let mut pt_buf = [(0.0, 0.0); 8];
+                        let points = bevel_points(pos, corner_offsets, &mut pt_buf);
                         painter.path_fill(
                             style.bg_color,
                             &mut points.iter().copied(),
@@ -599,6 +648,11 @@ impl Control {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum PopupPos {
+    MousePos,
+}
+
 #[derive(Debug, Clone)]
 pub struct UINotifier {
     pub tree_changed:   bool,
@@ -607,6 +661,7 @@ pub struct UINotifier {
     pub mouse_pos:      (f32, f32),
     pub redraw:         HashSet<usize>,
     pub active:         Option<usize>,
+    pub popups:         Vec<(usize, PopupPos)>,
 }
 
 impl UINotifier {
@@ -618,6 +673,7 @@ impl UINotifier {
             mouse_pos:      (0.0, 0.0),
             redraw:         HashSet::new(),
             active:         None,
+            popups:         vec![],
         }))
     }
 }
@@ -733,6 +789,14 @@ impl UINotifierRef {
     pub fn active(&self) -> Option<usize> {
         let r = self.0.borrow_mut();
         r.active
+    }
+
+    pub fn popup(&self, widget_id: usize, pos: PopupPos) {
+        self.0.borrow_mut().popups.push((widget_id, pos));
+    }
+
+    pub fn pop_popup(&self) -> Option<(usize, PopupPos)> {
+        self.0.borrow_mut().popups.pop()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{EventCore, Control, Painter, Rect, UINotifierRef, Event};
+use crate::{EventCore, Control, Painter, Rect, UINotifierRef, Event, PopupPos};
 use crate::painter::ImgRef;
 use crate::style::Style;
 use std::rc::{Weak, Rc};
@@ -250,6 +250,26 @@ impl Widget {
     pub fn change_layout<R, F: FnOnce(&mut Layout) -> R>(&self, f: F) -> R {
         self.0.borrow_mut().change_layout(f)
     }
+
+    pub fn is_visible(&self) -> bool {
+        if let Some(parent) = self.parent() {
+            parent.is_visible() && self.with_layout(|layout| layout.visible)
+        } else {
+            self.with_layout(|layout| layout.visible)
+        }
+    }
+
+    pub fn show(&self) {
+        self.0.borrow_mut().change_layout(|layout| layout.visible = true);
+    }
+
+    pub fn hide(&self) {
+        self.0.borrow_mut().change_layout(|layout| layout.visible = false);
+    }
+
+    pub fn popup_at(&self, pos: PopupPos) {
+        self.0.borrow().popup_at(pos)
+    }
 }
 
 pub struct WidgetImpl {
@@ -429,6 +449,10 @@ impl WidgetImpl {
         }
 
         self.notifier.as_mut().map(|n| n.set_tree_changed());
+    }
+
+    pub fn popup_at(&self, pos: PopupPos) {
+        self.notifier.as_ref().map(|n| n.popup(self.id, pos));
     }
 
     pub fn remove_childs(&mut self) {
