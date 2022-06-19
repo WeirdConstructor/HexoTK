@@ -201,12 +201,9 @@ impl Widget {
     pub fn set_pos(&self, pos: Rect) {
         self.emit_redraw_required();
         self.0.borrow_mut().pos       = pos;
-        self.0.borrow_mut().inner_pos = pos;
     }
 
     pub fn pos(&self) -> Rect { self.0.borrow().pos }
-
-    pub fn inner_pos(&self) -> Rect { self.0.borrow().inner_pos }
 
     pub fn style(&self) -> Rc<Style> { self.0.borrow().style.clone() }
 
@@ -293,7 +290,6 @@ pub struct WidgetImpl {
     pub ctrl:       Option<Box<Control>>,
     handle_childs:  Option<Vec<(Widget, Widget, bool, bool)>>,
     pos:            Rect,
-    inner_pos:      Rect,
     layout:         Layout,
     style:          Rc<Style>,
     notifier:       Option<UINotifierRef>,
@@ -322,7 +318,6 @@ impl WidgetImpl {
             ctrl:           Some(Box::new(Control::None)),
             data_gen:       0,
             pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
-            inner_pos:      Rect::from(0.0, 0.0, 0.0, 0.0),
             layout:         Layout::new(),
             notifier:       None,
             drag_widget:    None,
@@ -439,8 +434,6 @@ impl WidgetImpl {
     }
 
     pub fn pos(&self) -> Rect { self.pos }
-
-    pub fn inner_pos(&self) -> Rect { self.inner_pos }
 
     pub fn style(&self) -> &Style { &*self.style }
 

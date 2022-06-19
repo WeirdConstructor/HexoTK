@@ -49,7 +49,7 @@ fn main() {
         style.border_style = BorderStyle::Bevel { corner_offsets: (5.0, 10.0, 20.0, 2.0) };
         style.shadow_offs = (-3.0, 3.0);
 
-        let style_ref = Rc::new(style);
+        let style_ref = Rc::new(style.clone());
 
         let new_txt_btn = { let style_ref = style_ref.clone(); Box::new(move |txt: &str| {
             let btn1 = Widget::new(style_ref.clone());
@@ -354,7 +354,7 @@ fn main() {
         let hexmodel = Rc::new(RefCell::new(TestGrid { }));
         let hexgrid = Widget::new(
             style_ref.with_style_clone(|style| {
-                style.pad_top = 20.0;
+//                style.pad_top = 20.0;
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
             }));
         hexgrid.set_ctrl(Control::HexGrid {
@@ -415,11 +415,25 @@ fn main() {
 
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
         ui.push_frame_script(FrameScript::new());
-//        ui.add_layer_root(wid);
+
+        if false {
+            style.border_style = BorderStyle::Rect;
+            style.border_style = BorderStyle::Hex { offset: 100.0 };
+            style.border_style = BorderStyle::Bevel {
+                corner_offsets: (5.0, 7.0, 3.0, 0.0),
+            };
+            let mstyle = Rc::new(style);
+            let xxx = Widget::new(mstyle.clone());
+            xxx.enable_cache();
+            let my_root = Widget::new(mstyle.clone());
+            xxx.set_ctrl(Control::Rect);
+            xxx.change_layout(|l| l.left = Some(Units::Pixels(10.0)));
+            my_root.add(xxx);
+            ui.add_layer_root(my_root);
+        }
+
         ui.add_layer_root(layer2root.clone());
         ui.add_layer_root(root3);
-//        ui.add_layer_root(col);
-
 
         ui
     }));

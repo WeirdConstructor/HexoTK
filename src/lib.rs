@@ -345,12 +345,20 @@ impl Control {
 
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
-
-        let pos         = w.pos();
-        let inner_pos   = w.inner_pos();
+        let inner_pos   = w.pos(); // Returns position including border and padding!
         let style       = w.style();
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();
+
+        // Calculate the actually used space of this widget:
+        let pos = Rect {
+            x: inner_pos.x - (style.border + style.pad_left),
+            y: inner_pos.y - (style.border + style.pad_top),
+            w: inner_pos.w + (2.0 * style.border + style.pad_left + style.pad_right),
+            h: inner_pos.h + (2.0 * style.border + style.pad_top  + style.pad_bottom),
+        };
+
+        println!("draw {} => {:?} ({:?}) border={}", w.id(), pos, self, style.border);
 
         //d// println!("DRAW {:?}", pos);
 
@@ -385,30 +393,31 @@ impl Control {
         let is_cached   = w.is_cached();
         let mut img_ref = w.take_cache_img();
 
-        let orig_pos = pos;
+//        let orig_pos = pos;
 
-        let inner_pos =
-            if has_default_style {
-                match style.border_style {
-                    BorderStyle::Rect => {
-                        inner_pos.shrink(style.border, style.border)
-                    }
-                    BorderStyle::Hex { offset } => {
-                        inner_pos.shrink(offset * 2.0, style.border)
-                    }
-                    BorderStyle::Bevel { corner_offsets } => {
-                        let max =
-                            corner_offsets.0.max(
-                                corner_offsets.1.max(
-                                    corner_offsets.2.max(
-                                        corner_offsets.3)));
-                        inner_pos.shrink(style.border + max, style.border)
-                    }
-                }
-            } else { inner_pos };
+//        let outer_pos =
+//            if has_default_style {
+//                match style.border_style {
+//                    BorderStyle::Rect => {
+//                        inner_pos
+//                    }
+//                    BorderStyle::Hex { offset } => {
+//                        inner_pos.shrink(offset * 2.0, 0.0)
+//                    }
+//                    BorderStyle::Bevel { corner_offsets } => {
+//                        let max =
+//                            corner_offsets.0.max(
+//                                corner_offsets.1.max(
+//                                    corner_offsets.2.max(
+//                                        corner_offsets.3)));
+//                        inner_pos.shrink(max, 0.0)
+//                    }
+//                }
+//            } else { inner_pos };
 
-        let orig_inner_pos = inner_pos;
+//        let orig_inner_pos = inner_pos;
 
+        // Draw the shadow:
         if has_default_style {
             if    style.shadow_offs.0 > 0.1
                || style.shadow_offs.1 > 0.1
@@ -443,7 +452,7 @@ impl Control {
             }
         }
 
-        let (pos, inner_pos) =
+        let (draw_outer_pos, real_widget_pos, draw_widget_pos) =
             if is_cached {
                 if redraw {
                     if let Some(img) = &img_ref {
@@ -459,37 +468,47 @@ impl Control {
 
                     //d// println!("      start img {} ({}:{})", w.id(), pos.w, pos.h);
                     painter.start_image(img_ref.as_ref().unwrap());
-                    let new_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
+                    let draw_outer_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
                     let (inner_xo, inner_yo) = (
                         inner_pos.x - pos.x,
                         inner_pos.y - pos.y
                     );
-                    let new_inner_pos =
+                    let draw_widget_pos =
                         Rect::from(inner_xo, inner_yo, inner_pos.w, inner_pos.h);
-                    (new_pos, new_inner_pos)
+                    (draw_outer_pos, inner_pos, draw_widget_pos)
                 } else {
-                    (pos, inner_pos)
+                    (pos, inner_pos, inner_pos)
                 }
             } else {
-                (pos, inner_pos)
+                (pos, inner_pos, inner_pos)
             };
+
+        let draw_outer_pos  = draw_outer_pos.clip_wh();
+        let draw_widget_pos = draw_widget_pos.clip_wh();
+        let real_widget_pos = real_widget_pos.clip_wh();
 
         if !is_cached || redraw {
             if has_default_style {
                 match style.border_style {
                     BorderStyle::Rect => {
+                        let pos = draw_outer_pos;
                         if style.border > 0.1 {
                             painter.rect_fill(
-                                border_color, pos.x, pos.y, pos.w, pos.h);
+                                border_color,
+                                pos.x,
+                                pos.y,
+                                pos.w,
+                                pos.h);
                         }
 
+                        let bg_pos = pos.shrink(style.border, style.border);
                         painter.rect_fill(
                             style.bg_color,
-                            inner_pos.x, inner_pos.y,
-                            inner_pos.w, inner_pos.h);
+                            bg_pos.x, bg_pos.y,
+                            bg_pos.w, bg_pos.h);
                     }
                     BorderStyle::Bevel { corner_offsets } => {
-                        let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
+                        let pos = draw_outer_pos.shrink(style.border * 0.5, style.border * 0.5);
                         let mut pt_buf = [(0.0, 0.0); 8];
                         let points = bevel_points(pos, corner_offsets, &mut pt_buf);
                         painter.path_fill(
@@ -502,7 +521,7 @@ impl Control {
                             true);
                     }
                     BorderStyle::Hex { offset } => {
-                        let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
+                        let pos    = draw_outer_pos.shrink(style.border * 0.5, style.border * 0.5);
                         let points = hex_points(pos, offset);
                         painter.path_fill(
                             style.bg_color,
@@ -515,15 +534,6 @@ impl Control {
                     }
                 }
             }
-
-            // We need to apply also padding to the original inner position, or else
-            // the widget will compensate the padding away by comparing these two
-            // positions!
-            let orig_inner_pos = style.apply_padding(orig_inner_pos);
-            let inner_pos      = style.apply_padding(inner_pos);
-
-            let inner_pos      = inner_pos.clip_wh();
-            let orig_inner_pos = orig_inner_pos.clip_wh();
 
             match self {
                 Control::Rect => { },
@@ -541,35 +551,35 @@ impl Control {
 
                     let fs =
                         painter::calc_font_size_from_text(
-                            painter, s, style.font_size, inner_pos.w);
+                            painter, s, style.font_size, draw_widget_pos.w);
 
                     let mut dbg = painter::LblDebugTag::from_id(w.id());
                     dbg.set_offs(
-                        (orig_inner_pos.x - inner_pos.x,
-                         orig_inner_pos.y - inner_pos.y));
+                        (real_widget_pos.x - draw_widget_pos.x,
+                         real_widget_pos.y - draw_widget_pos.y));
 
                     painter.label(
                         fs,
                         align,
                         color,
-                        inner_pos.x,
-                        inner_pos.y,
-                        inner_pos.w,
-                        inner_pos.h,
+                        draw_widget_pos.x,
+                        draw_widget_pos.y,
+                        draw_widget_pos.w,
+                        draw_widget_pos.h,
                         s,
                         dbg.source("label"));
                 },
                 Control::Entry { entry } => {
-                    entry.draw(w, &style, inner_pos, orig_inner_pos, painter);
+                    entry.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
                 },
                 Control::WichText { wt } => {
-                    wt.draw(w, &style, inner_pos, orig_inner_pos, painter);
+                    wt.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
                 },
                 Control::HexKnob { knob } => {
-                    knob.draw(w, &style, inner_pos, orig_inner_pos, painter);
+                    knob.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
                 },
                 Control::HexGrid { grid } => {
-                    grid.draw(w, &style, inner_pos, orig_inner_pos, painter);
+                    grid.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
                 },
             }
         }
@@ -582,7 +592,8 @@ impl Control {
                 }
             }
 
-            painter.draw_image(&img_ref, orig_pos.x, orig_pos.y);
+            println!("DRAW IMAGE AT: {:?}", pos);
+            painter.draw_image(&img_ref, pos.x, pos.y);
             //d// println!("      give img {}", wid_id);
             w.give_cache_img(img_ref);
         }
