@@ -142,4 +142,22 @@ impl Style {
     pub fn color_by_idx(&self, idx: usize) -> (f32, f32, f32) {
         self.colors[idx % self.colors.len()]
     }
+
+    pub fn choose_shadow_color(&self, is_active: bool, is_hovered: bool) -> (f32, f32, f32) {
+        if is_active        { self.active_shadow_color }
+        else if is_hovered  { self.hover_shadow_color }
+        else                { self.shadow_color }
+    }
+
+    pub fn choose_border_color(&self, is_active: bool, is_hovered: bool) -> (f32, f32, f32) {
+        if is_active        { self.active_border_color }
+        else if is_hovered  { self.hover_border_color }
+        else                { self.border_color }
+    }
+
+    pub fn choose_color(&self, is_active: bool, is_hovered: bool) -> (f32, f32, f32) {
+        if is_active        { self.active_color }
+        else if is_hovered  { self.hover_color }
+        else                { self.color }
+    }
 }

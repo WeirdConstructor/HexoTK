@@ -355,12 +355,163 @@ impl Control {
         }
     }
 
+    fn draw_shadow(&mut self, w: &Widget, style: &Style, pos: Rect, painter: &mut Painter) {
+        let is_hovered = w.is_hovered();
+        let is_active  = w.is_active();
+
+        let shadow_color = style.choose_shadow_color(is_active, is_hovered);
+
+        if    style.shadow_offs.0 <= 0.1
+           && style.shadow_offs.1 <= 0.1
+        {
+            return;
+        }
+
+        let (xo, yo) = style.shadow_offs;
+
+        match style.border_style {
+            BorderStyle::Rect => {
+                painter.rect_fill(
+                    shadow_color,
+                    pos.x + xo,
+                    pos.y + yo,
+                    pos.w, pos.h);
+            }
+            BorderStyle::Hex { offset } => {
+                let points = hex_points(pos, offset);
+                painter.path_fill(
+                    shadow_color,
+                    &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
+                    true);
+            }
+            BorderStyle::Bevel { corner_offsets } => {
+                let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
+                let mut pt_buf = [(0.0, 0.0); 8];
+                let points = bevel_points(pos, corner_offsets, &mut pt_buf);
+                painter.path_fill(
+                    shadow_color,
+                    &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
+                    true);
+            }
+        }
+    }
+
+    fn draw_border_and_bg(&mut self, w: &Widget, style: &Style, pos: Rect, painter: &mut Painter) {
+        let is_hovered = w.is_hovered();
+        let is_active  = w.is_active();
+
+        let border_color = style.choose_border_color(is_active, is_hovered);
+
+        match style.border_style {
+            BorderStyle::Rect => {
+                if style.border > 0.1 {
+                    painter.rect_fill(
+                        border_color,
+                        pos.x,
+                        pos.y,
+                        pos.w,
+                        pos.h);
+                }
+
+                let bg_pos = pos.shrink(style.border, style.border);
+                painter.rect_fill(
+                    style.bg_color,
+                    bg_pos.x, bg_pos.y,
+                    bg_pos.w, bg_pos.h);
+            }
+            BorderStyle::Bevel { corner_offsets } => {
+                let pos = pos.shrink(style.border * 0.5, style.border * 0.5);
+                let mut pt_buf = [(0.0, 0.0); 8];
+                let points = bevel_points(pos, corner_offsets, &mut pt_buf);
+                painter.path_fill(
+                    style.bg_color,
+                    &mut points.iter().copied(),
+                    true);
+                painter.path_stroke(
+                    style.border, border_color,
+                    &mut points.iter().copied(),
+                    true);
+            }
+            BorderStyle::Hex { offset } => {
+                let pos = pos.shrink(style.border * 0.5, style.border * 0.5);
+                let points = hex_points(pos, offset);
+                painter.path_fill(
+                    style.bg_color,
+                    &mut points.iter().copied(),
+                    true);
+                painter.path_stroke(
+                    style.border, border_color,
+                    &mut points.iter().copied(),
+                    true);
+            }
+        }
+    }
+
+    fn dispatch_draw_control(
+        &mut self, w: &Widget,
+        style: &Style,
+        draw_widget_pos: Rect,
+        real_widget_pos: Rect,
+        painter: &mut Painter)
+    {
+        let is_hovered = w.is_hovered();
+        let is_active  = w.is_active();
+        let color = style.choose_color(is_active, is_hovered);
+
+        match self {
+            Control::Rect => { },
+            Control::None => { },
+            Control::Button { label } | Control::Label { label } => {
+                let mut buf : [u8; 128] = [0; 128];
+                let s = label.fmt(&mut buf[..]);
+
+                let align =
+                    match style.text_align {
+                        style::Align::Left   => -1,
+                        style::Align::Center => 0,
+                        style::Align::Right  => 1,
+                    };
+
+                let fs =
+                    painter::calc_font_size_from_text(
+                        painter, s, style.font_size, draw_widget_pos.w);
+
+                let mut dbg = painter::LblDebugTag::from_id(w.id());
+                dbg.set_offs(
+                    (real_widget_pos.x - draw_widget_pos.x,
+                     real_widget_pos.y - draw_widget_pos.y));
+
+                painter.label(
+                    fs,
+                    align,
+                    color,
+                    draw_widget_pos.x,
+                    draw_widget_pos.y,
+                    draw_widget_pos.w,
+                    draw_widget_pos.h,
+                    s,
+                    dbg.source("label"));
+            },
+            Control::Entry { entry } => {
+                entry.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
+            Control::WichText { wt } => {
+                wt.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
+            Control::HexKnob { knob } => {
+                knob.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
+            Control::HexGrid { grid } => {
+                grid.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
+        }
+    }
+
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
-        let pos         = w.pos(); // Returns position including border and padding!
-        let style       = w.style();
-        let is_hovered  = w.is_hovered();
-        let is_active   = w.is_active();
+        let pos               = w.pos(); // Returns position including border and padding!
+        let style             = w.style();
+        let has_default_style = self.has_default_style();
 
         // Calculate the actually used space of this widget:
         let inner_pos_border =
@@ -372,247 +523,88 @@ impl Control {
             h: pos.h - (2.0 * inner_pos_border + style.pad_top  + style.pad_bottom),
         };
 
-        println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), inner_pos, pos, self, style.border);
-
+        //d// println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), inner_pos, pos, self, style.border);
         //d// println!("DRAW {:?}", pos);
-
-        let has_default_style = self.has_default_style();
-
-        let shadow_color =
-            if is_active        { style.active_shadow_color }
-            else if is_hovered  { style.hover_shadow_color }
-            else                { style.shadow_color };
-
-        let border_color =
-            if is_active        { style.active_border_color }
-            else if is_hovered  { style.hover_border_color }
-            else                { style.border_color };
-
-        let color =
-            if is_active        { style.active_color }
-            else if is_hovered  { style.hover_color }
-            else                { style.color };
 
         let is_cached   = w.is_cached();
         let mut img_ref = w.take_cache_img();
 
-//        let orig_pos = pos;
-
-//        let outer_pos =
-//            if has_default_style {
-//                match style.border_style {
-//                    BorderStyle::Rect => {
-//                        inner_pos
-//                    }
-//                    BorderStyle::Hex { offset } => {
-//                        inner_pos.shrink(offset * 2.0, 0.0)
-//                    }
-//                    BorderStyle::Bevel { corner_offsets } => {
-//                        let max =
-//                            corner_offsets.0.max(
-//                                corner_offsets.1.max(
-//                                    corner_offsets.2.max(
-//                                        corner_offsets.3)));
-//                        inner_pos.shrink(max, 0.0)
-//                    }
-//                }
-//            } else { inner_pos };
-
-//        let orig_inner_pos = inner_pos;
-
         // Draw the shadow:
         if has_default_style {
-            if    style.shadow_offs.0 > 0.1
-               || style.shadow_offs.1 > 0.1
-            {
-                let (xo, yo) = style.shadow_offs;
-
-                match style.border_style {
-                    BorderStyle::Rect => {
-                        painter.rect_fill(
-                            shadow_color,
-                            pos.x + xo,
-                            pos.y + yo,
-                            pos.w, pos.h);
-                    }
-                    BorderStyle::Hex { offset } => {
-                        let points = hex_points(pos, offset);
-                        painter.path_fill(
-                            shadow_color,
-                            &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
-                            true);
-                    }
-                    BorderStyle::Bevel { corner_offsets } => {
-                        let pos    = pos.shrink(style.border * 0.5, style.border * 0.5);
-                        let mut pt_buf = [(0.0, 0.0); 8];
-                        let points = bevel_points(pos, corner_offsets, &mut pt_buf);
-                        painter.path_fill(
-                            shadow_color,
-                            &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
-                            true);
-                    }
-                }
-            }
+            self.draw_shadow(w, &style, pos, painter);
         }
 
         let (draw_outer_pos, real_widget_pos, draw_widget_pos) =
-            if is_cached {
-                if redraw {
-                    if let Some(img) = &img_ref {
-                        if    img.w() != pos.w.floor()
-                           || img.h() != pos.h.floor()
-                        {
-                            img_ref = Some(painter.new_image(pos.w, pos.h));
-                        }
-                    } else {
+            if is_cached && redraw {
+                if let Some(img) = &img_ref {
+                    if    img.w() != pos.w.floor()
+                       || img.h() != pos.h.floor()
+                    {
                         img_ref = Some(painter.new_image(pos.w, pos.h));
                     }
+                } else {
+                    img_ref = Some(painter.new_image(pos.w, pos.h));
+                }
 //                    img_ref = Some(painter.new_image(pos.w, pos.h));
 
-                    //d// println!("      start img {} ({}:{})", w.id(), pos.w, pos.h);
-                    painter.start_image(img_ref.as_ref().unwrap());
-                    let draw_outer_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
-                    let (inner_xo, inner_yo) = (
-                        inner_pos.x - pos.x,
-                        inner_pos.y - pos.y
-                    );
-                    let draw_widget_pos =
-                        Rect::from(inner_xo, inner_yo, inner_pos.w, inner_pos.h);
-                    (draw_outer_pos, inner_pos, draw_widget_pos)
-                } else {
-                    (pos, inner_pos, inner_pos)
-                }
+                //d// println!("      start img {} ({}:{})", w.id(), pos.w, pos.h);
+                painter.start_image(img_ref.as_ref().unwrap());
+                let draw_outer_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
+                let (inner_xo, inner_yo) = (
+                    inner_pos.x - pos.x,
+                    inner_pos.y - pos.y
+                );
+                let draw_widget_pos =
+                    Rect::from(inner_xo, inner_yo, inner_pos.w, inner_pos.h);
+                (draw_outer_pos, inner_pos, draw_widget_pos)
             } else {
                 (pos, inner_pos, inner_pos)
             };
 
-        let draw_outer_pos  = draw_outer_pos.clip_wh();
+        let draw_outer_pos      = draw_outer_pos.clip_wh();
         let mut draw_widget_pos = draw_widget_pos.clip_wh();
         let mut real_widget_pos = real_widget_pos.clip_wh();
 
         real_widget_pos = style.apply_padding(real_widget_pos);
         draw_widget_pos = style.apply_padding(draw_widget_pos);
 
-        if !is_cached || redraw {
-            if has_default_style {
-                match style.border_style {
-                    BorderStyle::Rect => {
-                        let pos = draw_outer_pos;
-                        if style.border > 0.1 {
-                            painter.rect_fill(
-                                border_color,
-                                pos.x,
-                                pos.y,
-                                pos.w,
-                                pos.h);
-                        }
-
-                        let bg_pos = pos.shrink(style.border, style.border);
-                        painter.rect_fill(
-                            style.bg_color,
-                            bg_pos.x, bg_pos.y,
-                            bg_pos.w, bg_pos.h);
-                    }
-                    BorderStyle::Bevel { corner_offsets } => {
-                        let pos = draw_outer_pos.shrink(style.border * 0.5, style.border * 0.5);
-                        let mut pt_buf = [(0.0, 0.0); 8];
-                        let points = bevel_points(pos, corner_offsets, &mut pt_buf);
-                        painter.path_fill(
-                            style.bg_color,
-                            &mut points.iter().copied(),
-                            true);
-                        painter.path_stroke(
-                            style.border, border_color,
-                            &mut points.iter().copied(),
-                            true);
-
-                        draw_widget_pos =
-                            draw_widget_pos
-                            .crop_left(corner_offsets.0.max(corner_offsets.2))
-                            .crop_right(corner_offsets.1.max(corner_offsets.3));
-                        real_widget_pos =
-                            real_widget_pos
-                            .crop_left(corner_offsets.0.max(corner_offsets.2))
-                            .crop_right(corner_offsets.1.max(corner_offsets.3));
-                    }
-                    BorderStyle::Hex { offset } => {
-                        let pos    = draw_outer_pos.shrink(style.border * 0.5, style.border * 0.5);
-                        let points = hex_points(pos, offset);
-                        painter.path_fill(
-                            style.bg_color,
-                            &mut points.iter().copied(),
-                            true);
-                        painter.path_stroke(
-                            style.border, border_color,
-                            &mut points.iter().copied(),
-                            true);
-
-                        draw_widget_pos = draw_widget_pos.shrink(offset, 0.0);
-                        real_widget_pos = real_widget_pos.shrink(offset, 0.0);
-                    }
-                }
+        // Clip away some part that is taken away by the Hex or Bevel
+        // of the border, so the widgets don't draw outside by accident.
+        // Ideally we would clip/scissor the border shape away in the painter,
+        // but the painter does not support this.
+        match style.border_style {
+            BorderStyle::Rect => { }
+            BorderStyle::Bevel { corner_offsets } => {
+                draw_widget_pos =
+                    draw_widget_pos
+                    .crop_left(corner_offsets.0.max(corner_offsets.2))
+                    .crop_right(corner_offsets.1.max(corner_offsets.3));
+                real_widget_pos =
+                    real_widget_pos
+                    .crop_left(corner_offsets.0.max(corner_offsets.2))
+                    .crop_right(corner_offsets.1.max(corner_offsets.3));
             }
-
-            match self {
-                Control::Rect => { },
-                Control::None => { },
-                Control::Button { label } | Control::Label { label } => {
-                    let mut buf : [u8; 128] = [0; 128];
-                    let s = label.fmt(&mut buf[..]);
-
-                    let align =
-                        match style.text_align {
-                            style::Align::Left   => -1,
-                            style::Align::Center => 0,
-                            style::Align::Right  => 1,
-                        };
-
-                    let fs =
-                        painter::calc_font_size_from_text(
-                            painter, s, style.font_size, draw_widget_pos.w);
-
-                    let mut dbg = painter::LblDebugTag::from_id(w.id());
-                    dbg.set_offs(
-                        (real_widget_pos.x - draw_widget_pos.x,
-                         real_widget_pos.y - draw_widget_pos.y));
-
-                    painter.label(
-                        fs,
-                        align,
-                        color,
-                        draw_widget_pos.x,
-                        draw_widget_pos.y,
-                        draw_widget_pos.w,
-                        draw_widget_pos.h,
-                        s,
-                        dbg.source("label"));
-                },
-                Control::Entry { entry } => {
-                    entry.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
-                },
-                Control::WichText { wt } => {
-                    wt.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
-                },
-                Control::HexKnob { knob } => {
-                    knob.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
-                },
-                Control::HexGrid { grid } => {
-                    grid.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
-                },
+            BorderStyle::Hex { offset } => {
+                draw_widget_pos = draw_widget_pos.shrink(offset, 0.0);
+                real_widget_pos = real_widget_pos.shrink(offset, 0.0);
             }
         }
 
-        if let Some(img_ref) = img_ref {
-            if is_cached {
-                if redraw {
-                    //d// println!("      finish img {}", wid_id);
-                    painter.finish_image();
-                }
+        if !is_cached || redraw {
+            if has_default_style {
+                self.draw_border_and_bg(w, &style, draw_outer_pos, painter);
             }
 
-            println!("DRAW IMAGE AT: {:?}", pos);
+            self.dispatch_draw_control(
+                w, &style, draw_widget_pos, real_widget_pos, painter);
+        }
+
+        if let Some(img_ref) = img_ref {
+            if is_cached && redraw {
+                painter.finish_image();
+            }
+
             painter.draw_image(&img_ref, pos.x, pos.y);
-            //d// println!("      give img {}", wid_id);
             w.give_cache_img(img_ref);
         }
     }

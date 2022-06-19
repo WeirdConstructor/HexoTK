@@ -426,10 +426,8 @@ impl Node<'_> for WidgetId {
         let w = store.borrow().get(self.id)?;
         let style = w.style();
         if w.has_default_style() {
-            println!("BORDER LEFT FOR {} = {}", w.id(), style.border);
             Some(Units::Pixels(style.border + style.pad_left))
         } else {
-            println!("NO BORDER LEFT FOR {}", w.id());
             Some(Units::Pixels(style.pad_left))
         }
     }
