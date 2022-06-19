@@ -110,6 +110,10 @@ impl Rect {
         }
     }
 
+    pub fn crop(&self, left: f32, right: f32, top: f32, bottom: f32) -> Self {
+        self.crop_left(left).crop_right(right).crop_top(top).crop_bottom(bottom)
+    }
+
     pub fn shrink(&self, delta_x: f32, delta_y: f32) -> Self {
         Self {
             x: self.x + delta_x,

@@ -302,6 +302,18 @@ fn hex_points(pos: Rect, offset: f32) -> [(f32, f32); 6] {
 }
 
 impl Control {
+    pub fn has_default_style(&self) -> bool {
+        match self {
+            Control::Rect            => { true },
+            Control::Label    { .. } => { true },
+            Control::Button   { .. } => { true },
+            Control::WichText { .. } => { true },
+            Control::Entry    { .. } => { true },
+            Control::HexKnob  { .. } => { true },
+            Control::HexGrid  { .. } => { true },
+            Control::None            => { false },
+        }
+    }
     pub fn draw_frame(&mut self, _w: &Widget, _painter: &mut Painter) {
         match self {
             Control::Rect => { },
@@ -345,35 +357,26 @@ impl Control {
 
     pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
 //        println!("     [draw widget id: {}]", w.id());
-        let inner_pos   = w.pos(); // Returns position including border and padding!
+        let pos         = w.pos(); // Returns position including border and padding!
         let style       = w.style();
         let is_hovered  = w.is_hovered();
         let is_active   = w.is_active();
 
         // Calculate the actually used space of this widget:
-        let pos = Rect {
-            x: inner_pos.x - (style.border + style.pad_left),
-            y: inner_pos.y - (style.border + style.pad_top),
-            w: inner_pos.w + (2.0 * style.border + style.pad_left + style.pad_right),
-            h: inner_pos.h + (2.0 * style.border + style.pad_top  + style.pad_bottom),
+        let inner_pos_border =
+            if self.has_default_style() { style.border } else { 0.0 };
+        let inner_pos = Rect {
+            x: pos.x + (inner_pos_border + style.pad_left),
+            y: pos.y + (inner_pos_border + style.pad_top),
+            w: pos.w - (2.0 * inner_pos_border + style.pad_left + style.pad_right),
+            h: pos.h - (2.0 * inner_pos_border + style.pad_top  + style.pad_bottom),
         };
 
-        println!("draw {} => {:?} ({:?}) border={}", w.id(), pos, self, style.border);
+        println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), inner_pos, pos, self, style.border);
 
         //d// println!("DRAW {:?}", pos);
 
-        let has_default_style =
-            match self {
-                Control::Rect            => { true },
-                Control::Label    { .. } => { true },
-                Control::Button   { .. } => { true },
-                Control::WichText { .. } => { true },
-                Control::Entry    { .. } => { true },
-                Control::HexKnob  { .. } => { true },
-                Control::HexGrid  { .. } => { true },
-                Control::None            => { false },
-            };
-
+        let has_default_style = self.has_default_style();
 
         let shadow_color =
             if is_active        { style.active_shadow_color }
@@ -484,8 +487,11 @@ impl Control {
             };
 
         let draw_outer_pos  = draw_outer_pos.clip_wh();
-        let draw_widget_pos = draw_widget_pos.clip_wh();
-        let real_widget_pos = real_widget_pos.clip_wh();
+        let mut draw_widget_pos = draw_widget_pos.clip_wh();
+        let mut real_widget_pos = real_widget_pos.clip_wh();
+
+        real_widget_pos = style.apply_padding(real_widget_pos);
+        draw_widget_pos = style.apply_padding(draw_widget_pos);
 
         if !is_cached || redraw {
             if has_default_style {
@@ -519,6 +525,15 @@ impl Control {
                             style.border, border_color,
                             &mut points.iter().copied(),
                             true);
+
+                        draw_widget_pos =
+                            draw_widget_pos
+                            .crop_left(corner_offsets.0.max(corner_offsets.2))
+                            .crop_right(corner_offsets.1.max(corner_offsets.3));
+                        real_widget_pos =
+                            real_widget_pos
+                            .crop_left(corner_offsets.0.max(corner_offsets.2))
+                            .crop_right(corner_offsets.1.max(corner_offsets.3));
                     }
                     BorderStyle::Hex { offset } => {
                         let pos    = draw_outer_pos.shrink(style.border * 0.5, style.border * 0.5);
@@ -531,6 +546,9 @@ impl Control {
                             style.border, border_color,
                             &mut points.iter().copied(),
                             true);
+
+                        draw_widget_pos = draw_widget_pos.shrink(offset, 0.0);
+                        real_widget_pos = real_widget_pos.shrink(offset, 0.0);
                     }
                 }
             }

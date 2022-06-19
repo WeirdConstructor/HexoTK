@@ -425,22 +425,40 @@ impl Node<'_> for WidgetId {
     fn border_left(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
         let style = w.style();
-        Some(Units::Pixels(style.border + style.pad_left))
+        if w.has_default_style() {
+            println!("BORDER LEFT FOR {} = {}", w.id(), style.border);
+            Some(Units::Pixels(style.border + style.pad_left))
+        } else {
+            println!("NO BORDER LEFT FOR {}", w.id());
+            Some(Units::Pixels(style.pad_left))
+        }
     }
     fn border_right(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
         let style = w.style();
-        Some(Units::Pixels(style.border + style.pad_right))
+        if w.has_default_style() {
+            Some(Units::Pixels(style.border + style.pad_right))
+        } else {
+            Some(Units::Pixels(style.pad_right))
+        }
     }
     fn border_top(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
         let style = w.style();
-        Some(Units::Pixels(style.border + style.pad_top))
+        if w.has_default_style() {
+            Some(Units::Pixels(style.border + style.pad_top))
+        } else {
+            Some(Units::Pixels(style.pad_top))
+        }
     }
     fn border_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
         let w = store.borrow().get(self.id)?;
         let style = w.style();
-        Some(Units::Pixels(style.border + style.pad_bottom))
+        if w.has_default_style() {
+            Some(Units::Pixels(style.border + style.pad_bottom))
+        } else {
+            Some(Units::Pixels(style.pad_bottom))
+        }
     }
 }
 

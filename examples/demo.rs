@@ -139,8 +139,8 @@ fn main() {
         let mut wstyle = Style::new();
         wstyle.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
         wstyle.font_size = 15.0;
-        wstyle.pad_left = 15.0;
-        wstyle.pad_top = 15.0;
+        wstyle.pad_left = 5.0;
+        wstyle.pad_top = 30.0;
 
         let wtd = Rc::new(WichTextSimpleDataStore::new());
         wtd.set_data_source("XXX", Rc::new(vec![
@@ -356,6 +356,7 @@ fn main() {
             style_ref.with_style_clone(|style| {
 //                style.pad_top = 20.0;
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+                style.border_style = BorderStyle::Hex { offset: 50.0 };
             }));
         hexgrid.set_ctrl(Control::HexGrid {
             grid: Box::new(HexGrid::new(hexmodel)),
@@ -398,8 +399,8 @@ fn main() {
         col.add(lbl1);
 
         let wtwid_row = Widget::new(style_ref.clone());
-        wtwid_row.add(hexgrid);
-        wtwid_row.add(wtwid);
+        wtwid_row.add(hexgrid.clone());
+        wtwid_row.add(wtwid.clone());
         wtwid_row.change_layout(|layout| {
             layout.layout_type = Some(LayoutType::Row);
             layout.height = Some(Units::Percentage(60.0));
@@ -431,6 +432,22 @@ fn main() {
             my_root.add(xxx);
             ui.add_layer_root(my_root);
         }
+
+        let mytestroot = Widget::new(style_ref.clone());
+
+//        hexgrid.enable_cache();
+//        mytestroot.enable_cache();
+//            hexgrid.change_layout(|l| l.left = Some(Units::Pixels(10.0)));
+//        mytestroot.add(hexgrid);
+//        mytestroot.add(wtwid.clone());
+
+//        ui.add_layer_root(mytestroot.clone());
+
+
+//        println!("mytestroot id={}", mytestroot.id());
+//        println!("wtwid id={}", wtwid.id());
+
+
 
         ui.add_layer_root(layer2root.clone());
         ui.add_layer_root(root3);

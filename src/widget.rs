@@ -188,6 +188,8 @@ impl Widget {
         self.0.borrow_mut().set_ctrl(ctrl)
     }
 
+    pub fn has_default_style(&self) -> bool { self.0.borrow().has_default_style() }
+
     pub fn take_ctrl(&self) -> Option<Box<Control>> {
         self.0.borrow_mut().ctrl.take()
     }
@@ -427,6 +429,10 @@ impl WidgetImpl {
 
     pub fn set_ctrl(&mut self, ctrl: Control) {
         self.ctrl = Some(Box::new(ctrl));
+    }
+
+    pub fn has_default_style(&self) -> bool {
+        self.ctrl.as_ref().map(|c| c.has_default_style()).unwrap_or(false)
     }
 
     pub fn can_hover(&self) -> bool {
