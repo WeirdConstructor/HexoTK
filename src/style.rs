@@ -146,7 +146,7 @@ impl Style {
             active_color:           UI_HLIGHT_CLR,
             text_align:             Align::Center,
             text_valign:            VAlign::Middle,
-            font_size:              12.0,
+            font_size:              14.0,
             colors,
         }
     }
