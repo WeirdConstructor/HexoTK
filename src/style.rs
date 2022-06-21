@@ -4,7 +4,7 @@ use crate::Rect;
 use std::rc::Rc;
 
 pub const UI_BOX_H          : f32 = 200.0;
-pub const UI_BOX_BORD       : f32 =   3.0;
+pub const UI_BOX_BORD       : f32 =   2.0;
 pub const UI_MARGIN         : f32 =   4.0;
 pub const UI_PADDING        : f32 =   6.0;
 pub const UI_ELEM_TXT_H     : f32 =  16.0;
@@ -28,6 +28,53 @@ pub const UI_HLIGHT2_CLR          : (f32, f32, f32) = hxclr!(0xbcf9cd); // b5c41
 pub const UI_SELECT_CLR           : (f32, f32, f32) = hxclr!(0xd73988); // 0xdc1821);
 pub const UI_INACTIVE_CLR         : (f32, f32, f32) = hxclr!(0x6f8782);
 pub const UI_INACTIVE2_CLR        : (f32, f32, f32) = hxclr!(0xa6dbd0);
+
+pub fn get_ui_colors() -> Vec<(&'static str, (f32, f32, f32))> {
+    vec![
+        ("UI_BG_CLR",          UI_BG_CLR),
+        ("UI_BG2_CLR",         UI_BG2_CLR),
+        ("UI_BG3_CLR",         UI_BG3_CLR),
+        ("UI_TXT_CLR",         UI_TXT_CLR),
+        ("UI_BORDER_CLR",      UI_BORDER_CLR),
+        ("UI_LBL_BG_CLR",      UI_LBL_BG_CLR),
+        ("UI_LBL_BG_ALT_CLR",  UI_LBL_BG_ALT_CLR),
+        ("UI_ACCENT_CLR",      UI_ACCENT_CLR),
+        ("UI_ACCENT_DARK_CLR", UI_ACCENT_DARK_CLR),
+        ("UI_ACCENT_BG1_CLR",  UI_ACCENT_BG1_CLR),
+        ("UI_ACCENT_BG2_CLR",  UI_ACCENT_BG2_CLR),
+        ("UI_PRIM_CLR",        UI_PRIM_CLR),
+        ("UI_PRIM2_CLR",       UI_PRIM2_CLR),
+        ("UI_HLIGHT_CLR",      UI_HLIGHT_CLR),
+        ("UI_HLIGHT2_CLR",     UI_HLIGHT2_CLR),
+        ("UI_SELECT_CLR",      UI_SELECT_CLR),
+        ("UI_INACTIVE_CLR",    UI_INACTIVE_CLR),
+        ("UI_INACTIVE2_CLR",   UI_INACTIVE2_CLR),
+    ]
+}
+
+pub fn get_standard_colors() -> Vec<(f32, f32, f32)> {
+    vec![
+        hxclr!(0x922f93), // 0
+        hxclr!(0x862b37),
+        hxclr!(0xb45745),
+        hxclr!(0x835933),
+        hxclr!(0xa69b64),
+        hxclr!(0xbec8a6),
+        hxclr!(0x346c38), // 6
+        hxclr!(0x1fb349),
+        hxclr!(0x4cdb80),
+        hxclr!(0x59bca3),
+        hxclr!(0x228f9d),
+        hxclr!(0x03b5e7),
+        hxclr!(0x3b5eca), // 12
+        hxclr!(0x594fa1),
+        hxclr!(0xc2b2eb),
+        hxclr!(0xac70fa),
+        hxclr!(0x9850a9),
+        hxclr!(0xdc4fc1), // 17
+        hxclr!(0x03fdcb), // 18
+    ]
+}
 
 #[derive(Debug, Clone)]
 pub enum Align {
@@ -77,27 +124,7 @@ pub struct Style {
 
 impl Style {
     pub fn new() -> Self {
-        let colors = vec![
-            hxclr!(0x922f93), // 0
-            hxclr!(0x862b37),
-            hxclr!(0xb45745),
-            hxclr!(0x835933),
-            hxclr!(0xa69b64),
-            hxclr!(0xbec8a6),
-            hxclr!(0x346c38), // 6
-            hxclr!(0x1fb349),
-            hxclr!(0x4cdb80),
-            hxclr!(0x59bca3),
-            hxclr!(0x228f9d),
-            hxclr!(0x03b5e7),
-            hxclr!(0x3b5eca), // 12
-            hxclr!(0x594fa1),
-            hxclr!(0xc2b2eb),
-            hxclr!(0xac70fa),
-            hxclr!(0x9850a9),
-            hxclr!(0xdc4fc1), // 17
-            hxclr!(0x03fdcb), // 18
-        ];
+        let colors = get_standard_colors();
 
         Self {
             bg_color:               UI_BG_CLR,

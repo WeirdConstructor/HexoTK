@@ -22,29 +22,8 @@ macro_rules! hxclr {
     }
 }
 
-pub const HEX_CLRS : [(f32, f32, f32); 18] = [
-    hxclr!(0x922f93), // 0
-    hxclr!(0x862b37),
-    hxclr!(0xb45745),
-    hxclr!(0x835933),
-    hxclr!(0xa69b64),
-    hxclr!(0xbec8a6),
-    hxclr!(0x346c38), // 6
-    hxclr!(0x1fb349),
-    hxclr!(0x4cdb80),
-    hxclr!(0x59bca3),
-    hxclr!(0x228f9d),
-    hxclr!(0x03b5e7),
-    hxclr!(0x3b5eca), // 12
-    hxclr!(0x594fa1),
-    hxclr!(0xc2b2eb),
-    hxclr!(0xac70fa),
-    hxclr!(0x9850a9),
-    hxclr!(0xdc4fc1), // 17
-];
-
-pub fn hex_color_idx2clr(idx: u8) -> (f32, f32, f32) {
-    HEX_CLRS[idx as usize % HEX_CLRS.len()]
+pub fn hex_color_idx2clr(style: &Style, idx: u8) -> (f32, f32, f32) {
+    style.colors[idx as usize % style.colors.len()]
 }
 
 pub const UI_GRID_TXT_CENTER_CLR    : (f32, f32, f32) = UI_PRIM_CLR;
@@ -555,7 +534,7 @@ impl HexGrid {
     }
 
 //    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
-    pub fn draw(&mut self, w: &Widget, _style: &Style, pos: Rect,
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect,
                 real_pos: Rect, p: &mut Painter)
     {
         let is_hovered = w.is_hovered();
@@ -646,7 +625,7 @@ impl HexGrid {
                     } else if model.cell_empty(xi, yi) {
                         (3.0, UI_GRID_EMPTY_BORDER_CLR)
                     } else {
-                        (3.0, hex_color_idx2clr(model.cell_color(xi, yi)))
+                        (3.0, hex_color_idx2clr(style, model.cell_color(xi, yi)))
                     };
 
                 p.translate(shift_x, shift_y);
