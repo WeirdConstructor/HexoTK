@@ -365,7 +365,7 @@ fn main() {
             move |_ctx, _wid, ev| {
                 println!("Drop Accept query!");
                 if let EvPayload::DropAccept(rc) = &ev.data {
-                    *rc.borrow_mut() = true;
+                    rc.borrow_mut().1 = true;
                 }
             }
         });

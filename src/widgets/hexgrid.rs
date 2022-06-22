@@ -135,9 +135,6 @@ pub trait HexGridModel {
         -> Option<(&'a str, HexEdge)>;
 
     fn get_generation(&self) -> u64;
-
-//    fn cell_click(&mut self, x: usize, y: usize, btn: MButton);
-//    fn cell_drag(&mut self, x: usize, y: usize, x2: usize, y2: usize, btn: MButton);
 }
 
 fn hex_size2wh(size: f32) -> (f32, f32) {
@@ -440,7 +437,7 @@ impl HexGrid {
                                && start_tile_pos.1 >= 0
                             {
                                 out_events.push((w.id(), Event {
-                                    name: "drag".to_string(),
+                                    name: "hex_drag".to_string(),
                                     data: EvPayload::HexGridDrag {
                                         x_src: start_tile_pos.0 as usize,
                                         y_src: start_tile_pos.1 as usize,

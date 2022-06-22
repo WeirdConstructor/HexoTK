@@ -198,7 +198,7 @@ impl UI {
             auto_hide_queue:    vec![],
             drop_query_ev: Event {
                 name: "drop_query".to_string(),
-                data: EvPayload::DropAccept(Rc::new(RefCell::new(false))),
+                data: EvPayload::DropAccept(Rc::new(RefCell::new((Rc::new(RefCell::new(Box::new(0))), false)))),
             },
             last_hover_id: 0,
             hover_ev: Event {
@@ -488,9 +488,13 @@ impl UI {
                 // widget we query again. For this we pass a shared reference
                 // for a flag to the widget "drop_query" event handler.
 
+                let user_data = self.drag.userdata.clone();
+                let mut old_ud = None;
+
                 let ev = &self.drop_query_ev;
                 if let EvPayload::DropAccept(rc) = &ev.data {
-                    *rc.borrow_mut() = false;
+                    old_ud = Some(rc.borrow().0.clone());
+                    *rc.borrow_mut() = (user_data.unwrap(), false);
                 }
 
                 if let Some(widget) = self.widgets.borrow().get(*hover_id) {
@@ -502,7 +506,8 @@ impl UI {
                 self.drag.query_accept = false;
 
                 if let EvPayload::DropAccept(rc) = &ev.data {
-                    if *rc.borrow_mut() {
+                    rc.borrow_mut().0 = old_ud.expect("old dummy userdata");
+                    if rc.borrow_mut().1 {
                         self.drag.query_accept = true;
                     }
                 }
