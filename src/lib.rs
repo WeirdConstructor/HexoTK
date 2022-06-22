@@ -316,8 +316,8 @@ impl Control {
     }
     pub fn draw_frame(&mut self, _w: &Widget, _painter: &mut Painter) {
         match self {
-            Control::Rect => { },
-            Control::None => { },
+            Control::Rect            => { },
+            Control::None            => { },
             Control::Button   { .. } => { },
             Control::Label    { .. } => { },
             Control::WichText { .. } => { },
@@ -327,11 +327,24 @@ impl Control {
         }
     }
 
+    pub fn can_show_hover(&self) -> bool {
+        match self {
+            Control::None            => false,
+            Control::Rect            => false,
+            Control::Label    { .. } => false,
+            Control::Button   { .. } => true,
+            Control::WichText { .. } => true,
+            Control::Entry    { .. } => true,
+            Control::HexKnob  { .. } => true,
+            Control::HexGrid  { .. } => true,
+        }
+    }
+
     pub fn can_hover(&self) -> bool {
         match self {
-            Control::Rect => false,
-            Control::None => false,
-            Control::Label    { .. } => false,
+            Control::None            => false,
+            Control::Rect            => true,
+            Control::Label    { .. } => true,
             Control::Button   { .. } => true,
             Control::WichText { .. } => true,
             Control::Entry    { .. } => true,
@@ -356,7 +369,7 @@ impl Control {
     }
 
     fn draw_shadow(&mut self, w: &Widget, style: &Style, pos: Rect, painter: &mut Painter) {
-        let is_hovered = w.is_hovered();
+        let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active  = w.is_active();
 
         let shadow_color = style.choose_shadow_color(is_active, is_hovered);
@@ -397,9 +410,8 @@ impl Control {
     }
 
     fn draw_border_and_bg(&mut self, w: &Widget, style: &Style, pos: Rect, painter: &mut Painter) {
-        let is_hovered = w.is_hovered();
+        let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active  = w.is_active();
-
         let border_color = style.choose_border_color(is_active, is_hovered);
 
         match style.border_style {
@@ -454,7 +466,7 @@ impl Control {
         real_widget_pos: Rect,
         painter: &mut Painter)
     {
-        let is_hovered = w.is_hovered();
+        let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active  = w.is_active();
         let color = style.choose_color(is_active, is_hovered);
 

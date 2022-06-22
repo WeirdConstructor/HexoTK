@@ -178,6 +178,10 @@ impl Widget {
         self.0.borrow().is_hovered()
     }
 
+    pub fn does_show_hover(&self) -> bool {
+        self.0.borrow().does_show_hover()
+    }
+
     pub fn id(&self) -> usize { self.0.borrow().id() }
 
     pub fn check_data_change(&self) -> bool {
@@ -298,6 +302,7 @@ pub struct WidgetImpl {
     data_gen:       u64,
     drag_widget:    Option<Widget>,
     auto_hide:      bool,
+    show_hover:     bool,
 
     cached:         bool,
     cache_img:      Option<ImgRef>,
@@ -326,6 +331,7 @@ impl WidgetImpl {
             cached:         false,
             cache_img:      None,
             auto_hide:      false,
+            show_hover:     false,
             style,
         }
     }
@@ -414,6 +420,8 @@ impl WidgetImpl {
         self.id == self.notifier.as_ref().map(|n| n.hover()).unwrap_or(0)
     }
 
+    pub fn does_show_hover(&self) -> bool { self.show_hover }
+
     pub fn id(&self) -> usize { self.id }
 
     pub fn check_data_change(&mut self) -> bool {
@@ -428,6 +436,7 @@ impl WidgetImpl {
     }
 
     pub fn set_ctrl(&mut self, ctrl: Control) {
+        self.show_hover = ctrl.can_show_hover();
         self.ctrl = Some(Box::new(ctrl));
     }
 

@@ -724,7 +724,8 @@ impl WindowUI for UI {
         if self.last_hover_id != new_hover_id {
             self.last_hover_id = new_hover_id;
             if let Some(widget) = self.widgets.borrow().get(new_hover_id) {
-                widget_handle_event(&widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
+                widget_handle_event(
+                    &widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
             }
         }
 
