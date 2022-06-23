@@ -421,11 +421,6 @@ impl<'a, 'b> Painter<'a, 'b> {
         self.canvas.stroke_path(&mut p, paint);
     }
 
-    #[allow(dead_code)]
-    pub fn rect_stroke_r(&mut self, width: f32, color: (f32, f32, f32), rect: Rect) {
-        self.rect_stroke(width, color, rect.x, rect.y, rect.w, rect.h)
-    }
-
     pub fn rect_fill_r(&mut self, color: (f32, f32, f32), rect: Rect) {
         self.rect_fill(color, rect.x, rect.y, rect.w, rect.h)
     }
@@ -434,6 +429,10 @@ impl<'a, 'b> Painter<'a, 'b> {
         let mut pth = femtovg::Path::new();
         pth.rect(x as f32, y as f32, w as f32, h as f32);
         self.canvas.fill_path(&mut pth, color_paint(color));
+    }
+
+    pub fn rect_stroke_r(&mut self, width: f32, color: (f32, f32, f32), r: Rect) {
+        self.rect_stroke(width, color, r.x, r.y, r.w, r.h)
     }
 
     pub fn rect_stroke(&mut self, width: f32, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32) {

@@ -2,11 +2,13 @@ mod wichtext;
 mod entry;
 mod hexknob;
 mod hexgrid;
+mod connector;
 
 pub use wichtext::{WichText, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
 pub use hexknob::{ParamModel, DummyParamModel, HexKnob, ChangeRes};
 pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
+pub use connector::{Connector, ConnectorData};
 
 use keyboard_types::Key;
 

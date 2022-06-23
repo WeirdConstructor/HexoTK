@@ -408,7 +408,28 @@ fn main() {
 
         layer2root.add(col);
         layer2root.add(wtwid_row);
-        layer2root.add(knob);
+
+        let knrow = Widget::new(style_ref.clone());
+        knrow.change_layout(|layout| {
+            layout.layout_type = Some(LayoutType::Row);
+        });
+        let conwid = Widget::new(style_ref.with_style_clone(|style| {
+            style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+        }));
+        let condata = Rc::new(RefCell::new(ConnectorData::new()));
+        condata.borrow_mut().add_input("env1".to_string(),  true);
+        condata.borrow_mut().add_input("out_l".to_string(), true);
+        condata.borrow_mut().add_input("out_r".to_string(), true);
+        condata.borrow_mut().add_input("sig".to_string(),   true);
+        condata.borrow_mut().add_output("inp1".to_string(), true);
+        condata.borrow_mut().add_output("freq".to_string(), true);
+        condata.borrow_mut().add_output("gain".to_string(), true);
+        condata.borrow_mut().add_output("vol".to_string(),  true);
+        conwid.set_ctrl(Control::Connector { con: Box::new(Connector::new(condata)) });
+
+        knrow.add(knob);
+        knrow.add(conwid);
+        layer2root.add(knrow);
 
         let root3 = Widget::new(style_ref.clone());
         root3.add(dw);
