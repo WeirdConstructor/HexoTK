@@ -43,11 +43,11 @@ impl ConnectorData {
     }
 
     pub fn add_input(&mut self, lbl: String, active: bool) {
-        self.items_left.push((lbl, active));
+        self.items_right.push((lbl, active));
         self.generation += 1;
     }
     pub fn add_output(&mut self, lbl: String, active: bool) {
-        self.items_right.push((lbl, active));
+        self.items_left.push((lbl, active));
         self.generation += 1;
     }
 
@@ -287,8 +287,8 @@ impl Connector {
                     UI_CON_BORDER_CLR,
                     btn_rect.offs(pos.x, pos.y + yo));
                 self.zones.push(
-                    (btn_rect.offs(real_pos.x, real_pos.y),
-                     (true, row)));
+                    (btn_rect.offs(real_pos.x, real_pos.y + yo),
+                     (false, row)));
 
                 let fs =
                     calc_font_size_from_text(
@@ -341,7 +341,7 @@ impl Connector {
                         p.rect_stroke_r(
                             UI_CON_BORDER_W,
                             UI_CON_HOV_CLR,
-                            btn_rect.offs(pos.x, pos.y));
+                            btn_rect.offs(pos.x + xo, pos.y + yo));
                     }
                 }
             }

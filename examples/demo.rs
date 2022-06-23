@@ -414,17 +414,19 @@ fn main() {
             layout.layout_type = Some(LayoutType::Row);
         });
         let conwid = Widget::new(style_ref.with_style_clone(|style| {
-            style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+            style.pad_top    = 5.0;
+            style.pad_bottom = 5.0;
+            style.bg_color   = hexotk::style::UI_ACCENT_BG1_CLR;
         }));
         let condata = Rc::new(RefCell::new(ConnectorData::new()));
-        condata.borrow_mut().add_input("env1".to_string(),  true);
-        condata.borrow_mut().add_input("out_l".to_string(), true);
-        condata.borrow_mut().add_input("out_r".to_string(), true);
-        condata.borrow_mut().add_input("sig".to_string(),   true);
-        condata.borrow_mut().add_output("inp1".to_string(), true);
-        condata.borrow_mut().add_output("freq".to_string(), true);
-        condata.borrow_mut().add_output("gain".to_string(), true);
-        condata.borrow_mut().add_output("vol".to_string(),  true);
+        condata.borrow_mut().add_output("env1".to_string(),  true);
+        condata.borrow_mut().add_output("out_l".to_string(), false);
+        condata.borrow_mut().add_output("out_r".to_string(), false);
+        condata.borrow_mut().add_output("sig".to_string(),   true);
+        condata.borrow_mut().add_input("inp1".to_string(), true);
+        condata.borrow_mut().add_input("freq".to_string(), true);
+        condata.borrow_mut().add_input("gain".to_string(), true);
+        condata.borrow_mut().add_input("vol".to_string(),  false);
         conwid.set_ctrl(Control::Connector { con: Box::new(Connector::new(condata)) });
 
         knrow.add(knob);
