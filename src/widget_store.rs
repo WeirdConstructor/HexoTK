@@ -74,7 +74,6 @@ impl WidgetTree {
 
         widget_walk(root, |wid, _parent, is_first, is_last| {
             widget_dfs_vec.push(WidgetId::from(wid.id()));
-            println!("Walk {}", wid.id());
             widgets.insert(wid.id(), (
                 wid.parent().map(|w| WidgetId::from(w.id())),
                 is_first,
