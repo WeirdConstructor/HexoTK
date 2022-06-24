@@ -878,7 +878,7 @@ pub enum EvPayload {
         y: usize,
         data: Rc<RefCell<Box<dyn std::any::Any>>>,
     },
-    SetConnection(usize, usize),
+    SetConnection(Option<(usize, usize)>),
     ConnectionHover { is_input: bool, index: usize },
     DropAccept(Rc<RefCell<(Rc<RefCell<Box<dyn std::any::Any>>>, bool)>>),
     UserData(Rc<RefCell<Box<dyn std::any::Any>>>),

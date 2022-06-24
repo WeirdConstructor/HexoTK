@@ -55,12 +55,19 @@ impl ConnectorData {
         self.connection = Some((i, o));
         self.generation += 1;
     }
+
+    pub fn clear_connection(&mut self) {
+        self.connection = None;
+        self.generation += 1;
+    }
+
+    pub fn get_connection(&mut self) -> Option<(usize, usize)> {
+        self.connection
+    }
 }
 
 pub struct Connector {
     data:           Rc<RefCell<ConnectorData>>,
-
-    con:            Option<(usize, usize)>,
 
     yrow:           f32,
     hover_idx:      Option<(bool, usize)>,
@@ -76,8 +83,6 @@ impl Connector {
     pub fn new(data: Rc<RefCell<ConnectorData>>) -> Self {
         Self {
             data,
-
-            con:            None,
 
             yrow:           0.0,
             hover_idx:      None,
@@ -130,14 +135,14 @@ impl Connector {
             if let Some((inputs, row)) = self.drag_src_idx {
                 (inputs, row)
             } else {
-                return self.con.map(|con| (false, con));
+                return data.connection.map(|con| (false, con));
             };
 
         let (b_inp, b) =
             if let Some((inputs, row)) = self.hover_idx {
                 (inputs, row)
             } else {
-                return self.con.map(|con| (false, con));
+                return data.connection.map(|con| (false, con));
             };
 
         if a_inp == b_inp {
@@ -150,7 +155,7 @@ impl Connector {
                     return Some((true, (a, 0)))
                 }
             }
-            return self.con.map(|con| (false, con));
+            return data.connection.map(|con| (false, con));
         }
 
         let (a, b) =
@@ -158,11 +163,11 @@ impl Connector {
             else     { (b, a) };
 
         if !data.items_left.get(a).map(|x| x.1).unwrap_or(false) {
-            return self.con.map(|con| (false, con));
+            return data.connection.map(|con| (false, con));
         }
 
         if !data.items_right.get(b).map(|x| x.1).unwrap_or(false) {
-            return self.con.map(|con| (false, con));
+            return data.connection.map(|con| (false, con));
         }
 
         Some((true, (a, b)))
@@ -205,15 +210,15 @@ impl Connector {
                 }
 
                 if let Some((_drag, con)) = self.get_current_con() {
-                    self.con = Some(con);
-
-                    out_events.push((w.id(), Event {
-                        name: "change".to_string(),
-                        data: EvPayload::SetConnection(con.0, con.1)
-                    }));
+                    self.data.borrow_mut().connection = Some(con);
                 } else {
-                    self.con = None;
+                    self.data.borrow_mut().connection = None;
                 }
+
+                out_events.push((w.id(), Event {
+                    name: "change".to_string(),
+                    data: EvPayload::SetConnection(self.data.borrow().connection)
+                }));
 
                 self.drag = false;
                 self.drag_src_idx = None;
@@ -382,72 +387,3 @@ impl Connector {
         self.data.borrow().generation
     }
 }
-
-
-
-//    fn on_event(&mut self, state: &mut State, entity: Entity, event: &mut Event) {
-//        if let Some(window_event) = event.message.downcast::<WindowEvent>() {
-//            match window_event {
-//                WindowEvent::MouseDown(MouseButton::Left) => {
-//                    let (x, y) = (state.mouse.cursorx, state.mouse.cursory);
-//                    self.drag = true;
-//                    self.drag_src_idx = self.xy2pos(x, y);
-//
-//                    if let Some((inputs, _)) = self.drag_src_idx {
-//                        if inputs {
-//                            if self.items_left.len() == 1 {
-//                                self.drag_src_idx = Some((false, 0));
-//                            }
-//                        } else {
-//                            if self.items_right.len() == 1 {
-//                                self.drag_src_idx = Some((true, 0));
-//                            }
-//                        }
-//                    }
-//
-//                    state.capture(entity);
-//                    state.insert_event(
-//                        Event::new(WindowEvent::Redraw)
-//                            .target(Entity::root()));
-//                },
-//                WindowEvent::MouseUp(MouseButton::Left) => {
-//                    if let Some((_drag, con)) = self.get_current_con() {
-//                        self.con = Some(con);
-//
-//                        if let Some(callback) = self.on_change.take() {
-//                            (callback)(self, state, entity, con);
-//                            self.on_change = Some(callback);
-//                        }
-//                    } else {
-//                        self.con = None;
-//                    }
-//
-//                    self.drag = false;
-//                    self.drag_src_idx = None;
-//
-//                    state.release(entity);
-//                    state.insert_event(
-//                        Event::new(WindowEvent::Redraw)
-//                            .target(Entity::root()));
-//                },
-//                WindowEvent::MouseMove(x, y) => {
-//                    let old_hover = self.hover_idx;
-//                    self.hover_idx = self.xy2pos(*x, *y);
-//
-//                    if old_hover != self.hover_idx {
-//                        if let Some((inputs, idx)) = self.hover_idx {
-//                            out_events.push((w.id(), Event {
-//                                name: "connection_hover".to_string(),
-//                                data: EvPayload::ConnectionHover(inputs, idx)));
-//                        }
-//
-//                        state.insert_event(
-//                            Event::new(WindowEvent::Redraw)
-//                                .target(Entity::root()));
-//                    }
-//                },
-//                _ => {},
-//            }
-//        }
-//    }
-
