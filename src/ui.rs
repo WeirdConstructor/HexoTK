@@ -68,8 +68,8 @@ impl Layer {
 
 #[derive(Debug)]
 pub struct WidgetFeedback {
-                     // widid, source,       logicpos,   pos,  text
-    labels: Option<Vec<(usize, &'static str, (i32, i32), Rect, String)>>,
+              // widid, source,       logicpos,   pos,  text
+    labels: Vec<(usize, &'static str, (i32, i32), Rect, String)>,
 }
 
 pub struct TestDriver {
@@ -85,20 +85,17 @@ impl TestDriver {
         }
     }
 
-    pub fn get_all_labels(&self) -> Vec<(String, String, (i32, i32), Rect)> {
+    pub fn get_all_labels(&self) -> Vec<(usize, String, String, (i32, i32), Rect)> {
         let mut ret = vec![];
-        println!("GET ALL LABELS");
         for (id, wid) in self.widgets.iter() {
-            println!("LBLS: {}", id);
-            if let Some(lbls) = &wid.labels {
-                for lbl in lbls.iter() {
-                    ret.push((
-                        lbl.1.to_string(),
-                        lbl.4.to_string(),
-                        lbl.2,
-                        lbl.3
-                    ));
-                }
+            for lbl in wid.labels.iter() {
+                ret.push((
+                    lbl.0,
+                    lbl.1.to_string(),
+                    lbl.4.to_string(),
+                    lbl.2,
+                    lbl.3
+                ));
             }
         }
 
@@ -109,16 +106,14 @@ impl TestDriver {
         -> Option<((i32, i32), Rect)>
     {
         for (id, wid) in self.widgets.iter() {
-            if let Some(lbls) = &wid.labels {
-                for lbl in lbls.iter() {
-                    let mut ok =
-                        if let Some(src) = source { lbl.1 == src } else { true };
-                    if let Some(substr) = text_substr {
-                        ok = if ok { (lbl.4).contains(substr) } else { false };
-                    }
-                    if ok {
-                        return Some((lbl.2, lbl.3));
-                    }
+            for lbl in wid.labels.iter() {
+                let mut ok =
+                    if let Some(src) = source { lbl.1 == src } else { true };
+                if let Some(substr) = text_substr {
+                    ok = if ok { (lbl.4).contains(substr) } else { false };
+                }
+                if ok {
+                    return Some((lbl.2, lbl.3));
                 }
             }
         }
@@ -144,6 +139,8 @@ impl TestDriver {
         &mut self, lbl_collection: Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>)
     {
         if let Some(coll) = lbl_collection {
+            self.widgets.clear();
+
             for item in coll {
                 let info = item.0.info();
                 let label_info = (
@@ -153,7 +150,14 @@ impl TestDriver {
                     Rect::from(item.1.0, item.1.1, item.1.2, item.1.3),
                     item.1.4
                 );
-                println!("FEEDBACK: {:?}", label_info);
+
+                if let Some(wf) = self.widgets.get_mut(&info.0) {
+                    wf.labels.push(label_info);
+                } else {
+                    self.widgets.insert(info.0, WidgetFeedback {
+                        labels: vec![label_info]
+                    });
+                }
             }
         }
     }
