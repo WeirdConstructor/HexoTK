@@ -33,7 +33,7 @@ pub use widgets::Entry;
 pub use widgets::WichText;
 pub use widgets::{HexKnob, ParamModel, DummyParamModel, ChangeRes};
 pub use widgets::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
-pub use widgets::WichTextSimpleDataStore;
+pub use widgets::{WichTextData, WichTextSimpleDataStore};
 pub use widgets::EditableText;
 pub use widgets::TextField;
 pub use widgets::{Connector, ConnectorData};

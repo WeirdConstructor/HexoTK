@@ -4,7 +4,7 @@ mod hexknob;
 mod hexgrid;
 mod connector;
 
-pub use wichtext::{WichText, WichTextSimpleDataStore};
+pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
 pub use hexknob::{ParamModel, DummyParamModel, HexKnob, ChangeRes};
 pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
