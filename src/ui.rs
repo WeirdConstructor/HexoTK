@@ -68,6 +68,7 @@ impl Layer {
 
 #[derive(Debug)]
 pub struct WidgetFeedback {
+                     // widid, source,       logicpos,   pos,  text
     labels: Option<Vec<(usize, &'static str, (i32, i32), Rect, String)>>,
 }
 
@@ -84,20 +85,75 @@ impl TestDriver {
         }
     }
 
+    pub fn get_all_labels(&self) -> Vec<(String, String, (i32, i32), Rect)> {
+        let mut ret = vec![];
+        println!("GET ALL LABELS");
+        for (id, wid) in self.widgets.iter() {
+            println!("LBLS: {}", id);
+            if let Some(lbls) = &wid.labels {
+                for lbl in lbls.iter() {
+                    ret.push((
+                        lbl.1.to_string(),
+                        lbl.4.to_string(),
+                        lbl.2,
+                        lbl.3
+                    ));
+                }
+            }
+        }
+
+        ret
+    }
+
+    pub fn find_label_by(&self, source: Option<&str>, text_substr: Option<&str>)
+        -> Option<((i32, i32), Rect)>
+    {
+        for (id, wid) in self.widgets.iter() {
+            if let Some(lbls) = &wid.labels {
+                for lbl in lbls.iter() {
+                    let mut ok =
+                        if let Some(src) = source { lbl.1 == src } else { true };
+                    if let Some(substr) = text_substr {
+                        ok = if ok { (lbl.4).contains(substr) } else { false };
+                    }
+                    if ok {
+                        return Some((lbl.2, lbl.3));
+                    }
+                }
+            }
+        }
+
+        None
+    }
+
+    pub fn inject_mouse_press_at(&mut self, x: f32, y: f32, btn: MButton) {
+        self.injected_events.push(InputEvent::MousePosition(x, y));
+        self.injected_events.push(InputEvent::MouseButtonPressed(btn));
+    }
+
+    pub fn inject_mouse_release_at(&mut self, x: f32, y: f32, btn: MButton) {
+        self.injected_events.push(InputEvent::MousePosition(x, y));
+        self.injected_events.push(InputEvent::MouseButtonReleased(btn));
+    }
+
+    pub fn inject_mouse_to(&mut self, x: f32, y: f32) {
+        self.injected_events.push(InputEvent::MousePosition(x, y));
+    }
+
     pub fn apply_labels(
         &mut self, lbl_collection: Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>)
     {
         if let Some(coll) = lbl_collection {
             for item in coll {
-                let info       = item.0.info();
-                let _label_info = (
+                let info = item.0.info();
+                let label_info = (
                     info.0,
                     info.1,
                     info.2,
                     Rect::from(item.1.0, item.1.1, item.1.2, item.1.3),
                     item.1.4
                 );
-                //d// println!("FEEDBACK: {:?}", label_info);
+                println!("FEEDBACK: {:?}", label_info);
             }
         }
     }
