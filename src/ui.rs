@@ -8,7 +8,8 @@ use crate::{
 use crate::painter::LblDebugTag;
 use crate::WindowUI;
 use crate::Widget;
-use std::rc::Rc;
+use crate::widget::WidgetImpl;
+use std::rc::{Weak, Rc};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::collections::HashMap;
@@ -260,7 +261,7 @@ pub struct UI {
     drag:               DragState,
     drop_query_ev:      Event,
     hover_ev:           Event,
-    last_hover_id:      usize,
+    last_hover:         Option<Weak<RefCell<WidgetImpl>>>,
     auto_hide_queue:    Vec<(usize, HashSet<usize>)>,
     ctx:                Rc<RefCell<dyn std::any::Any>>,
 }
@@ -288,7 +289,7 @@ impl UI {
                 name: "drop_query".to_string(),
                 data: EvPayload::DropAccept(Rc::new(RefCell::new((Rc::new(RefCell::new(Box::new(0))), false)))),
             },
-            last_hover_id: 0,
+            last_hover: None,
             hover_ev: Event {
                 name: "hover".to_string(),
                 data: EvPayload::None,
@@ -844,6 +845,7 @@ impl WindowUI for UI {
                         }
                     }
                 }
+                //d// println!("MOUSE POS {},{} hover old={}, id={}", x, y, old_hover, hover_id);
 
                 self.handle_drag_mouse_move(*x, *y, &mut hover_id);
 
@@ -870,9 +872,19 @@ impl WindowUI for UI {
 
         let ctx = self.ctx.clone();
 
-        if self.last_hover_id != new_hover_id {
-            self.last_hover_id = new_hover_id;
+        let last_hover_id =
+            if let Some(last_hover) = &self.last_hover {
+                if let Some(last_hover_wid) = Widget::from_weak(last_hover) {
+                    last_hover_wid.id()
+                } else { usize::MAX }
+            } else { usize::MAX };
+
+        if last_hover_id != new_hover_id {
+            self.last_hover = None;
+
             if let Some(widget) = self.widgets.borrow().get(new_hover_id) {
+                self.last_hover = Some(widget.as_weak());
+
                 widget_handle_event(
                     &widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
             }

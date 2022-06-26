@@ -634,7 +634,9 @@ impl HexGrid {
                     match pos {
                         HexDecorPos::Center(x, y) => {
                             p.define_debug_area(Rect {
-                                    x: x, y: y, w: sz.0 / 3.0, h: sz.1 / 3.0
+                                    x: x, y: y,
+                                    w: (sz.0 / 3.0).round(),
+                                    h: (sz.1 / 3.0).round(),
                                 }, || {
                                     (*(dbg.source("hexcell")),
                                      format!("hexcell_{}_{}", xi, yi))

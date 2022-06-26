@@ -543,6 +543,7 @@ impl WidgetImpl {
         self.evc.as_mut().map(|evc| evc.clear());
         self.ctrl   = None;
         self.parent = None;
+        self.id     = usize::MAX;
 
         if let Some(childs) = &mut self.childs {
             if recursive {
