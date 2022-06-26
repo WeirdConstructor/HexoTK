@@ -438,7 +438,7 @@ fn main() {
 
 
         let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
-        ui.push_frame_script(FrameScript::new());
+        ui.install_test_script(TestScript::new("test1".to_string()));
 
         if false {
             style.border_style = BorderStyle::Rect;

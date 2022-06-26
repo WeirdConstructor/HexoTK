@@ -485,6 +485,19 @@ impl<'a, 'b> Painter<'a, 'b> {
         }
     }
 
+    pub fn define_debug_area<F: FnMut() -> (LblDebugTag, String)>(
+        &mut self, pos: Rect, mut f: F)
+    {
+        if let Some(collector) = &mut self.lbl_collect {
+            let (dbg, text) = f();
+            collector.push(
+                (dbg,
+                 (pos.x + dbg.offs_x, pos.y + dbg.offs_y,
+                  pos.w, pos.h,
+                  text)));
+        }
+    }
+
     pub fn translate(&mut self, x: f32, y: f32) { // , x2: f64, y2: f64, factor: f64) {
         self.canvas.save();
 //        self.cur_scale = factor as f32;

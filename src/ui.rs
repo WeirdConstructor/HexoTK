@@ -184,24 +184,31 @@ impl TestDriver {
     }
 }
 
+#[derive(Clone)]
 enum FScriptStep {
-    Callback(Box<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>) -> Box<TestDriver>>),
+    Callback(Rc<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>) -> (bool, Box<TestDriver>)>),
 }
 
-pub struct FrameScript {
-    queue:  Vec<FScriptStep>,
+#[derive(Clone)]
+pub struct TestScript {
+    name:   String,
+    queue:  Vec<(String, FScriptStep)>,
 }
 
-impl FrameScript {
-    pub fn new() -> Self {
-        Self { queue: vec![] }
+impl TestScript {
+    pub fn new(name: String) -> Self {
+        Self { name, queue: vec![] }
     }
+
+    pub fn name(&self) -> &str { &self.name }
 
     pub fn push_cb(
         &mut self,
-        cb: Box<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>) -> Box<TestDriver>>)
-    {
-        self.queue.push(FScriptStep::Callback(cb));
+        step_name: String,
+        cb: Rc<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>)
+                   -> (bool, Box<TestDriver>)>
+    ) {
+        self.queue.push((step_name, FScriptStep::Callback(cb)));
     }
 }
 
@@ -248,8 +255,8 @@ pub struct UI {
     layout_cache:       LayoutCache,
     ftm:                crate::window::FrameTimeMeasurement,
     fb:                 Option<Box<TestDriver>>,
-    scripts:            Option<Vec<FrameScript>>,
-    cur_script:         Option<FrameScript>,
+    scripts:            Option<Vec<TestScript>>,
+    cur_script:         Option<TestScript>,
     drag:               DragState,
     drop_query_ev:      Event,
     hover_ev:           Event,
@@ -440,7 +447,7 @@ impl UI {
         self.notifier.reset_layout_changed();
     }
 
-    pub fn push_frame_script(&mut self, script: FrameScript) {
+    pub fn install_test_script(&mut self, script: TestScript) {
         if self.fb.is_none() {
             self.fb = Some(Box::new(TestDriver::new()));
         }
@@ -750,21 +757,35 @@ impl WindowUI for UI {
 
             let mut fb_ret =
                 if let Some(mut script) = self.cur_script.take() {
-                    if !script.queue.is_empty() {
-                        let step = script.queue.remove(0);
+                    if script.queue.is_empty() {
+                        println!("PASS - {}", script.name());
+
+                        fb
+                    } else {
+                        let (step_name, step) = script.queue.remove(0);
+
+                        let mut ok = false;
 
                         let fb_ret =
                             match step {
                                 FScriptStep::Callback(cb) => {
-                                    (*cb)(&mut *(ctx.borrow_mut()), fb)
+                                    let (ok_flag, fb) =
+                                        (*cb)(&mut *(ctx.borrow_mut()), fb);
+                                    ok = ok_flag;
+                                    fb
                                 },
                             };
 
-                        self.cur_script = Some(script);
+                        if !ok {
+                            eprintln!(
+                                "FAIL - {} - step {}",
+                                script.name(),
+                                step_name);
+                        } else {
+                            self.cur_script = Some(script);
+                        }
 
                         fb_ret
-                    } else {
-                        fb
                     }
 
                 } else {
