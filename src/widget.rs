@@ -184,6 +184,9 @@ impl Widget {
 
     pub fn id(&self) -> usize { self.0.borrow().id() }
 
+    pub fn set_tag(&self, tag: String) { self.0.borrow_mut().set_tag(tag); }
+    pub fn tag(&self) -> String { self.0.borrow().tag().to_string() }
+
     pub fn check_data_change(&self) -> bool {
         self.0.borrow_mut().check_data_change()
     }
@@ -303,6 +306,7 @@ pub struct WidgetImpl {
     drag_widget:    Option<Widget>,
     auto_hide:      bool,
     show_hover:     bool,
+    tag:            Option<String>,
 
     cached:         bool,
     cache_img:      Option<ImgRef>,
@@ -310,7 +314,10 @@ pub struct WidgetImpl {
 
 impl std::fmt::Debug for WidgetImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Widget").field("id", &self.id).finish()
+        f.debug_struct("Widget")
+         .field("id", &self.id)
+         .field("tag", &self.tag)
+         .finish()
     }
 }
 
@@ -332,6 +339,7 @@ impl WidgetImpl {
             cache_img:      None,
             auto_hide:      false,
             show_hover:     false,
+            tag:            None,
             style,
         }
     }
@@ -423,6 +431,9 @@ impl WidgetImpl {
     pub fn does_show_hover(&self) -> bool { self.show_hover }
 
     pub fn id(&self) -> usize { self.id }
+
+    pub fn set_tag(&mut self, tag: String) { self.tag = Some(tag); }
+    pub fn tag(&self) -> &str { self.tag.as_ref().map(|t| &t[..]).unwrap_or("") }
 
     pub fn check_data_change(&mut self) -> bool {
         if let Some(ctrl) = &mut self.ctrl {
@@ -614,4 +625,13 @@ pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: 
 
 pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, mut cb: F) {
     widget_walk_impl(widget, None, &mut cb, true, true);
+}
+
+pub fn widget_walk_parents<F: FnMut(&Widget)>(widget: &Widget, mut cb: F) {
+    let mut cur_parent = widget.parent();
+
+    while cur_parent.is_some() {
+        cb(cur_parent.as_ref().unwrap());
+        cur_parent = cur_parent.unwrap().parent();
+    }
 }

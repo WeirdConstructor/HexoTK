@@ -15,7 +15,7 @@ use std::collections::HashMap;
 
 use crate::layout::LayoutCache;
 use crate::widget_store::{WidgetStore, WidgetTree};
-use crate::widget::widget_walk;
+use crate::widget::{widget_walk, widget_walk_parents};
 
 use keyboard_types::Key;
 use morphorm::{
@@ -23,6 +23,7 @@ use morphorm::{
 };
 
 struct Layer {
+    layer_idx:  usize,
     root:       Widget,
     tree:       Option<WidgetTree>,
     popups:     Vec<(Widget, PopupPos)>,
@@ -66,15 +67,31 @@ impl Layer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WidgetFeedback {
               // widid, source,       logicpos,   pos,  text
-    labels: Vec<(usize, &'static str, (i32, i32), Rect, String)>,
+    labels:     Vec<(usize, &'static str, (i32, i32), Rect, String)>,
 }
 
+#[derive(Debug, Clone)]
 pub struct TestDriver {
     injected_events: Vec<InputEvent>,
     widgets:         HashMap<usize, WidgetFeedback>,
+                                //  tag,   tag_path, ctrl, widget pos
+    widget_tags:     HashMap<usize, (String, String, String, Rect)>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LabelInfo {
+    pub wid_id:     usize,
+    pub wid_pos:    Rect,
+    pub source:     &'static str,
+    pub logic_pos:  (i32, i32),
+    pub pos:        Rect,
+    pub text:       String,
+    pub tag:        String,
+    pub tag_path:   String,
+    pub ctrl:       String,
 }
 
 impl TestDriver {
@@ -82,43 +99,39 @@ impl TestDriver {
         Self {
             injected_events: vec![],
             widgets:         HashMap::new(),
+            widget_tags:     HashMap::new(),
         }
     }
 
-    pub fn get_all_labels(&self) -> Vec<(usize, String, String, (i32, i32), Rect)> {
+    pub fn get_all_labels(&self) -> Vec<LabelInfo> {
         let mut ret = vec![];
         for (id, wid) in self.widgets.iter() {
-            for lbl in wid.labels.iter() {
-                ret.push((
-                    lbl.0,
-                    lbl.1.to_string(),
-                    lbl.4.to_string(),
-                    lbl.2,
-                    lbl.3
-                ));
+            for wfb in wid.labels.iter() {
+                let (tag, tag_path, ctrl, wid_pos) =
+                    self.widget_tags
+                        .get(&wfb.0)
+                        .cloned()
+                        .unwrap_or_else(||
+                            ("".to_string(),
+                             "".to_string(),
+                             "".to_string(),
+                             Rect::from(0.0, 0.0, 0.0, 0.0)));
+
+                ret.push(LabelInfo {
+                    wid_id:     wfb.0,
+                    source:     wfb.1,
+                    logic_pos:  wfb.2,
+                    pos:        wfb.3,
+                    text:       wfb.4.to_string(),
+                    wid_pos,
+                    tag,
+                    tag_path,
+                    ctrl,
+                });
             }
         }
 
         ret
-    }
-
-    pub fn find_label_by(&self, source: Option<&str>, text_substr: Option<&str>)
-        -> Option<((i32, i32), Rect)>
-    {
-        for (id, wid) in self.widgets.iter() {
-            for lbl in wid.labels.iter() {
-                let mut ok =
-                    if let Some(src) = source { lbl.1 == src } else { true };
-                if let Some(substr) = text_substr {
-                    ok = if ok { (lbl.4).contains(substr) } else { false };
-                }
-                if ok {
-                    return Some((lbl.2, lbl.3));
-                }
-            }
-        }
-
-        None
     }
 
     pub fn inject_mouse_press_at(&mut self, x: f32, y: f32, btn: MButton) {
@@ -133,6 +146,14 @@ impl TestDriver {
 
     pub fn inject_mouse_to(&mut self, x: f32, y: f32) {
         self.injected_events.push(InputEvent::MousePosition(x, y));
+    }
+
+    pub fn reset_tags(&mut self) {
+        self.widget_tags.clear();
+    }
+
+    pub fn set_tag(&mut self, id: usize, tag: String, tag_path: String, ctrl: String, pos: Rect) {
+        self.widget_tags.insert(id, (tag, tag_path, ctrl, pos));
     }
 
     pub fn apply_labels(
@@ -270,7 +291,13 @@ impl UI {
     }
 
     pub fn add_layer_root(&mut self, root: Widget) {
-        self.layers.push(Layer { root, tree: None, popups: vec![] });
+        let index = self.layers.len();
+        self.layers.push(Layer {
+            layer_idx: index,
+            root,
+            tree: None,
+            popups: vec![]
+        });
 
         self.on_tree_changed();
     }
@@ -279,6 +306,10 @@ impl UI {
         println!("start relayout");
 
         let (win_w, win_h) = (self.win_w, self.win_h);
+
+        if let Some(fb) = &mut self.fb {
+            fb.reset_tags();
+        }
 
         for layer in &mut self.layers {
             layer.root.change_layout(|l| {
@@ -307,6 +338,43 @@ impl UI {
 
             let mouse_pos = self.notifier.mouse_pos();
             layer.handle_popup_positioning_after_layout(win_w, win_h, mouse_pos);
+        }
+
+        if let Some(mut fb) = self.fb.take() {
+            let wids = self.widgets.clone();
+            wids.borrow().for_each_widget(|wid, id| {
+                let tag = wid.tag();
+                let mut tag_path : Vec<String> = vec![tag.clone()];
+                let mut root = wid.clone();
+                widget_walk_parents(&wid, |par| {
+                    tag_path.push(par.tag());
+                    root = par.clone();
+                });
+
+                let mut tag_path_str =
+                    format!("layer_{}",
+                        self.find_layer_by_root_id(root.id())
+                            .map(|layer| layer.layer_idx)
+                            .unwrap_or(0));
+
+                for tag in tag_path.iter().rev() {
+                    tag_path_str += ".";
+                    tag_path_str += &tag;
+                }
+
+                let ctrl =
+                    if let Some(ctrl) = wid.take_ctrl() {
+                        let ret = format!("{:?}", ctrl);
+                        wid.give_ctrl_back(ctrl);
+                        ret
+                    } else {
+                        "".to_string()
+                    };
+
+                fb.set_tag(wid.id(), tag, tag_path_str, ctrl, wid.pos());
+            });
+
+            self.fb = Some(fb);
         }
 
         self.on_layout_changed();
