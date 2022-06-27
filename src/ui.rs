@@ -263,6 +263,7 @@ pub struct UI {
     hover_ev:           Event,
     last_hover:         Option<Weak<RefCell<WidgetImpl>>>,
     auto_hide_queue:    Vec<(usize, HashSet<usize>)>,
+    frame_cb:           Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
     ctx:                Rc<RefCell<dyn std::any::Any>>,
 }
 
@@ -285,6 +286,7 @@ impl UI {
             cur_script:         None,
             drag:               DragState::new(),
             auto_hide_queue:    vec![],
+            frame_cb:           None,
             drop_query_ev: Event {
                 name: "drop_query".to_string(),
                 data: EvPayload::DropAccept(Rc::new(RefCell::new((Rc::new(RefCell::new(Box::new(0))), false)))),
@@ -296,6 +298,10 @@ impl UI {
             },
             ctx,
         }
+    }
+
+    pub fn set_frame_callback(&mut self, cb: Box<dyn FnMut(&mut dyn std::any::Any)>) {
+        self.frame_cb = Some(cb);
     }
 
     pub fn add_layer_root(&mut self, root: Widget) {
@@ -735,6 +741,10 @@ impl UI {
 
 impl WindowUI for UI {
     fn pre_frame(&mut self) {
+        if let Some(cb) = &mut self.frame_cb {
+            cb(&mut *(self.ctx.borrow_mut()));
+        }
+
         let notifier = self.notifier.clone();
 
         self.deposit_popups_in_layers();
