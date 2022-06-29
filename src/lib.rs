@@ -317,7 +317,7 @@ impl Control {
             Control::None             => { false },
         }
     }
-    pub fn draw_frame(&mut self, _w: &Widget, _painter: &mut Painter) {
+    pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
         match self {
             Control::Rect             => { },
             Control::None             => { },
@@ -326,7 +326,10 @@ impl Control {
             Control::WichText  { .. } => { },
             Control::Entry     { .. } => { },
             Control::HexKnob   { .. } => { },
-            Control::HexGrid   { .. } => { },
+            Control::HexGrid { grid } => {
+                let style = w.style();
+                grid.draw_frame(w, &style, painter);
+            },
             Control::Connector { .. } => { },
         }
     }

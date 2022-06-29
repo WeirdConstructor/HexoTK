@@ -15,6 +15,7 @@ impl HexGridModel for TestGrid {
     fn cell_visible(&self, _x: usize, _y: usize) -> bool { true }
     fn cell_empty(&self, _x: usize, _y: usize) -> bool { false }
     fn cell_color(&self, _x: usize, _y: usize) -> u8 { 0 }
+    fn cell_led(&self, _x: usize, _y: usize) -> Option<(f32, f32)> { Some((0.5, 0.2)) }
     fn cell_label<'a>(&self, _x: usize, _y: usize, _out: &'a mut [u8])
         -> Option<HexCell<'a>> { None }
     fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8])

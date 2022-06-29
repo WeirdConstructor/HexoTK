@@ -117,7 +117,6 @@ pub enum HexHLight {
 pub struct HexCell<'a> {
     pub label:      &'a str,
     pub hlight:     HexHLight,
-    pub rg_colors:  Option<(f32, f32)>,
 }
 
 pub trait HexGridModel {
@@ -127,6 +126,7 @@ pub trait HexGridModel {
     fn cell_empty(&self, x: usize, y: usize) -> bool;
     fn cell_color(&self, _x: usize, _y: usize) -> u8 { 0 }
 
+    fn cell_led(&self, x: usize, y: usize) -> Option<(f32, f32)>;
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8])
         -> Option<HexCell<'a>>; // (&'a str, HexCell, Option<(f32, f32)>)>;
 
@@ -300,6 +300,8 @@ pub struct HexGrid {
     start_tile_pos:   Option<(i32, i32)>,
     hover_pos:        (i32, i32),
 
+    led_pos:        Option<Vec<((usize, usize), (f32, f32))>>,
+
     real_pos:       Rect,
     mouse:          (f32, f32),
     mouse_state:    Option<(MButton, f32, f32)>,
@@ -324,6 +326,7 @@ impl HexGrid {
             real_pos:           Rect::from(0.0, 0.0, 0.0, 0.0),
             mouse:              (0.0, 0.0),
             mouse_state:        None,
+            led_pos:            Some(vec![]),
             model,
         }
     }
@@ -537,7 +540,8 @@ impl HexGrid {
         let is_hovered = w.is_hovered();
 
         let mut dbg = LblDebugTag::from_id(w.id());
-        dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
+        let rp_offset = (real_pos.x - pos.x, real_pos.y - pos.y);
+        dbg.set_offs(rp_offset);
 
         self.real_pos = real_pos;
 
@@ -554,6 +558,9 @@ impl HexGrid {
 
         let nx = model.width();
         let ny = model.height();
+
+        let mut led_pos = self.led_pos.take();
+        led_pos.as_mut().unwrap().clear();
 
         for xi in 0..nx {
             let x = xi as f32;
@@ -643,10 +650,11 @@ impl HexGrid {
                                 });
 
                             if let Some(cell_vis) = model.cell_label(xi, yi, &mut label_buf) {
-                                let (s, hc, led) = (
+                                let led = model.cell_led(xi, yi);
+
+                                let (s, hc) = (
                                     cell_vis.label,
                                     cell_vis.hlight,
-                                    cell_vis.rg_colors
                                 );
 
                                 let (txt_clr, clr) =
@@ -694,7 +702,9 @@ impl HexGrid {
                                 }
 
                                 if let Some(led) = led {
-                                    draw_led(p, self.scale, x, y - th, led);
+                                    led_pos
+                                        .as_mut().unwrap()
+                                        .push(((xi, yi), (rp_offset.0 + x, rp_offset.1 + (y - th))));
                                 }
 
                                 if hc != HexHLight::Plain {
@@ -785,7 +795,30 @@ impl HexGrid {
             }
         }
 
+        self.led_pos = led_pos;
+
         p.reset_clip_region();
+    }
+
+    pub fn draw_frame(&mut self, w: &Widget, style: &Style, painter: &mut Painter) {
+        let shift_x = (self.shift_offs.0 + self.tmp_shift_offs.map(|o| o.0).unwrap_or(0.0)).round();
+        let shift_y = (self.shift_offs.1 + self.tmp_shift_offs.map(|o| o.1).unwrap_or(0.0)).round();
+
+        let pos = self.real_pos;
+
+        painter.clip_region(pos.x, pos.y, pos.w, pos.h);
+        painter.translate(shift_x, shift_y);
+
+        let model = self.model.borrow();
+        for (cell_pos, pos) in self.led_pos.as_ref().unwrap().iter() {
+            let led = model.cell_led(cell_pos.0, cell_pos.1);
+            if let Some(led) = led {
+                draw_led(painter, self.scale, pos.0, pos.1, led);
+            }
+        }
+
+        painter.restore();
+        painter.reset_clip_region();
     }
 
     pub fn annotate_drop_event(&mut self, mouse_pos: (f32, f32), ev: Event) -> Event {

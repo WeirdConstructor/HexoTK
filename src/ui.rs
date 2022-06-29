@@ -954,6 +954,8 @@ impl WindowUI for UI {
         if let Some(fb) = &mut self.fb {
             fb.apply_labels(painter.get_label_collection());
         }
+
+        self.draw_frame(painter);
     }
 
     fn draw_frame(&mut self, painter: &mut Painter) {
