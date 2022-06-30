@@ -22,7 +22,7 @@ pub use window::open_window;
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
-use widget::{widget_draw, widget_draw_frame, widget_annotate_drop_event};
+use widget::{widget_draw, widget_draw_frame, widget_draw_shallow, widget_annotate_drop_event};
 pub use ui::UI;
 pub use ui::{TestDriver, TestScript};
 pub use style::{Style, Align, VAlign, BorderStyle};
@@ -532,8 +532,19 @@ impl Control {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, redraw: bool, painter: &mut Painter) {
-//        println!("     [draw widget id: {}]", w.id());
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        redraw_widgets: Option<&std::collections::HashSet<usize>>,
+        childs: Option<&Vec<Widget>>,
+        painter: &mut Painter
+    ) {
+        let redraw =
+            if let Some(redraw_widgets) =redraw_widgets {
+                redraw_widgets.contains(&w.id())
+            } else { false };
+
+        //d// println!("     [draw widget id: {}]", w.id());
         let pos               = w.pos(); // Returns position including border and padding!
         let style             = w.style();
         let has_default_style = self.has_default_style();
@@ -573,6 +584,8 @@ impl Control {
 //                    img_ref = Some(painter.new_image(pos.w, pos.h));
 
                 //d// println!("      start img {} ({}:{})", w.id(), pos.w, pos.h);
+                //d// println!("START IMAGE wid={} {:?}", w.id(), pos);
+
                 painter.start_image(img_ref.as_ref().unwrap());
                 let draw_outer_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
                 let (inner_xo, inner_yo) = (
@@ -622,14 +635,25 @@ impl Control {
                 self.draw_border_and_bg(w, &style, draw_outer_pos, painter);
             }
 
+            //d// println!("DISP DRAW CTRL wid={} cached={} {:?}", w.id(), is_cached, draw_widget_pos);
             self.dispatch_draw_control(
                 w, &style, draw_widget_pos, real_widget_pos, painter);
+        }
+
+        if let Some(redraw_widgets) = redraw_widgets {
+            if let Some(childs) = childs {
+                for c in childs.iter() {
+                    widget_draw(c, redraw_widgets, painter);
+                }
+            }
         }
 
         if let Some(img_ref) = img_ref {
             if is_cached && redraw {
                 painter.finish_image();
             }
+
+            //d// println!("PAINT IMAGE wid={} cached={} {:?}", w.id(), is_cached, pos);
 
             painter.draw_image(&img_ref, pos.x, pos.y);
             w.give_cache_img(img_ref);
@@ -938,11 +962,11 @@ pub(crate) fn widget_handle_event(widget: &Widget, ctx: &mut dyn std::any::Any, 
 pub trait WindowUI {
     fn pre_frame(&mut self);
     fn post_frame(&mut self);
-    fn needs_redraw(&mut self) -> bool;
+//    fn needs_redraw(&mut self) -> bool;
     fn is_active(&mut self) -> bool;
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut Painter);
-    fn draw_frame(&mut self, painter: &mut Painter);
+//    fn draw_frame(&mut self, painter: &mut Painter);
     fn set_window_size(&mut self, w: f32, h: f32);
 }
 

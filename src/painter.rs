@@ -175,13 +175,14 @@ impl<'a, 'b> Painter<'a, 'b> {
     }
 
     pub fn new_image(&mut self, w: f32, h: f32) -> ImgRef {
-        //d// println!("new_image w={}, h={}", w, h);
         let image_id =
             self.canvas.create_image_empty(
                 w as usize, h as usize,
                 femtovg::PixelFormat::Rgba8,
                 femtovg::ImageFlags::FLIP_Y)
                 .expect("making image buffer");
+
+        //d// println!("new_image w={}, h={} id={:?}", w, h, image_id);
 
         ImgRef {
             store: self.data.store.clone(),

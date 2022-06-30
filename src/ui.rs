@@ -2,6 +2,7 @@ use crate::{
     InputEvent, Painter, widget_draw,
     UINotifierRef, Rect, Event, EvPayload, MButton, PopupPos,
     widget_draw_frame,
+    widget_draw_shallow,
     widget_annotate_drop_event,
     widget_handle_event,
 };
@@ -306,6 +307,9 @@ impl UI {
 
     pub fn add_layer_root(&mut self, root: Widget) {
         let index = self.layers.len();
+        // Roots must always be cached, otherwise they won't be redrawn in the
+        // per frame drawing and you get heavy flickering :)
+        root.enable_cache();
         self.layers.push(Layer {
             layer_idx: index,
             root,
@@ -818,8 +822,6 @@ impl WindowUI for UI {
         }
     }
 
-    fn needs_redraw(&mut self) -> bool { self.notifier.need_redraw() }
-
     fn is_active(&mut self) -> bool { true }
 
     fn handle_input_event(&mut self, event: InputEvent) {
@@ -925,42 +927,49 @@ impl WindowUI for UI {
     }
 
     fn draw(&mut self, painter: &mut Painter) {
-        self.ftm.start_measure();
         let notifier = self.notifier.clone();
-
-        if self.fb.is_some() {
-            painter.start_label_collector();
-        }
-
-        if notifier.is_layout_changed() {
-            self.relayout();
-        }
-
-        notifier.swap_redraw(&mut self.cur_redraw);
-        notifier.clear_redraw();
-        self.ftm.end_measure();
+        let need_redraw = notifier.need_redraw();
 
         //d// println!("REDRAW: {:?}", self.cur_redraw);
-        for layer in &self.layers {
-            widget_draw(&layer.root, &self.cur_redraw, painter);
-        }
-
-        if let Some(drag_widget) = &self.drag.widget {
-            if self.drag.started {
-                widget_draw(drag_widget, &self.cur_redraw, painter);
+        if need_redraw {
+            self.ftm.start_measure();
+            if self.fb.is_some() {
+                painter.start_label_collector();
             }
-        }
 
-        if let Some(fb) = &mut self.fb {
-            fb.apply_labels(painter.get_label_collection());
-        }
+            if notifier.is_layout_changed() {
+                self.relayout();
+            }
 
-        self.draw_frame(painter);
-    }
+            notifier.swap_redraw(&mut self.cur_redraw);
+            notifier.clear_redraw();
+            self.ftm.end_measure();
 
-    fn draw_frame(&mut self, painter: &mut Painter) {
-        for layer in &self.layers {
-            widget_draw_frame(&layer.root, painter);
+            for layer in &self.layers {
+                widget_draw(&layer.root, &self.cur_redraw, painter);
+                widget_draw_frame(&layer.root, painter);
+            }
+
+            if let Some(drag_widget) = &self.drag.widget {
+                if self.drag.started {
+                    widget_draw(drag_widget, &self.cur_redraw, painter);
+                }
+            }
+
+            if let Some(fb) = &mut self.fb {
+                fb.apply_labels(painter.get_label_collection());
+            }
+        } else {
+            for layer in &self.layers {
+                widget_draw_shallow(&layer.root, false, painter);
+                widget_draw_frame(&layer.root, painter);
+            }
+
+            if let Some(drag_widget) = &self.drag.widget {
+                if self.drag.started {
+                    widget_draw(drag_widget, &self.cur_redraw, painter);
+                }
+            }
         }
     }
 

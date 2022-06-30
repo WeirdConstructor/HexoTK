@@ -187,77 +187,90 @@ impl WindowHandler for GUIWindowHandler {
         }
 
         self.ui.pre_frame();
-        let redraw = self.ui.needs_redraw();
+//        let redraw = self.ui.needs_redraw();
 
-        if redraw {
-            self.ftm.start_measure();
-        }
+//        if redraw {
+//            self.ftm.start_measure();
+//        }
+//
+//        if true {
+//            self.ftm_redraw.start_measure();
+//            self.canvas.set_render_target(
+//                femtovg::RenderTarget::Image(self.img_buf));
+//            self.canvas.save();
+//            self.canvas.clear_rect(
+//                0, 0,
+//                self.canvas.width() as u32,
+//                self.canvas.height() as u32,
+//                Color::rgbf(
+//                    self.bg_color.0,
+//                    self.bg_color.1,
+//                    self.bg_color.2));
+//
+//            self.painter_data.init_render_targets(
+//                femtovg::RenderTarget::Image(self.img_buf));
+//
+//            let painter = &mut Painter {
+//                canvas:      &mut self.canvas,
+//                data:        &mut self.painter_data,
+//                font:        self.font,
+//                font_mono:   self.font_mono,
+//                lbl_collect: None,
+//            };
+//
+//            self.ui.draw(painter);
+//
+//            self.canvas.restore();
+//            if !quiet {
+//                self.ftm_redraw.end_measure();
+//            }
+//        }
 
-        if redraw {
-            self.ftm_redraw.start_measure();
-            self.canvas.set_render_target(
-                femtovg::RenderTarget::Image(self.img_buf));
-            self.canvas.save();
-            self.canvas.clear_rect(
-                0, 0,
-                self.canvas.width() as u32,
-                self.canvas.height() as u32,
-                Color::rgbf(
-                    self.bg_color.0,
-                    self.bg_color.1,
-                    self.bg_color.2));
+//        let img_paint =
+//            femtovg::Paint::image(
+//                self.img_buf, 0.0, 0.0,
+//                self.canvas.width(),
+//                self.canvas.height(),
+//                0.0, 1.0);
+//        let mut path = femtovg::Path::new();
+//        path.rect(0.0, 0.0, self.canvas.width(), self.canvas.height());
 
-            self.painter_data.init_render_targets(
-                femtovg::RenderTarget::Image(self.img_buf));
-
-            let painter = &mut Painter {
-                canvas:      &mut self.canvas,
-                data:        &mut self.painter_data,
-                font:        self.font,
-                font_mono:   self.font_mono,
-                lbl_collect: None,
-            };
-
-            self.ui.draw(painter);
-
-            self.canvas.restore();
-            if !quiet {
-                self.ftm_redraw.end_measure();
-            }
-        }
-
-        let img_paint =
-            femtovg::Paint::image(
-                self.img_buf, 0.0, 0.0,
-                self.canvas.width(),
-                self.canvas.height(),
-                0.0, 1.0);
-        let mut path = femtovg::Path::new();
-        path.rect(0.0, 0.0, self.canvas.width(), self.canvas.height());
-
+        self.canvas.save();
+        self.canvas.clear_rect(
+            0, 0,
+            self.canvas.width() as u32,
+            self.canvas.height() as u32,
+            Color::rgbf(
+                self.bg_color.0,
+                self.bg_color.1,
+                self.bg_color.2));
         self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-        self.canvas.fill_path(&mut path, img_paint);
+        self.painter_data.init_render_targets(
+            femtovg::RenderTarget::Screen);
+
+//        self.canvas.fill_path(&mut path, img_paint);
 
         {
             let painter = &mut Painter {
-                canvas:      &mut self.canvas,
-                data:        &mut self.painter_data,
-                font:        self.font,
-                font_mono:   self.font_mono,
+                canvas:     &mut self.canvas,
+                data:       &mut self.painter_data,
+                font:       self.font,
+                font_mono:  self.font_mono,
                 lbl_collect: None,
             };
-            self.ui.draw_frame(painter);
+            self.ui.draw(painter);
         }
 
         self.painter_data.cleanup(&mut self.canvas);
 
         self.canvas.flush();
+        self.canvas.restore();
 
         win.gl_context().unwrap().swap_buffers();
 
-        if redraw && !quiet {
-            self.ftm.end_measure();
-        }
+//        if redraw && !quiet {
+//            self.ftm.end_measure();
+//        }
 
         self.ui.post_frame();
     }

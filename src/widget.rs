@@ -567,18 +567,27 @@ pub fn widget_draw(
 
     let ctrl   = widget.0.borrow_mut().ctrl.take();
     let childs = widget.0.borrow_mut().childs.take();
-    let wid_id = widget.0.borrow().id();
 
     if let Some(mut ctrl) = ctrl {
-        ctrl.draw(widget, redraw.contains(&wid_id), painter);
+        ctrl.draw(
+            widget, Some(redraw), childs.as_ref(), painter);
 
-        if let Some(childs) = childs {
-            for c in childs.iter() {
-                widget_draw(c, redraw, painter);
-            }
-            widget.0.borrow_mut().childs = Some(childs);
-        }
+        widget.0.borrow_mut().childs = childs;
+        widget.0.borrow_mut().ctrl = Some(ctrl);
+    }
+}
 
+pub fn widget_draw_shallow(
+    widget: &Widget,
+    redraw: bool,
+    painter: &mut Painter)
+{
+    let visible  = widget.0.borrow().layout.visible;
+    if !visible { return; }
+
+    let ctrl = widget.0.borrow_mut().ctrl.take();
+    if let Some(mut ctrl) = ctrl {
+        ctrl.draw(widget, None, None, painter);
         widget.0.borrow_mut().ctrl = Some(ctrl);
     }
 }

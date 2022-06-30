@@ -435,6 +435,7 @@ fn main() {
         layer2root.add(knrow);
 
         let root3 = Widget::new(style_ref.clone());
+        root3.enable_cache();
         root3.add(dw);
 
 
