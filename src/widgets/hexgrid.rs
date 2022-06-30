@@ -41,7 +41,7 @@ pub const UI_GRID_LED_CLR           : (f32, f32, f32) = UI_PRIM_CLR;
 pub const UI_GRID_LED_R             : f32             = 5.0;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum HexDir {
     TR,
     BR,
@@ -130,9 +130,12 @@ pub trait HexGridModel {
     fn cell_label<'a>(&self, x: usize, y: usize, out: &'a mut [u8])
         -> Option<HexCell<'a>>; // (&'a str, HexCell, Option<(f32, f32)>)>;
 
-    /// Edge: 0 top-right, 1 bottom-right, 2 bottom, 3 bottom-left, 4 top-left, 5 top
-    fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8])
-        -> Option<(&'a str, HexEdge)>;
+//    fn cell_edge<'a>(&self, x: usize, y: usize, edge: HexDir, out: &'a mut [u8])
+//        -> Option<(&'a str, HexEdge)>;
+
+    fn cell_edge(&self, x: usize, y: usize, edge: HexDir) -> HexEdge;
+    fn cell_edge_label<'a>(&self, x: usize, y: usize, edge: HexDir, buf: &'a mut [u8])
+        -> Option<&'a str>;
 
     fn get_generation(&self) -> u64;
 }
@@ -301,6 +304,7 @@ pub struct HexGrid {
     hover_pos:        (i32, i32),
 
     led_pos:        Option<Vec<((usize, usize), (f32, f32))>>,
+    edge_led_pos:   Option<Vec<((usize, usize, HexDir), (f32, f32, f32))>>,
 
     real_pos:       Rect,
     mouse:          (f32, f32),
@@ -327,6 +331,7 @@ impl HexGrid {
             mouse:              (0.0, 0.0),
             mouse_state:        None,
             led_pos:            Some(vec![]),
+            edge_led_pos:       Some(vec![]),
             model,
         }
     }
@@ -562,6 +567,9 @@ impl HexGrid {
         let mut led_pos = self.led_pos.take();
         led_pos.as_mut().unwrap().clear();
 
+        let mut edge_led_pos = self.edge_led_pos.take();
+        edge_led_pos.as_mut().unwrap().clear();
+
         for xi in 0..nx {
             let x = xi as f32;
 
@@ -715,7 +723,7 @@ impl HexGrid {
                             }
                         },
                         HexDecorPos::Top(x, y) => {
-                            if let Some((s, _)) = model.cell_edge(xi, yi, HexDir::T, &mut label_buf) {
+                            if let Some(s) = model.cell_edge_label(xi, yi, HexDir::T, &mut label_buf) {
                                 p.label(
                                     fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                     x - 0.5 * sz.0,
@@ -725,7 +733,7 @@ impl HexGrid {
                             }
                         },
                         HexDecorPos::Bottom(x, y) => {
-                            if let Some((s, et)) = model.cell_edge(xi, yi, HexDir::B, &mut label_buf) {
+                            if let Some(s) = model.cell_edge_label(xi, yi, HexDir::B, &mut label_buf) {
                                 p.label(
                                     fs2, 0, UI_GRID_TXT_EDGE_CLR,
                                     x - 0.5 * sz.0,
@@ -733,11 +741,13 @@ impl HexGrid {
                                     sz.0, th, s,
                                     dbg.source("cell_bottom"));
 
-                                et.draw(p, self.scale, x, y, 90.0);
+                                edge_led_pos.as_mut().unwrap().push(
+                                    ((xi, yi, HexDir::B),
+                                     (rp_offset.0 + x, rp_offset.1 + y, 90.0)));
                             }
                         },
                         HexDecorPos::TopLeft(x, y) => {
-                            if let Some((s, _)) = model.cell_edge(xi, yi, HexDir::TL, &mut label_buf) {
+                            if let Some(s) = model.cell_edge_label(xi, yi, HexDir::TL, &mut label_buf) {
                                 p.label_rot(
                                     fs2, 0, 300.0, UI_GRID_TXT_EDGE_CLR,
                                     (x - 0.5 * sz.0).floor(),
@@ -749,7 +759,7 @@ impl HexGrid {
                             }
                         },
                         HexDecorPos::TopRight(x, y) => {
-                            if let Some((s, et)) = model.cell_edge(xi, yi, HexDir::TR, &mut label_buf) {
+                            if let Some(s) = model.cell_edge_label(xi, yi, HexDir::TR, &mut label_buf) {
                                 p.label_rot(
                                     fs2, 0, 60.0, UI_GRID_TXT_EDGE_CLR,
                                     (x - 0.5 * sz.0).floor(),
@@ -759,11 +769,13 @@ impl HexGrid {
                                     sz.0, th2, s,
                                     dbg.source("cell_top_right"));
 
-                                et.draw(p, self.scale, x, y, -30.0);
+                                edge_led_pos.as_mut().unwrap().push(
+                                    ((xi, yi, HexDir::TR),
+                                     (rp_offset.0 + x, rp_offset.1 + y, -30.0)));
                             }
                         },
                         HexDecorPos::BotLeft(x, y) => {
-                            if let Some((s, _)) = model.cell_edge(xi, yi, HexDir::BL, &mut label_buf) {
+                            if let Some(s) = model.cell_edge_label(xi, yi, HexDir::BL, &mut label_buf) {
                                 p.label_rot(
                                     fs2, 0, 60.0, UI_GRID_TXT_EDGE_CLR,
                                     (x - 0.5 * sz.0).floor(),
@@ -775,7 +787,7 @@ impl HexGrid {
                             }
                         },
                         HexDecorPos::BotRight(x, y) => {
-                            if let Some((s, et)) = model.cell_edge(xi, yi, HexDir::BR, &mut label_buf) {
+                            if let Some(s) = model.cell_edge_label(xi, yi, HexDir::BR, &mut label_buf) {
                                 p.label_rot(
                                     fs2, 0, 300.0, UI_GRID_TXT_EDGE_CLR,
                                     (x - 0.5 * sz.0).floor(),
@@ -785,8 +797,11 @@ impl HexGrid {
                                     sz.0, th2, s,
                                     dbg.source("cell_bottom_right"));
 
-                                et.draw(p, self.scale, x, y, 30.0);
+                                edge_led_pos.as_mut().unwrap().push(
+                                    ((xi, yi, HexDir::BR),
+                                     (rp_offset.0 + x, rp_offset.1 + y, 30.0)));
                             }
+
                         },
                     }
                 });
@@ -795,7 +810,8 @@ impl HexGrid {
             }
         }
 
-        self.led_pos = led_pos;
+        self.led_pos      = led_pos;
+        self.edge_led_pos = edge_led_pos;
 
         p.reset_clip_region();
     }
@@ -814,6 +830,12 @@ impl HexGrid {
             let led = model.cell_led(cell_pos.0, cell_pos.1);
             if let Some(led) = led {
                 draw_led(painter, self.scale, pos.0, pos.1, led);
+            }
+        }
+
+        for (edge_pos, pos_angl) in self.edge_led_pos.as_ref().unwrap().iter() {
+            if let et = model.cell_edge(edge_pos.0, edge_pos.1, edge_pos.2) {
+                et.draw(painter, self.scale, pos_angl.0, pos_angl.1, pos_angl.2);
             }
         }
 

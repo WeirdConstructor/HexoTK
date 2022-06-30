@@ -18,8 +18,10 @@ impl HexGridModel for TestGrid {
     fn cell_led(&self, _x: usize, _y: usize) -> Option<(f32, f32)> { Some((0.5, 0.2)) }
     fn cell_label<'a>(&self, _x: usize, _y: usize, _out: &'a mut [u8])
         -> Option<HexCell<'a>> { None }
-    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8])
-        -> Option<(&'a str, HexEdge)> { None }
+    fn cell_edge<'a>(&self, _x: usize, _y: usize, _edge: HexDir)
+        -> HexEdge { HexEdge::Arrow }
+    fn cell_edge_label<'a>(&self, _x: usize, _y: usize, _edge: HexDir, _out: &'a mut [u8])
+        -> Option<&'a str> { None }
     fn get_generation(&self) -> u64 { 1 }
 //    fn cell_click(&mut self, x: usize, y: usize, btn: MButton) { }
 //    fn cell_drag(&mut self, x: usize, y: usize, x2: usize, y2: usize, btn: MButton) { }
