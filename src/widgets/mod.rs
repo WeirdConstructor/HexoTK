@@ -10,7 +10,7 @@ pub use entry::{Entry, EditableText, TextField};
 pub use hexknob::{ParamModel, DummyParamModel, HexKnob, ChangeRes};
 pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 pub use connector::{Connector, ConnectorData};
-pub use octave_keys::{OctaveKeys, OctaveKeysData};
+pub use octave_keys::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
 
 use keyboard_types::Key;
 

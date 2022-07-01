@@ -433,8 +433,13 @@ fn main() {
         conwid.set_ctrl(Control::Connector { con: Box::new(Connector::new(condata)) });
 
         let octkeys = Widget::new(style_ref.clone());
-        let octdata = Rc::new(RefCell::new(OctaveKeysData::new()));
+        let octdata = Rc::new(RefCell::new(DummyOctaveKeysData::new()));
         octkeys.set_ctrl(Control::OctaveKeys { keys: Box::new(OctaveKeys::new(octdata)) });
+        octkeys.reg("changed", {
+            move |_ctx, _wid, ev| {
+                println!("CHANGED KEYS! {:?}", ev);
+            }
+        });
 
         knrow.add(knob);
         knrow.add(conwid);

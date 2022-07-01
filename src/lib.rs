@@ -36,7 +36,7 @@ pub use widgets::{WichTextData, WichTextSimpleDataStore};
 pub use widgets::EditableText;
 pub use widgets::TextField;
 pub use widgets::{Connector, ConnectorData};
-pub use widgets::{OctaveKeys, OctaveKeysData};
+pub use widgets::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
 
 pub use morphorm::{Units, LayoutType, PositionType};
 
