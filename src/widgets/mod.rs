@@ -3,12 +3,14 @@ mod entry;
 mod hexknob;
 mod hexgrid;
 mod connector;
+mod octave_keys;
 
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
 pub use hexknob::{ParamModel, DummyParamModel, HexKnob, ChangeRes};
 pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 pub use connector::{Connector, ConnectorData};
+pub use octave_keys::{OctaveKeys, OctaveKeysData};
 
 use keyboard_types::Key;
 

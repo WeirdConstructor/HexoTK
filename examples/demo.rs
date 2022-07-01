@@ -432,8 +432,13 @@ fn main() {
         condata.borrow_mut().add_input("vol".to_string(),  false);
         conwid.set_ctrl(Control::Connector { con: Box::new(Connector::new(condata)) });
 
+        let octkeys = Widget::new(style_ref.clone());
+        let octdata = Rc::new(RefCell::new(OctaveKeysData::new()));
+        octkeys.set_ctrl(Control::OctaveKeys { keys: Box::new(OctaveKeys::new(octdata)) });
+
         knrow.add(knob);
         knrow.add(conwid);
+        knrow.add(octkeys);
         layer2root.add(knrow);
 
         let root3 = Widget::new(style_ref.clone());
