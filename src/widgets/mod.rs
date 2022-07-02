@@ -4,6 +4,7 @@ mod hexknob;
 mod hexgrid;
 mod connector;
 mod octave_keys;
+mod graph;
 
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
@@ -11,6 +12,7 @@ pub use hexknob::{ParamModel, DummyParamModel, HexKnob, ChangeRes};
 pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 pub use connector::{Connector, ConnectorData};
 pub use octave_keys::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
+pub use graph::{GraphModel, Graph, StaticGraphData};
 
 use keyboard_types::Key;
 

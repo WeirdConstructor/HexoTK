@@ -37,6 +37,7 @@ pub use widgets::EditableText;
 pub use widgets::TextField;
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
+pub use widgets::{GraphModel, Graph, StaticGraphData};
 
 pub use morphorm::{Units, LayoutType, PositionType};
 
@@ -197,6 +198,7 @@ pub enum Control {
     HexGrid    { grid:  Box<HexGrid> },
     Connector  { con:   Box<Connector> },
     OctaveKeys { keys:  Box<OctaveKeys> },
+    Graph      { graph: Box<Graph> },
 }
 
 impl std::fmt::Debug for Control {
@@ -212,6 +214,7 @@ impl std::fmt::Debug for Control {
             Control::HexGrid    { .. } => write!(f, "Ctrl::HexGrid"),
             Control::Connector  { .. } => write!(f, "Ctrl::Connector"),
             Control::OctaveKeys { .. } => write!(f, "Ctrl::OctaveKeys"),
+            Control::Graph      { .. } => write!(f, "Ctrl::Graph"),
         }
     }
 }
@@ -318,6 +321,7 @@ impl Control {
             Control::HexGrid    { .. } => { true },
             Control::Connector  { .. } => { true },
             Control::OctaveKeys { .. } => { true },
+            Control::Graph      { .. } => { true },
             Control::None              => { false },
         }
     }
@@ -339,6 +343,10 @@ impl Control {
                 let style = w.style();
                 keys.draw_frame(w, &style, painter);
             },
+            Control::Graph { graph } => {
+                let style = w.style();
+                graph.draw_frame(w, &style, painter);
+            },
         }
     }
 
@@ -354,6 +362,7 @@ impl Control {
             Control::HexGrid    { .. } => true,
             Control::Connector  { .. } => true,
             Control::OctaveKeys { .. } => true,
+            Control::Graph      { .. } => true,
         }
     }
 
@@ -369,6 +378,7 @@ impl Control {
             Control::HexGrid    { .. } => true,
             Control::Connector  { .. } => true,
             Control::OctaveKeys { .. } => true,
+            Control::Graph      { .. } => true,
         }
     }
 
@@ -385,6 +395,7 @@ impl Control {
             | Control::Entry      { .. }
             | Control::Connector  { .. }
             | Control::OctaveKeys { .. }
+            | Control::Graph      { .. }
             | Control::HexKnob    { .. } => ev,
         }
     }
@@ -543,6 +554,9 @@ impl Control {
             Control::OctaveKeys { keys } => {
                 keys.draw(w, style, draw_widget_pos, real_widget_pos, painter);
             },
+            Control::Graph { graph } => {
+                graph.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
         }
     }
 
@@ -686,6 +700,7 @@ impl Control {
             Control::HexGrid    { grid }  => grid.get_generation(),
             Control::Connector  { con }   => con.get_generation(),
             Control::OctaveKeys { keys }  => keys.get_generation(),
+            Control::Graph      { graph } => graph.get_generation(),
         }
     }
 
@@ -738,6 +753,7 @@ impl Control {
             Control::OctaveKeys { keys } => {
                 keys.handle(w, event, out_events);
             },
+            Control::Graph { .. } => { },
         }
     }
 }

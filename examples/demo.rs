@@ -443,9 +443,23 @@ fn main() {
             }
         });
 
+        let graph = Widget::new(style_ref.clone());
+        let gd = Rc::new(RefCell::new(StaticGraphData::new()));
+        for xi in 0..50 {
+            gd.borrow_mut().set_point(xi,
+                (((xi as f64 / 50.0)
+                  * std::f64::consts::PI * 2.0)
+                 .sin() + 1.0)
+                 * 0.5);
+        }
+        graph.set_ctrl(Control::Graph {
+            graph: Box::new(Graph::new(gd, 0.25, true)),
+        });
+
         knrow.add(knob);
         knrow.add(conwid);
         knrow.add(octkeys);
+        knrow.add(graph);
         layer2root.add(knrow);
 
         let root3 = Widget::new(style_ref.clone());
