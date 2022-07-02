@@ -106,6 +106,8 @@ pub enum StyleExt {
         vline2:         f32,
         vline1_color:   (f32, f32, f32),
         vline2_color:   (f32, f32, f32),
+        hline:          f32,
+        hline_color:    (f32, f32, f32),
     },
 }
 

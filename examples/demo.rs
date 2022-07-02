@@ -452,8 +452,10 @@ fn main() {
                 graph_line: 2.5,
                 vline1:     1.0,
                 vline2:     2.0,
+                hline:      1.0,
                 vline1_color: hexotk::style::UI_PRIM2_CLR,
                 vline2_color: hexotk::style::UI_PRIM_CLR,
+                hline_color:  hexotk::style::UI_ACCENT_CLR,
             };
         }));
         let gd = Rc::new(RefCell::new(StaticGraphData::new()));

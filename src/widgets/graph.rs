@@ -156,7 +156,7 @@ impl Graph {
         let mut line1_color = style.border_color;
         let mut line2_color = style.border_color;
         if let StyleExt::Graph {
-            graph_line, vline1, vline2, vline1_color, vline2_color
+            graph_line, vline1, vline2, vline1_color, vline2_color, ..
         } = style.ext {
             line_w      = graph_line;
             line1       = vline1;
@@ -197,6 +197,21 @@ impl Graph {
         let samples = (pos.w * self.sampling_factor).floor() as usize;
         if self.draw_buf.len() != samples {
             self.draw_buf.resize(samples, (0.0, 0.0));
+        }
+
+        if let StyleExt::Graph {
+            hline, hline_color, ..
+        } = style.ext {
+            if hline > 0.1 {
+                p.path_stroke(
+                    hline,
+                    hline_color,
+                    &mut [
+                        (pos.x,         (pos.y + pos.h * 0.5).round()),
+                        (pos.x + pos.w, (pos.y + pos.h * 0.5).round()),
+                    ].iter().copied(),
+                    false);
+            }
         }
 
         self.samples = samples as f64;
