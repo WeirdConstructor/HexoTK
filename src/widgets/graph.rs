@@ -194,7 +194,7 @@ impl Graph {
     {
         self.live_area = real_pos;
 
-        let samples = (pos.w * self.sampling_factor).floor() as usize;
+        let samples = ((pos.w * self.sampling_factor).floor() as usize).max(20);
         if self.draw_buf.len() != samples {
             self.draw_buf.resize(samples, (0.0, 0.0));
         }
