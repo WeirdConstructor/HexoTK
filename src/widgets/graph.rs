@@ -12,12 +12,6 @@ use crate::rect::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub const UI_GRPH_BORDER_CLR      : (f32, f32, f32) = UI_ACCENT_CLR;
-pub const UI_GRPH_LINE_CLR        : (f32, f32, f32) = UI_PRIM_CLR;
-pub const UI_GRPH_PHASE_CLR       : (f32, f32, f32) = UI_SELECT_CLR;
-pub const UI_GRPH_PHASE_BG_CLR    : (f32, f32, f32) = UI_HLIGHT2_CLR;
-pub const UI_GRPH_BG              : (f32, f32, f32) = UI_LBL_BG_CLR;
-
 pub trait GraphModel {
     fn get_generation(&self) -> u64;
     fn f(&self, init: bool, x: f64, x_next: f64) -> f64;
@@ -72,7 +66,7 @@ impl GraphModel for StaticGraphData {
     fn f(&self, init: bool, x: f64, x_next: f64) -> f64 {
         if self.points.is_empty() { return 0.0; }
 
-        let x       = self.points.len() as f64 * x.clamp(0.0, 1.0);
+        let x       = (self.points.len() - 1) as f64 * x.clamp(0.0, 1.0);
         let i_start = (x.floor() as usize).clamp(0, self.points.len() - 1);
         let i_end   = (x.ceil() as usize).clamp(0, self.points.len() - 1);
         let xr      = x - x.floor();
@@ -91,6 +85,8 @@ pub struct Graph {
     live_draw:       bool,
     samples:         f64,
     sampling_factor: f32,
+    vline1_pos:      Option<[(f32, f32); 2]>,
+    vline2_pos:      Option<[(f32, f32); 2]>,
 }
 
 impl Graph {
@@ -99,6 +95,8 @@ impl Graph {
             live_area: Rect::from(0.0, 0.0, 0.0, 0.0),
             draw_buf:  vec![],
             samples:   0.0,
+            vline1_pos: None,
+            vline2_pos: None,
             sampling_factor,
             data,
             live_draw,
@@ -128,6 +126,66 @@ impl Graph {
 
             x += xd;
         }
+
+        if let Some(x) = data.vline1_pos() {
+            let rx = ((pos.w as f64 * x) as f32).round();
+            self.vline1_pos = Some([
+                (pos.x + rx, pos.y),
+                (pos.x + rx, pos.y + pos.h),
+            ]);
+        } else {
+            self.vline1_pos = None;
+        }
+
+        if let Some(x) = data.vline2_pos() {
+            let rx = ((pos.w as f64 * x) as f32).round();
+            self.vline2_pos = Some([
+                (pos.x + rx, pos.y),
+                (pos.x + rx, pos.y + pos.h),
+            ]);
+        } else {
+            self.vline2_pos = None;
+        }
+    }
+
+    fn draw_graph(&mut self, style: &Style, p: &mut Painter) {
+        let line_color = style.color;
+        let mut line_w      = 1.0;
+        let mut line1       = 1.0;
+        let mut line2       = 1.0;
+        let mut line1_color = style.border_color;
+        let mut line2_color = style.border_color;
+        if let StyleExt::Graph {
+            graph_line, vline1, vline2, vline1_color, vline2_color
+        } = style.ext {
+            line_w      = graph_line;
+            line1       = vline1;
+            line2       = vline2;
+            line1_color = vline1_color;
+            line2_color = vline2_color;
+        }
+
+        p.path_stroke(
+            line_w,
+            line_color,
+            &mut self.draw_buf.iter().copied(),
+            false);
+
+        if let Some(linepos) = &self.vline1_pos {
+            p.path_stroke(
+                line1,
+                line1_color,
+                &mut linepos.iter().copied(),
+                false);
+        }
+
+        if let Some(linepos) = &self.vline2_pos {
+            p.path_stroke(
+                line2,
+                line2_color,
+                &mut linepos.iter().copied(),
+                false);
+        }
     }
 
     pub fn draw(
@@ -146,24 +204,14 @@ impl Graph {
         if self.live_draw { return; }
 
         self.draw_samples(pos);
-
-        p.path_stroke(
-            1.0,
-            UI_GRPH_LINE_CLR,
-            &mut self.draw_buf.iter().copied(),
-            false);
+        self.draw_graph(style, p);
     }
 
     pub fn draw_frame(&mut self, w: &Widget, style: &Style, p: &mut Painter) {
         if !self.live_draw { return; }
 
         self.draw_samples(self.live_area);
-
-        p.path_stroke(
-            1.0,
-            UI_GRPH_LINE_CLR,
-            &mut self.draw_buf.iter().copied(),
-            false);
+        self.draw_graph(style, p);
     }
 }
 

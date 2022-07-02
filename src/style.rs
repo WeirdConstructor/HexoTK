@@ -98,6 +98,18 @@ pub enum BorderStyle {
 }
 
 #[derive(Debug, Clone)]
+pub enum StyleExt {
+    None,
+    Graph {
+        graph_line:     f32,
+        vline1:         f32,
+        vline2:         f32,
+        vline1_color:   (f32, f32, f32),
+        vline2_color:   (f32, f32, f32),
+    },
+}
+
+#[derive(Debug, Clone)]
 pub struct Style {
     pub bg_color:               (f32, f32, f32),
     pub border_color:           (f32, f32, f32),
@@ -120,6 +132,7 @@ pub struct Style {
     pub text_valign:            VAlign,
     pub font_size:              f32,
     pub colors:                 Vec<(f32, f32, f32)>,
+    pub ext:                    StyleExt,
 }
 
 impl Style {
@@ -147,6 +160,7 @@ impl Style {
             text_align:             Align::Center,
             text_valign:            VAlign::Middle,
             font_size:              14.0,
+            ext:                    StyleExt::None,
             colors,
         }
     }

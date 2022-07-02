@@ -443,7 +443,19 @@ fn main() {
             }
         });
 
-        let graph = Widget::new(style_ref.clone());
+        let graph = Widget::new(style_ref.with_style_clone(|style| {
+            style.pad_top     = 5.0;
+            style.pad_bottom  = 5.0;
+            style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+            style.color    = hexotk::style::UI_SELECT_CLR;
+            style.ext = StyleExt::Graph {
+                graph_line: 2.5,
+                vline1:     1.0,
+                vline2:     2.0,
+                vline1_color: hexotk::style::UI_PRIM2_CLR,
+                vline2_color: hexotk::style::UI_PRIM_CLR,
+            };
+        }));
         let gd = Rc::new(RefCell::new(StaticGraphData::new()));
         for xi in 0..50 {
             gd.borrow_mut().set_point(xi,
@@ -452,8 +464,10 @@ fn main() {
                  .sin() + 1.0)
                  * 0.5);
         }
+        gd.borrow_mut().set_vline1(Some(0.25));
+        gd.borrow_mut().set_vline2(Some(0.6));
         graph.set_ctrl(Control::Graph {
-            graph: Box::new(Graph::new(gd, 0.25, true)),
+            graph: Box::new(Graph::new(gd, 0.1, false)),
         });
 
         knrow.add(knob);

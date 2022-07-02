@@ -25,7 +25,7 @@ pub use widget::Widget;
 use widget::{widget_draw, widget_draw_frame, widget_draw_shallow, widget_annotate_drop_event};
 pub use ui::UI;
 pub use ui::{TestDriver, TestScript};
-pub use style::{Style, Align, VAlign, BorderStyle};
+pub use style::{Style, StyleExt, Align, VAlign, BorderStyle};
 pub use widget::Layout;
 
 pub use widgets::Entry;
