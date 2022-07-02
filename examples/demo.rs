@@ -434,7 +434,9 @@ fn main() {
 
         let octkeys = Widget::new(style_ref.clone());
         let octdata = Rc::new(RefCell::new(DummyOctaveKeysData::new()));
-        octkeys.set_ctrl(Control::OctaveKeys { keys: Box::new(OctaveKeys::new(octdata)) });
+        octkeys.set_ctrl(Control::OctaveKeys {
+            keys: Box::new(OctaveKeys::new(octdata))
+        });
         octkeys.reg("changed", {
             move |_ctx, _wid, ev| {
                 println!("CHANGED KEYS! {:?}", ev);
