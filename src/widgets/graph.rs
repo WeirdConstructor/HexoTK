@@ -83,21 +83,19 @@ pub struct Graph {
     draw_buf:        Vec<(f32, f32)>,
     live_area:       Rect,
     live_draw:       bool,
-    samples:         f64,
-    sampling_factor: f32,
+    samples:         u16,
     vline1_pos:      Option<[(f32, f32); 2]>,
     vline2_pos:      Option<[(f32, f32); 2]>,
 }
 
 impl Graph {
-    pub fn new(data: Rc<RefCell<dyn GraphModel>>, sampling_factor: f32, live_draw: bool) -> Self {
+    pub fn new(data: Rc<RefCell<dyn GraphModel>>, samples: u16, live_draw: bool) -> Self {
         Self {
             live_area: Rect::from(0.0, 0.0, 0.0, 0.0),
             draw_buf:  vec![],
-            samples:   0.0,
             vline1_pos: None,
             vline2_pos: None,
-            sampling_factor,
+            samples,
             data,
             live_draw,
         }
@@ -108,12 +106,12 @@ impl Graph {
     }
 
     fn draw_samples(&mut self, pos: Rect) {
-        let samples = self.samples;
+        let samples = self.samples as f64;
         let mut data = self.data.borrow_mut();
 
         let mut x : f64 = 0.0;
         let xd = 1.0 / (samples - 1.0);
-        for i in 0..(samples as usize) {
+        for i in 0..(self.samples as usize) {
             let gx = x * (pos.w as f64);
             let gy =
                 (1.0 - data.f(i == 0, x, x + xd).clamp(0.0, 1.0))
@@ -194,9 +192,8 @@ impl Graph {
     {
         self.live_area = real_pos;
 
-        let samples = ((pos.w * self.sampling_factor).floor() as usize).max(20);
-        if self.draw_buf.len() != samples {
-            self.draw_buf.resize(samples, (0.0, 0.0));
+        if self.draw_buf.len() != (self.samples as usize) {
+            self.draw_buf.resize(self.samples as usize, (0.0, 0.0));
         }
 
         if let StyleExt::Graph {
@@ -213,8 +210,6 @@ impl Graph {
                     false);
             }
         }
-
-        self.samples = samples as f64;
 
         if self.live_draw { return; }
 

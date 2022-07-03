@@ -469,7 +469,7 @@ fn main() {
         gd.borrow_mut().set_vline1(Some(0.25));
         gd.borrow_mut().set_vline2(Some(0.6));
         graph.set_ctrl(Control::Graph {
-            graph: Box::new(Graph::new(gd, 0.1, false)),
+            graph: Box::new(Graph::new(gd, 128, false)),
         });
 
         knrow.add(knob);
