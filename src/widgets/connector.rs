@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
+use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
 
 use crate::style::*;
 
@@ -14,7 +14,6 @@ use std::cell::RefCell;
 
 pub const UI_CON_BORDER_CLR      : (f32, f32, f32) = UI_ACCENT_CLR;
 pub const UI_CON_HOV_CLR         : (f32, f32, f32) = UI_HLIGHT_CLR;
-pub const UI_CON_BG              : (f32, f32, f32) = UI_LBL_BG_CLR;
 pub const UI_CON_BORDER_W        : f32             = 2.0;
 
 #[derive(Debug, Clone)]

@@ -297,7 +297,6 @@ pub struct WidgetImpl {
     parent:         Option<Weak<RefCell<WidgetImpl>>>,
     childs:         Option<Vec<Widget>>,
     pub ctrl:       Option<Box<Control>>,
-    handle_childs:  Option<Vec<(Widget, Widget, bool, bool)>>,
     pos:            Rect,
     layout:         Layout,
     style:          Rc<Style>,
@@ -328,7 +327,6 @@ impl WidgetImpl {
             evc:            Some(EventCore::new()),
             parent:         None,
             childs:         Some(vec![]),
-            handle_childs:  Some(vec![]),
             ctrl:           Some(Box::new(Control::None)),
             data_gen:       0,
             pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
@@ -579,7 +577,7 @@ pub fn widget_draw(
 
 pub fn widget_draw_shallow(
     widget: &Widget,
-    redraw: bool,
+    _redraw: bool,
     painter: &mut Painter)
 {
     let visible  = widget.0.borrow().layout.visible;

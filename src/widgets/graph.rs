@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
+use crate::{Widget, Style};
 
 use crate::style::*;
 
@@ -14,7 +14,7 @@ use std::cell::RefCell;
 
 pub trait GraphModel {
     fn get_generation(&self) -> u64;
-    fn f(&self, init: bool, x: f64, x_next: f64) -> f64;
+    fn f(&mut self, init: bool, x: f64, x_next: f64) -> f64;
     fn vline1_pos(&self) -> Option<f64>;
     fn vline2_pos(&self) -> Option<f64>;
 }
@@ -63,7 +63,7 @@ impl StaticGraphData {
 
 impl GraphModel for StaticGraphData {
     fn get_generation(&self) -> u64 { self.generation }
-    fn f(&self, init: bool, x: f64, x_next: f64) -> f64 {
+    fn f(&mut self, _init: bool, x: f64, _x_next: f64) -> f64 {
         if self.points.is_empty() { return 0.0; }
 
         let x       = (self.points.len() - 1) as f64 * x.clamp(0.0, 1.0);
@@ -109,7 +109,7 @@ impl Graph {
 
     fn draw_samples(&mut self, pos: Rect) {
         let samples = self.samples;
-        let data = self.data.borrow();
+        let mut data = self.data.borrow_mut();
 
         let mut x : f64 = 0.0;
         let xd = 1.0 / (samples - 1.0);
@@ -189,7 +189,7 @@ impl Graph {
     }
 
     pub fn draw(
-        &mut self, w: &Widget, style: &Style, pos: Rect,
+        &mut self, _w: &Widget, style: &Style, pos: Rect,
         real_pos: Rect, p: &mut Painter)
     {
         self.live_area = real_pos;
@@ -222,7 +222,7 @@ impl Graph {
         self.draw_graph(style, p);
     }
 
-    pub fn draw_frame(&mut self, w: &Widget, style: &Style, p: &mut Painter) {
+    pub fn draw_frame(&mut self, _w: &Widget, style: &Style, p: &mut Painter) {
         if !self.live_draw { return; }
 
         self.draw_samples(self.live_area);

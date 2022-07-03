@@ -46,8 +46,7 @@ pub struct Knob {
     s:              [(f32, f32); 7],
     arc_len:        [f32; 5],
     full_len:       f32,
-    s1_len:         f32,
-    s2_len:         f32,
+    s_len:          f32,
     radius:         f32,
     font_size_lbl:  f32,
     font_size_data: f32,
@@ -77,25 +76,23 @@ impl Knob {
         s[5] = circle_point(radius, (init_rot + 300.0_f32).to_radians());
         s[6] = circle_point(radius, (init_rot + 350.0_f32).to_radians());
 
-        let s1_len  = ((s[0].0 - s[1].1).powf(2.0) + (s[0].0 - s[1].1).powf(2.0)).sqrt();
-        let s2_len  = ((s[1].0 - s[2].1).powf(2.0) + (s[1].0 - s[2].1).powf(2.0)).sqrt();
+        let s_len  = ((s[1].0 - s[2].1).powf(2.0) + (s[1].0 - s[2].1).powf(2.0)).sqrt();
 
         // TODO: If I stumble across this the next time, simplify this.
-        let full_len = s2_len * 2.0 + s2_len * 4.0;
+        let full_len = s_len * 2.0 + s_len * 4.0;
 
-        arc_len[0] = s2_len                  / full_len;
-        arc_len[1] = (s2_len + s2_len)       / full_len;
-        arc_len[2] = (s2_len + 2.0 * s2_len) / full_len;
-        arc_len[3] = (s2_len + 3.0 * s2_len) / full_len;
-        arc_len[4] = (s2_len + 4.0 * s2_len) / full_len;
+        arc_len[0] = s_len                  / full_len;
+        arc_len[1] = (s_len + s_len)       / full_len;
+        arc_len[2] = (s_len + 2.0 * s_len) / full_len;
+        arc_len[3] = (s_len + 3.0 * s_len) / full_len;
+        arc_len[4] = (s_len + 4.0 * s_len) / full_len;
 
         Self {
             sbottom,
             s,
             arc_len,
             full_len,
-            s1_len,
-            s2_len,
+            s_len,
             radius,
             font_size_lbl,
             font_size_data,
@@ -298,7 +295,7 @@ impl Knob {
 
         // The segment len is used to calculate the ratio of the traveled
         // total length.
-        let segment_len = self.s2_len;
+        let segment_len = self.s_len;
         let prev       = s[next_idx - 1];
         let last       = s[next_idx];
         let rest_len   = value - prev_arc_len;

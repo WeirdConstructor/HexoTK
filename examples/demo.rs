@@ -54,11 +54,11 @@ fn main() {
 
         let style_ref = Rc::new(style.clone());
 
-        let new_txt_btn = { let style_ref = style_ref.clone(); Box::new(move |txt: &str| {
-            let btn1 = Widget::new(style_ref.clone());
-            btn1.set_ctrl(Control::Button { label: Box::new(txt.to_string()) });
-            btn1
-        }) };
+//        let new_txt_btn = { let style_ref = style_ref.clone(); Box::new(move |txt: &str| {
+//            let btn1 = Widget::new(style_ref.clone());
+//            btn1.set_ctrl(Control::Button { label: Box::new(txt.to_string()) });
+//            btn1
+//        }) };
 
         let wid = Widget::new(style_ref.clone());
 
@@ -278,7 +278,7 @@ fn main() {
 
         for dw_x in [dw_x1, dw_x2, dw_x3] {
             dw_x.change_layout(dw_x_layout);
-            dw_x.reg("click", move |_ctx, wid, _ev| println!("Test Click"));
+            dw_x.reg("click", move |_ctx, _wid, _ev| println!("Test Click"));
             dw.add(dw_x);
         }
 
@@ -286,7 +286,7 @@ fn main() {
 
         btn2.reg("click", {
             let dw = dw.clone();
-            move |_ctx, _wid, ev| { dw.popup_at(PopupPos::MousePos); }
+            move |_ctx, _wid, _ev| { dw.popup_at(PopupPos::MousePos); }
         });
 
         let drag_wid = Widget::new(style_ref.clone());
@@ -502,7 +502,7 @@ fn main() {
             ui.add_layer_root(my_root);
         }
 
-        let mytestroot = Widget::new(style_ref.clone());
+//        let mytestroot = Widget::new(style_ref.clone());
 
 //        hexgrid.enable_cache();
 //        mytestroot.enable_cache();

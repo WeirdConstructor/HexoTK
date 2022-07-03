@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style, Mutable};
+use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
 
 use crate::style::*;
 
@@ -183,8 +183,8 @@ impl OctaveKeys {
     }
 
     pub fn draw(
-        &mut self, w: &Widget, style: &Style, pos: Rect,
-        real_pos: Rect, p: &mut Painter)
+        &mut self, w: &Widget, _style: &Style, pos: Rect,
+        real_pos: Rect, _p: &mut Painter)
     {
         let mut dbg = LblDebugTag::from_id(w.id());
         let rp_offset = (real_pos.x - pos.x, real_pos.y - pos.y);
@@ -254,7 +254,7 @@ impl OctaveKeys {
         }
     }
 
-    pub fn draw_frame(&mut self, w: &Widget, style: &Style, painter: &mut Painter) {
+    pub fn draw_frame(&mut self, w: &Widget, _style: &Style, painter: &mut Painter) {
         let phase = self.data.borrow().phase_value();
         let phase_index = (phase * 12.0).floor() as usize;
 

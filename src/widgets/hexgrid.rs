@@ -12,20 +12,6 @@ use crate::rect::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-macro_rules! hxclr {
-    ($i: expr) => {
-        (
-            ($i >> 16 & 0xFF) as f32 / 255.0,
-            ($i >> 8  & 0xFF) as f32 / 255.0,
-            ($i       & 0xFF) as f32 / 255.0,
-        )
-    }
-}
-
-pub fn hex_color_idx2clr(style: &Style, idx: u8) -> (f32, f32, f32) {
-    style.colors[idx as usize % style.colors.len()]
-}
-
 pub const UI_GRID_TXT_CENTER_CLR    : (f32, f32, f32) = UI_PRIM_CLR;
 pub const UI_GRID_TXT_CENTER_HL_CLR : (f32, f32, f32) = UI_HLIGHT_CLR;
 pub const UI_GRID_TXT_CENTER_SL_CLR : (f32, f32, f32) = UI_SELECT_CLR;
@@ -381,11 +367,6 @@ impl HexGrid {
     }
 }
 
-#[derive(Clone)]
-pub enum HexGridMessage {
-    SetModel(Rc<RefCell<dyn HexGridModel>>),
-}
-
 impl HexGrid {
     pub fn handle(
         &mut self, w: &Widget, event: &InputEvent,
@@ -637,7 +618,7 @@ impl HexGrid {
                     } else if model.cell_empty(xi, yi) {
                         (3.0, UI_GRID_EMPTY_BORDER_CLR)
                     } else {
-                        (3.0, hex_color_idx2clr(style, model.cell_color(xi, yi)))
+                        (3.0, style.color_by_idx(model.cell_color(xi, yi) as usize))
                     };
 
                 p.translate(shift_x, shift_y);
@@ -709,7 +690,7 @@ impl HexGrid {
                                         dbg.source("cell_num"));
                                 }
 
-                                if let Some(led) = led {
+                                if let Some(_led) = led {
                                     led_pos
                                         .as_mut().unwrap()
                                         .push(((xi, yi), (rp_offset.0 + x, rp_offset.1 + (y - th))));
@@ -816,7 +797,7 @@ impl HexGrid {
         p.reset_clip_region();
     }
 
-    pub fn draw_frame(&mut self, w: &Widget, style: &Style, painter: &mut Painter) {
+    pub fn draw_frame(&mut self, _w: &Widget, _style: &Style, painter: &mut Painter) {
         let shift_x = (self.shift_offs.0 + self.tmp_shift_offs.map(|o| o.0).unwrap_or(0.0)).round();
         let shift_y = (self.shift_offs.1 + self.tmp_shift_offs.map(|o| o.1).unwrap_or(0.0)).round();
 
@@ -834,9 +815,8 @@ impl HexGrid {
         }
 
         for (edge_pos, pos_angl) in self.edge_led_pos.as_ref().unwrap().iter() {
-            if let et = model.cell_edge(edge_pos.0, edge_pos.1, edge_pos.2) {
-                et.draw(painter, self.scale, pos_angl.0, pos_angl.1, pos_angl.2);
-            }
+            let et = model.cell_edge(edge_pos.0, edge_pos.1, edge_pos.2);
+            et.draw(painter, self.scale, pos_angl.0, pos_angl.1, pos_angl.2);
         }
 
         painter.restore();

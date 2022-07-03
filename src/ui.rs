@@ -41,7 +41,7 @@ impl Layer {
                     PopupPos::MousePos => mouse_pos,
                 };
 
-            let mut popup_pos = wid.pos();
+            let popup_pos = wid.pos();
 
             let (mut offs_x, mut offs_y) = (
                 dest_pos.0 - popup_pos.x,
@@ -107,7 +107,7 @@ impl TestDriver {
 
     pub fn get_all_labels(&self) -> Vec<LabelInfo> {
         let mut ret = vec![];
-        for (id, wid) in self.widgets.iter() {
+        for (_id, wid) in self.widgets.iter() {
             for wfb in wid.labels.iter() {
                 let (tag, tag_path, ctrl, wid_pos) =
                     self.widget_tags
@@ -360,7 +360,7 @@ impl UI {
 
         if let Some(mut fb) = self.fb.take() {
             let wids = self.widgets.clone();
-            wids.borrow().for_each_widget(|wid, id| {
+            wids.borrow().for_each_widget(|wid, _id| {
                 let tag = wid.tag();
                 let mut tag_path : Vec<String> = vec![tag.clone()];
                 let mut root = wid.clone();
@@ -709,7 +709,7 @@ impl UI {
     }
 
     fn do_auto_hide_if_not_inside(&mut self, pos: (f32, f32)) {
-        for (wid_id, subtree) in self.auto_hide_queue.iter() {
+        for (wid_id, _subtree) in self.auto_hide_queue.iter() {
             if let Some(wid) = self.widgets.borrow().get(*wid_id) {
                 if wid.is_visible() {
                     if !wid.pos().is_inside(pos.0, pos.1) {
@@ -767,6 +767,7 @@ impl WindowUI for UI {
     }
 
     fn post_frame(&mut self) {
+        #[allow(unused_assignments)]
         if let Some(fb) = self.fb.take() {
             let ctx = self.ctx.clone();
 
