@@ -184,11 +184,11 @@ pub struct WTFragment {
 }
 
 impl WTFragment {
-    fn new(font_size: f32) -> Self {
+    fn new(font_size: f32, text_color: usize) -> Self {
         Self {
             font_size,
             typ:            FragType::Text,
-            color:          9,
+            color:          text_color,
             color2:         17,
             is_active:      false,
             text:           String::from(""),
@@ -609,12 +609,14 @@ impl WichText {
 
         let mut cur_y = 0.0;
 
+        let mut txt_color = 9;
+
         for line in text.lines() {
             let mut frag_line = WTLine::new();
             let mut ci = line.chars().peekable();
 
             let mut cur_font_size = style_font_size;
-            let mut cur_fragment  = WTFragment::new(cur_font_size);
+            let mut cur_fragment  = WTFragment::new(cur_font_size, txt_color);
             let mut first_frag    = true;
             let mut in_frag_start = false;
             let mut in_frag       = false;
@@ -660,6 +662,11 @@ impl WichText {
                             cur_fragment.height_px     = h;
                             cur_fragment.ext_size_px.1 = h;
                         },
+                        't' => {
+                            txt_color =
+                                parse_number::<usize>(&mut ci, 0);
+                            cur_fragment.color = txt_color;
+                        },
                         'c' => {
                             cur_fragment.color =
                                 parse_number::<usize>(&mut ci, 0);
@@ -686,7 +693,7 @@ impl WichText {
                             frag_line.add(
                                 std::mem::replace(
                                     &mut cur_fragment,
-                                    WTFragment::new(cur_font_size)));
+                                    WTFragment::new(cur_font_size, txt_color)));
 
                             in_frag_start = false;
                             in_frag       = false;
@@ -708,7 +715,7 @@ impl WichText {
                                 frag_line.add(
                                     std::mem::replace(
                                         &mut cur_fragment,
-                                        WTFragment::new(cur_font_size)));
+                                        WTFragment::new(cur_font_size, txt_color)));
 
                                 in_frag = false;
                             }
@@ -727,14 +734,14 @@ impl WichText {
                                 cur_fragment.push_char('[');
                             } else {
                                 if first_frag && cur_fragment.chars.len() == 0 {
-                                    cur_fragment = WTFragment::new(cur_font_size);
+                                    cur_fragment = WTFragment::new(cur_font_size, txt_color);
                                 } else {
                                     cur_fragment.finish(p);
 
                                     frag_line.add(
                                         std::mem::replace(
                                             &mut cur_fragment,
-                                            WTFragment::new(cur_font_size)));
+                                            WTFragment::new(cur_font_size, txt_color)));
                                 }
 
                                 in_frag_start = true;
@@ -749,7 +756,7 @@ impl WichText {
                                         frag_line.add(
                                             std::mem::replace(
                                                 &mut cur_fragment,
-                                                WTFragment::new(cur_font_size)));
+                                                WTFragment::new(cur_font_size, txt_color)));
                                     }
                                 } else {
                                     cur_fragment.push_char(c);
@@ -768,7 +775,7 @@ impl WichText {
                 frag_line.add(
                     std::mem::replace(
                         &mut cur_fragment,
-                        WTFragment::new(cur_font_size)));
+                        WTFragment::new(cur_font_size, txt_color)));
             }
 
             //let default_font_h = p.font_height(cur_font_size, true);
