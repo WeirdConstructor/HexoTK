@@ -264,6 +264,7 @@ pub fn open_window(
         WindowOpenOptions {
             title:     title.to_string(),
             size:      Size::new(window_width as f64, window_height as f64),
+//            scale:     WindowScalePolicy::ScaleFactor(1.25),
             scale:     WindowScalePolicy::ScaleFactor(1.0),
             gl_config: Some(baseview::gl::GlConfig::default()),
         };

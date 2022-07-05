@@ -3,7 +3,7 @@ name        = "hexotk"
 version     = "0.5.0"
 authors     = ["Weird Constructor <weirdconstructor@m8geil.de>"]
 edition     = "2021"
-license     = "AGPL-3.0-or-later"
+license     = "GPL-3.0-or-later"
 description = "HexoTK - A GUI Toolkit for Audio Plugins"
 
 [lib]
