@@ -16,7 +16,7 @@ use raw_window_handle::RawWindowHandle;
 
 use baseview::{
     Size, Event, WindowEvent, MouseEvent, ScrollDelta, MouseButton, Window,
-    WindowHandler, WindowOpenOptions, WindowScalePolicy,
+    WindowHandler, WindowHandle, WindowOpenOptions, WindowScalePolicy,
     EventStatus,
 };
 
@@ -233,13 +233,32 @@ unsafe impl raw_window_handle::HasRawWindowHandle for StupidWindowHandleHolder {
     }
 }
 
+pub struct HexoTKWindowHandle {
+    hdl: Option<WindowHandle>,
+}
+
+impl HexoTKWindowHandle {
+    pub fn close(&mut self) {
+        if let Some(mut hdl) = self.hdl.take() {
+            hdl.close();
+        }
+    }
+    pub fn is_open(&self) -> bool {
+        self.hdl.as_ref().map(|h| h.is_open()).unwrap_or(false)
+    }
+}
+
+impl Drop for HexoTKWindowHandle {
+    fn drop(&mut self) { self.close() }
+}
+
 pub fn open_window(
     title:         &str,
     window_width:  i32,
     window_height: i32,
     parent:        Option<RawWindowHandle>,
     factory:       Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>
-) {
+) -> Option<HexoTKWindowHandle> {
     //d// println!("*** OPEN WINDOW ***");
     let options =
         WindowOpenOptions {
@@ -292,8 +311,11 @@ pub fn open_window(
 
     if let Some(parent) = parent {
         let swhh = StupidWindowHandleHolder { handle: parent };
-        Window::open_parented(&swhh, options, window_create_fun);
+        Some(HexoTKWindowHandle {
+            hdl: Some(Window::open_parented(&swhh, options, window_create_fun))
+        })
     } else {
         Window::open_blocking(options, window_create_fun);
+        None
     }
 }

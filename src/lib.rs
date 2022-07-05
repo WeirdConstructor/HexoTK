@@ -18,7 +18,7 @@ use std::cell::RefCell;
 use std::collections::HashSet;
 
 use keyboard_types::{KeyboardEvent}; // Key
-pub use window::open_window;
+pub use window::{open_window, HexoTKWindowHandle};
 pub use rect::Rect;
 use painter::Painter;
 pub use widget::Widget;
