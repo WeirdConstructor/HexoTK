@@ -19,7 +19,7 @@ use crate::layout::LayoutCache;
 use crate::widget_store::{WidgetStore, WidgetTree};
 use crate::widget::{widget_walk, widget_walk_parents};
 
-use keyboard_types::Key;
+use keyboard_types::{KeyboardEvent, Key};
 use morphorm::{
     PositionType, Units,
 };
@@ -134,6 +134,27 @@ impl TestDriver {
         }
 
         ret
+    }
+
+    pub fn inject_char(&mut self, chr: &str) {
+        let mut ev = KeyboardEvent::default();
+        ev.key   = Key::Character(chr.to_string());
+        ev.state = keyboard_types::KeyState::Down;
+        self.injected_events.push(InputEvent::KeyPressed(ev));
+    }
+
+    pub fn inject_key_down(&mut self, key: Key) {
+        let mut ev = KeyboardEvent::default();
+        ev.key   = key;
+        ev.state = keyboard_types::KeyState::Down;
+        self.injected_events.push(InputEvent::KeyPressed(ev));
+    }
+
+    pub fn inject_key_up(&mut self, key: Key) {
+        let mut ev = KeyboardEvent::default();
+        ev.key   = key;
+        ev.state = keyboard_types::KeyState::Up;
+        self.injected_events.push(InputEvent::KeyReleased(ev));
     }
 
     pub fn inject_mouse_press_at(&mut self, x: f32, y: f32, btn: MButton) {
