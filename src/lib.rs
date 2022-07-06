@@ -718,13 +718,21 @@ impl Control {
             Control::Label { .. } => { },
             Control::Button { .. } => {
                 match event {
-                    InputEvent::MouseButtonPressed(_button) => {
+                    InputEvent::MouseButtonPressed(button) => {
                         if is_hovered { w.activate(); }
+                        out_events.push((w.id(), Event {
+                            name: "press".to_string(),
+                            data: EvPayload::Button(*button),
+                        }));
                     },
                     InputEvent::MouseButtonReleased(button) => {
                         if w.is_active() && is_hovered {
                             out_events.push((w.id(), Event {
                                 name: "click".to_string(),
+                                data: EvPayload::Button(*button),
+                            }));
+                            out_events.push((w.id(), Event {
+                                name: "release".to_string(),
                                 data: EvPayload::Button(*button),
                             }));
                         }
