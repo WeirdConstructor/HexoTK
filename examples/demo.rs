@@ -404,6 +404,7 @@ fn main() {
         let pedit = Widget::new(
             style_ref.with_style_clone(|style| {
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+                style.border = 20.0;
             }));
         pedit.enable_cache();
         pedit.set_ctrl(Control::PatternEditor {
@@ -411,7 +412,7 @@ fn main() {
         });
 
         let wtwid_row = Widget::new(style_ref.clone());
-        //wtwid_row.enable_cache();
+        wtwid_row.enable_cache();
         wtwid_row.add(hexgrid.clone());
         wtwid_row.add(wtwid.clone());
         wtwid_row.add(pedit.clone());
@@ -531,6 +532,7 @@ fn main() {
 
         ui.add_layer_root(layer2root.clone());
         ui.add_layer_root(root3);
+//        ui.add_layer_root(root);
 
         ui
     }));

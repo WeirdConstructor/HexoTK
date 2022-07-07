@@ -558,6 +558,7 @@ impl WidgetImpl {
 pub fn widget_draw(
     widget: &Widget,
     redraw: &std::collections::HashSet<usize>,
+    draw_origin: Rect,
     painter: &mut Painter)
 {
     let visible  = widget.0.borrow().layout.visible;
@@ -568,7 +569,7 @@ pub fn widget_draw(
 
     if let Some(mut ctrl) = ctrl {
         ctrl.draw(
-            widget, Some(redraw), childs.as_ref(), painter);
+            draw_origin, widget, Some(redraw), childs.as_ref(), painter);
 
         widget.0.borrow_mut().childs = childs;
         widget.0.borrow_mut().ctrl = Some(ctrl);
@@ -578,6 +579,7 @@ pub fn widget_draw(
 pub fn widget_draw_shallow(
     widget: &Widget,
     _redraw: bool,
+    draw_origin: Rect,
     painter: &mut Painter)
 {
     let visible  = widget.0.borrow().layout.visible;
@@ -585,7 +587,7 @@ pub fn widget_draw_shallow(
 
     let ctrl = widget.0.borrow_mut().ctrl.take();
     if let Some(mut ctrl) = ctrl {
-        ctrl.draw(widget, None, None, painter);
+        ctrl.draw(draw_origin, widget, None, None, painter);
         widget.0.borrow_mut().ctrl = Some(ctrl);
     }
 }

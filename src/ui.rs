@@ -952,6 +952,8 @@ impl WindowUI for UI {
         let notifier = self.notifier.clone();
         let need_redraw = notifier.need_redraw();
 
+        let origin = Rect::from(0.0, 0.0, self.win_w, self.win_h);
+
         //d// println!("REDRAW: {:?}", self.cur_redraw);
         if need_redraw {
             self.ftm.start_measure();
@@ -968,13 +970,13 @@ impl WindowUI for UI {
             self.ftm.end_measure();
 
             for layer in &self.layers {
-                widget_draw(&layer.root, &self.cur_redraw, painter);
+                widget_draw(&layer.root, &self.cur_redraw, origin, painter);
                 widget_draw_frame(&layer.root, painter);
             }
 
             if let Some(drag_widget) = &self.drag.widget {
                 if self.drag.started {
-                    widget_draw(drag_widget, &self.cur_redraw, painter);
+                    widget_draw(drag_widget, &self.cur_redraw, origin, painter);
                 }
             }
 
@@ -983,13 +985,13 @@ impl WindowUI for UI {
             }
         } else {
             for layer in &self.layers {
-                widget_draw_shallow(&layer.root, false, painter);
+                widget_draw_shallow(&layer.root, false, origin, painter);
                 widget_draw_frame(&layer.root, painter);
             }
 
             if let Some(drag_widget) = &self.drag.widget {
                 if self.drag.started {
-                    widget_draw(drag_widget, &self.cur_redraw, painter);
+                    widget_draw(drag_widget, &self.cur_redraw, origin, painter);
                 }
             }
         }

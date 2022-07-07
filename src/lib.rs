@@ -523,6 +523,13 @@ impl Control {
                 let mut buf : [u8; 128] = [0; 128];
                 let s = label.fmt(&mut buf[..]);
 
+                //d// println!("[{:3}] LABEL draw={},{} real={},{}",
+                //d//     w.id(),
+                //d//     draw_widget_pos.x,
+                //d//     draw_widget_pos.y,
+                //d//     real_widget_pos.x,
+                //d//     real_widget_pos.y);
+
                 let align =
                     match style.text_align {
                         style::Align::Left   => -1,
@@ -577,15 +584,17 @@ impl Control {
         }
     }
 
+    /// The `draw_origin` is the position of the cached image we draw onto.
     pub fn draw(
         &mut self,
+        draw_origin: Rect,
         w: &Widget,
         redraw_widgets: Option<&std::collections::HashSet<usize>>,
         childs: Option<&Vec<Widget>>,
         painter: &mut Painter
     ) {
         let redraw =
-            if let Some(redraw_widgets) =redraw_widgets {
+            if let Some(redraw_widgets) = redraw_widgets {
                 redraw_widgets.contains(&w.id())
             } else { false };
 
@@ -595,16 +604,31 @@ impl Control {
         let has_default_style = self.has_default_style();
 
         // Calculate the actually used space of this widget:
-        let inner_pos_border =
+        let border_pos_offs =
             if self.has_default_style() { style.border } else { 0.0 };
-        let inner_pos = Rect {
-            x: pos.x + (inner_pos_border + style.pad_left),
-            y: pos.y + (inner_pos_border + style.pad_top),
-            w: pos.w - (2.0 * inner_pos_border + style.pad_left + style.pad_right),
-            h: pos.h - (2.0 * inner_pos_border + style.pad_top  + style.pad_bottom),
+
+        // local_pos: Local in relation to the drawing image/canvas origin
+        let local_pos = pos.offs(-draw_origin.x, -draw_origin.y);
+
+        // ctrl_pos: Logical position of the control (or child widget)
+        // in relation to the drawing image/canvas origin.
+        // This position is inside the border/padding. So to speak, the
+        // drawing area of this widget.
+        let ctrl_pos = Rect {
+            x: local_pos.x + (border_pos_offs + style.pad_left),
+            y: local_pos.y + (border_pos_offs + style.pad_top),
+            w: local_pos.w - (2.0 * border_pos_offs + style.pad_left + style.pad_right),
+            h: local_pos.h - (2.0 * border_pos_offs + style.pad_top  + style.pad_bottom),
         };
 
-        //d// println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), inner_pos, pos, self, style.border);
+        let (border_pad_offs_x, border_pad_offs_y) = (
+            ctrl_pos.x - local_pos.x,
+            ctrl_pos.y - local_pos.y
+        );
+
+        let real_widget_pos = pos.offs(border_pad_offs_x, border_pad_offs_y);
+
+        //d// println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), ctrl_pos, pos, self, style.border);
         //d// println!("DRAW {:?}", pos);
 
         let is_cached   = w.is_cached();
@@ -612,39 +636,43 @@ impl Control {
 
         // Draw the shadow:
         if has_default_style {
-            self.draw_shadow(w, &style, pos, painter);
+            self.draw_shadow(w, &style, local_pos, painter);
         }
 
-        let (draw_outer_pos, real_widget_pos, draw_widget_pos) =
+        let mut child_draw_origin = draw_origin;
+
+        let (draw_border_pos, draw_widget_pos) =
             if is_cached && redraw {
                 if let Some(img) = &img_ref {
-                    if    img.w() != pos.w.floor()
-                       || img.h() != pos.h.floor()
+                    if    img.w() != local_pos.w.floor()
+                       || img.h() != local_pos.h.floor()
                     {
-                        img_ref = Some(painter.new_image(pos.w, pos.h));
+                        img_ref = Some(painter.new_image(local_pos.w, local_pos.h));
                     }
                 } else {
-                    img_ref = Some(painter.new_image(pos.w, pos.h));
+                    img_ref = Some(painter.new_image(local_pos.w, local_pos.h));
                 }
-//                    img_ref = Some(painter.new_image(pos.w, pos.h));
+//                    img_ref = Some(painter.new_image(local_pos.w, local_pos.h));
 
-                //d// println!("      start img {} ({}:{})", w.id(), pos.w, pos.h);
-                //d// println!("START IMAGE wid={} {:?}", w.id(), pos);
-
+                //d// println!("      start img {} ({}:{})", w.id(), local_pos.w, local_pos.h);
+                //d// println!("START IMAGE wid={} {:?}", w.id(), local_pos);
                 painter.start_image(img_ref.as_ref().unwrap());
-                let draw_outer_pos = Rect::from(0.0, 0.0, pos.w, pos.h);
-                let (inner_xo, inner_yo) = (
-                    inner_pos.x - pos.x,
-                    inner_pos.y - pos.y
-                );
+                let draw_border_pos = Rect::from(0.0, 0.0, local_pos.w, local_pos.h);
                 let draw_widget_pos =
-                    Rect::from(inner_xo, inner_yo, inner_pos.w, inner_pos.h);
-                (draw_outer_pos, inner_pos, draw_widget_pos)
+                    Rect::from(
+                        border_pad_offs_x,
+                        border_pad_offs_y,
+                        ctrl_pos.w,
+                        ctrl_pos.h);
+
+                child_draw_origin = local_pos;
+
+                (draw_border_pos, draw_widget_pos)
             } else {
-                (pos, inner_pos, inner_pos)
+                (local_pos, ctrl_pos)
             };
 
-        let draw_outer_pos      = draw_outer_pos.clip_wh();
+        let mut draw_border_pos = draw_border_pos.clip_wh();
         let mut draw_widget_pos = draw_widget_pos.clip_wh();
         let mut real_widget_pos = real_widget_pos.clip_wh();
 
@@ -660,8 +688,6 @@ impl Control {
             BorderStyle::Bevel { corner_offsets } => {
                 draw_widget_pos =
                     draw_widget_pos
-                    .crop_top(style.border * 0.5)
-                    .crop_bottom(style.border * 0.5)
                     .crop_left(corner_offsets.0.max(corner_offsets.2))
                     .crop_right(corner_offsets.1.max(corner_offsets.3));
                 real_widget_pos =
@@ -675,9 +701,22 @@ impl Control {
             }
         }
 
+        //d// println!("[{:3}] pos={:3},{:3} orig={:3},{:3} bor={:3},{:3} dwid={:3},{:3} | childorig={:4},{:4}",
+        //d//     w.id(),
+        //d//     w.pos().x,
+        //d//     w.pos().y,
+        //d//     draw_origin.x,
+        //d//     draw_origin.y,
+        //d//     draw_border_pos.x,
+        //d//     draw_border_pos.y,
+        //d//     draw_widget_pos.x,
+        //d//     draw_widget_pos.y,
+        //d//     child_draw_origin.x,
+        //d//     child_draw_origin.y);
+
         if !is_cached || redraw {
             if has_default_style {
-                self.draw_border_and_bg(w, &style, draw_outer_pos, painter);
+                self.draw_border_and_bg(w, &style, draw_border_pos, painter);
             }
 
             //d// println!("DISP DRAW CTRL wid={} cached={} {:?}", w.id(), is_cached, draw_widget_pos);
@@ -688,7 +727,7 @@ impl Control {
         if let Some(redraw_widgets) = redraw_widgets {
             if let Some(childs) = childs {
                 for c in childs.iter() {
-                    widget_draw(c, redraw_widgets, painter);
+                    widget_draw(c, redraw_widgets, child_draw_origin, painter);
                 }
             }
         }
@@ -700,7 +739,8 @@ impl Control {
 
             //d// println!("PAINT IMAGE wid={} cached={} {:?}", w.id(), is_cached, pos);
 
-            painter.draw_image(&img_ref, pos.x, pos.y);
+//            painter.draw_image(&img_ref, pos.x - draw_origin.x, pos.y - draw_origin.y);
+            painter.draw_image(&img_ref, local_pos.x, local_pos.y);
             w.give_cache_img(img_ref);
         }
     }
