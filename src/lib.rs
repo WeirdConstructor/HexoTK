@@ -38,6 +38,10 @@ pub use widgets::TextField;
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
 pub use widgets::{GraphModel, Graph, StaticGraphData};
+pub use widgets::{
+    PatternEditor, PatternData, UIPatternModel,
+    PatternEditorFeedback, PatternEditorFeedbackDummy
+};
 
 pub use morphorm::{Units, LayoutType, PositionType};
 

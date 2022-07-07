@@ -5,6 +5,7 @@ mod hexgrid;
 mod connector;
 mod octave_keys;
 mod graph;
+mod pattern_editor;
 
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
 pub use entry::{Entry, EditableText, TextField};
@@ -13,9 +14,14 @@ pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 pub use connector::{Connector, ConnectorData};
 pub use octave_keys::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
 pub use graph::{GraphModel, Graph, StaticGraphData};
+pub use pattern_editor::{
+    PatternEditor, PatternData, UIPatternModel,
+    PatternEditorFeedback, PatternEditorFeedbackDummy
+};
 
 use keyboard_types::Key;
 
+#[derive(Debug)]
 pub struct ModifierTracker {
     pub ctrl:      bool,
     pub shift:     bool,
