@@ -401,9 +401,20 @@ fn main() {
         col.add(cont);
         col.add(lbl1);
 
+        let pedit = Widget::new(
+            style_ref.with_style_clone(|style| {
+                style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+            }));
+        pedit.enable_cache();
+        pedit.set_ctrl(Control::PatternEditor {
+            edit: Box::new(PatternEditor::new(6))
+        });
+
         let wtwid_row = Widget::new(style_ref.clone());
+        //wtwid_row.enable_cache();
         wtwid_row.add(hexgrid.clone());
         wtwid_row.add(wtwid.clone());
+        wtwid_row.add(pedit.clone());
         wtwid_row.change_layout(|layout| {
             layout.layout_type = Some(LayoutType::Row);
             layout.height = Some(Units::Percentage(60.0));

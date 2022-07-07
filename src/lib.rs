@@ -194,15 +194,16 @@ impl<T> TextMutable for T where T: Text + Mutable { }
 pub enum Control {
     None,
     Rect,
-    Button     { label: Box<dyn TextMutable> },
-    Label      { label: Box<dyn TextMutable> },
-    WichText   { wt:    Box<WichText> },
-    Entry      { entry: Box<Entry> },
-    HexKnob    { knob:  Box<HexKnob> },
-    HexGrid    { grid:  Box<HexGrid> },
-    Connector  { con:   Box<Connector> },
-    OctaveKeys { keys:  Box<OctaveKeys> },
-    Graph      { graph: Box<Graph> },
+    Button          { label: Box<dyn TextMutable> },
+    Label           { label: Box<dyn TextMutable> },
+    WichText        { wt:    Box<WichText> },
+    Entry           { entry: Box<Entry> },
+    HexKnob         { knob:  Box<HexKnob> },
+    HexGrid         { grid:  Box<HexGrid> },
+    Connector       { con:   Box<Connector> },
+    OctaveKeys      { keys:  Box<OctaveKeys> },
+    Graph           { graph: Box<Graph> },
+    PatternEditor   { edit:  Box<PatternEditor> },
 }
 
 impl std::fmt::Debug for Control {
@@ -210,15 +211,16 @@ impl std::fmt::Debug for Control {
         match self {
             Control::None => write!(f, "Ctrl::None"),
             Control::Rect => write!(f, "Ctrl::Rect"),
-            Control::Button     { .. } => write!(f, "Ctrl::Button"),
-            Control::Label      { .. } => write!(f, "Ctrl::Label"),
-            Control::WichText   { .. } => write!(f, "Ctrl::WichText"),
-            Control::Entry      { .. } => write!(f, "Ctrl::Entry"),
-            Control::HexKnob    { .. } => write!(f, "Ctrl::HexKnob"),
-            Control::HexGrid    { .. } => write!(f, "Ctrl::HexGrid"),
-            Control::Connector  { .. } => write!(f, "Ctrl::Connector"),
-            Control::OctaveKeys { .. } => write!(f, "Ctrl::OctaveKeys"),
-            Control::Graph      { .. } => write!(f, "Ctrl::Graph"),
+            Control::Button         { .. } => write!(f, "Ctrl::Button"),
+            Control::Label          { .. } => write!(f, "Ctrl::Label"),
+            Control::WichText       { .. } => write!(f, "Ctrl::WichText"),
+            Control::Entry          { .. } => write!(f, "Ctrl::Entry"),
+            Control::HexKnob        { .. } => write!(f, "Ctrl::HexKnob"),
+            Control::HexGrid        { .. } => write!(f, "Ctrl::HexGrid"),
+            Control::Connector      { .. } => write!(f, "Ctrl::Connector"),
+            Control::OctaveKeys     { .. } => write!(f, "Ctrl::OctaveKeys"),
+            Control::Graph          { .. } => write!(f, "Ctrl::Graph"),
+            Control::PatternEditor  { .. } => write!(f, "Ctrl::PatternEditor"),
         }
     }
 }
@@ -316,17 +318,18 @@ fn hex_points(pos: Rect, offset: f32) -> [(f32, f32); 6] {
 impl Control {
     pub fn has_default_style(&self) -> bool {
         match self {
-            Control::Rect              => { true },
-            Control::Label      { .. } => { true },
-            Control::Button     { .. } => { true },
-            Control::WichText   { .. } => { true },
-            Control::Entry      { .. } => { true },
-            Control::HexKnob    { .. } => { true },
-            Control::HexGrid    { .. } => { true },
-            Control::Connector  { .. } => { true },
-            Control::OctaveKeys { .. } => { true },
-            Control::Graph      { .. } => { true },
-            Control::None              => { false },
+            Control::Rect                  => { true },
+            Control::Label          { .. } => { true },
+            Control::Button         { .. } => { true },
+            Control::WichText       { .. } => { true },
+            Control::Entry          { .. } => { true },
+            Control::HexKnob        { .. } => { true },
+            Control::HexGrid        { .. } => { true },
+            Control::Connector      { .. } => { true },
+            Control::OctaveKeys     { .. } => { true },
+            Control::Graph          { .. } => { true },
+            Control::PatternEditor  { .. } => { true },
+            Control::None                  => { false },
         }
     }
     pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
@@ -351,38 +354,44 @@ impl Control {
                 let style = w.style();
                 graph.draw_frame(w, &style, painter);
             },
+            Control::PatternEditor { edit } => {
+                let style = w.style();
+                edit.draw_frame(w, &style, painter);
+            },
         }
     }
 
     pub fn can_show_hover(&self) -> bool {
         match self {
-            Control::None              => false,
-            Control::Rect              => false,
-            Control::Label      { .. } => false,
-            Control::Button     { .. } => true,
-            Control::WichText   { .. } => true,
-            Control::Entry      { .. } => true,
-            Control::HexKnob    { .. } => true,
-            Control::HexGrid    { .. } => true,
-            Control::Connector  { .. } => true,
-            Control::OctaveKeys { .. } => true,
-            Control::Graph      { .. } => true,
+            Control::None                  => false,
+            Control::Rect                  => false,
+            Control::Label          { .. } => false,
+            Control::Button         { .. } => true,
+            Control::WichText       { .. } => true,
+            Control::Entry          { .. } => true,
+            Control::HexKnob        { .. } => true,
+            Control::HexGrid        { .. } => true,
+            Control::Connector      { .. } => true,
+            Control::OctaveKeys     { .. } => true,
+            Control::Graph          { .. } => true,
+            Control::PatternEditor  { .. } => true,
         }
     }
 
     pub fn can_hover(&self) -> bool {
         match self {
-            Control::None              => false,
-            Control::Rect              => true,
-            Control::Label      { .. } => true,
-            Control::Button     { .. } => true,
-            Control::WichText   { .. } => true,
-            Control::Entry      { .. } => true,
-            Control::HexKnob    { .. } => true,
-            Control::HexGrid    { .. } => true,
-            Control::Connector  { .. } => true,
-            Control::OctaveKeys { .. } => true,
-            Control::Graph      { .. } => true,
+            Control::None                  => false,
+            Control::Rect                  => true,
+            Control::Label          { .. } => true,
+            Control::Button         { .. } => true,
+            Control::WichText       { .. } => true,
+            Control::Entry          { .. } => true,
+            Control::HexKnob        { .. } => true,
+            Control::HexGrid        { .. } => true,
+            Control::Connector      { .. } => true,
+            Control::OctaveKeys     { .. } => true,
+            Control::Graph          { .. } => true,
+            Control::PatternEditor  { .. } => true,
         }
     }
 
@@ -393,14 +402,15 @@ impl Control {
             }
             Control::Rect
             | Control::None
-            | Control::Label      { .. }
-            | Control::Button     { .. }
-            | Control::WichText   { .. }
-            | Control::Entry      { .. }
-            | Control::Connector  { .. }
-            | Control::OctaveKeys { .. }
-            | Control::Graph      { .. }
-            | Control::HexKnob    { .. } => ev,
+            | Control::Label            { .. }
+            | Control::Button           { .. }
+            | Control::WichText         { .. }
+            | Control::Entry            { .. }
+            | Control::Connector        { .. }
+            | Control::OctaveKeys       { .. }
+            | Control::Graph            { .. }
+            | Control::PatternEditor    { .. }
+            | Control::HexKnob          { .. } => ev,
         }
     }
 
@@ -561,6 +571,9 @@ impl Control {
             Control::Graph { graph } => {
                 graph.draw(w, style, draw_widget_pos, real_widget_pos, painter);
             },
+            Control::PatternEditor { edit } => {
+                edit.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
         }
     }
 
@@ -696,15 +709,16 @@ impl Control {
         match self {
             Control::None => 0,
             Control::Rect => 0,
-            Control::Button     { label } => label.get_generation(),
-            Control::Label      { label } => label.get_generation(),
-            Control::WichText   { wt }    => wt.data().get_generation(),
-            Control::Entry      { entry } => entry.get_generation(),
-            Control::HexKnob    { knob }  => knob.get_generation(),
-            Control::HexGrid    { grid }  => grid.get_generation(),
-            Control::Connector  { con }   => con.get_generation(),
-            Control::OctaveKeys { keys }  => keys.get_generation(),
-            Control::Graph      { graph } => graph.get_generation(),
+            Control::Button         { label } => label.get_generation(),
+            Control::Label          { label } => label.get_generation(),
+            Control::WichText       { wt }    => wt.data().get_generation(),
+            Control::Entry          { entry } => entry.get_generation(),
+            Control::HexKnob        { knob }  => knob.get_generation(),
+            Control::HexGrid        { grid }  => grid.get_generation(),
+            Control::Connector      { con }   => con.get_generation(),
+            Control::OctaveKeys     { keys }  => keys.get_generation(),
+            Control::Graph          { graph } => graph.get_generation(),
+            Control::PatternEditor  { edit }  => edit.get_generation(),
         }
     }
 
@@ -768,6 +782,9 @@ impl Control {
                 keys.handle(w, event, out_events);
             },
             Control::Graph { .. } => { },
+            Control::PatternEditor { edit } => {
+                edit.handle(w, event, out_events);
+            },
         }
     }
 }

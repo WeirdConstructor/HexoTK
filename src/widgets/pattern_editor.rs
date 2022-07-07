@@ -476,6 +476,20 @@ impl PatternEditor {
         }
     }
 
+    pub fn get_generation(&self) -> u64 {
+        let pat = self.pattern.lock().expect("Pattern lockable");
+        pat.get_generation() as u64
+    }
+
+    pub fn set_data_sources(
+        &mut self,
+        data: Arc<Mutex<dyn UIPatternModel>>,
+        fb: Arc<Mutex<dyn PatternEditorFeedback>>
+    ) {
+        self.pattern    = data;
+        self.pattern_fb = fb;
+    }
+
     pub fn calc_row_offs(&self, rows: usize) -> usize {
         let rows = rows as i64;
         let mut cur = self.cursor.0 as i64;
@@ -966,7 +980,12 @@ impl PatternEditor {
         real_pos: Rect, p: &mut Painter)
     {
         let mut dbg = LblDebugTag::from_id(w.id());
-        dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
+        let rp_offs = (
+            real_pos.x - pos.x,
+            real_pos.y - pos.y
+        );
+        dbg.set_offs(rp_offs);
+        self.real_pos = real_pos;
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
 
@@ -1092,8 +1111,8 @@ impl PatternEditor {
         let pos = pos.crop_top(2.0 * UI_TRK_ROW_HEIGHT);
 
         self.cell_zone = Rect {
-            x: pos.x - orig_pos.x,
-            y: pos.y - orig_pos.y,
+            x: (pos.x - orig_pos.x),
+            y: (pos.y - orig_pos.y),
             w: pos.w,
             h: pos.h,
         };
@@ -1266,6 +1285,11 @@ impl PatternEditor {
         }
 
         p.reset_clip_region();
+    }
+
+    pub fn draw_frame(
+        &mut self, _w: &Widget, _style: &Style, painter: &mut Painter
+    ) {
     }
 }
 
