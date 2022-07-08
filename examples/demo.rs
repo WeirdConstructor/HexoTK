@@ -27,17 +27,34 @@ impl HexGridModel for TestGrid {
 //    fn cell_drag(&mut self, x: usize, y: usize, x2: usize, y2: usize, btn: MButton) { }
 }
 
+#[derive(Debug)]
+struct PatFb(f32);
+impl PatternEditorFeedback for PatFb {
+    fn get_phase(&self) -> f32 { self.0 }
+}
+impl PatFb {
+    fn inc_phase(&mut self) {
+        self.0 += 1.0 / 290.0;
+        self.0 = self.0.fract();
+    }
+}
+
 fn main() {
+    let phase_data = Arc::new(Mutex::new(PatFb(0.0)));
     let concurrent_data =
         Arc::new(Mutex::new(CloneMutable::new(
             ("Count:".to_string(), 0))));
 
     std::thread::spawn({
         let data = concurrent_data.clone();
+        let pd = phase_data.clone();
         move || {
             loop {
                 if let Ok(mut data) = data.lock() {
                     (*data).1 += 1;
+                }
+                if let Ok(mut pd) = pd.lock() {
+                    pd.inc_phase();
                 }
                 std::thread::sleep(std::time::Duration::from_millis(1000));
             }
@@ -407,8 +424,12 @@ fn main() {
                 style.border = 20.0;
             }));
         pedit.enable_cache();
+        let mut pateditor = Box::new(PatternEditor::new(6));
+        let pattern = Arc::new(Mutex::new(PatternData::new(256)));
+        pateditor.set_data_sources(pattern, phase_data);
+
         pedit.set_ctrl(Control::PatternEditor {
-            edit: Box::new(PatternEditor::new(6))
+            edit: pateditor,
         });
 
         let wtwid_row = Widget::new(style_ref.clone());
