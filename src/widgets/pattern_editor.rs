@@ -365,6 +365,28 @@ impl PatternEditor {
                                     edit_step as i16, 0, &mut *pat);
                                 reset_entered_value = true;
                             },
+                            "s" => {
+                                let nv = 0x000;
+                                pat.set_cell_value(
+                                    self.cursor.0,
+                                    self.cursor.1,
+                                    nv as u16);
+                                self.last_set_value = nv as u16;
+                                advance_cursor(
+                                    &mut self.cursor,
+                                    edit_step as i16, 0, &mut *pat);
+                            },
+                            "g" => {
+                                let nv = 0xFFF;
+                                pat.set_cell_value(
+                                    self.cursor.0,
+                                    self.cursor.1,
+                                    nv as u16);
+                                self.last_set_value = nv as u16;
+                                advance_cursor(
+                                    &mut self.cursor,
+                                    edit_step as i16, 0, &mut *pat);
+                            },
                             _ if pat.is_col_note(self.cursor.1) => {
                                 if let Some(value) =
                                     note_from_char(&c[..], octave)
