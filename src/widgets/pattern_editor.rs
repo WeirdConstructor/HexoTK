@@ -36,7 +36,6 @@ pub const UI_TRK_CURSOR_FG_CLR     : (f32, f32, f32) = UI_LBL_BG_CLR;
 pub const UI_TRK_PHASEROW_BG_CLR   : (f32, f32, f32) = UI_HLIGHT_CLR;
 pub const UI_TRK_PHASEROW_FG_CLR   : (f32, f32, f32) = UI_LBL_BG_CLR;
 
-
 pub trait PatternEditorFeedback: std::fmt::Debug {
     fn get_phase(&self) -> f32;
 }

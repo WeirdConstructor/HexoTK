@@ -679,28 +679,6 @@ impl Control {
         real_widget_pos = style.apply_padding(real_widget_pos);
         draw_widget_pos = style.apply_padding(draw_widget_pos);
 
-        // Clip away some part that is taken away by the Hex or Bevel
-        // of the border, so the widgets don't draw outside by accident.
-        // Ideally we would clip/scissor the border shape away in the painter,
-        // but the painter does not support this.
-        match style.border_style {
-            BorderStyle::Rect => { }
-            BorderStyle::Bevel { corner_offsets } => {
-                draw_widget_pos =
-                    draw_widget_pos
-                    .crop_left(corner_offsets.0.max(corner_offsets.2))
-                    .crop_right(corner_offsets.1.max(corner_offsets.3));
-                real_widget_pos =
-                    real_widget_pos
-                    .crop_left(corner_offsets.0.max(corner_offsets.2))
-                    .crop_right(corner_offsets.1.max(corner_offsets.3));
-            }
-            BorderStyle::Hex { offset } => {
-                draw_widget_pos = draw_widget_pos.shrink(offset, 0.0);
-                real_widget_pos = real_widget_pos.shrink(offset, 0.0);
-            }
-        }
-
         //d// println!("[{:3}] pos={:3},{:3} orig={:3},{:3} bor={:3},{:3} dwid={:3},{:3} | childorig={:4},{:4}",
         //d//     w.id(),
         //d//     w.pos().x,
