@@ -486,9 +486,9 @@ impl HexGrid {
             InputEvent::MouseWheel(y) => {
                 if is_hovered {
                     if *y < 0.0 {
-                        self.scale_step += 1;
-                    } else {
                         self.scale_step -= 1;
+                    } else {
+                        self.scale_step += 1;
                     }
 
                     let old_shift = self.shift_offs;
