@@ -966,7 +966,7 @@ impl PatternEditor {
     }
 
     pub fn draw_frame(
-        &mut self, _w: &Widget, _style: &Style, painter: &mut Painter
+        &mut self, _w: &Widget, _style: &Style, _painter: &mut Painter
     ) {
     }
 }

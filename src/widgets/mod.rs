@@ -5,6 +5,7 @@ mod hexgrid;
 mod connector;
 mod octave_keys;
 mod graph;
+mod graph_minmax;
 mod pattern_editor;
 
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
@@ -14,6 +15,7 @@ pub use hexgrid::{HexGrid, HexGridModel, HexCell, HexDir, HexEdge, HexHLight};
 pub use connector::{Connector, ConnectorData};
 pub use octave_keys::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
 pub use graph::{GraphModel, Graph, StaticGraphData};
+pub use graph_minmax::{GraphMinMaxModel, GraphMinMax, StaticGraphMinMaxData};
 pub use pattern_editor::{
     PatternEditor, PatternData, UIPatternModel,
     PatternEditorFeedback, PatternEditorFeedbackDummy

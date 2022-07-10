@@ -3,8 +3,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 
-const WINDOW_W : i32 = 1020;
-const WINDOW_H : i32 = 720;
+const WINDOW_W : i32 = 1220;
+const WINDOW_H : i32 = 800;
 
 pub struct TestGrid {
 }
@@ -476,7 +476,7 @@ fn main() {
             }
         });
 
-        let graph = Widget::new(style_ref.with_style_clone(|style| {
+        let graph_style = style_ref.with_style_clone(|style| {
             style.pad_top     = 5.0;
             style.pad_bottom  = 5.0;
             style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
@@ -490,7 +490,8 @@ fn main() {
                 vline2_color: hexotk::style::UI_PRIM_CLR,
                 hline_color:  hexotk::style::UI_ACCENT_CLR,
             };
-        }));
+        });
+        let graph = Widget::new(graph_style.clone());
         let gd = Rc::new(RefCell::new(StaticGraphData::new()));
         for xi in 0..50 {
             gd.borrow_mut().set_point(xi,
@@ -505,10 +506,21 @@ fn main() {
             graph: Box::new(Graph::new(gd, 128, false)),
         });
 
+        let graph_mm = Widget::new(graph_style);
+        let gd = Rc::new(RefCell::new(StaticGraphMinMaxData::new()));
+        for xi in 0..128 {
+            let v = ((xi as f32 / 50.0) * std::f32::consts::PI * 2.0).sin();
+            gd.borrow_mut().set_point(xi, (v, v));
+        }
+        graph_mm.set_ctrl(Control::GraphMinMax {
+            graph: Box::new(GraphMinMax::new(gd, 128)),
+        });
+
         knrow.add(knob);
         knrow.add(conwid);
         knrow.add(octkeys);
         knrow.add(graph);
+        knrow.add(graph_mm);
         layer2root.add(knrow);
 
         let root3 = Widget::new(style_ref.clone());

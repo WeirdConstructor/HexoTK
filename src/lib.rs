@@ -38,6 +38,7 @@ pub use widgets::TextField;
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{OctaveKeys, OctaveKeysModel, DummyOctaveKeysData};
 pub use widgets::{GraphModel, Graph, StaticGraphData};
+pub use widgets::{GraphMinMaxModel, GraphMinMax, StaticGraphMinMaxData};
 pub use widgets::{
     PatternEditor, PatternData, UIPatternModel,
     PatternEditorFeedback, PatternEditorFeedbackDummy
@@ -203,6 +204,7 @@ pub enum Control {
     Connector       { con:   Box<Connector> },
     OctaveKeys      { keys:  Box<OctaveKeys> },
     Graph           { graph: Box<Graph> },
+    GraphMinMax     { graph: Box<GraphMinMax> },
     PatternEditor   { edit:  Box<PatternEditor> },
 }
 
@@ -220,6 +222,7 @@ impl std::fmt::Debug for Control {
             Control::Connector      { .. } => write!(f, "Ctrl::Connector"),
             Control::OctaveKeys     { .. } => write!(f, "Ctrl::OctaveKeys"),
             Control::Graph          { .. } => write!(f, "Ctrl::Graph"),
+            Control::GraphMinMax    { .. } => write!(f, "Ctrl::GraphMinMax"),
             Control::PatternEditor  { .. } => write!(f, "Ctrl::PatternEditor"),
         }
     }
@@ -328,6 +331,7 @@ impl Control {
             Control::Connector      { .. } => { true },
             Control::OctaveKeys     { .. } => { true },
             Control::Graph          { .. } => { true },
+            Control::GraphMinMax    { .. } => { true },
             Control::PatternEditor  { .. } => { true },
             Control::None                  => { false },
         }
@@ -354,6 +358,10 @@ impl Control {
                 let style = w.style();
                 graph.draw_frame(w, &style, painter);
             },
+            Control::GraphMinMax { graph } => {
+                let style = w.style();
+                graph.draw_frame(w, &style, painter);
+            },
             Control::PatternEditor { edit } => {
                 let style = w.style();
                 edit.draw_frame(w, &style, painter);
@@ -374,6 +382,7 @@ impl Control {
             Control::Connector      { .. } => true,
             Control::OctaveKeys     { .. } => true,
             Control::Graph          { .. } => true,
+            Control::GraphMinMax    { .. } => true,
             Control::PatternEditor  { .. } => true,
         }
     }
@@ -391,6 +400,7 @@ impl Control {
             Control::Connector      { .. } => true,
             Control::OctaveKeys     { .. } => true,
             Control::Graph          { .. } => true,
+            Control::GraphMinMax    { .. } => true,
             Control::PatternEditor  { .. } => true,
         }
     }
@@ -409,6 +419,7 @@ impl Control {
             | Control::Connector        { .. }
             | Control::OctaveKeys       { .. }
             | Control::Graph            { .. }
+            | Control::GraphMinMax      { .. }
             | Control::PatternEditor    { .. }
             | Control::HexKnob          { .. } => ev,
         }
@@ -578,6 +589,9 @@ impl Control {
             Control::Graph { graph } => {
                 graph.draw(w, style, draw_widget_pos, real_widget_pos, painter);
             },
+            Control::GraphMinMax { graph } => {
+                graph.draw(w, style, draw_widget_pos, real_widget_pos, painter);
+            },
             Control::PatternEditor { edit } => {
                 edit.draw(w, style, draw_widget_pos, real_widget_pos, painter);
             },
@@ -672,7 +686,7 @@ impl Control {
                 (local_pos, ctrl_pos)
             };
 
-        let mut draw_border_pos = draw_border_pos.clip_wh();
+        let draw_border_pos     = draw_border_pos.clip_wh();
         let mut draw_widget_pos = draw_widget_pos.clip_wh();
         let mut real_widget_pos = real_widget_pos.clip_wh();
 
@@ -736,6 +750,7 @@ impl Control {
             Control::Connector      { con }   => con.get_generation(),
             Control::OctaveKeys     { keys }  => keys.get_generation(),
             Control::Graph          { graph } => graph.get_generation(),
+            Control::GraphMinMax    { graph } => graph.get_generation(),
             Control::PatternEditor  { edit }  => edit.get_generation(),
         }
     }
@@ -800,6 +815,7 @@ impl Control {
                 keys.handle(w, event, out_events);
             },
             Control::Graph { .. } => { },
+            Control::GraphMinMax { .. } => { },
             Control::PatternEditor { edit } => {
                 edit.handle(w, event, out_events);
             },
