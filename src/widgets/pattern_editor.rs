@@ -131,6 +131,7 @@ impl PatternEditor {
         let phase_row = (pat.rows() as f32 * phase).floor() as usize;
 
         if self.last_phase_row != phase_row {
+            self.last_phase_row = phase_row;
             self.generation += 1;
         }
         self.generation
