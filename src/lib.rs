@@ -381,8 +381,8 @@ impl Control {
             Control::HexGrid        { .. } => true,
             Control::Connector      { .. } => true,
             Control::OctaveKeys     { .. } => true,
-            Control::Graph          { .. } => true,
-            Control::GraphMinMax    { .. } => true,
+            Control::Graph          { .. } => false,
+            Control::GraphMinMax    { .. } => false,
             Control::PatternEditor  { .. } => true,
         }
     }
@@ -399,8 +399,8 @@ impl Control {
             Control::HexGrid        { .. } => true,
             Control::Connector      { .. } => true,
             Control::OctaveKeys     { .. } => true,
-            Control::Graph          { .. } => true,
-            Control::GraphMinMax    { .. } => true,
+            Control::Graph          { .. } => false,
+            Control::GraphMinMax    { .. } => false,
             Control::PatternEditor  { .. } => true,
         }
     }
