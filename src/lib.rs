@@ -640,7 +640,14 @@ impl Control {
             ctrl_pos.y - local_pos.y
         );
 
-        let real_widget_pos = pos.offs(border_pad_offs_x, border_pad_offs_y);
+        let real_widget_pos =
+            pos.offs(border_pad_offs_x, border_pad_offs_y)
+                // FIXME: This is just a workaround, I need to think this
+                // cropping and repositioning of the "real" widget postion
+                // through. Because the rectangle should be the same size
+                // as the draw_widget_pos!
+               .crop_right(2.0 * border_pad_offs_x)
+               .crop_bottom(2.0 * border_pad_offs_y);
 
         //d// println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), ctrl_pos, pos, self, style.border);
         //d// println!("DRAW {:?}", pos);
