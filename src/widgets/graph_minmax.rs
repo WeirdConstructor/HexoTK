@@ -153,9 +153,8 @@ impl GraphMinMax {
         let mut data = self.data.borrow_mut();
 
         let txt_h = p.font_height(style.font_size as f32, true);
-        let txt_h_b = txt_h * 1.5;
         let val_pos  = pos.resize(pos.w, txt_h);
-        let grph_pos = pos.crop_bottom(txt_h_b).crop_top(txt_h);
+        let grph_pos = pos.crop_top(txt_h);
 
         data.read(&mut self.minmax_buf[..]);
 
