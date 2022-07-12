@@ -147,9 +147,9 @@ impl GraphMinMax {
         let mut line_w = 0.9;
         let mut line_c = 0.7;
         let mut line_c_color = (
-            style.color.0 * 0.75,
-            style.color.1 * 0.75,
-            style.color.2 * 0.75,
+            style.color.0 * 0.5,
+            style.color.1 * 0.5,
+            style.color.2 * 0.5,
         );
         if let StyleExt::Graph { graph_line, vline1, vline1_color, ..  } = style.ext {
             line_w       = graph_line;
