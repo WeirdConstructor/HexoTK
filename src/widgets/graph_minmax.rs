@@ -145,8 +145,16 @@ impl GraphMinMax {
 
         let line_color = style.color;
         let mut line_w = 0.9;
-        if let StyleExt::Graph { graph_line, ..  } = style.ext {
-            line_w = graph_line;
+        let mut line_c = 0.7;
+        let mut line_c_color = (
+            style.color.0 * 0.75,
+            style.color.1 * 0.75,
+            style.color.2 * 0.75,
+        );
+        if let StyleExt::Graph { graph_line, vline1, vline1_color, ..  } = style.ext {
+            line_w       = graph_line;
+            line_c       = vline1;
+            line_c_color = vline1_color;
         }
 
         let pos = self.live_area;
@@ -201,8 +209,8 @@ impl GraphMinMax {
         }
 
         p.path_stroke(
-            1.0,
-            line_color,
+            line_c,
+            line_c_color,
             &mut ([
                 (grph_pos.x             , grph_pos.y + grph_pos.h * 0.5),
                 (grph_pos.x + grph_pos.w, grph_pos.y + grph_pos.h * 0.5),
