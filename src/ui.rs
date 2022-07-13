@@ -842,9 +842,15 @@ impl WindowUI for UI {
 
                 if self.cur_script.is_none() && scripts.is_empty() {
                     if self.tests_run > 0 {
-                        println!("*** TEST RESULTS: {} run, {} pass, {} fail",
-                            self.tests_run, self.tests_run - self.tests_fail,
-                            self.tests_fail);
+                        if self.tests_fail > 0 {
+                            println!("### TESTS FAIL: {} run, {} pass, {} fail",
+                                self.tests_run, self.tests_run - self.tests_fail,
+                                self.tests_fail);
+                        } else {
+                            println!("*** TESTS OK: {} run, {} pass, {} fail",
+                                self.tests_run, self.tests_run - self.tests_fail,
+                                self.tests_fail);
+                        }
                         self.tests_run = 0;
                     }
                 }
