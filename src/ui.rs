@@ -280,6 +280,8 @@ pub struct UI {
     fb:                 Option<Box<TestDriver>>,
     scripts:            Option<Vec<TestScript>>,
     cur_script:         Option<TestScript>,
+    tests_run:          usize,
+    tests_fail:         usize,
     drag:               DragState,
     drop_query_ev:      Event,
     hover_ev:           Event,
@@ -306,6 +308,8 @@ impl UI {
             fb:                 None,
             scripts:            None,
             cur_script:         None,
+            tests_run:          0,
+            tests_fail:         0,
             drag:               DragState::new(),
             auto_hide_queue:    vec![],
             frame_cb:           None,
@@ -795,7 +799,7 @@ impl WindowUI for UI {
             let mut fb_ret =
                 if let Some(mut script) = self.cur_script.take() {
                     if script.queue.is_empty() {
-                        println!("PASS - {}", script.name());
+                        println!("*** PASS - {}", script.name());
 
                         fb
                     } else {
@@ -815,9 +819,10 @@ impl WindowUI for UI {
 
                         if !ok {
                             eprintln!(
-                                "FAIL - {} - step {}",
+                                "### FAIL - {} - step {}",
                                 script.name(),
                                 step_name);
+                            self.tests_fail += 1;
                         } else {
                             self.cur_script = Some(script);
                         }
@@ -831,7 +836,17 @@ impl WindowUI for UI {
 
             if let Some(scripts) = &mut self.scripts {
                 if self.cur_script.is_none() && !scripts.is_empty() {
+                    self.tests_run += 1;
                     self.cur_script = Some(scripts.remove(0));
+                }
+
+                if self.cur_script.is_none() && scripts.is_empty() {
+                    if self.tests_run > 0 {
+                        println!("*** TEST RESULTS: {} run, {} pass, {} fail",
+                            self.tests_run, self.tests_run - self.tests_fail,
+                            self.tests_fail);
+                        self.tests_run = 0;
+                    }
                 }
             }
 
