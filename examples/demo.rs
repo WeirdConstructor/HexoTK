@@ -381,6 +381,13 @@ fn main() {
         hexgrid.set_ctrl(Control::HexGrid {
             grid: Box::new(HexGrid::new(hexmodel)),
         });
+        hexgrid.reg("center_pos", {
+            move |_ctx, _wid, ev| {
+                if let EvPayload::HexGridPos { x, y } = &ev.data {
+                    println!("HEX CENTER: {},{}", x, y);
+                }
+            }
+        });
         hexgrid.reg("drop_query", {
             move |_ctx, _wid, ev| {
                 println!("Drop Accept query!");

@@ -993,6 +993,10 @@ pub struct Event {
 pub enum EvPayload {
     None,
     WichTextCommand { line: usize, frag: usize, cmd: String },
+    HexGridPos {
+        x: usize,
+        y: usize,
+    },
     HexGridClick {
         x: usize,
         y: usize,

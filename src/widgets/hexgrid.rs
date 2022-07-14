@@ -365,6 +365,21 @@ impl HexGrid {
 
         self.mouse_to_tile(x - pos.x - shift_x, y - pos.y - shift_y)
     }
+
+    pub fn create_center_tile_event(&self) -> Event {
+        let tile_pos =
+            self.get_mouse_tile_pos(
+                self.real_pos.x + self.real_pos.w * 0.5,
+                self.real_pos.y + self.real_pos.h * 0.5);
+
+        Event {
+            name: "center_pos".to_string(),
+            data: EvPayload::HexGridPos {
+                x: tile_pos.0 as usize,
+                y: tile_pos.1 as usize,
+            }
+        }
+    }
 }
 
 impl HexGrid {
@@ -400,6 +415,8 @@ impl HexGrid {
                     if let Some(tmp_shift_offs) = self.tmp_shift_offs.take() {
                         self.shift_offs.0 += tmp_shift_offs.0;
                         self.shift_offs.1 += tmp_shift_offs.1;
+
+                        out_events.push((w.id(), self.create_center_tile_event()));
                     }
                 } else {
                     let cur_tile_pos =
@@ -508,6 +525,7 @@ impl HexGrid {
                         old_shift.1 * self.scale
                     );
 
+                    out_events.push((w.id(), self.create_center_tile_event()));
                     w.emit_redraw_required();
                 }
             },
