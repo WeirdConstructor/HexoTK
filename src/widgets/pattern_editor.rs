@@ -677,12 +677,8 @@ impl PatternEditor {
 
         let pos = pos.crop_top(2.0 * UI_TRK_ROW_HEIGHT);
 
-        self.cell_zone = Rect {
-            x: (pos.x - orig_pos.x),
-            y: (pos.y - orig_pos.y),
-            w: pos.w,
-            h: pos.h,
-        };
+        self.cell_zone =
+            Rect { x: (pos.x - orig_pos.x), y: (pos.y - orig_pos.y), w: pos.w, h: pos.h };
 
         self.rows = (self.cell_zone.h / UI_TRK_ROW_HEIGHT).round() as usize - 1;
 
@@ -702,13 +698,7 @@ impl PatternEditor {
             dbg.set_logic_pos(-1 as i32, ir as i32);
 
             if self.edit_step > 0 && ir % self.edit_step == 0 {
-                p.rect_fill(
-                    UI_TRK_BG_ALT_CLR,
-                    pos.x,
-                    pos.y + y,
-                    pos.w,
-                    UI_TRK_ROW_HEIGHT,
-                );
+                p.rect_fill(UI_TRK_BG_ALT_CLR, pos.x, pos.y + y, pos.w, UI_TRK_ROW_HEIGHT);
             }
 
             p.label_mono(
@@ -852,9 +842,7 @@ impl PatternEditor {
             p.path_stroke(
                 1.0,
                 UI_TRK_COL_DIV_CLR,
-                &mut [(pos.x + x + 0.5, pos.y), (pos.x + x + 0.5, pos.y + pos.h)]
-                    .iter()
-                    .copied(),
+                &mut [(pos.x + x + 0.5, pos.y), (pos.x + x + 0.5, pos.y + pos.h)].iter().copied(),
                 false,
             );
         }

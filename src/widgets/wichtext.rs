@@ -97,10 +97,7 @@ impl WichTextSimpleDataStore {
     }
 
     pub fn set_data_source(&self, key: &str, source: Rc<Vec<f32>>) {
-        self.0
-            .borrow_mut()
-            .data_sources
-            .insert(key.to_string(), source);
+        self.0.borrow_mut().data_sources.insert(key.to_string(), source);
         self.0.borrow_mut().generation += 1;
     }
 
@@ -426,13 +423,7 @@ struct WTLine {
 
 impl WTLine {
     fn new() -> Self {
-        Self {
-            frags: vec![],
-            line_h: 0.0,
-            line_y: 0.0,
-            align: VAlign::Bottom,
-            wrap: false,
-        }
+        Self { frags: vec![], line_h: 0.0, line_y: 0.0, align: VAlign::Bottom, wrap: false }
     }
 
     fn add(&mut self, frag: WTFragment) {
@@ -508,12 +499,7 @@ struct DataSource {
 
 impl DataSource {
     fn new(source: Rc<dyn WichTextDataSource>) -> Self {
-        Self {
-            generation: 0,
-            cache_graph_size: (0.0, 0.0),
-            point_cache: vec![],
-            source,
-        }
+        Self { generation: 0, cache_graph_size: (0.0, 0.0), point_cache: vec![], source }
     }
 
     fn create_points(&mut self, graph_w: f32, graph_h: f32) {
@@ -844,8 +830,7 @@ impl WichText {
                 if add_after || cur_line.calc_cur_w(true, None) > width {
                     y += cur_line.finish(line.align, true, y);
 
-                    self.wrapped_lines
-                        .push(std::mem::replace(&mut cur_line, WTLine::new()));
+                    self.wrapped_lines.push(std::mem::replace(&mut cur_line, WTLine::new()));
                 }
 
                 if add_after {
@@ -873,21 +858,15 @@ impl WichText {
     }
 
     fn clamp_scroll(&mut self, mut dx: f32, mut dy: f32) -> (f32, f32) {
-        let max_scroll = if self.full_h > self.render.1 {
-            self.full_h - self.render.1
-        } else {
-            0.0
-        };
+        let max_scroll =
+            if self.full_h > self.render.1 { self.full_h - self.render.1 } else { 0.0 };
 
         if let Some((px, py)) = self.pan_pos {
             dx += self.mouse_pos.0 - px;
             dy += self.mouse_pos.1 - py;
         }
 
-        (
-            self.scroll.0 + dx,
-            (self.scroll.1 + dy).clamp(-max_scroll, 0.0),
-        )
+        (self.scroll.0 + dx, (self.scroll.1 + dy).clamp(-max_scroll, 0.0))
     }
 
     fn drag_val(&self, mouse_y: f32) -> f32 {
@@ -1035,12 +1014,7 @@ impl WichText {
         let pos = pos.floor();
         let pos = pos.crop_right(10.0);
 
-        let scroll_box = Rect {
-            x: pos.w + pos.x,
-            y: pos.y,
-            w: 10.0,
-            h: pos.h,
-        };
+        let scroll_box = Rect { x: pos.w + pos.x, y: pos.y, w: 10.0, h: pos.h };
 
         if self.text_generation != self.data.text_generation() {
             self.parse(style.font_size, p, &self.data.text());
@@ -1085,16 +1059,8 @@ impl WichText {
                 (val_s, knb_v)
             });
 
-        for (
-            line_idx,
-            WTLine {
-                frags,
-                line_h,
-                line_y,
-                align,
-                ..
-            },
-        ) in self.wrapped_lines.iter().enumerate()
+        for (line_idx, WTLine { frags, line_h, line_y, align, .. }) in
+            self.wrapped_lines.iter().enumerate()
         {
             for (frag_idx, frag) in frags.iter().enumerate() {
                 let valign_offs = match align {
@@ -1151,8 +1117,7 @@ impl WichText {
                 );
 
                 if frag.is_active {
-                    self.zones
-                        .push((frag_pos.offs(real_offs_x, real_offs_y), line_idx, frag_idx));
+                    self.zones.push((frag_pos.offs(real_offs_x, real_offs_y), line_idx, frag_idx));
                 }
             }
         }

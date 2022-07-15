@@ -29,12 +29,7 @@ pub struct StaticGraphData {
 
 impl StaticGraphData {
     pub fn new() -> Self {
-        Self {
-            points: vec![],
-            vline1: None,
-            vline2: None,
-            generation: 0,
-        }
+        Self { points: vec![], vline1: None, vline2: None, generation: 0 }
     }
 
     pub fn clear(&mut self) {
@@ -149,14 +144,8 @@ impl Graph {
         let mut line2 = 1.0;
         let mut line1_color = style.border_color;
         let mut line2_color = style.border_color;
-        if let StyleExt::Graph {
-            graph_line,
-            vline1,
-            vline2,
-            vline1_color,
-            vline2_color,
-            ..
-        } = style.ext
+        if let StyleExt::Graph { graph_line, vline1, vline2, vline1_color, vline2_color, .. } =
+            style.ext
         {
             line_w = graph_line;
             line1 = vline1;
@@ -165,12 +154,7 @@ impl Graph {
             line2_color = vline2_color;
         }
 
-        p.path_stroke(
-            line_w,
-            line_color,
-            &mut self.draw_buf.iter().copied(),
-            false,
-        );
+        p.path_stroke(line_w, line_color, &mut self.draw_buf.iter().copied(), false);
 
         if let Some(linepos) = &self.vline1_pos {
             p.path_stroke(line1, line1_color, &mut linepos.iter().copied(), false);
@@ -188,10 +172,7 @@ impl Graph {
             self.draw_buf.resize(self.samples as usize, (0.0, 0.0));
         }
 
-        if let StyleExt::Graph {
-            hline, hline_color, ..
-        } = style.ext
-        {
+        if let StyleExt::Graph { hline, hline_color, .. } = style.ext {
             if hline > 0.1 {
                 p.path_stroke(
                     hline,

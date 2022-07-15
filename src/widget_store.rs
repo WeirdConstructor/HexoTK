@@ -78,19 +78,11 @@ impl WidgetTree {
             widget_dfs_vec.push(WidgetId::from(wid.id()));
             widgets.insert(
                 wid.id(),
-                (
-                    wid.parent().map(|w| WidgetId::from(w.id())),
-                    is_first,
-                    is_last,
-                ),
+                (wid.parent().map(|w| WidgetId::from(w.id())), is_first, is_last),
             );
         });
 
-        Self {
-            store,
-            widgets,
-            widget_dfs_vec,
-        }
+        Self { store, widgets, widget_dfs_vec }
     }
 
     pub fn apply_layout_to_widgets(&self, cache: &LayoutCache) {
@@ -133,16 +125,10 @@ impl<'a> Hierarchy<'a> for WidgetTree {
     }
 
     fn is_first_child(&self, node: Self::Item) -> bool {
-        self.widgets
-            .get(&node.id())
-            .map(|(_, is_first, _)| *is_first)
-            .unwrap_or(false)
+        self.widgets.get(&node.id()).map(|(_, is_first, _)| *is_first).unwrap_or(false)
     }
 
     fn is_last_child(&self, node: Self::Item) -> bool {
-        self.widgets
-            .get(&node.id())
-            .map(|(_, _, is_last)| *is_last)
-            .unwrap_or(false)
+        self.widgets.get(&node.id()).map(|(_, _, is_last)| *is_last).unwrap_or(false)
     }
 }

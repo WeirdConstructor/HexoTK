@@ -93,12 +93,8 @@ pub enum VAlign {
 #[derive(Debug, Clone)]
 pub enum BorderStyle {
     Rect,
-    Hex {
-        offset: f32,
-    },
-    Bevel {
-        corner_offsets: (f32, f32, f32, f32),
-    },
+    Hex { offset: f32 },
+    Bevel { corner_offsets: (f32, f32, f32, f32) },
 }
 
 #[derive(Debug, Clone)]

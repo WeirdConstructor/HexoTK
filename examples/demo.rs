@@ -91,9 +91,7 @@ fn main() {
             style.font_size = 20.0;
             //        style.border_style = BorderStyle::Hex { offset: 10.0 };
             //        style.border = 4.0;
-            style.border_style = BorderStyle::Bevel {
-                corner_offsets: (5.0, 10.0, 20.0, 2.0),
-            };
+            style.border_style = BorderStyle::Bevel { corner_offsets: (5.0, 10.0, 20.0, 2.0) };
             style.shadow_offs = (-3.0, 3.0);
 
             let style_ref = Rc::new(style.clone());
@@ -110,9 +108,7 @@ fn main() {
             sub.enable_cache();
             wid.add(sub.clone());
 
-            sub.set_ctrl(Control::Button {
-                label: Box::new(concurrent_data.clone()),
-            });
+            sub.set_ctrl(Control::Button { label: Box::new(concurrent_data.clone()) });
 
             let ccdata = concurrent_data.clone();
 
@@ -129,9 +125,7 @@ fn main() {
 
             let data = Rc::new(RefCell::new(CloneMutable::new(("Other:".to_string(), 0))));
 
-            sub2.set_ctrl(Control::Button {
-                label: Box::new(data.clone()),
-            });
+            sub2.set_ctrl(Control::Button { label: Box::new(data.clone()) });
 
             sub2.reg("click", move |_ctx, _wid, _ev| {
                 (*data.borrow_mut()).1 += 1;
@@ -146,12 +140,8 @@ fn main() {
             }));
             wid.add(sub4.clone());
 
-            sub3.set_ctrl(Control::Button {
-                label: Box::new("Sub3".to_string()),
-            });
-            sub4.set_ctrl(Control::Button {
-                label: Box::new("Add to Layer2".to_string()),
-            });
+            sub3.set_ctrl(Control::Button { label: Box::new("Sub3".to_string()) });
+            sub4.set_ctrl(Control::Button { label: Box::new("Add to Layer2".to_string()) });
 
             //        wid.change_layout(|layout| {
             //        });
@@ -218,9 +208,7 @@ fn main() {
                 move |_ctx, _wid, _ev| {
                     cnt += 1;
                     let btn1 = Widget::new(style_ref.clone());
-                    btn1.set_ctrl(Control::Button {
-                        label: Box::new(format!("Sub Btn {}", cnt)),
-                    });
+                    btn1.set_ctrl(Control::Button { label: Box::new(format!("Sub Btn {}", cnt)) });
                     btn1.change_layout(|layout| {
                         layout.max_height = Some(Units::Pixels(40.0));
                     });
@@ -244,9 +232,7 @@ fn main() {
                 layout.top = Some(Units::Pixels(4.0));
                 layout.bottom = Some(Units::Pixels(4.0));
             });
-            lbl1.set_ctrl(Control::Label {
-                label: Box::new(format!("LBL Xyz:")),
-            });
+            lbl1.set_ctrl(Control::Label { label: Box::new(format!("LBL Xyz:")) });
             lbl1.change_layout(|layout| {
                 layout.max_height = Some(Units::Pixels(40.0));
             });
@@ -259,9 +245,7 @@ fn main() {
             let etf = TextField::new();
             let btn0 = Widget::new(style_ref.clone());
             btn0.enable_cache();
-            btn0.set_ctrl(Control::Button {
-                label: Box::new(ccdata.clone()),
-            });
+            btn0.set_ctrl(Control::Button { label: Box::new(ccdata.clone()) });
             btn0.change_layout(|layout| {
                 layout.top = Some(Units::Pixels(4.0));
                 layout.bottom = Some(Units::Pixels(4.0));
@@ -283,9 +267,7 @@ fn main() {
                 layout.left = Some(Units::Pixels(4.0));
             });
             btn2.enable_cache();
-            btn2.set_ctrl(Control::Button {
-                label: Box::new(ccdata.clone()),
-            });
+            btn2.set_ctrl(Control::Button { label: Box::new(ccdata.clone()) });
 
             let dw = Widget::new(style_ref.with_style_clone(|style| {
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
@@ -301,20 +283,14 @@ fn main() {
             });
 
             let dw_style = style_ref.with_style_clone(|style| {
-                style.border_style = BorderStyle::Bevel {
-                    corner_offsets: (10.0, 0.0, 0.0, 0.0),
-                };
+                style.border_style = BorderStyle::Bevel { corner_offsets: (10.0, 0.0, 0.0, 0.0) };
             });
 
             let dw_x1 = Widget::new(dw_style.clone());
             let dw_x2 = Widget::new(dw_style.clone());
             let dw_x3 = Widget::new(dw_style.clone());
-            dw_x1.set_ctrl(crate::Control::Button {
-                label: Box::new("Test1".to_string()),
-            });
-            dw_x2.set_ctrl(crate::Control::Button {
-                label: Box::new("Test ABC".to_string()),
-            });
+            dw_x1.set_ctrl(crate::Control::Button { label: Box::new("Test1".to_string()) });
+            dw_x2.set_ctrl(crate::Control::Button { label: Box::new("Test ABC".to_string()) });
             dw_x3.set_ctrl(crate::Control::Button {
                 label: Box::new("Super Synth Hexo".to_string()),
             });
@@ -343,15 +319,8 @@ fn main() {
             //        drag_wid.change_layout(|layout| {
             //            layout.visible = false;
             //        });
-            drag_wid.set_ctrl(crate::Control::Button {
-                label: Box::new(ccdata),
-            });
-            drag_wid.set_pos(Rect {
-                x: 0.0,
-                y: 0.0,
-                w: 130.0,
-                h: 50.0,
-            });
+            drag_wid.set_ctrl(crate::Control::Button { label: Box::new(ccdata) });
+            drag_wid.set_pos(Rect { x: 0.0, y: 0.0, w: 130.0, h: 50.0 });
             btn2.set_drag_widget(drag_wid);
 
             btn2.reg("drag", {
@@ -365,9 +334,7 @@ fn main() {
             });
 
             let btn1 = Widget::new(style_ref.clone());
-            btn1.set_ctrl(Control::Button {
-                label: Box::new(format!("Lay2 Btn {}", cnt)),
-            });
+            btn1.set_ctrl(Control::Button { label: Box::new(format!("Lay2 Btn {}", cnt)) });
             btn1.change_layout(|layout| {
                 layout.top = Some(Units::Pixels(4.0));
                 layout.bottom = Some(Units::Pixels(4.0));
@@ -404,9 +371,7 @@ fn main() {
             }));
             knob.enable_cache();
             let param = Rc::new(RefCell::new(hexotk::DummyParamModel::new()));
-            knob.set_ctrl(Control::HexKnob {
-                knob: Box::new(HexKnob::new(param.clone())),
-            });
+            knob.set_ctrl(Control::HexKnob { knob: Box::new(HexKnob::new(param.clone())) });
 
             let hexmodel = Rc::new(RefCell::new(TestGrid {}));
             let hexgrid = Widget::new(style_ref.with_style_clone(|style| {
@@ -414,9 +379,7 @@ fn main() {
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
                 style.border_style = BorderStyle::Hex { offset: 50.0 };
             }));
-            hexgrid.set_ctrl(Control::HexGrid {
-                grid: Box::new(HexGrid::new(hexmodel)),
-            });
+            hexgrid.set_ctrl(Control::HexGrid { grid: Box::new(HexGrid::new(hexmodel)) });
             hexgrid.reg("center_pos", {
                 move |_ctx, _wid, ev| {
                     if let EvPayload::HexGridPos { x, y } = &ev.data {
@@ -445,9 +408,7 @@ fn main() {
 
             let entry = Widget::new(style_ref.clone());
             //        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
-            entry.set_ctrl(Control::Entry {
-                entry: Box::new(Entry::new(Box::new(etf))),
-            });
+            entry.set_ctrl(Control::Entry { entry: Box::new(Entry::new(Box::new(etf))) });
             entry.change_layout(|layout| layout.max_height = Some(Units::Pixels(40.0)));
             entry.reg("changed", {
                 move |_ctx, _wid, _ev| {
@@ -500,15 +461,11 @@ fn main() {
             condata.borrow_mut().add_input("freq".to_string(), true);
             condata.borrow_mut().add_input("gain".to_string(), true);
             condata.borrow_mut().add_input("vol".to_string(), false);
-            conwid.set_ctrl(Control::Connector {
-                con: Box::new(Connector::new(condata)),
-            });
+            conwid.set_ctrl(Control::Connector { con: Box::new(Connector::new(condata)) });
 
             let octkeys = Widget::new(style_ref.clone());
             let octdata = Rc::new(RefCell::new(DummyOctaveKeysData::new()));
-            octkeys.set_ctrl(Control::OctaveKeys {
-                keys: Box::new(OctaveKeys::new(octdata)),
-            });
+            octkeys.set_ctrl(Control::OctaveKeys { keys: Box::new(OctaveKeys::new(octdata)) });
             octkeys.reg("changed", {
                 move |_ctx, _wid, ev| {
                     println!("CHANGED KEYS! {:?}", ev);
@@ -540,9 +497,7 @@ fn main() {
             }
             gd.borrow_mut().set_vline1(Some(0.25));
             gd.borrow_mut().set_vline2(Some(0.6));
-            graph.set_ctrl(Control::Graph {
-                graph: Box::new(Graph::new(gd, 128, false)),
-            });
+            graph.set_ctrl(Control::Graph { graph: Box::new(Graph::new(gd, 128, false)) });
 
             let graph_mm = Widget::new(graph_style);
             let gd = Rc::new(RefCell::new(StaticGraphMinMaxData::new()));
@@ -550,9 +505,7 @@ fn main() {
                 let v = ((xi as f32 / 50.0) * std::f32::consts::PI * 2.0).sin();
                 gd.borrow_mut().set_point(xi, (v, v));
             }
-            graph_mm.set_ctrl(Control::GraphMinMax {
-                graph: Box::new(GraphMinMax::new(gd, 128)),
-            });
+            graph_mm.set_ctrl(Control::GraphMinMax { graph: Box::new(GraphMinMax::new(gd, 128)) });
 
             knrow.add(knob);
             knrow.add(conwid);
@@ -571,9 +524,7 @@ fn main() {
             if false {
                 style.border_style = BorderStyle::Rect;
                 style.border_style = BorderStyle::Hex { offset: 100.0 };
-                style.border_style = BorderStyle::Bevel {
-                    corner_offsets: (5.0, 7.0, 3.0, 0.0),
-                };
+                style.border_style = BorderStyle::Bevel { corner_offsets: (5.0, 7.0, 3.0, 0.0) };
                 let mstyle = Rc::new(style);
                 let xxx = Widget::new(mstyle.clone());
                 xxx.enable_cache();

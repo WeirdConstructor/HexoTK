@@ -100,11 +100,7 @@ pub struct LabelInfo {
 
 impl TestDriver {
     pub fn new() -> Self {
-        Self {
-            injected_events: vec![],
-            widgets: HashMap::new(),
-            widget_tags: HashMap::new(),
-        }
+        Self { injected_events: vec![], widgets: HashMap::new(), widget_tags: HashMap::new() }
     }
 
     pub fn get_all_labels(&self) -> Vec<LabelInfo> {
@@ -161,14 +157,12 @@ impl TestDriver {
 
     pub fn inject_mouse_press_at(&mut self, x: f32, y: f32, btn: MButton) {
         self.injected_events.push(InputEvent::MousePosition(x, y));
-        self.injected_events
-            .push(InputEvent::MouseButtonPressed(btn));
+        self.injected_events.push(InputEvent::MouseButtonPressed(btn));
     }
 
     pub fn inject_mouse_release_at(&mut self, x: f32, y: f32, btn: MButton) {
         self.injected_events.push(InputEvent::MousePosition(x, y));
-        self.injected_events
-            .push(InputEvent::MouseButtonReleased(btn));
+        self.injected_events.push(InputEvent::MouseButtonReleased(btn));
     }
 
     pub fn inject_mouse_to(&mut self, x: f32, y: f32) {
@@ -203,12 +197,7 @@ impl TestDriver {
                 if let Some(wf) = self.widgets.get_mut(&info.0) {
                     wf.labels.push(label_info);
                 } else {
-                    self.widgets.insert(
-                        info.0,
-                        WidgetFeedback {
-                            labels: vec![label_info],
-                        },
-                    );
+                    self.widgets.insert(info.0, WidgetFeedback { labels: vec![label_info] });
                 }
             }
         }
@@ -228,10 +217,7 @@ pub struct TestScript {
 
 impl TestScript {
     pub fn new(name: String) -> Self {
-        Self {
-            name,
-            queue: vec![],
-        }
+        Self { name, queue: vec![] }
     }
 
     pub fn name(&self) -> &str {
@@ -333,10 +319,7 @@ impl UI {
                 )))),
             },
             last_hover: None,
-            hover_ev: Event {
-                name: "hover".to_string(),
-                data: EvPayload::None,
-            },
+            hover_ev: Event { name: "hover".to_string(), data: EvPayload::None },
             ctx,
         }
     }
@@ -350,12 +333,7 @@ impl UI {
         // Roots must always be cached, otherwise they won't be redrawn in the
         // per frame drawing and you get heavy flickering :)
         root.enable_cache();
-        self.layers.push(Layer {
-            layer_idx: index,
-            root,
-            tree: None,
-            popups: vec![],
-        });
+        self.layers.push(Layer { layer_idx: index, root, tree: None, popups: vec![] });
 
         self.on_tree_changed();
     }
@@ -406,9 +384,7 @@ impl UI {
 
                 let mut tag_path_str = format!(
                     "layer_{}",
-                    self.find_layer_by_root_id(root.id())
-                        .map(|layer| layer.layer_idx)
-                        .unwrap_or(0)
+                    self.find_layer_by_root_id(root.id()).map(|layer| layer.layer_idx).unwrap_or(0)
                 );
 
                 for tag in tag_path.iter().rev() {
@@ -567,10 +543,8 @@ impl UI {
             //d// println!("DROP! {} on {}", self.drag.hover_id, hov_id);
             if let Some(ud) = &self.drag.userdata {
                 if let Some(widget) = self.widgets.borrow().get(hov_id) {
-                    let ev = Event {
-                        name: "drop".to_string(),
-                        data: EvPayload::UserData(ud.clone()),
-                    };
+                    let ev =
+                        Event { name: "drop".to_string(), data: EvPayload::UserData(ud.clone()) };
                     let ev = widget_annotate_drop_event(&widget, self.drag.pos, ev);
 
                     if let Some(widget) = self.widgets.borrow().get(hov_id) {
@@ -721,12 +695,7 @@ impl UI {
                 let wid = orig_wid.expect("orig_wid set when root_wid was found!");
                 wid.show();
                 let orig_pos = wid.pos();
-                wid.set_pos(Rect {
-                    x: 0.0,
-                    y: 0.0,
-                    w: orig_pos.w,
-                    h: orig_pos.h,
-                });
+                wid.set_pos(Rect { x: 0.0, y: 0.0, w: orig_pos.w, h: orig_pos.h });
 
                 if let Some(layer) = self.find_layer_by_root_id(root_wid.id()) {
                     layer.popups.push((wid, pos));

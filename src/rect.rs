@@ -13,12 +13,7 @@ pub struct Rect {
 #[allow(dead_code)]
 impl Rect {
     pub fn from_tpl(t: (f32, f32, f32, f32)) -> Self {
-        Self {
-            x: t.0,
-            y: t.1,
-            w: t.2,
-            h: t.3,
-        }
+        Self { x: t.0, y: t.1, w: t.2, h: t.3 }
     }
 
     pub fn from(x: f32, y: f32, w: f32, h: f32) -> Self {
@@ -26,100 +21,47 @@ impl Rect {
     }
 
     pub fn clip_wh(&self) -> Self {
-        Self {
-            x: self.x,
-            y: self.y,
-            w: self.w.max(0.0),
-            h: self.h.max(0.0),
-        }
+        Self { x: self.x, y: self.y, w: self.w.max(0.0), h: self.h.max(0.0) }
     }
 
     pub fn round(&self) -> Self {
-        Self {
-            x: self.x.round(),
-            y: self.y.round(),
-            w: self.w.round(),
-            h: self.h.round(),
-        }
+        Self { x: self.x.round(), y: self.y.round(), w: self.w.round(), h: self.h.round() }
     }
 
     pub fn floor(&self) -> Self {
-        Self {
-            x: self.x.floor(),
-            y: self.y.floor(),
-            w: self.w.floor(),
-            h: self.h.floor(),
-        }
+        Self { x: self.x.floor(), y: self.y.floor(), w: self.w.floor(), h: self.h.floor() }
     }
 
     pub fn resize(&self, w: f32, h: f32) -> Self {
-        Self {
-            x: self.x,
-            y: self.y,
-            w,
-            h,
-        }
+        Self { x: self.x, y: self.y, w, h }
     }
 
     pub fn scale(&self, factor: f32) -> Self {
-        Self {
-            x: self.x,
-            y: self.y,
-            w: self.w * factor,
-            h: self.h * factor,
-        }
+        Self { x: self.x, y: self.y, w: self.w * factor, h: self.h * factor }
     }
 
     pub fn center(&self) -> Self {
-        Self {
-            x: self.x + self.w * 0.5,
-            y: self.y + self.h * 0.5,
-            w: 1.0,
-            h: 1.0,
-        }
+        Self { x: self.x + self.w * 0.5, y: self.y + self.h * 0.5, w: 1.0, h: 1.0 }
     }
 
     pub fn crop_left(&self, delta: f32) -> Self {
-        Self {
-            x: self.x + delta,
-            y: self.y,
-            w: self.w - delta,
-            h: self.h,
-        }
+        Self { x: self.x + delta, y: self.y, w: self.w - delta, h: self.h }
     }
 
     pub fn crop_right(&self, delta: f32) -> Self {
-        Self {
-            x: self.x,
-            y: self.y,
-            w: self.w - delta,
-            h: self.h,
-        }
+        Self { x: self.x, y: self.y, w: self.w - delta, h: self.h }
     }
 
     pub fn crop_bottom(&self, delta: f32) -> Self {
-        Self {
-            x: self.x,
-            y: self.y,
-            w: self.w,
-            h: self.h - delta,
-        }
+        Self { x: self.x, y: self.y, w: self.w, h: self.h - delta }
     }
 
     pub fn crop_top(&self, delta: f32) -> Self {
-        Self {
-            x: self.x,
-            y: self.y + delta,
-            w: self.w,
-            h: self.h - delta,
-        }
+        Self { x: self.x, y: self.y + delta, w: self.w, h: self.h - delta }
     }
 
     pub fn crop(&self, left: f32, right: f32, top: f32, bottom: f32) -> Self {
-        self.crop_left(left)
-            .crop_right(right)
-            .crop_top(top)
-            .crop_bottom(bottom)
+        self.crop_left(left).crop_right(right).crop_top(top).crop_bottom(bottom)
     }
 
     pub fn shrink(&self, delta_x: f32, delta_y: f32) -> Self {
@@ -141,12 +83,7 @@ impl Rect {
     }
 
     pub fn offs(&self, x: f32, y: f32) -> Self {
-        Self {
-            x: self.x + x,
-            y: self.y + y,
-            w: self.w,
-            h: self.h,
-        }
+        Self { x: self.x + x, y: self.y + y, w: self.w, h: self.h }
     }
 
     pub fn move_into(mut self, pos: &Rect) -> Self {

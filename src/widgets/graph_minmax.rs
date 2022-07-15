@@ -28,10 +28,7 @@ pub struct StaticGraphMinMaxData {
 
 impl StaticGraphMinMaxData {
     pub fn new() -> Self {
-        Self {
-            minmax: vec![],
-            generation: 0,
-        }
+        Self { minmax: vec![], generation: 0 }
     }
 
     pub fn clear(&mut self) {
@@ -153,18 +150,8 @@ impl GraphMinMax {
         let line_color = style.color;
         let mut line_w = 0.9;
         let mut line_c = 0.7;
-        let mut line_c_color = (
-            style.color.0 * 0.5,
-            style.color.1 * 0.5,
-            style.color.2 * 0.5,
-        );
-        if let StyleExt::Graph {
-            graph_line,
-            vline1,
-            vline1_color,
-            ..
-        } = style.ext
-        {
+        let mut line_c_color = (style.color.0 * 0.5, style.color.1 * 0.5, style.color.2 * 0.5);
+        if let StyleExt::Graph { graph_line, vline1, vline1_color, .. } = style.ext {
             line_w = graph_line;
             line_c = vline1;
             line_c_color = vline1_color;

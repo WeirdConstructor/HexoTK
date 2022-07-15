@@ -24,12 +24,7 @@ pub struct FrameTimeMeasurement {
 
 impl FrameTimeMeasurement {
     pub fn new(lbl: &str) -> Self {
-        Self {
-            buf: [0; 240],
-            idx: 0,
-            cur: None,
-            lbl: lbl.to_string(),
-        }
+        Self { buf: [0; 240], idx: 0, cur: None, lbl: lbl.to_string() }
     }
 
     pub fn start_measure(&mut self) {
@@ -94,8 +89,7 @@ impl WindowHandler for GUIWindowHandler {
     fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
-                self.ui
-                    .handle_input_event(InputEvent::MousePosition(p.x as f32, p.y as f32));
+                self.ui.handle_input_event(InputEvent::MousePosition(p.x as f32, p.y as f32));
             }
             Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
                 let ev_btn = match btn {
@@ -104,8 +98,7 @@ impl WindowHandler for GUIWindowHandler {
                     MouseButton::Middle => MButton::Middle,
                     _ => MButton::Left,
                 };
-                self.ui
-                    .handle_input_event(InputEvent::MouseButtonPressed(ev_btn));
+                self.ui.handle_input_event(InputEvent::MouseButtonPressed(ev_btn));
             }
             Event::Mouse(MouseEvent::ButtonReleased(btn)) => {
                 let ev_btn = match btn {
@@ -114,8 +107,7 @@ impl WindowHandler for GUIWindowHandler {
                     MouseButton::Middle => MButton::Middle,
                     _ => MButton::Left,
                 };
-                self.ui
-                    .handle_input_event(InputEvent::MouseButtonReleased(ev_btn));
+                self.ui.handle_input_event(InputEvent::MouseButtonReleased(ev_btn));
             }
             Event::Mouse(MouseEvent::WheelScrolled(scroll)) => match scroll {
                 ScrollDelta::Lines { y, .. } => {
@@ -148,8 +140,7 @@ impl WindowHandler for GUIWindowHandler {
             Event::Window(WindowEvent::Resized(info)) => {
                 let size = info.logical_size();
 
-                self.canvas
-                    .set_size(size.width as u32, size.height as u32, 1.0);
+                self.canvas.set_size(size.width as u32, size.height as u32, 1.0);
                 let (w, h) = (self.canvas.width(), self.canvas.height());
                 self.canvas.delete_image(self.img_buf);
                 self.img_buf = self
@@ -195,8 +186,7 @@ impl WindowHandler for GUIWindowHandler {
             Color::rgbf(self.bg_color.0, self.bg_color.1, self.bg_color.2),
         );
         self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-        self.painter_data
-            .init_render_targets(femtovg::RenderTarget::Screen);
+        self.painter_data.init_render_targets(femtovg::RenderTarget::Screen);
 
         {
             let painter = &mut Painter {
@@ -284,12 +274,9 @@ pub fn open_window(
 
         let mut canvas = Canvas::new(renderer).expect("Cannot create canvas");
         canvas.set_size(window_width as u32, window_height as u32, 1.0);
-        let font = canvas
-            .add_font_mem(std::include_bytes!("font.ttf"))
-            .expect("can load font");
-        let font_mono = canvas
-            .add_font_mem(std::include_bytes!("font_mono.ttf"))
-            .expect("can load font");
+        let font = canvas.add_font_mem(std::include_bytes!("font.ttf")).expect("can load font");
+        let font_mono =
+            canvas.add_font_mem(std::include_bytes!("font_mono.ttf")).expect("can load font");
         let (w, h) = (canvas.width(), canvas.height());
         let img_buf = canvas
             .create_image_empty(

@@ -288,24 +288,16 @@ impl Widget {
     }
 
     pub fn show(&self) {
-        self.0
-            .borrow_mut()
-            .change_layout(|layout| layout.visible = true);
+        self.0.borrow_mut().change_layout(|layout| layout.visible = true);
     }
 
     pub fn hide(&self) {
-        self.0
-            .borrow_mut()
-            .change_layout(|layout| layout.visible = false);
+        self.0.borrow_mut().change_layout(|layout| layout.visible = false);
     }
 
     pub fn auto_hide(&self) {
         self.0.borrow_mut().auto_hide = true;
-        self.0
-            .borrow_mut()
-            .notifier
-            .as_mut()
-            .map(|n| n.set_tree_changed());
+        self.0.borrow_mut().notifier.as_mut().map(|n| n.set_tree_changed());
     }
 
     pub fn wants_auto_hide(&self) -> bool {
@@ -339,10 +331,7 @@ pub struct WidgetImpl {
 
 impl std::fmt::Debug for WidgetImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Widget")
-            .field("id", &self.id)
-            .field("tag", &self.tag)
-            .finish()
+        f.debug_struct("Widget").field("id", &self.id).field("tag", &self.tag).finish()
     }
 }
 
@@ -452,13 +441,7 @@ impl WidgetImpl {
     }
 
     pub fn is_active(&self) -> bool {
-        self.id
-            == self
-                .notifier
-                .as_ref()
-                .map(|n| n.active())
-                .flatten()
-                .unwrap_or(0)
+        self.id == self.notifier.as_ref().map(|n| n.active()).flatten().unwrap_or(0)
     }
 
     pub fn set_notifier(&mut self, not: UINotifierRef, id: usize) {
@@ -502,10 +485,7 @@ impl WidgetImpl {
     }
 
     pub fn has_default_style(&self) -> bool {
-        self.ctrl
-            .as_ref()
-            .map(|c| c.has_default_style())
-            .unwrap_or(false)
+        self.ctrl.as_ref().map(|c| c.has_default_style()).unwrap_or(false)
     }
 
     pub fn can_hover(&self) -> bool {

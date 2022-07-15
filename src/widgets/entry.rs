@@ -242,10 +242,7 @@ impl Entry {
             self.update_text.update(self.data.clone());
             out_events.push((
                 w.id(),
-                Event {
-                    name: "changed".to_string(),
-                    data: EvPayload::Text(self.data.clone()),
-                },
+                Event { name: "changed".to_string(), data: EvPayload::Text(self.data.clone()) },
             ));
         }
     }

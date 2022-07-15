@@ -84,10 +84,7 @@ pub struct LayoutCache {
 
 impl LayoutCache {
     pub fn new(store: Rc<RefCell<WidgetStore>>) -> Self {
-        Self {
-            layouts: vec![],
-            store,
-        }
+        Self { layouts: vec![], store }
     }
 
     pub fn get_widget_rect_by_id(&self, id: &WidgetId) -> Rect {
@@ -113,11 +110,7 @@ impl Cache for LayoutCache {
     }
 
     fn visible(&self, node: Self::Item) -> bool {
-        self.store
-            .borrow()
-            .get(node.id)
-            .map(|w| w.with_layout(|l| l.visible))
-            .unwrap_or(false)
+        self.store.borrow().get(node.id).map(|w| w.with_layout(|l| l.visible)).unwrap_or(false)
     }
 
     fn width(&self, node: Self::Item) -> f32 {

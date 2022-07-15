@@ -85,9 +85,7 @@ impl PersistPainterData {
     pub fn new() -> Self {
         Self {
             render_targets: vec![],
-            store: Rc::new(RefCell::new(ImageStore {
-                freed_images: vec![],
-            })),
+            store: Rc::new(RefCell::new(ImageStore { freed_images: vec![] })),
         }
     }
 
@@ -121,25 +119,11 @@ pub struct LblDebugTag {
 
 impl LblDebugTag {
     pub fn new(wid_id: usize, x: i32, y: i32, source: &'static str) -> Self {
-        Self {
-            wid_id,
-            x,
-            y,
-            offs_x: 0.0,
-            offs_y: 0.0,
-            source,
-        }
+        Self { wid_id, x, y, offs_x: 0.0, offs_y: 0.0, source }
     }
 
     pub fn from_id(wid_id: usize) -> Self {
-        Self {
-            wid_id,
-            x: 0,
-            y: 0,
-            offs_x: 0.0,
-            offs_y: 0.0,
-            source: "?",
-        }
+        Self { wid_id, x: 0, y: 0, offs_x: 0.0, offs_y: 0.0, source: "?" }
     }
 
     pub fn info(&self) -> (usize, &'static str, (i32, i32)) {
@@ -205,22 +189,14 @@ impl<'a, 'b> Painter<'a, 'b> {
 
         //d// println!("new_image w={}, h={} id={:?}", w, h, image_id);
 
-        ImgRef {
-            store: self.data.store.clone(),
-            w,
-            h,
-            image_id,
-        }
+        ImgRef { store: self.data.store.clone(), w, h, image_id }
     }
 
     pub fn start_image(&mut self, image: &ImgRef) {
         //d// println!("start_image {:?}", image.image_id);
         self.canvas.save();
-        self.canvas
-            .set_render_target(femtovg::RenderTarget::Image(image.image_id));
-        self.data
-            .render_targets
-            .push(femtovg::RenderTarget::Image(image.image_id));
+        self.canvas.set_render_target(femtovg::RenderTarget::Image(image.image_id));
+        self.data.render_targets.push(femtovg::RenderTarget::Image(image.image_id));
         self.canvas.clear_rect(
             0,
             0,
@@ -257,12 +233,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             1.0,
         );
         let mut path = femtovg::Path::new();
-        path.rect(
-            screen_x as f32,
-            screen_y as f32,
-            image.w as f32,
-            image.h as f32,
-        );
+        path.rect(screen_x as f32, screen_y as f32, image.w as f32, image.h as f32);
         self.canvas.fill_path(&mut path, img_paint);
     }
 
@@ -328,10 +299,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         let _ = self.canvas.fill_text(rx, ry, text, paint);
 
         if let Some(collector) = &mut self.lbl_collect {
-            collector.push((
-                *dbg,
-                (rx + dbg.offs_x, ry + dbg.offs_y, w, h, text.to_string()),
-            ));
+            collector.push((*dbg, (rx + dbg.offs_x, ry + dbg.offs_y, w, h, text.to_string())));
         }
 
         //        let mut p = femtovg::Path::new();
@@ -538,9 +506,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         text: &str,
         dbg: &LblDebugTag,
     ) {
-        self.label_with_font(
-            size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font, dbg,
-        );
+        self.label_with_font(size, align, 0.0, color, x, y, 0.0, 0.0, w, h, text, self.font, dbg);
     }
 
     pub fn label_rot(
@@ -558,9 +524,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         text: &str,
         dbg: &LblDebugTag,
     ) {
-        self.label_with_font(
-            size, align, rot, color, x, y, xo, yo, w, h, text, self.font, dbg,
-        );
+        self.label_with_font(size, align, rot, color, x, y, xo, yo, w, h, text, self.font, dbg);
     }
 
     pub fn label_mono(
@@ -625,10 +589,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     pub fn define_debug_area<F: FnMut() -> (LblDebugTag, String)>(&mut self, pos: Rect, mut f: F) {
         if let Some(collector) = &mut self.lbl_collect {
             let (dbg, text) = f();
-            collector.push((
-                dbg,
-                (pos.x + dbg.offs_x, pos.y + dbg.offs_y, pos.w, pos.h, text),
-            ));
+            collector.push((dbg, (pos.x + dbg.offs_x, pos.y + dbg.offs_y, pos.w, pos.h, text)));
         }
     }
 

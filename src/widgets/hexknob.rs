@@ -111,12 +111,7 @@ impl Knob {
         if (size as i32) % 2 != 0 {
             size += 1.0;
         }
-        (
-            (r.0 + size * 1.0).round(),
-            r.1 + (r.3 * 0.5 + size * 0.5).round(),
-            size,
-            size,
-        )
+        ((r.0 + size * 1.0).round(), r.1 + (r.3 * 0.5 + size * 0.5).round(), size, size)
     }
 
     pub fn get_fine_adjustment_rect(&self) -> (f32, f32, f32, f32) {
@@ -176,17 +171,7 @@ impl Knob {
 
     pub fn draw_name(&self, p: &mut Painter, x: f32, y: f32, s: &str, dbg: &mut LblDebugTag) {
         let r = self.get_label_rect();
-        p.label(
-            self.font_size_lbl,
-            0,
-            UI_TXT_KNOB_CLR,
-            x + r.0,
-            y + r.1,
-            r.2,
-            r.3,
-            s,
-            dbg,
-        );
+        p.label(self.font_size_lbl, 0, UI_TXT_KNOB_CLR, x + r.0, y + r.1, r.2, r.3, s, dbg);
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -362,10 +347,7 @@ impl Knob {
         //        println!("i[{}] prev_arc_len={:1.3}, rest_len={:1.3}, value={:1.3}, seglen={:1.3}",
         //                 next_idx, prev_arc_len, rest_len, value,
         //                 segment_len / self.full_len);
-        let partial = (
-            (last.0 - prev.0) * rest_ratio,
-            (last.1 - prev.1) * rest_ratio,
-        );
+        let partial = ((last.0 - prev.0) * rest_ratio, (last.1 - prev.1) * rest_ratio);
 
         s[next_idx] = (prev.0 + partial.0, prev.1 + partial.1);
 
@@ -381,12 +363,7 @@ impl Knob {
             );
         }
 
-        p.path_stroke(
-            line_w,
-            color,
-            &mut s.iter().copied().take(next_idx + 1),
-            closed,
-        );
+        p.path_stroke(line_w, color, &mut s.iter().copied().take(next_idx + 1), closed);
     }
 }
 
@@ -491,11 +468,7 @@ pub struct DummyParamModel {
 
 impl DummyParamModel {
     pub fn new() -> Self {
-        Self {
-            value: 0.25,
-            modamt: Some(0.25),
-            generation: 0,
-        }
+        Self { value: 0.25, modamt: Some(0.25), generation: 0 }
     }
 
     pub fn mark_changed(&mut self) {
@@ -656,11 +629,7 @@ impl HexValueDrag {
         let res = if modkeys.ctrl { ChangeRes::Free } else { res };
 
         Some(Self {
-            value: if is_modamt {
-                model.get_mod_amt().unwrap_or(0.0)
-            } else {
-                model.get()
-            },
+            value: if is_modamt { model.get_mod_amt().unwrap_or(0.0) } else { model.get() },
             step_dt,
             zone,
             res,
@@ -673,11 +642,7 @@ impl HexValueDrag {
 
     fn calc_delta_value(&self, x: f32, y: f32) -> f32 {
         let pos_delta = self.delta(x, y);
-        let steps = if self.fine_key {
-            pos_delta / 100.0
-        } else {
-            pos_delta / 10.0
-        };
+        let steps = if self.fine_key { pos_delta / 100.0 } else { pos_delta / 10.0 };
 
         steps * self.step_dt
     }
@@ -693,10 +658,7 @@ impl HexValueDrag {
     }
 
     pub fn wheel(&mut self, model: &mut dyn ParamModel, wheel_y: f32) {
-        model.change_end(
-            self.value + self.step_dt * (wheel_y as f32),
-            ChangeRes::Free,
-        );
+        model.change_end(self.value + self.step_dt * (wheel_y as f32), ChangeRes::Free);
     }
 
     pub fn change(&mut self, model: &mut dyn ParamModel, x: f32, y: f32) {
@@ -938,11 +900,8 @@ impl HexKnob {
         let w_factor = pos.w / (32.0 * 2.0);
         let v_factor = pos.h / ((36.0 + (UI_ELEM_TXT_H) * 0.4) * 2.0);
 
-        let (size, mut factor) = if w_factor < v_factor {
-            (pos.w, w_factor)
-        } else {
-            (pos.h, v_factor)
-        };
+        let (size, mut factor) =
+            if w_factor < v_factor { (pos.w, w_factor) } else { (pos.h, v_factor) };
 
         let mut radius_factor = factor;
         if factor < 1.0 {
@@ -977,8 +936,7 @@ impl HexKnob {
 
         let modamt = model.get_ui_mod_amt();
 
-        self.knob
-            .draw_oct_arc_bg(p, xo, yo, UI_BG_KNOB_STROKE_CLR, None, 1.0, false);
+        self.knob.draw_oct_arc_bg(p, xo, yo, UI_BG_KNOB_STROKE_CLR, None, 1.0, false);
 
         let dc1 = self.knob.get_decor_rect1();
         p.rect_fill(UI_BG_KNOB_STROKE_CLR, xo + dc1.0, yo + dc1.1, dc1.2, dc1.3);
@@ -995,13 +953,7 @@ impl HexKnob {
         }
 
         let lblrect = self.knob.get_label_rect();
-        p.rect_fill(
-            UI_BG_KNOB_STROKE_CLR,
-            lblrect.0 + xo,
-            lblrect.1 + yo,
-            lblrect.2,
-            lblrect.3,
-        );
+        p.rect_fill(UI_BG_KNOB_STROKE_CLR, lblrect.0 + xo, lblrect.1 + yo, lblrect.2, lblrect.3);
 
         let r = self.knob.get_fine_adjustment_mark();
         p.rect_fill(UI_BG_KNOB_STROKE_CLR, xo + r.0, yo + r.1, r.2, r.3);
@@ -1029,11 +981,9 @@ impl HexKnob {
 
         match highlight {
             HLStyle::Inactive => {
-                self.knob
-                    .draw_oct_arc_fg(p, xo, yo, UI_INACTIVE_CLR, None, 1.0);
+                self.knob.draw_oct_arc_fg(p, xo, yo, UI_INACTIVE_CLR, None, 1.0);
 
-                self.knob
-                    .draw_mod_arc(p, xo, yo, value, modamt, UI_INACTIVE2_CLR, 0);
+                self.knob.draw_mod_arc(p, xo, yo, value, modamt, UI_INACTIVE2_CLR, 0);
             }
             HLStyle::Hover(fine) => {
                 if fine {
@@ -1050,15 +1000,12 @@ impl HexKnob {
                     1.0,
                 );
 
-                self.knob
-                    .draw_mod_arc(p, xo, yo, value, modamt, UI_FG_KNOB_STROKE_CLR, 2);
+                self.knob.draw_mod_arc(p, xo, yo, value, modamt, UI_FG_KNOB_STROKE_CLR, 2);
             }
             HLStyle::None => {
-                self.knob
-                    .draw_oct_arc_fg(p, xo, yo, UI_MG_KNOB_STROKE_CLR, None, 1.0);
+                self.knob.draw_oct_arc_fg(p, xo, yo, UI_MG_KNOB_STROKE_CLR, None, 1.0);
 
-                self.knob
-                    .draw_mod_arc(p, xo, yo, value, modamt, UI_FG_KNOB_STROKE_CLR, 0);
+                self.knob.draw_mod_arc(p, xo, yo, value, modamt, UI_FG_KNOB_STROKE_CLR, 0);
             }
         }
 
@@ -1097,7 +1044,6 @@ impl HexKnob {
         let len = model.fmt_norm(&mut self.lbl_buf[..]);
         let val_s = std::str::from_utf8(&self.lbl_buf[0..len]).unwrap();
         // + 2.0 for the marker cube, to space it from the minus sign.
-        self.knob
-            .draw_name(p, xo + 2.0, yo, &val_s, dbg.source("name"));
+        self.knob.draw_name(p, xo + 2.0, yo, &val_s, dbg.source("name"));
     }
 }

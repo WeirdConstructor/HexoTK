@@ -31,11 +31,7 @@ pub struct ModifierTracker {
 
 impl ModifierTracker {
     pub fn new() -> Self {
-        Self {
-            ctrl: false,
-            shift: false,
-            mouse: crate::rect::Rect::from(0.0, 0.0, 0.0, 0.0),
-        }
+        Self { ctrl: false, shift: false, mouse: crate::rect::Rect::from(0.0, 0.0, 0.0, 0.0) }
     }
 
     pub fn handle(&mut self, event: &crate::InputEvent) {

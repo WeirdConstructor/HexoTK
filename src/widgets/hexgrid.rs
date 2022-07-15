@@ -221,31 +221,15 @@ fn draw_hexagon<F: FnMut(&mut Painter, HexDecorPos, (f32, f32, f32))>(
 
     decor_fun(p, HexDecorPos::Top(x.floor(), (y - 0.5 * h).floor()), sz);
 
-    decor_fun(
-        p,
-        HexDecorPos::TopRight((x + 0.75 * size).floor(), (y - 0.25 * h).floor()),
-        sz,
-    );
+    decor_fun(p, HexDecorPos::TopRight((x + 0.75 * size).floor(), (y - 0.25 * h).floor()), sz);
 
-    decor_fun(
-        p,
-        HexDecorPos::TopLeft((x - 0.75 * size).floor(), (y - 0.25 * h).floor()),
-        sz,
-    );
+    decor_fun(p, HexDecorPos::TopLeft((x - 0.75 * size).floor(), (y - 0.25 * h).floor()), sz);
 
     decor_fun(p, HexDecorPos::Bottom(x.floor(), (y + 0.5 * h).floor()), sz);
 
-    decor_fun(
-        p,
-        HexDecorPos::BotRight((x + 0.75 * size).floor(), (y + 0.25 * h).floor()),
-        sz,
-    );
+    decor_fun(p, HexDecorPos::BotRight((x + 0.75 * size).floor(), (y + 0.25 * h).floor()), sz);
 
-    decor_fun(
-        p,
-        HexDecorPos::BotLeft((x - 0.75 * size).floor(), (y + 0.25 * h).floor()),
-        sz,
-    );
+    decor_fun(p, HexDecorPos::BotLeft((x - 0.75 * size).floor(), (y + 0.25 * h).floor()), sz);
 }
 
 fn draw_led(p: &mut Painter, scale: f32, x: f32, y: f32, led_value: (f32, f32)) {
@@ -270,11 +254,8 @@ fn draw_led(p: &mut Painter, scale: f32, x: f32, y: f32, led_value: (f32, f32)) 
         (x - r, y + (r * 0.5)),
     ];
 
-    let led_clr_border = (
-        UI_GRID_LED_CLR.0 * 0.3,
-        UI_GRID_LED_CLR.1 * 0.3,
-        UI_GRID_LED_CLR.2 * 0.3,
-    );
+    let led_clr_border =
+        (UI_GRID_LED_CLR.0 * 0.3, UI_GRID_LED_CLR.1 * 0.3, UI_GRID_LED_CLR.2 * 0.3);
     let led_clr = (led_value.0 as f32, led_value.1 as f32, 0.3);
     p.path_fill(led_clr, &mut path.iter().copied(), true);
     p.path_stroke(1.0 * scale, led_clr_border, &mut path.iter().copied(), true);
@@ -351,10 +332,7 @@ impl HexGrid {
         let (i, j) = if cx > (radius / 2.0 - radius * cy / height).abs() {
             (ci, cj)
         } else {
-            (
-                ci - 1.0,
-                cj + (ci % 2.0) - (if cy < height / 2.0 { 1.0 } else { 0.0 }),
-            )
+            (ci - 1.0, cj + (ci % 2.0) - (if cy < height / 2.0 { 1.0 } else { 0.0 }))
         };
         (i as i32, j as i32)
     }
@@ -376,10 +354,7 @@ impl HexGrid {
 
         Event {
             name: "center_pos".to_string(),
-            data: EvPayload::HexGridPos {
-                x: tile_pos.0 as usize,
-                y: tile_pos.1 as usize,
-            },
+            data: EvPayload::HexGridPos { x: tile_pos.0 as usize, y: tile_pos.1 as usize },
         }
     }
 }
@@ -562,11 +537,7 @@ impl HexGrid {
             let x = xi as f32;
 
             for yi in 0..ny {
-                let y = if xi % 2 == 0 {
-                    yi as f32 - 0.5
-                } else {
-                    yi as f32
-                };
+                let y = if xi % 2 == 0 { yi as f32 - 0.5 } else { yi as f32 };
 
                 dbg.set_logic_pos(xi as i32, yi as i32);
 
@@ -575,12 +546,8 @@ impl HexGrid {
 
                 let yo = if self.y_offs { yo - 0.5 * h } else { yo };
 
-                let test_pos = Rect {
-                    x: -0.5 * w,
-                    y: -0.5 * h,
-                    w: pos.w + 1.0 * w,
-                    h: pos.h + 1.0 * h,
-                };
+                let test_pos =
+                    Rect { x: -0.5 * w, y: -0.5 * h, w: pos.w + 1.0 * w, h: pos.h + 1.0 * h };
                 let shift_x =
                     (self.shift_offs.0 + self.tmp_shift_offs.map(|o| o.0).unwrap_or(0.0)).round();
                 let shift_y =
@@ -646,12 +613,7 @@ impl HexGrid {
                         match pos {
                             HexDecorPos::Center(x, y) => {
                                 p.define_debug_area(
-                                    Rect {
-                                        x: x,
-                                        y: y,
-                                        w: (sz.0 / 3.0).round(),
-                                        h: (sz.1 / 3.0).round(),
-                                    },
+                                    Rect { x, y, w: (sz.0 / 3.0).round(), h: (sz.1 / 3.0).round() },
                                     || (*(dbg.source("hexcell")), format!("hexcell_{}_{}", xi, yi)),
                                 );
 
@@ -914,7 +876,7 @@ impl HexGrid {
                 data: EvPayload::HexGridDropData {
                     x: cur_tile_pos.0 as usize,
                     y: cur_tile_pos.1 as usize,
-                    data: data,
+                    data,
                 },
             }
         } else {

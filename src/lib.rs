@@ -77,11 +77,7 @@ where
     T: PartialEq + Clone,
 {
     pub fn new(cur: T) -> Self {
-        Self {
-            generation: 0,
-            old: None,
-            cur,
-        }
+        Self { generation: 0, old: None, cur }
     }
 }
 
@@ -521,23 +517,13 @@ impl Control {
                 let mut pt_buf = [(0.0, 0.0); 8];
                 let points = bevel_points(pos, corner_offsets, &mut pt_buf);
                 painter.path_fill(style.bg_color, &mut points.iter().copied(), true);
-                painter.path_stroke(
-                    style.border,
-                    border_color,
-                    &mut points.iter().copied(),
-                    true,
-                );
+                painter.path_stroke(style.border, border_color, &mut points.iter().copied(), true);
             }
             BorderStyle::Hex { offset } => {
                 let pos = pos.shrink(style.border * 0.5, style.border * 0.5);
                 let points = hex_points(pos, offset);
                 painter.path_fill(style.bg_color, &mut points.iter().copied(), true);
-                painter.path_stroke(
-                    style.border,
-                    border_color,
-                    &mut points.iter().copied(),
-                    true,
-                );
+                painter.path_stroke(style.border, border_color, &mut points.iter().copied(), true);
             }
         }
     }
@@ -650,11 +636,7 @@ impl Control {
         let has_default_style = self.has_default_style();
 
         // Calculate the actually used space of this widget:
-        let border_pos_offs = if self.has_default_style() {
-            style.border
-        } else {
-            0.0
-        };
+        let border_pos_offs = if self.has_default_style() { style.border } else { 0.0 };
 
         // local_pos: Local in relation to the drawing image/canvas origin
         let local_pos = pos.offs(-draw_origin.x, -draw_origin.y);
@@ -800,10 +782,7 @@ impl Control {
                         w.activate();
                         out_events.push((
                             w.id(),
-                            Event {
-                                name: "press".to_string(),
-                                data: EvPayload::Button(*button),
-                            },
+                            Event { name: "press".to_string(), data: EvPayload::Button(*button) },
                         ));
                     }
                 }
@@ -811,17 +790,11 @@ impl Control {
                     if w.is_active() && is_hovered {
                         out_events.push((
                             w.id(),
-                            Event {
-                                name: "click".to_string(),
-                                data: EvPayload::Button(*button),
-                            },
+                            Event { name: "click".to_string(), data: EvPayload::Button(*button) },
                         ));
                         out_events.push((
                             w.id(),
-                            Event {
-                                name: "release".to_string(),
-                                data: EvPayload::Button(*button),
-                            },
+                            Event { name: "release".to_string(), data: EvPayload::Button(*button) },
                         ));
                     }
                     if w.is_active() {
@@ -1017,46 +990,19 @@ pub struct Event {
 #[derive(Debug, Clone)]
 pub enum EvPayload {
     None,
-    WichTextCommand {
-        line: usize,
-        frag: usize,
-        cmd: String,
-    },
-    HexGridPos {
-        x: usize,
-        y: usize,
-    },
-    HexGridClick {
-        x: usize,
-        y: usize,
-        button: MButton,
-    },
-    HexGridDrag {
-        x_src: usize,
-        y_src: usize,
-        x_dst: usize,
-        y_dst: usize,
-        button: MButton,
-    },
-    HexGridDropData {
-        x: usize,
-        y: usize,
-        data: Rc<RefCell<Box<dyn std::any::Any>>>,
-    },
+    WichTextCommand { line: usize, frag: usize, cmd: String },
+    HexGridPos { x: usize, y: usize },
+    HexGridClick { x: usize, y: usize, button: MButton },
+    HexGridDrag { x_src: usize, y_src: usize, x_dst: usize, y_dst: usize, button: MButton },
+    HexGridDropData { x: usize, y: usize, data: Rc<RefCell<Box<dyn std::any::Any>>> },
     SetConnection(Option<(usize, usize)>),
     KeyMask(i64),
-    ConnectionHover {
-        is_input: bool,
-        index: usize,
-    },
+    ConnectionHover { is_input: bool, index: usize },
     DropAccept(Rc<RefCell<(Rc<RefCell<Box<dyn std::any::Any>>>, bool)>>),
     UserData(Rc<RefCell<Box<dyn std::any::Any>>>),
     Button(MButton),
     Text(String),
-    Pos {
-        x: f32,
-        y: f32,
-    },
+    Pos { x: f32, y: f32 },
 }
 
 pub struct EventCore {
@@ -1068,9 +1014,7 @@ pub struct EventCore {
 
 impl EventCore {
     pub fn new() -> Self {
-        Self {
-            callbacks: std::collections::HashMap::new(),
-        }
+        Self { callbacks: std::collections::HashMap::new() }
     }
 
     pub fn clear(&mut self) {

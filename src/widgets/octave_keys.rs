@@ -33,10 +33,7 @@ pub struct DummyOctaveKeysData {
 
 impl DummyOctaveKeysData {
     pub fn new() -> Self {
-        Self {
-            key_mask: 0x0,
-            generation: 0,
-        }
+        Self { key_mask: 0x0, generation: 0 }
     }
 
     pub fn clear(&mut self) {
@@ -74,12 +71,7 @@ pub struct OctaveKeys {
 
 impl OctaveKeys {
     pub fn new(data: Rc<RefCell<dyn OctaveKeysModel>>) -> Self {
-        Self {
-            data,
-            key_areas: vec![],
-            hover_index: None,
-            mouse_pos: (0.0, 0.0),
-        }
+        Self { data, key_areas: vec![], hover_index: None, mouse_pos: (0.0, 0.0) }
     }
 
     pub fn get_generation(&self) -> u64 {
@@ -232,24 +224,15 @@ impl OctaveKeys {
 
         self.key_areas.clear();
         for xw in xoffs_w.iter() {
-            let key = Rect {
-                x: pos.x + (*xw).1,
-                y: pos.y,
-                w: xd,
-                h: pos.h,
-            };
+            let key = Rect { x: pos.x + (*xw).1, y: pos.y, w: xd, h: pos.h };
 
             //            draw_key(p, key_mask, key, hover_idx, (*xw).0, phase_index);
-            self.key_areas
-                .push(((*xw).0, key.offs(rp_offset.0, rp_offset.1)));
+            self.key_areas.push(((*xw).0, key.offs(rp_offset.0, rp_offset.1)));
         }
 
         let black_width = (xd * 0.75).round();
-        let black_width = if (black_width as i64) % 2 == 1 {
-            black_width + 1.0
-        } else {
-            black_width
-        };
+        let black_width =
+            if (black_width as i64) % 2 == 1 { black_width + 1.0 } else { black_width };
 
         for xb in xoffs_b.iter() {
             let key = Rect {
@@ -260,8 +243,7 @@ impl OctaveKeys {
             };
 
             //            draw_key(p, key_mask, key, hover_idx, (*xb).0, phase_index);
-            self.key_areas
-                .push(((*xb).0, key.offs(rp_offset.0, rp_offset.1)));
+            self.key_areas.push(((*xb).0, key.offs(rp_offset.0, rp_offset.1)));
         }
     }
 

@@ -26,12 +26,7 @@ pub struct ConnectorData {
 
 impl ConnectorData {
     pub fn new() -> Self {
-        Self {
-            connection: None,
-            items_left: vec![],
-            items_right: vec![],
-            generation: 0,
-        }
+        Self { connection: None, items_left: vec![], items_right: vec![], generation: 0 }
     }
 
     pub fn clear(&mut self) {
@@ -231,10 +226,7 @@ impl Connector {
                             w.id(),
                             Event {
                                 name: "connection_hover".to_string(),
-                                data: EvPayload::ConnectionHover {
-                                    is_input: inputs,
-                                    index: idx,
-                                },
+                                data: EvPayload::ConnectionHover { is_input: inputs, index: idx },
                             },
                         ));
                     }
@@ -264,12 +256,7 @@ impl Connector {
 
         self.yrow = yrow;
 
-        let pos = Rect {
-            x: pos.x,
-            y: pos.y,
-            w: xcol * 3.0,
-            h: yrow * (row_h as f32),
-        };
+        let pos = Rect { x: pos.x, y: pos.y, w: xcol * 3.0, h: yrow * (row_h as f32) };
 
         let does_hover_this_widget = w.is_hovered();
 
@@ -285,18 +272,13 @@ impl Connector {
                     UI_CON_BORDER_CLR,
                     btn_rect.offs(pos.x, pos.y + yo),
                 );
-                self.zones
-                    .push((btn_rect.offs(real_pos.x, real_pos.y + yo), (false, row)));
+                self.zones.push((btn_rect.offs(real_pos.x, real_pos.y + yo), (false, row)));
 
                 let fs = calc_font_size_from_text(p, &lbl, style.font_size, txt_w);
                 p.label(
                     fs,
                     -1,
-                    if *active {
-                        UI_PRIM_CLR
-                    } else {
-                        UI_INACTIVE_CLR
-                    },
+                    if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
                     pos.x + txt_pad,
                     pos.y + yo,
                     txt_w,
@@ -321,11 +303,7 @@ impl Connector {
                 p.label(
                     fs,
                     1,
-                    if *active {
-                        UI_PRIM_CLR
-                    } else {
-                        UI_INACTIVE_CLR
-                    },
+                    if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
                     pos.x + txt_pad + 2.0 * xcol - UI_CON_BORDER_W,
                     pos.y + yo,
                     txt_w,
@@ -337,11 +315,7 @@ impl Connector {
         }
 
         if let Some((inputs, row)) = self.hover_idx {
-            let items = if inputs {
-                &data.items_right
-            } else {
-                &data.items_left
-            };
+            let items = if inputs { &data.items_right } else { &data.items_left };
 
             if let Some((_lbl, active)) = items.get(row) {
                 if *active {
