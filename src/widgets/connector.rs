@@ -2,35 +2,35 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
+use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
 
 use crate::style::*;
 
 use crate::painter::*;
 use crate::rect::*;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
-pub const UI_CON_BORDER_CLR      : (f32, f32, f32) = UI_ACCENT_CLR;
-pub const UI_CON_HOV_CLR         : (f32, f32, f32) = UI_HLIGHT_CLR;
-pub const UI_CON_BORDER_W        : f32             = 2.0;
+pub const UI_CON_BORDER_CLR: (f32, f32, f32) = UI_ACCENT_CLR;
+pub const UI_CON_HOV_CLR: (f32, f32, f32) = UI_HLIGHT_CLR;
+pub const UI_CON_BORDER_W: f32 = 2.0;
 
 #[derive(Debug, Clone)]
 pub struct ConnectorData {
-    connection:  Option<(usize, usize)>,
-    items_left:  Vec<(String, bool)>,
+    connection: Option<(usize, usize)>,
+    items_left: Vec<(String, bool)>,
     items_right: Vec<(String, bool)>,
-    generation:  u64,
+    generation: u64,
 }
 
 impl ConnectorData {
     pub fn new() -> Self {
         Self {
-            connection:  None,
-            items_left:  vec![],
+            connection: None,
+            items_left: vec![],
             items_right: vec![],
-            generation:  0,
+            generation: 0,
         }
     }
 
@@ -66,16 +66,16 @@ impl ConnectorData {
 }
 
 pub struct Connector {
-    data:           Rc<RefCell<ConnectorData>>,
+    data: Rc<RefCell<ConnectorData>>,
 
-    yrow:           f32,
-    hover_idx:      Option<(bool, usize)>,
-    drag_src_idx:   Option<(bool, usize)>,
-    drag:           bool,
+    yrow: f32,
+    hover_idx: Option<(bool, usize)>,
+    drag_src_idx: Option<(bool, usize)>,
+    drag: bool,
 
-    mouse_pos:      (f32, f32),
-    zones:          Vec<(Rect, (bool, usize))>,
-    debug_lbls:     Vec<(&'static str, &'static str)>,
+    mouse_pos: (f32, f32),
+    zones: Vec<(Rect, (bool, usize))>,
+    debug_lbls: Vec<(&'static str, &'static str)>,
 }
 
 impl Connector {
@@ -83,24 +83,24 @@ impl Connector {
         Self {
             data,
 
-            yrow:           0.0,
-            hover_idx:      None,
-            drag_src_idx:   None,
-            drag:           false,
+            yrow: 0.0,
+            hover_idx: None,
+            drag_src_idx: None,
+            drag: false,
 
-            mouse_pos:      (0.0, 0.0),
-            zones:          vec![],
+            mouse_pos: (0.0, 0.0),
+            zones: vec![],
             debug_lbls: vec![
-                ("input_0",  "output_0"),
-                ("input_1",  "output_1"),
-                ("input_2",  "output_2"),
-                ("input_3",  "output_3"),
-                ("input_4",  "output_4"),
-                ("input_5",  "output_5"),
-                ("input_6",  "output_6"),
-                ("input_7",  "output_7"),
-                ("input_8",  "output_8"),
-                ("input_9",  "output_9"),
+                ("input_0", "output_0"),
+                ("input_1", "output_1"),
+                ("input_2", "output_2"),
+                ("input_3", "output_3"),
+                ("input_4", "output_4"),
+                ("input_5", "output_5"),
+                ("input_6", "output_6"),
+                ("input_7", "output_7"),
+                ("input_8", "output_8"),
+                ("input_9", "output_9"),
                 ("input_10", "output_10"),
                 ("input_11", "output_11"),
                 ("input_12", "output_12"),
@@ -115,9 +115,7 @@ impl Connector {
         }
     }
 
-    fn xy2pos(&self, x: f32, y: f32)
-        -> Option<(bool, usize)>
-    {
+    fn xy2pos(&self, x: f32, y: f32) -> Option<(bool, usize)> {
         for z in &self.zones {
             if z.0.is_inside(x, y) {
                 return Some(z.1);
@@ -130,36 +128,32 @@ impl Connector {
     fn get_current_con(&self) -> Option<(bool, (usize, usize))> {
         let data = self.data.borrow();
 
-        let (a_inp, a) =
-            if let Some((inputs, row)) = self.drag_src_idx {
-                (inputs, row)
-            } else {
-                return data.connection.map(|con| (false, con));
-            };
+        let (a_inp, a) = if let Some((inputs, row)) = self.drag_src_idx {
+            (inputs, row)
+        } else {
+            return data.connection.map(|con| (false, con));
+        };
 
-        let (b_inp, b) =
-            if let Some((inputs, row)) = self.hover_idx {
-                (inputs, row)
-            } else {
-                return data.connection.map(|con| (false, con));
-            };
+        let (b_inp, b) = if let Some((inputs, row)) = self.hover_idx {
+            (inputs, row)
+        } else {
+            return data.connection.map(|con| (false, con));
+        };
 
         if a_inp == b_inp {
             if a_inp {
                 if data.items_left.len() == 1 {
-                    return Some((true, (0, a)))
+                    return Some((true, (0, a)));
                 }
             } else {
                 if data.items_right.len() == 1 {
-                    return Some((true, (a, 0)))
+                    return Some((true, (a, 0)));
                 }
             }
             return data.connection.map(|con| (false, con));
         }
 
-        let (a, b) =
-            if b_inp { (a, b) }
-            else     { (b, a) };
+        let (a, b) = if b_inp { (a, b) } else { (b, a) };
 
         if !data.items_left.get(a).map(|x| x.1).unwrap_or(false) {
             return data.connection.map(|con| (false, con));
@@ -174,10 +168,7 @@ impl Connector {
 }
 
 impl Connector {
-    pub fn handle(
-        &mut self, w: &Widget, event: &InputEvent,
-        out_events: &mut Vec<(usize, Event)>)
-    {
+    pub fn handle(&mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>) {
         match event {
             InputEvent::MouseButtonPressed(MButton::Left) => {
                 if !w.is_hovered() {
@@ -214,10 +205,13 @@ impl Connector {
                     self.data.borrow_mut().connection = None;
                 }
 
-                out_events.push((w.id(), Event {
-                    name: "change".to_string(),
-                    data: EvPayload::SetConnection(self.data.borrow().connection)
-                }));
+                out_events.push((
+                    w.id(),
+                    Event {
+                        name: "change".to_string(),
+                        data: EvPayload::SetConnection(self.data.borrow().connection),
+                    },
+                ));
 
                 self.drag = false;
                 self.drag_src_idx = None;
@@ -233,13 +227,16 @@ impl Connector {
 
                 if old_hover != self.hover_idx {
                     if let Some((inputs, idx)) = self.hover_idx {
-                        out_events.push((w.id(), Event {
-                            name: "connection_hover".to_string(),
-                            data: EvPayload::ConnectionHover {
-                                is_input: inputs,
-                                index: idx
-                            }
-                        }));
+                        out_events.push((
+                            w.id(),
+                            Event {
+                                name: "connection_hover".to_string(),
+                                data: EvPayload::ConnectionHover {
+                                    is_input: inputs,
+                                    index: idx,
+                                },
+                            },
+                        ));
                     }
 
                     w.emit_redraw_required();
@@ -249,10 +246,7 @@ impl Connector {
         }
     }
 
-    pub fn draw(
-        &mut self, w: &Widget, style: &Style, pos: Rect,
-        real_pos: Rect, p: &mut Painter)
-    {
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let mut dbg = LblDebugTag::from_id(w.id());
         dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
 
@@ -281,60 +275,73 @@ impl Connector {
 
         let btn_rect = Rect::from(0.0, 0.0, xcol, yrow);
         for row in 0..row_h {
-            let yo      = row as f32 * yrow;
+            let yo = row as f32 * yrow;
             let txt_pad = 2.0 * UI_CON_BORDER_W;
-            let txt_w   = xcol - 2.0 * txt_pad;
+            let txt_w = xcol - 2.0 * txt_pad;
 
             if let Some((lbl, active)) = data.items_left.get(row) {
                 p.rect_stroke_r(
                     UI_CON_BORDER_W,
                     UI_CON_BORDER_CLR,
-                    btn_rect.offs(pos.x, pos.y + yo));
-                self.zones.push(
-                    (btn_rect.offs(real_pos.x, real_pos.y + yo),
-                     (false, row)));
+                    btn_rect.offs(pos.x, pos.y + yo),
+                );
+                self.zones
+                    .push((btn_rect.offs(real_pos.x, real_pos.y + yo), (false, row)));
 
-                let fs =
-                    calc_font_size_from_text(
-                        p, &lbl, style.font_size, txt_w);
+                let fs = calc_font_size_from_text(p, &lbl, style.font_size, txt_w);
                 p.label(
-                    fs, -1, if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
-                    pos.x + txt_pad, pos.y + yo,
-                    txt_w, yrow, &lbl,
-                    dbg.source(
-                        self.debug_lbls.get(row)
-                            .unwrap_or(&("input_", "output_")).0));
+                    fs,
+                    -1,
+                    if *active {
+                        UI_PRIM_CLR
+                    } else {
+                        UI_INACTIVE_CLR
+                    },
+                    pos.x + txt_pad,
+                    pos.y + yo,
+                    txt_w,
+                    yrow,
+                    &lbl,
+                    dbg.source(self.debug_lbls.get(row).unwrap_or(&("input_", "output_")).0),
+                );
             }
 
             if let Some((lbl, active)) = data.items_right.get(row) {
                 p.rect_stroke_r(
                     UI_CON_BORDER_W,
                     UI_CON_BORDER_CLR,
-                    btn_rect.offs(
-                        pos.x + 2.0 * xcol - 1.0,
-                        pos.y + yo));
-                self.zones.push(
-                    (btn_rect.offs(
-                        real_pos.x + 2.0 * xcol - 1.0,
-                        real_pos.y + yo),
-                     (true, row)));
+                    btn_rect.offs(pos.x + 2.0 * xcol - 1.0, pos.y + yo),
+                );
+                self.zones.push((
+                    btn_rect.offs(real_pos.x + 2.0 * xcol - 1.0, real_pos.y + yo),
+                    (true, row),
+                ));
 
-                let fs =
-                    calc_font_size_from_text(
-                        p, &lbl, style.font_size, txt_w);
+                let fs = calc_font_size_from_text(p, &lbl, style.font_size, txt_w);
                 p.label(
-                    fs, 1, if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
+                    fs,
+                    1,
+                    if *active {
+                        UI_PRIM_CLR
+                    } else {
+                        UI_INACTIVE_CLR
+                    },
                     pos.x + txt_pad + 2.0 * xcol - UI_CON_BORDER_W,
                     pos.y + yo,
-                    txt_w, yrow, &lbl,
-                    dbg.source(
-                        self.debug_lbls.get(row)
-                            .unwrap_or(&("input_", "output_")).1));
+                    txt_w,
+                    yrow,
+                    &lbl,
+                    dbg.source(self.debug_lbls.get(row).unwrap_or(&("input_", "output_")).1),
+                );
             }
         }
 
         if let Some((inputs, row)) = self.hover_idx {
-            let items = if inputs { &data.items_right } else { &data.items_left };
+            let items = if inputs {
+                &data.items_right
+            } else {
+                &data.items_left
+            };
 
             if let Some((_lbl, active)) = items.get(row) {
                 if *active {
@@ -345,7 +352,8 @@ impl Connector {
                         p.rect_stroke_r(
                             UI_CON_BORDER_W,
                             UI_CON_HOV_CLR,
-                            btn_rect.offs(pos.x + xo, pos.y + yo));
+                            btn_rect.offs(pos.x + xo, pos.y + yo),
+                        );
                     }
                 }
             }
@@ -359,7 +367,8 @@ impl Connector {
                 p.rect_stroke_r(
                     UI_CON_BORDER_W,
                     UI_SELECT_CLR,
-                    btn_rect.offs(pos.x + xo, pos.y + yo));
+                    btn_rect.offs(pos.x + xo, pos.y + yo),
+                );
             }
         }
 
@@ -371,14 +380,16 @@ impl Connector {
                 4.0,
                 if drag { UI_CON_HOV_CLR } else { UI_PRIM_CLR },
                 &mut [
-                    (xcol,                         ay + yrow * 0.5),
-                    (xcol + xcol * 0.25,           ay + yrow * 0.5),
-                    (2.0 * xcol - xcol * 0.25,     by + yrow * 0.5),
+                    (xcol, ay + yrow * 0.5),
+                    (xcol + xcol * 0.25, ay + yrow * 0.5),
+                    (2.0 * xcol - xcol * 0.25, by + yrow * 0.5),
                     (2.0 * xcol - UI_CON_BORDER_W, by + yrow * 0.5),
-                ].iter().copied().map(|(x, y)|
-                    ((pos.x + x).floor(),
-                     (pos.y + y).floor())),
-                false);
+                ]
+                .iter()
+                .copied()
+                .map(|(x, y)| ((pos.x + x).floor(), (pos.y + y).floor())),
+                false,
+            );
         }
     }
 

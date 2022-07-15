@@ -13,7 +13,12 @@ pub struct Rect {
 #[allow(dead_code)]
 impl Rect {
     pub fn from_tpl(t: (f32, f32, f32, f32)) -> Self {
-        Self { x: t.0, y: t.1, w: t.2, h: t.3 }
+        Self {
+            x: t.0,
+            y: t.1,
+            w: t.2,
+            h: t.3,
+        }
     }
 
     pub fn from(x: f32, y: f32, w: f32, h: f32) -> Self {
@@ -111,7 +116,10 @@ impl Rect {
     }
 
     pub fn crop(&self, left: f32, right: f32, top: f32, bottom: f32) -> Self {
-        self.crop_left(left).crop_right(right).crop_top(top).crop_bottom(bottom)
+        self.crop_left(left)
+            .crop_right(right)
+            .crop_top(top)
+            .crop_bottom(bottom)
     }
 
     pub fn shrink(&self, delta_x: f32, delta_y: f32) -> Self {
@@ -142,8 +150,12 @@ impl Rect {
     }
 
     pub fn move_into(mut self, pos: &Rect) -> Self {
-        if self.x < pos.x { self.x = pos.x; }
-        if self.y < pos.y { self.y = pos.y; }
+        if self.x < pos.x {
+            self.x = pos.x;
+        }
+        if self.y < pos.y {
+            self.y = pos.y;
+        }
 
         if (self.x + self.w) > (pos.x + pos.w) {
             self.x = (pos.x + pos.w) - self.w;
@@ -157,15 +169,22 @@ impl Rect {
     }
 
     pub fn aabb_is_inside(&self, aabb: Rect) -> bool {
-        if self.is_inside(aabb.x,          aabb.y)          { return true; }
-        if self.is_inside(aabb.x + aabb.w, aabb.y)          { return true; }
-        if self.is_inside(aabb.x,          aabb.y + aabb.h) { return true; }
-        if self.is_inside(aabb.x + aabb.w, aabb.y + aabb.h) { return true; }
+        if self.is_inside(aabb.x, aabb.y) {
+            return true;
+        }
+        if self.is_inside(aabb.x + aabb.w, aabb.y) {
+            return true;
+        }
+        if self.is_inside(aabb.x, aabb.y + aabb.h) {
+            return true;
+        }
+        if self.is_inside(aabb.x + aabb.w, aabb.y + aabb.h) {
+            return true;
+        }
         false
     }
 
     pub fn is_inside(&self, x: f32, y: f32) -> bool {
-           x >= self.x && x <= (self.x + self.w)
-        && y >= self.y && y <= (self.y + self.h)
+        x >= self.x && x <= (self.x + self.w) && y >= self.y && y <= (self.y + self.h)
     }
 }

@@ -1,92 +1,92 @@
-use crate::{EventCore, Control, Painter, Rect, UINotifierRef, Event, PopupPos};
 use crate::painter::ImgRef;
 use crate::style::Style;
-use std::rc::{Weak, Rc};
+use crate::{Control, Event, EventCore, Painter, PopupPos, Rect, UINotifierRef};
 use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
 use morphorm::{LayoutType, PositionType, Units};
 
 #[derive(Debug, Clone)]
 pub struct Layout {
-    pub visible:        bool,
+    pub visible: bool,
 
-    pub layout_type:   Option<LayoutType>,
+    pub layout_type: Option<LayoutType>,
     pub position_type: Option<PositionType>,
-    pub width:         Option<Units>,
-    pub height:        Option<Units>,
-    pub min_width:     Option<Units>,
-    pub min_height:    Option<Units>,
-    pub max_width:     Option<Units>,
-    pub max_height:    Option<Units>,
-    pub left:          Option<Units>,
-    pub right:         Option<Units>,
-    pub top:           Option<Units>,
-    pub bottom:        Option<Units>,
-    pub min_left:      Option<Units>,
-    pub max_left:      Option<Units>,
-    pub min_right:     Option<Units>,
-    pub max_right:     Option<Units>,
-    pub min_top:       Option<Units>,
-    pub max_top:       Option<Units>,
-    pub min_bottom:    Option<Units>,
-    pub max_bottom:    Option<Units>,
-    pub child_left:    Option<Units>,
-    pub child_right:   Option<Units>,
-    pub child_top:     Option<Units>,
-    pub child_bottom:  Option<Units>,
-    pub row_between:   Option<Units>,
-    pub col_between:   Option<Units>,
-    pub grid_rows:     Option<Vec<Units>>,
-    pub grid_cols:     Option<Vec<Units>>,
-    pub row_index:     Option<usize>,
-    pub col_index:     Option<usize>,
-    pub col_span:      Option<usize>,
-    pub row_span:      Option<usize>,
-    pub border_left:   Option<Units>,
-    pub border_right:  Option<Units>,
-    pub border_top:    Option<Units>,
+    pub width: Option<Units>,
+    pub height: Option<Units>,
+    pub min_width: Option<Units>,
+    pub min_height: Option<Units>,
+    pub max_width: Option<Units>,
+    pub max_height: Option<Units>,
+    pub left: Option<Units>,
+    pub right: Option<Units>,
+    pub top: Option<Units>,
+    pub bottom: Option<Units>,
+    pub min_left: Option<Units>,
+    pub max_left: Option<Units>,
+    pub min_right: Option<Units>,
+    pub max_right: Option<Units>,
+    pub min_top: Option<Units>,
+    pub max_top: Option<Units>,
+    pub min_bottom: Option<Units>,
+    pub max_bottom: Option<Units>,
+    pub child_left: Option<Units>,
+    pub child_right: Option<Units>,
+    pub child_top: Option<Units>,
+    pub child_bottom: Option<Units>,
+    pub row_between: Option<Units>,
+    pub col_between: Option<Units>,
+    pub grid_rows: Option<Vec<Units>>,
+    pub grid_cols: Option<Vec<Units>>,
+    pub row_index: Option<usize>,
+    pub col_index: Option<usize>,
+    pub col_span: Option<usize>,
+    pub row_span: Option<usize>,
+    pub border_left: Option<Units>,
+    pub border_right: Option<Units>,
+    pub border_top: Option<Units>,
     pub border_bottom: Option<Units>,
 }
 
 impl Layout {
     pub fn new() -> Self {
         Self {
-            visible:       true,
-            layout_type:   None,
+            visible: true,
+            layout_type: None,
             position_type: None,
-            width:         None,
-            height:        None,
-            min_width:     None,
-            min_height:    None,
-            max_width:     None,
-            max_height:    None,
-            left:          None,
-            right:         None,
-            top:           None,
-            bottom:        None,
-            min_left:      None,
-            max_left:      None,
-            min_right:     None,
-            max_right:     None,
-            min_top:       None,
-            max_top:       None,
-            min_bottom:    None,
-            max_bottom:    None,
-            child_left:    None,
-            child_right:   None,
-            child_top:     None,
-            child_bottom:  None,
-            row_between:   None,
-            col_between:   None,
-            grid_rows:     None,
-            grid_cols:     None,
-            row_index:     None,
-            col_index:     None,
-            col_span:      None,
-            row_span:      None,
-            border_left:   None,
-            border_right:  None,
-            border_top:    None,
+            width: None,
+            height: None,
+            min_width: None,
+            min_height: None,
+            max_width: None,
+            max_height: None,
+            left: None,
+            right: None,
+            top: None,
+            bottom: None,
+            min_left: None,
+            max_left: None,
+            min_right: None,
+            max_right: None,
+            min_top: None,
+            max_top: None,
+            min_bottom: None,
+            max_bottom: None,
+            child_left: None,
+            child_right: None,
+            child_top: None,
+            child_bottom: None,
+            row_between: None,
+            col_between: None,
+            grid_rows: None,
+            grid_cols: None,
+            row_index: None,
+            col_index: None,
+            col_span: None,
+            row_span: None,
+            border_left: None,
+            border_right: None,
+            border_top: None,
             border_bottom: None,
         }
     }
@@ -112,7 +112,11 @@ impl Widget {
         Rc::downgrade(&self.0)
     }
 
-    pub fn reg<F: 'static + FnMut(&mut dyn std::any::Any, Widget, &Event)>(&self, ev_name: &str, cb: F) {
+    pub fn reg<F: 'static + FnMut(&mut dyn std::any::Any, Widget, &Event)>(
+        &self,
+        ev_name: &str,
+        cb: F,
+    ) {
         self.0.borrow_mut().reg(ev_name, Box::new(cb));
     }
 
@@ -182,10 +186,16 @@ impl Widget {
         self.0.borrow().does_show_hover()
     }
 
-    pub fn id(&self) -> usize { self.0.borrow().id() }
+    pub fn id(&self) -> usize {
+        self.0.borrow().id()
+    }
 
-    pub fn set_tag(&self, tag: String) { self.0.borrow_mut().set_tag(tag); }
-    pub fn tag(&self) -> String { self.0.borrow().tag().to_string() }
+    pub fn set_tag(&self, tag: String) {
+        self.0.borrow_mut().set_tag(tag);
+    }
+    pub fn tag(&self) -> String {
+        self.0.borrow().tag().to_string()
+    }
 
     pub fn check_data_change(&self) -> bool {
         self.0.borrow_mut().check_data_change()
@@ -195,7 +205,9 @@ impl Widget {
         self.0.borrow_mut().set_ctrl(ctrl)
     }
 
-    pub fn has_default_style(&self) -> bool { self.0.borrow().has_default_style() }
+    pub fn has_default_style(&self) -> bool {
+        self.0.borrow().has_default_style()
+    }
 
     pub fn take_ctrl(&self) -> Option<Box<Control>> {
         self.0.borrow_mut().ctrl.take()
@@ -205,16 +217,22 @@ impl Widget {
         self.0.borrow_mut().ctrl = Some(ctrl);
     }
 
-    pub fn can_hover(&self) -> bool { self.0.borrow_mut().can_hover() }
+    pub fn can_hover(&self) -> bool {
+        self.0.borrow_mut().can_hover()
+    }
 
     pub fn set_pos(&self, pos: Rect) {
         self.emit_redraw_required();
-        self.0.borrow_mut().pos       = pos;
+        self.0.borrow_mut().pos = pos;
     }
 
-    pub fn pos(&self) -> Rect { self.0.borrow().pos }
+    pub fn pos(&self) -> Rect {
+        self.0.borrow().pos
+    }
 
-    pub fn style(&self) -> Rc<Style> { self.0.borrow().style.clone() }
+    pub fn style(&self) -> Rc<Style> {
+        self.0.borrow().style.clone()
+    }
 
     pub fn set_style(&self, style: Rc<Style>) {
         self.0.borrow_mut().set_style(style);
@@ -270,16 +288,24 @@ impl Widget {
     }
 
     pub fn show(&self) {
-        self.0.borrow_mut().change_layout(|layout| layout.visible = true);
+        self.0
+            .borrow_mut()
+            .change_layout(|layout| layout.visible = true);
     }
 
     pub fn hide(&self) {
-        self.0.borrow_mut().change_layout(|layout| layout.visible = false);
+        self.0
+            .borrow_mut()
+            .change_layout(|layout| layout.visible = false);
     }
 
     pub fn auto_hide(&self) {
         self.0.borrow_mut().auto_hide = true;
-        self.0.borrow_mut().notifier.as_mut().map(|n| n.set_tree_changed());
+        self.0
+            .borrow_mut()
+            .notifier
+            .as_mut()
+            .map(|n| n.set_tree_changed());
     }
 
     pub fn wants_auto_hide(&self) -> bool {
@@ -292,52 +318,52 @@ impl Widget {
 }
 
 pub struct WidgetImpl {
-    id:             usize,
-    pub evc:        Option<EventCore>,
-    parent:         Option<Weak<RefCell<WidgetImpl>>>,
-    childs:         Option<Vec<Widget>>,
-    pub ctrl:       Option<Box<Control>>,
-    pos:            Rect,
-    layout:         Layout,
-    style:          Rc<Style>,
-    notifier:       Option<UINotifierRef>,
-    data_gen:       u64,
-    drag_widget:    Option<Widget>,
-    auto_hide:      bool,
-    show_hover:     bool,
-    tag:            Option<String>,
+    id: usize,
+    pub evc: Option<EventCore>,
+    parent: Option<Weak<RefCell<WidgetImpl>>>,
+    childs: Option<Vec<Widget>>,
+    pub ctrl: Option<Box<Control>>,
+    pos: Rect,
+    layout: Layout,
+    style: Rc<Style>,
+    notifier: Option<UINotifierRef>,
+    data_gen: u64,
+    drag_widget: Option<Widget>,
+    auto_hide: bool,
+    show_hover: bool,
+    tag: Option<String>,
 
-    cached:         bool,
-    cache_img:      Option<ImgRef>,
+    cached: bool,
+    cache_img: Option<ImgRef>,
 }
 
 impl std::fmt::Debug for WidgetImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Widget")
-         .field("id", &self.id)
-         .field("tag", &self.tag)
-         .finish()
+            .field("id", &self.id)
+            .field("tag", &self.tag)
+            .finish()
     }
 }
 
 impl WidgetImpl {
     pub fn new(style: Rc<Style>) -> Self {
         Self {
-            id:             0,
-            evc:            Some(EventCore::new()),
-            parent:         None,
-            childs:         Some(vec![]),
-            ctrl:           Some(Box::new(Control::None)),
-            data_gen:       0,
-            pos:            Rect::from(0.0, 0.0, 0.0, 0.0),
-            layout:         Layout::new(),
-            notifier:       None,
-            drag_widget:    None,
-            cached:         false,
-            cache_img:      None,
-            auto_hide:      false,
-            show_hover:     false,
-            tag:            None,
+            id: 0,
+            evc: Some(EventCore::new()),
+            parent: None,
+            childs: Some(vec![]),
+            ctrl: Some(Box::new(Control::None)),
+            data_gen: 0,
+            pos: Rect::from(0.0, 0.0, 0.0, 0.0),
+            layout: Layout::new(),
+            notifier: None,
+            drag_widget: None,
+            cached: false,
+            cache_img: None,
+            auto_hide: false,
+            show_hover: false,
+            tag: None,
             style,
         }
     }
@@ -351,7 +377,11 @@ impl WidgetImpl {
         }
     }
 
-    pub fn reg(&mut self, ev_name: &str, cb: Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>) {
+    pub fn reg(
+        &mut self,
+        ev_name: &str,
+        cb: Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>,
+    ) {
         if let Some(evc) = &mut self.evc {
             evc.reg(ev_name, cb);
         }
@@ -372,11 +402,19 @@ impl WidgetImpl {
         self.drag_widget.clone()
     }
 
-    pub fn is_cached(&mut self) -> bool { self.cached }
-    pub fn enable_cache(&mut self) { self.cached = true; }
+    pub fn is_cached(&mut self) -> bool {
+        self.cached
+    }
+    pub fn enable_cache(&mut self) {
+        self.cached = true;
+    }
 
-    pub fn take_cache_img(&mut self) -> Option<ImgRef> { self.cache_img.take() }
-    pub fn give_cache_img(&mut self, img: ImgRef) { self.cache_img = Some(img); }
+    pub fn take_cache_img(&mut self) -> Option<ImgRef> {
+        self.cache_img.take()
+    }
+    pub fn give_cache_img(&mut self, img: ImgRef) {
+        self.cache_img = Some(img);
+    }
 
     pub fn with_layout<R, F: FnOnce(&Layout) -> R>(&self, f: F) -> R {
         f(&self.layout)
@@ -414,7 +452,13 @@ impl WidgetImpl {
     }
 
     pub fn is_active(&self) -> bool {
-        self.id == self.notifier.as_ref().map(|n| n.active()).flatten().unwrap_or(0)
+        self.id
+            == self
+                .notifier
+                .as_ref()
+                .map(|n| n.active())
+                .flatten()
+                .unwrap_or(0)
     }
 
     pub fn set_notifier(&mut self, not: UINotifierRef, id: usize) {
@@ -426,12 +470,20 @@ impl WidgetImpl {
         self.id == self.notifier.as_ref().map(|n| n.hover()).unwrap_or(0)
     }
 
-    pub fn does_show_hover(&self) -> bool { self.show_hover }
+    pub fn does_show_hover(&self) -> bool {
+        self.show_hover
+    }
 
-    pub fn id(&self) -> usize { self.id }
+    pub fn id(&self) -> usize {
+        self.id
+    }
 
-    pub fn set_tag(&mut self, tag: String) { self.tag = Some(tag); }
-    pub fn tag(&self) -> &str { self.tag.as_ref().map(|t| &t[..]).unwrap_or("") }
+    pub fn set_tag(&mut self, tag: String) {
+        self.tag = Some(tag);
+    }
+    pub fn tag(&self) -> &str {
+        self.tag.as_ref().map(|t| &t[..]).unwrap_or("")
+    }
 
     pub fn check_data_change(&mut self) -> bool {
         if let Some(ctrl) = &mut self.ctrl {
@@ -450,16 +502,23 @@ impl WidgetImpl {
     }
 
     pub fn has_default_style(&self) -> bool {
-        self.ctrl.as_ref().map(|c| c.has_default_style()).unwrap_or(false)
+        self.ctrl
+            .as_ref()
+            .map(|c| c.has_default_style())
+            .unwrap_or(false)
     }
 
     pub fn can_hover(&self) -> bool {
         self.ctrl.as_ref().map(|c| c.can_hover()).unwrap_or(false)
     }
 
-    pub fn pos(&self) -> Rect { self.pos }
+    pub fn pos(&self) -> Rect {
+        self.pos
+    }
 
-    pub fn style(&self) -> &Style { &*self.style }
+    pub fn style(&self) -> &Style {
+        &*self.style
+    }
 
     pub fn set_style(&mut self, style: Rc<Style>) {
         if self.style.border != style.border {
@@ -509,12 +568,12 @@ impl WidgetImpl {
         let child_addr = child.0.as_ptr();
 
         if let Some(childs) = &mut self.childs {
-            let mut idx   = None;
+            let mut idx = None;
             let mut child = None;
 
             for (i, c) in childs.iter().enumerate() {
                 if std::ptr::eq(c.0.as_ptr(), child_addr) {
-                    idx   = Some(i);
+                    idx = Some(i);
                     child = Some(c.clone());
                     break;
                 }
@@ -531,7 +590,9 @@ impl WidgetImpl {
         }
     }
 
-    pub fn wants_auto_hide(&self) -> bool { self.auto_hide }
+    pub fn wants_auto_hide(&self) -> bool {
+        self.auto_hide
+    }
 
     pub fn set_parent(&mut self, parent: &Widget) {
         self.parent = Some(Rc::downgrade(&parent.0));
@@ -539,9 +600,9 @@ impl WidgetImpl {
 
     pub fn clear(&mut self, recursive: bool) {
         self.evc.as_mut().map(|evc| evc.clear());
-        self.ctrl   = None;
+        self.ctrl = None;
         self.parent = None;
-        self.id     = usize::MAX;
+        self.id = usize::MAX;
 
         if let Some(childs) = &mut self.childs {
             if recursive {
@@ -559,17 +620,18 @@ pub fn widget_draw(
     widget: &Widget,
     redraw: &std::collections::HashSet<usize>,
     draw_origin: Rect,
-    painter: &mut Painter)
-{
-    let visible  = widget.0.borrow().layout.visible;
-    if !visible { return; }
+    painter: &mut Painter,
+) {
+    let visible = widget.0.borrow().layout.visible;
+    if !visible {
+        return;
+    }
 
-    let ctrl   = widget.0.borrow_mut().ctrl.take();
+    let ctrl = widget.0.borrow_mut().ctrl.take();
     let childs = widget.0.borrow_mut().childs.take();
 
     if let Some(mut ctrl) = ctrl {
-        ctrl.draw(
-            draw_origin, widget, Some(redraw), childs.as_ref(), painter);
+        ctrl.draw(draw_origin, widget, Some(redraw), childs.as_ref(), painter);
 
         widget.0.borrow_mut().childs = childs;
         widget.0.borrow_mut().ctrl = Some(ctrl);
@@ -580,10 +642,12 @@ pub fn widget_draw_shallow(
     widget: &Widget,
     _redraw: bool,
     draw_origin: Rect,
-    painter: &mut Painter)
-{
-    let visible  = widget.0.borrow().layout.visible;
-    if !visible { return; }
+    painter: &mut Painter,
+) {
+    let visible = widget.0.borrow().layout.visible;
+    if !visible {
+        return;
+    }
 
     let ctrl = widget.0.borrow_mut().ctrl.take();
     if let Some(mut ctrl) = ctrl {
@@ -593,7 +657,7 @@ pub fn widget_draw_shallow(
 }
 
 pub fn widget_draw_frame(widget: &Widget, painter: &mut Painter) {
-    let ctrl   = widget.0.borrow_mut().ctrl.take();
+    let ctrl = widget.0.borrow_mut().ctrl.take();
     let childs = widget.0.borrow_mut().childs.take();
 
     if let Some(mut ctrl) = ctrl {
@@ -611,7 +675,7 @@ pub fn widget_draw_frame(widget: &Widget, painter: &mut Painter) {
 }
 
 pub fn widget_annotate_drop_event(widget: &Widget, mouse_pos: (f32, f32), ev: Event) -> Event {
-    let ctrl   = widget.0.borrow_mut().ctrl.take();
+    let ctrl = widget.0.borrow_mut().ctrl.take();
 
     if let Some(mut ctrl) = ctrl {
         let ret = ctrl.annotate_drop_event(mouse_pos, ev);
@@ -622,7 +686,13 @@ pub fn widget_annotate_drop_event(widget: &Widget, mouse_pos: (f32, f32), ev: Ev
     }
 }
 
-pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, parent: Option<&Widget>, cb: &mut F, is_first: bool, is_last: bool) {
+pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(
+    widget: &Widget,
+    parent: Option<&Widget>,
+    cb: &mut F,
+    is_first: bool,
+    is_last: bool,
+) {
     cb(widget, parent, is_first, is_last);
 
     if let Some(childs) = &widget.0.borrow().childs {

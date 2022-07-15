@@ -1,58 +1,60 @@
-use crate::{
-    InputEvent, Painter, widget_draw,
-    UINotifierRef, Rect, Event, EvPayload, MButton, PopupPos,
-    widget_draw_frame,
-    widget_draw_shallow,
-    widget_annotate_drop_event,
-    widget_handle_event,
-};
 use crate::painter::LblDebugTag;
-use crate::WindowUI;
-use crate::Widget;
 use crate::widget::WidgetImpl;
-use std::rc::{Weak, Rc};
+use crate::Widget;
+use crate::WindowUI;
+use crate::{
+    widget_annotate_drop_event, widget_draw, widget_draw_frame, widget_draw_shallow,
+    widget_handle_event, EvPayload, Event, InputEvent, MButton, Painter, PopupPos, Rect,
+    UINotifierRef,
+};
 use std::cell::RefCell;
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
+use std::rc::{Rc, Weak};
 
 use crate::layout::LayoutCache;
-use crate::widget_store::{WidgetStore, WidgetTree};
 use crate::widget::{widget_walk, widget_walk_parents};
+use crate::widget_store::{WidgetStore, WidgetTree};
 
-use keyboard_types::{KeyboardEvent, Key};
-use morphorm::{
-    PositionType, Units,
-};
+use keyboard_types::{Key, KeyboardEvent};
+use morphorm::{PositionType, Units};
 
 struct Layer {
-    layer_idx:  usize,
-    root:       Widget,
-    tree:       Option<WidgetTree>,
-    popups:     Vec<(Widget, PopupPos)>,
+    layer_idx: usize,
+    root: Widget,
+    tree: Option<WidgetTree>,
+    popups: Vec<(Widget, PopupPos)>,
 }
 
 impl Layer {
     fn handle_popup_positioning_after_layout(
-        &mut self, win_w: f32, win_h: f32, mouse_pos: (f32, f32))
-    {
+        &mut self,
+        win_w: f32,
+        win_h: f32,
+        mouse_pos: (f32, f32),
+    ) {
         while let Some((wid, pos)) = self.popups.pop() {
-            let dest_pos =
-                match pos {
-                    PopupPos::MousePos => mouse_pos,
-                };
+            let dest_pos = match pos {
+                PopupPos::MousePos => mouse_pos,
+            };
 
             let popup_pos = wid.pos();
 
-            let (mut offs_x, mut offs_y) = (
-                dest_pos.0 - popup_pos.x,
-                dest_pos.1 - popup_pos.y
-            );
+            let (mut offs_x, mut offs_y) = (dest_pos.0 - popup_pos.x, dest_pos.1 - popup_pos.y);
             let overhang_x = (popup_pos.x + popup_pos.w + offs_x) - win_w;
             let overhang_y = (popup_pos.y + popup_pos.h + offs_y) - win_h;
-            if overhang_x > 0.0 { offs_x -= overhang_x; }
-            if overhang_y > 0.0 { offs_y -= overhang_y; }
-            if popup_pos.x + offs_x < 0.0 { offs_x = 0.0 - popup_pos.x; }
-            if popup_pos.y + offs_y < 0.0 { offs_y = 0.0 - popup_pos.y; }
+            if overhang_x > 0.0 {
+                offs_x -= overhang_x;
+            }
+            if overhang_y > 0.0 {
+                offs_y -= overhang_y;
+            }
+            if popup_pos.x + offs_x < 0.0 {
+                offs_x = 0.0 - popup_pos.x;
+            }
+            if popup_pos.y + offs_y < 0.0 {
+                offs_y = 0.0 - popup_pos.y;
+            }
 
             widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
                 let pos = wid.pos();
@@ -63,7 +65,7 @@ impl Layer {
             let wid_pos = wid.pos();
             wid.change_layout_silent(|layout| {
                 layout.left = Some(Units::Pixels(wid_pos.x));
-                layout.top  = Some(Units::Pixels(wid_pos.y));
+                layout.top = Some(Units::Pixels(wid_pos.y));
             });
         }
     }
@@ -71,37 +73,37 @@ impl Layer {
 
 #[derive(Debug, Clone)]
 pub struct WidgetFeedback {
-              // widid, source,       logicpos,   pos,  text
-    labels:     Vec<(usize, &'static str, (i32, i32), Rect, String)>,
+    // widid, source,       logicpos,   pos,  text
+    labels: Vec<(usize, &'static str, (i32, i32), Rect, String)>,
 }
 
 #[derive(Debug, Clone)]
 pub struct TestDriver {
     injected_events: Vec<InputEvent>,
-    widgets:         HashMap<usize, WidgetFeedback>,
-                                //  tag,   tag_path, ctrl, widget pos
-    widget_tags:     HashMap<usize, (String, String, String, Rect)>,
+    widgets: HashMap<usize, WidgetFeedback>,
+    //  tag,   tag_path, ctrl, widget pos
+    widget_tags: HashMap<usize, (String, String, String, Rect)>,
 }
 
 #[derive(Debug, Clone)]
 pub struct LabelInfo {
-    pub wid_id:     usize,
-    pub wid_pos:    Rect,
-    pub source:     &'static str,
-    pub logic_pos:  (i32, i32),
-    pub pos:        Rect,
-    pub text:       String,
-    pub tag:        String,
-    pub tag_path:   String,
-    pub ctrl:       String,
+    pub wid_id: usize,
+    pub wid_pos: Rect,
+    pub source: &'static str,
+    pub logic_pos: (i32, i32),
+    pub pos: Rect,
+    pub text: String,
+    pub tag: String,
+    pub tag_path: String,
+    pub ctrl: String,
 }
 
 impl TestDriver {
     pub fn new() -> Self {
         Self {
             injected_events: vec![],
-            widgets:         HashMap::new(),
-            widget_tags:     HashMap::new(),
+            widgets: HashMap::new(),
+            widget_tags: HashMap::new(),
         }
     }
 
@@ -110,21 +112,21 @@ impl TestDriver {
         for (_id, wid) in self.widgets.iter() {
             for wfb in wid.labels.iter() {
                 let (tag, tag_path, ctrl, wid_pos) =
-                    self.widget_tags
-                        .get(&wfb.0)
-                        .cloned()
-                        .unwrap_or_else(||
-                            ("".to_string(),
-                             "".to_string(),
-                             "".to_string(),
-                             Rect::from(0.0, 0.0, 0.0, 0.0)));
+                    self.widget_tags.get(&wfb.0).cloned().unwrap_or_else(|| {
+                        (
+                            "".to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            Rect::from(0.0, 0.0, 0.0, 0.0),
+                        )
+                    });
 
                 ret.push(LabelInfo {
-                    wid_id:     wfb.0,
-                    source:     wfb.1,
-                    logic_pos:  wfb.2,
-                    pos:        wfb.3,
-                    text:       wfb.4.to_string(),
+                    wid_id: wfb.0,
+                    source: wfb.1,
+                    logic_pos: wfb.2,
+                    pos: wfb.3,
+                    text: wfb.4.to_string(),
                     wid_pos,
                     tag,
                     tag_path,
@@ -138,33 +140,35 @@ impl TestDriver {
 
     pub fn inject_char(&mut self, chr: &str) {
         let mut ev = KeyboardEvent::default();
-        ev.key   = Key::Character(chr.to_string());
+        ev.key = Key::Character(chr.to_string());
         ev.state = keyboard_types::KeyState::Down;
         self.injected_events.push(InputEvent::KeyPressed(ev));
     }
 
     pub fn inject_key_down(&mut self, key: Key) {
         let mut ev = KeyboardEvent::default();
-        ev.key   = key;
+        ev.key = key;
         ev.state = keyboard_types::KeyState::Down;
         self.injected_events.push(InputEvent::KeyPressed(ev));
     }
 
     pub fn inject_key_up(&mut self, key: Key) {
         let mut ev = KeyboardEvent::default();
-        ev.key   = key;
+        ev.key = key;
         ev.state = keyboard_types::KeyState::Up;
         self.injected_events.push(InputEvent::KeyReleased(ev));
     }
 
     pub fn inject_mouse_press_at(&mut self, x: f32, y: f32, btn: MButton) {
         self.injected_events.push(InputEvent::MousePosition(x, y));
-        self.injected_events.push(InputEvent::MouseButtonPressed(btn));
+        self.injected_events
+            .push(InputEvent::MouseButtonPressed(btn));
     }
 
     pub fn inject_mouse_release_at(&mut self, x: f32, y: f32, btn: MButton) {
         self.injected_events.push(InputEvent::MousePosition(x, y));
-        self.injected_events.push(InputEvent::MouseButtonReleased(btn));
+        self.injected_events
+            .push(InputEvent::MouseButtonReleased(btn));
     }
 
     pub fn inject_mouse_to(&mut self, x: f32, y: f32) {
@@ -180,8 +184,9 @@ impl TestDriver {
     }
 
     pub fn apply_labels(
-        &mut self, lbl_collection: Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>)
-    {
+        &mut self,
+        lbl_collection: Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>,
+    ) {
         if let Some(coll) = lbl_collection {
             self.widgets.clear();
 
@@ -191,16 +196,19 @@ impl TestDriver {
                     info.0,
                     info.1,
                     info.2,
-                    Rect::from(item.1.0, item.1.1, item.1.2, item.1.3),
-                    item.1.4
+                    Rect::from(item.1 .0, item.1 .1, item.1 .2, item.1 .3),
+                    item.1 .4,
                 );
 
                 if let Some(wf) = self.widgets.get_mut(&info.0) {
                     wf.labels.push(label_info);
                 } else {
-                    self.widgets.insert(info.0, WidgetFeedback {
-                        labels: vec![label_info]
-                    });
+                    self.widgets.insert(
+                        info.0,
+                        WidgetFeedback {
+                            labels: vec![label_info],
+                        },
+                    );
                 }
             }
         }
@@ -214,22 +222,26 @@ enum FScriptStep {
 
 #[derive(Clone)]
 pub struct TestScript {
-    name:   String,
-    queue:  Vec<(String, FScriptStep)>,
+    name: String,
+    queue: Vec<(String, FScriptStep)>,
 }
 
 impl TestScript {
     pub fn new(name: String) -> Self {
-        Self { name, queue: vec![] }
+        Self {
+            name,
+            queue: vec![],
+        }
     }
 
-    pub fn name(&self) -> &str { &self.name }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 
     pub fn push_cb(
         &mut self,
         step_name: String,
-        cb: Rc<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>)
-                   -> (bool, Box<TestDriver>)>
+        cb: Rc<dyn Fn(&mut dyn std::any::Any, Box<TestDriver>) -> (bool, Box<TestDriver>)>,
     ) {
         self.queue.push((step_name, FScriptStep::Callback(cb)));
     }
@@ -238,26 +250,26 @@ impl TestScript {
 #[derive(Debug, Clone)]
 pub struct DragState {
     button_pressed: bool,
-    started:        bool,
-    hover_id:       usize,
-    last_query_id:  usize,
-    query_accept:   bool,
-    pos:            (f32, f32),
-    widget:         Option<Widget>,
-    userdata:       Option<Rc<RefCell<Box<dyn std::any::Any>>>>,
+    started: bool,
+    hover_id: usize,
+    last_query_id: usize,
+    query_accept: bool,
+    pos: (f32, f32),
+    widget: Option<Widget>,
+    userdata: Option<Rc<RefCell<Box<dyn std::any::Any>>>>,
 }
 
 impl DragState {
     fn new() -> Self {
         Self {
             button_pressed: false,
-            started:        false,
-            last_query_id:  0,
-            query_accept:   false,
-            hover_id:       0,
-            pos:            (0.0, 0.0),
-            userdata:       None,
-            widget:         None,
+            started: false,
+            last_query_id: 0,
+            query_accept: false,
+            hover_id: 0,
+            pos: (0.0, 0.0),
+            userdata: None,
+            widget: None,
         }
     }
 
@@ -267,55 +279,58 @@ impl DragState {
 }
 
 pub struct UI {
-    win_w:              f32,
-    win_h:              f32,
-    layers:             Vec<Layer>,
-    widgets:            Rc<RefCell<WidgetStore>>,
-    notifier:           UINotifierRef,
-    zones:              Option<Vec<(Rect, bool, usize)>>,
-    cur_redraw:         HashSet<usize>,
-    cur_parent_lookup:  Vec<usize>,
-    layout_cache:       LayoutCache,
-    ftm:                crate::window::FrameTimeMeasurement,
-    fb:                 Option<Box<TestDriver>>,
-    scripts:            Option<Vec<TestScript>>,
-    cur_script:         Option<TestScript>,
-    tests_run:          usize,
-    tests_fail:         usize,
-    drag:               DragState,
-    drop_query_ev:      Event,
-    hover_ev:           Event,
-    last_hover:         Option<Weak<RefCell<WidgetImpl>>>,
-    auto_hide_queue:    Vec<(usize, HashSet<usize>)>,
-    frame_cb:           Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
-    ctx:                Rc<RefCell<dyn std::any::Any>>,
+    win_w: f32,
+    win_h: f32,
+    layers: Vec<Layer>,
+    widgets: Rc<RefCell<WidgetStore>>,
+    notifier: UINotifierRef,
+    zones: Option<Vec<(Rect, bool, usize)>>,
+    cur_redraw: HashSet<usize>,
+    cur_parent_lookup: Vec<usize>,
+    layout_cache: LayoutCache,
+    ftm: crate::window::FrameTimeMeasurement,
+    fb: Option<Box<TestDriver>>,
+    scripts: Option<Vec<TestScript>>,
+    cur_script: Option<TestScript>,
+    tests_run: usize,
+    tests_fail: usize,
+    drag: DragState,
+    drop_query_ev: Event,
+    hover_ev: Event,
+    last_hover: Option<Weak<RefCell<WidgetImpl>>>,
+    auto_hide_queue: Vec<(usize, HashSet<usize>)>,
+    frame_cb: Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
+    ctx: Rc<RefCell<dyn std::any::Any>>,
 }
 
 impl UI {
     pub fn new(ctx: Rc<RefCell<dyn std::any::Any>>) -> Self {
         let store = Rc::new(RefCell::new(WidgetStore::new()));
         Self {
-            win_h:              0.0,
-            win_w:              0.0,
-            layers:             vec![],
-            widgets:            store.clone(),
-            notifier:           UINotifierRef::new(),
-            zones:              Some(vec![]),
-            cur_redraw:         HashSet::new(),
-            cur_parent_lookup:  vec![],
-            layout_cache:       LayoutCache::new(store),
-            ftm:                crate::window::FrameTimeMeasurement::new("layout"),
-            fb:                 None,
-            scripts:            None,
-            cur_script:         None,
-            tests_run:          0,
-            tests_fail:         0,
-            drag:               DragState::new(),
-            auto_hide_queue:    vec![],
-            frame_cb:           None,
+            win_h: 0.0,
+            win_w: 0.0,
+            layers: vec![],
+            widgets: store.clone(),
+            notifier: UINotifierRef::new(),
+            zones: Some(vec![]),
+            cur_redraw: HashSet::new(),
+            cur_parent_lookup: vec![],
+            layout_cache: LayoutCache::new(store),
+            ftm: crate::window::FrameTimeMeasurement::new("layout"),
+            fb: None,
+            scripts: None,
+            cur_script: None,
+            tests_run: 0,
+            tests_fail: 0,
+            drag: DragState::new(),
+            auto_hide_queue: vec![],
+            frame_cb: None,
             drop_query_ev: Event {
                 name: "drop_query".to_string(),
-                data: EvPayload::DropAccept(Rc::new(RefCell::new((Rc::new(RefCell::new(Box::new(0))), false)))),
+                data: EvPayload::DropAccept(Rc::new(RefCell::new((
+                    Rc::new(RefCell::new(Box::new(0))),
+                    false,
+                )))),
             },
             last_hover: None,
             hover_ev: Event {
@@ -339,7 +354,7 @@ impl UI {
             layer_idx: index,
             root,
             tree: None,
-            popups: vec![]
+            popups: vec![],
         });
 
         self.on_tree_changed();
@@ -356,25 +371,20 @@ impl UI {
 
         for layer in &mut self.layers {
             layer.root.change_layout(|l| {
-                l.left   = Some(Units::Pixels(0.0));
-                l.top    = Some(Units::Pixels(0.0));
-                l.width  = Some(Units::Pixels(win_w));
+                l.left = Some(Units::Pixels(0.0));
+                l.top = Some(Units::Pixels(0.0));
+                l.width = Some(Units::Pixels(win_w));
                 l.height = Some(Units::Pixels(win_h));
                 l.position_type = Some(PositionType::SelfDirected);
             });
 
             if layer.tree.is_none() {
-                layer.tree =
-                    Some(WidgetTree::from_root(
-                        self.widgets.clone(), &layer.root));
+                layer.tree = Some(WidgetTree::from_root(self.widgets.clone(), &layer.root));
             }
 
             let tree = layer.tree.as_ref().unwrap();
 
-            morphorm::layout(
-                &mut self.layout_cache,
-                tree,
-                &self.widgets.clone());
+            morphorm::layout(&mut self.layout_cache, tree, &self.widgets.clone());
 
             tree.apply_layout_to_widgets(&self.layout_cache);
             layer.root.set_pos(Rect::from(0.0, 0.0, win_w, win_h));
@@ -387,32 +397,32 @@ impl UI {
             let wids = self.widgets.clone();
             wids.borrow().for_each_widget(|wid, _id| {
                 let tag = wid.tag();
-                let mut tag_path : Vec<String> = vec![tag.clone()];
+                let mut tag_path: Vec<String> = vec![tag.clone()];
                 let mut root = wid.clone();
                 widget_walk_parents(&wid, |par| {
                     tag_path.push(par.tag());
                     root = par.clone();
                 });
 
-                let mut tag_path_str =
-                    format!("layer_{}",
-                        self.find_layer_by_root_id(root.id())
-                            .map(|layer| layer.layer_idx)
-                            .unwrap_or(0));
+                let mut tag_path_str = format!(
+                    "layer_{}",
+                    self.find_layer_by_root_id(root.id())
+                        .map(|layer| layer.layer_idx)
+                        .unwrap_or(0)
+                );
 
                 for tag in tag_path.iter().rev() {
                     tag_path_str += ".";
                     tag_path_str += &tag;
                 }
 
-                let ctrl =
-                    if let Some(ctrl) = wid.take_ctrl() {
-                        let ret = format!("{:?}", ctrl);
-                        wid.give_ctrl_back(ctrl);
-                        ret
-                    } else {
-                        "".to_string()
-                    };
+                let ctrl = if let Some(ctrl) = wid.take_ctrl() {
+                    let ret = format!("{:?}", ctrl);
+                    wid.give_ctrl_back(ctrl);
+                    ret
+                } else {
+                    "".to_string()
+                };
 
                 fb.set_tag(wid.id(), tag, tag_path_str, ctrl, wid.pos());
             });
@@ -451,7 +461,6 @@ impl UI {
                 auto_hide_queue.push((wid.id(), subtree_set));
             }
         }
-
 
         self.auto_hide_queue = auto_hide_queue;
 
@@ -541,12 +550,10 @@ impl UI {
 
     fn handle_drag_mouse_pressed(&mut self) {
         let drag_hover_id = self.notifier.hover();
-        if let Some(widget) =
-            self.widgets.borrow().get(drag_hover_id)
-        {
+        if let Some(widget) = self.widgets.borrow().get(drag_hover_id) {
             if let Some(widget) = widget.drag_widget() {
                 self.drag.button_pressed = true;
-                self.drag.hover_id       = drag_hover_id;
+                self.drag.hover_id = drag_hover_id;
 
                 widget.set_notifier(self.notifier.clone(), 9999991999);
                 self.drag.widget = Some(widget);
@@ -558,21 +565,16 @@ impl UI {
         let hov_id = self.notifier.hover();
         if self.drag.started && self.drag.hover_id != hov_id {
             //d// println!("DROP! {} on {}", self.drag.hover_id, hov_id);
-            if let Some(ud) = &self.drag.userdata  {
-                if let Some(widget) =
-                    self.widgets.borrow().get(hov_id)
-                {
+            if let Some(ud) = &self.drag.userdata {
+                if let Some(widget) = self.widgets.borrow().get(hov_id) {
                     let ev = Event {
                         name: "drop".to_string(),
                         data: EvPayload::UserData(ud.clone()),
                     };
-                    let ev =
-                        widget_annotate_drop_event(
-                            &widget, self.drag.pos, ev);
+                    let ev = widget_annotate_drop_event(&widget, self.drag.pos, ev);
 
                     if let Some(widget) = self.widgets.borrow().get(hov_id) {
-                        widget_handle_event(
-                            &widget, &mut *(self.ctx.borrow_mut()), &ev);
+                        widget_handle_event(&widget, &mut *(self.ctx.borrow_mut()), &ev);
                     }
                 }
             }
@@ -585,25 +587,25 @@ impl UI {
     }
 
     fn handle_drag_mouse_move(&mut self, x: f32, y: f32, hover_id: &mut usize) {
-        if    self.drag.button_pressed
-           && !self.drag.started
-           && self.drag.hover_id != *hover_id
-        {
+        if self.drag.button_pressed && !self.drag.started && self.drag.hover_id != *hover_id {
             // the starting case, the mouse button was just pressed, but it did
             // not yet hover a new widget and dragging is not started yet.
 
             // first query the widget if it supports dragging at all.
             // for this the widget needs to set the drag UserData to something
             // else than Option<()> None.
-            let sentinel : Option<()> = None;
-            let sentinel : Box<dyn std::any::Any> = Box::new(sentinel);
+            let sentinel: Option<()> = None;
+            let sentinel: Box<dyn std::any::Any> = Box::new(sentinel);
             let userdata = Rc::new(RefCell::new(sentinel));
             if let Some(widget) = self.widgets.borrow().get(self.drag.hover_id) {
                 widget_handle_event(
-                    &widget, &mut *(self.ctx.borrow_mut()), &Event {
+                    &widget,
+                    &mut *(self.ctx.borrow_mut()),
+                    &Event {
                         name: "drag".to_string(),
                         data: EvPayload::UserData(userdata.clone()),
-                    });
+                    },
+                );
             }
 
             let mut cancel_drag = false;
@@ -621,7 +623,6 @@ impl UI {
 
             if cancel_drag {
                 self.drag.reset();
-
             } else {
                 // If the widget actually has something to drag, note that down here:
                 self.drag.userdata = Some(userdata);
@@ -639,8 +640,7 @@ impl UI {
 
                 //d// println!("DRAG START {} (=>{})!", self.drag.hover_id, *hover_id);
             }
-        }
-        else if self.drag.started && self.drag.hover_id == *hover_id {
+        } else if self.drag.started && self.drag.hover_id == *hover_id {
             // The drag gesture gets back to the origin widget of the drag
             // this resets the drag and it will/needs to be restarted next
             // time the cursor leaves the widget.
@@ -648,8 +648,7 @@ impl UI {
             if let Some(drag_widget) = &self.drag.widget {
                 self.notifier.redraw(drag_widget.id());
             }
-        }
-        else if self.drag.started {
+        } else if self.drag.started {
             // This case handles if the user actually drags something.
             // We need to query the (currently) hovered widget if it
             // can accept dropping what we drag at all.
@@ -669,8 +668,7 @@ impl UI {
                 }
 
                 if let Some(widget) = self.widgets.borrow().get(*hover_id) {
-                    widget_handle_event(
-                        &widget, &mut *(self.ctx.borrow_mut()), ev);
+                    widget_handle_event(&widget, &mut *(self.ctx.borrow_mut()), ev);
                 }
 
                 self.drag.last_query_id = *hover_id;
@@ -688,7 +686,6 @@ impl UI {
 
             // Update the drag widget position and mark for redraw:
             if let Some(drag_widget) = &self.drag.widget {
-
                 // if the queries widget does not accept dropping, signal
                 // this by setting the hover widget to he drag widget at the
                 // mouse cursor:
@@ -724,7 +721,12 @@ impl UI {
                 let wid = orig_wid.expect("orig_wid set when root_wid was found!");
                 wid.show();
                 let orig_pos = wid.pos();
-                wid.set_pos(Rect { x: 0.0, y: 0.0, w: orig_pos.w, h: orig_pos.h });
+                wid.set_pos(Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    w: orig_pos.w,
+                    h: orig_pos.h,
+                });
 
                 if let Some(layer) = self.find_layer_by_root_id(root_wid.id()) {
                     layer.popups.push((wid, pos));
@@ -796,43 +798,36 @@ impl WindowUI for UI {
         if let Some(fb) = self.fb.take() {
             let ctx = self.ctx.clone();
 
-            let mut fb_ret =
-                if let Some(mut script) = self.cur_script.take() {
-                    if script.queue.is_empty() {
-                        println!("*** PASS - {}", script.name());
+            let mut fb_ret = if let Some(mut script) = self.cur_script.take() {
+                if script.queue.is_empty() {
+                    println!("*** PASS - {}", script.name());
 
-                        fb
-                    } else {
-                        let (step_name, step) = script.queue.remove(0);
+                    fb
+                } else {
+                    let (step_name, step) = script.queue.remove(0);
 
-                        let mut ok = false;
+                    let mut ok = false;
 
-                        let fb_ret =
-                            match step {
-                                FScriptStep::Callback(cb) => {
-                                    let (ok_flag, fb) =
-                                        (*cb)(&mut *(ctx.borrow_mut()), fb);
-                                    ok = ok_flag;
-                                    fb
-                                },
-                            };
-
-                        if !ok {
-                            eprintln!(
-                                "### FAIL - {} - step {}",
-                                script.name(),
-                                step_name);
-                            self.tests_fail += 1;
-                        } else {
-                            self.cur_script = Some(script);
+                    let fb_ret = match step {
+                        FScriptStep::Callback(cb) => {
+                            let (ok_flag, fb) = (*cb)(&mut *(ctx.borrow_mut()), fb);
+                            ok = ok_flag;
+                            fb
                         }
+                    };
 
-                        fb_ret
+                    if !ok {
+                        eprintln!("### FAIL - {} - step {}", script.name(), step_name);
+                        self.tests_fail += 1;
+                    } else {
+                        self.cur_script = Some(script);
                     }
 
-                } else {
-                    fb
-                };
+                    fb_ret
+                }
+            } else {
+                fb
+            };
 
             if let Some(scripts) = &mut self.scripts {
                 if self.cur_script.is_none() && !scripts.is_empty() {
@@ -843,13 +838,19 @@ impl WindowUI for UI {
                 if self.cur_script.is_none() && scripts.is_empty() {
                     if self.tests_run > 0 {
                         if self.tests_fail > 0 {
-                            println!("### TESTS FAIL: {} run, {} pass, {} fail",
-                                self.tests_run, self.tests_run - self.tests_fail,
-                                self.tests_fail);
+                            println!(
+                                "### TESTS FAIL: {} run, {} pass, {} fail",
+                                self.tests_run,
+                                self.tests_run - self.tests_fail,
+                                self.tests_fail
+                            );
                         } else {
-                            println!("*** TESTS OK: {} run, {} pass, {} fail",
-                                self.tests_run, self.tests_run - self.tests_fail,
-                                self.tests_fail);
+                            println!(
+                                "*** TESTS OK: {} run, {} pass, {} fail",
+                                self.tests_run,
+                                self.tests_run - self.tests_fail,
+                                self.tests_fail
+                            );
                         }
                         self.tests_run = 0;
                     }
@@ -865,15 +866,17 @@ impl WindowUI for UI {
         }
     }
 
-    fn is_active(&mut self) -> bool { true }
+    fn is_active(&mut self) -> bool {
+        true
+    }
 
     fn handle_input_event(&mut self, event: InputEvent) {
         let notifier = self.notifier.clone();
 
-        let old_hover  = notifier.hover();
+        let old_hover = notifier.hover();
         let old_active = notifier.active();
 
-        let mut sent_events : Vec<(usize, Event)> = vec![];
+        let mut sent_events: Vec<(usize, Event)> = vec![];
 
         match &event {
             InputEvent::MouseButtonPressed(btn) => {
@@ -892,7 +895,9 @@ impl WindowUI for UI {
                 let mut hover_id = 0;
                 if let Some(zones) = &self.zones {
                     for (pos, can_hover, id) in zones.iter() {
-                        if !can_hover { continue; }
+                        if !can_hover {
+                            continue;
+                        }
 
                         //d// println!("CHECK {:?} in {:?}", (*x, *y), pos);
                         if pos.is_inside(*x, *y) {
@@ -906,16 +911,14 @@ impl WindowUI for UI {
 
                 notifier.set_mouse_pos((*x, *y));
                 notifier.set_hover(hover_id);
-            },
-            InputEvent::KeyPressed(key) => {
-                match &key.key {
-                    Key::Escape => {
-                        self.do_auto_hide(None);
-                    }
-                    _ => {}
-                }
             }
-            _ => {},
+            InputEvent::KeyPressed(key) => match &key.key {
+                Key::Escape => {
+                    self.do_auto_hide(None);
+                }
+                _ => {}
+            },
+            _ => {}
         }
 
         let new_hover_id = notifier.hover();
@@ -927,12 +930,15 @@ impl WindowUI for UI {
 
         let ctx = self.ctx.clone();
 
-        let last_hover_id =
-            if let Some(last_hover) = &self.last_hover {
-                if let Some(last_hover_wid) = Widget::from_weak(last_hover) {
-                    last_hover_wid.id()
-                } else { usize::MAX }
-            } else { usize::MAX };
+        let last_hover_id = if let Some(last_hover) = &self.last_hover {
+            if let Some(last_hover_wid) = Widget::from_weak(last_hover) {
+                last_hover_wid.id()
+            } else {
+                usize::MAX
+            }
+        } else {
+            usize::MAX
+        };
 
         if last_hover_id != new_hover_id {
             self.last_hover = None;
@@ -940,8 +946,7 @@ impl WindowUI for UI {
             if let Some(widget) = self.widgets.borrow().get(new_hover_id) {
                 self.last_hover = Some(widget.as_weak());
 
-                widget_handle_event(
-                    &widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
+                widget_handle_event(&widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
             }
         }
 
@@ -954,7 +959,6 @@ impl WindowUI for UI {
                 wid.give_ctrl_back(ctrl);
             }
         });
-
 
         for (wid_id, event) in sent_events {
             if let Some(widget) = self.widgets.borrow().get(wid_id) {

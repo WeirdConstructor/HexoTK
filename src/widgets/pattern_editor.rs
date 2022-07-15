@@ -2,7 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, Style};
+use crate::{Event, InputEvent, MButton, Style, Widget};
 use keyboard_types::Key;
 
 use super::ModifierTracker;
@@ -12,103 +12,107 @@ use crate::style::*;
 use crate::painter::*;
 use crate::rect::*;
 
-pub use hexodsp::dsp::tracker::UIPatternModel;
 pub use hexodsp::dsp::tracker::PatternData;
+pub use hexodsp::dsp::tracker::UIPatternModel;
 
 use std::sync::{Arc, Mutex};
 
-pub const UI_TRK_ROW_HEIGHT        : f32 = 14.0;
-pub const UI_TRK_COL_WIDTH         : f32 = 38.0;
-pub const UI_TRK_FONT_SIZE         : f32 = 12.0;
-pub const UI_TRK_COL_DIV_PAD       : f32 = 3.0;
+pub const UI_TRK_ROW_HEIGHT: f32 = 14.0;
+pub const UI_TRK_COL_WIDTH: f32 = 38.0;
+pub const UI_TRK_FONT_SIZE: f32 = 12.0;
+pub const UI_TRK_COL_DIV_PAD: f32 = 3.0;
 //pub const UI_TRK_BG_CLR            : (f32, f32, f32) = UI_LBL_BG_CLR;
-pub const UI_TRK_BG_ALT_CLR        : (f32, f32, f32) = UI_LBL_BG_ALT_CLR;
-pub const UI_TRK_COL_DIV_CLR       : (f32, f32, f32) = UI_PRIM2_CLR;
+pub const UI_TRK_BG_ALT_CLR: (f32, f32, f32) = UI_LBL_BG_ALT_CLR;
+pub const UI_TRK_COL_DIV_CLR: (f32, f32, f32) = UI_PRIM2_CLR;
 //pub const UI_TRK_BORDER_CLR        : (f32, f32, f32) = UI_ACCENT_CLR;
 //pub const UI_TRK_BORDER_HOVER_CLR  : (f32, f32, f32) = UI_HLIGHT_CLR;
 //pub const UI_TRK_BORDER_EDIT_CLR   : (f32, f32, f32) = UI_SELECT_CLR;
 //pub const UI_TRK_BORDER_INACT_CLR  : (f32, f32, f32) = UI_INACTIVE_CLR;
-pub const UI_TRK_TEXT_CLR          : (f32, f32, f32) = UI_TXT_CLR;
-pub const UI_TRK_CURSOR_BG_CLR     : (f32, f32, f32) = UI_PRIM2_CLR;
-pub const UI_TRK_CURSOR_BG_HOV_CLR : (f32, f32, f32) = UI_PRIM_CLR;
-pub const UI_TRK_CURSOR_BG_SEL_CLR : (f32, f32, f32) = UI_SELECT_CLR;
-pub const UI_TRK_CURSOR_FG_CLR     : (f32, f32, f32) = UI_LBL_BG_CLR;
-pub const UI_TRK_PHASEROW_BG_CLR   : (f32, f32, f32) = UI_HLIGHT_CLR;
-pub const UI_TRK_PHASEROW_FG_CLR   : (f32, f32, f32) = UI_LBL_BG_CLR;
+pub const UI_TRK_TEXT_CLR: (f32, f32, f32) = UI_TXT_CLR;
+pub const UI_TRK_CURSOR_BG_CLR: (f32, f32, f32) = UI_PRIM2_CLR;
+pub const UI_TRK_CURSOR_BG_HOV_CLR: (f32, f32, f32) = UI_PRIM_CLR;
+pub const UI_TRK_CURSOR_BG_SEL_CLR: (f32, f32, f32) = UI_SELECT_CLR;
+pub const UI_TRK_CURSOR_FG_CLR: (f32, f32, f32) = UI_LBL_BG_CLR;
+pub const UI_TRK_PHASEROW_BG_CLR: (f32, f32, f32) = UI_HLIGHT_CLR;
+pub const UI_TRK_PHASEROW_FG_CLR: (f32, f32, f32) = UI_LBL_BG_CLR;
 
 pub trait PatternEditorFeedback: std::fmt::Debug {
     fn get_phase(&self) -> f32;
 }
 
 #[derive(Debug)]
-pub struct PatternEditorFeedbackDummy { }
+pub struct PatternEditorFeedbackDummy {}
 
 impl PatternEditorFeedbackDummy {
-    pub fn new() -> Self { Self { } }
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
 impl PatternEditorFeedback for PatternEditorFeedbackDummy {
-    fn get_phase(&self) -> f32 { 0.5 }
+    fn get_phase(&self) -> f32 {
+        0.5
+    }
 }
 
 #[derive(Debug)]
 pub struct PatternEditor {
-    rows:       usize,
-    columns:    usize,
+    rows: usize,
+    columns: usize,
 
-    pattern:        Arc<Mutex<dyn UIPatternModel>>,
-    pattern_fb:     Arc<Mutex<dyn PatternEditorFeedback>>,
+    pattern: Arc<Mutex<dyn UIPatternModel>>,
+    pattern_fb: Arc<Mutex<dyn PatternEditorFeedback>>,
 
-    cursor:         (usize, usize),
-    enter_mode:     EnterMode,
+    cursor: (usize, usize),
+    enter_mode: EnterMode,
 
-    cell_zone:      Rect,
+    cell_zone: Rect,
 
     last_set_value: u16,
 
-    edit_step:      usize,
-    octave:         u16,
-    follow_phase:   bool,
-    info_line:      String,
+    edit_step: usize,
+    octave: u16,
+    follow_phase: bool,
+    info_line: String,
     update_info_line: bool,
 
-    real_pos:       Rect,
-    modkeys:        ModifierTracker,
-    mouse_pos:      (f32, f32),
+    real_pos: Rect,
+    modkeys: ModifierTracker,
+    mouse_pos: (f32, f32),
 
     pat_generation: u64,
-    generation:     u64,
+    generation: u64,
     last_phase_row: usize,
 }
 
 impl PatternEditor {
     pub fn new(columns: usize) -> Self {
         Self {
-            rows:       10,
+            rows: 10,
             columns,
 
-            pattern:    Arc::new(Mutex::new(PatternData::new(256))),
+            pattern: Arc::new(Mutex::new(PatternData::new(256))),
             pattern_fb: Arc::new(Mutex::new(PatternEditorFeedbackDummy::new())),
-            cursor:     (1, 2),
+            cursor: (1, 2),
             enter_mode: EnterMode::None,
 
             cell_zone: Rect::from(0.0, 0.0, 0.0, 0.0),
 
             last_set_value: 0,
 
-            edit_step:        4,
-            octave:           4,
-            follow_phase:     false,
+            edit_step: 4,
+            octave: 4,
+            follow_phase: false,
             update_info_line: true,
-            info_line:        String::from(""),
-            real_pos:         Rect::from(0.0, 0.0, 0.0, 0.0),
-            modkeys:          ModifierTracker::new(),
+            info_line: String::from(""),
+            real_pos: Rect::from(0.0, 0.0, 0.0, 0.0),
+            modkeys: ModifierTracker::new(),
 
-            pat_generation:   0,
-            generation:       0,
-            last_phase_row:   0,
+            pat_generation: 0,
+            generation: 0,
+            last_phase_row: 0,
 
-            mouse_pos:        (0.0, 0.0),
+            mouse_pos: (0.0, 0.0),
         }
     }
 
@@ -118,7 +122,7 @@ impl PatternEditor {
     //       for drawing a row and draw the play-head position row ontop of
     //       the widget itself. Or just a red border around the play-head row.
     pub fn get_generation(&mut self) -> u64 {
-        let pat    = self.pattern.lock().expect("Pattern lockable");
+        let pat = self.pattern.lock().expect("Pattern lockable");
         if self.pat_generation != pat.get_generation() as u64 {
             self.pat_generation = pat.get_generation() as u64;
             self.generation += 1;
@@ -127,7 +131,7 @@ impl PatternEditor {
 
         let pat_fb = self.pattern_fb.lock().expect("Matrix lockable");
 
-        let phase     = pat_fb.get_phase();
+        let phase = pat_fb.get_phase();
         let phase_row = (pat.rows() as f32 * phase).floor() as usize;
 
         if self.last_phase_row != phase_row {
@@ -140,9 +144,9 @@ impl PatternEditor {
     pub fn set_data_sources(
         &mut self,
         data: Arc<Mutex<dyn UIPatternModel>>,
-        fb: Arc<Mutex<dyn PatternEditorFeedback>>
+        fb: Arc<Mutex<dyn PatternEditorFeedback>>,
     ) {
-        self.pattern    = data;
+        self.pattern = data;
         self.pattern_fb = fb;
     }
 
@@ -181,7 +185,9 @@ impl PatternEditor {
             edit_step = 1;
         }
 
-        if edit_step < 1 { edit_step = 1; }
+        if edit_step < 1 {
+            edit_step = 1;
+        }
 
         let octave = self.octave;
 
@@ -191,82 +197,50 @@ impl PatternEditor {
             Key::Home => {
                 self.cursor.0 = 0;
                 reset_entered_value = true;
-            },
+            }
             Key::End => {
                 self.cursor.0 = pat.rows() - self.edit_step;
                 reset_entered_value = true;
-            },
+            }
             Key::PageUp => {
                 if self.modkeys.shift {
-                    pat.change_value(
-                        self.cursor.0,
-                        self.cursor.1,
-                        0x100);
-
+                    pat.change_value(self.cursor.0, self.cursor.1, 0x100);
                 } else {
-                    advance_cursor(
-                        &mut self.cursor,
-                        -2 * edit_step as i16,
-                        0, &mut *pat);
+                    advance_cursor(&mut self.cursor, -2 * edit_step as i16, 0, &mut *pat);
                 }
                 reset_entered_value = true;
-            },
+            }
             Key::PageDown => {
                 if self.modkeys.shift {
-                    pat.change_value(
-                        self.cursor.0,
-                        self.cursor.1,
-                        -0x100);
-
+                    pat.change_value(self.cursor.0, self.cursor.1, -0x100);
                 } else {
-                    advance_cursor(
-                        &mut self.cursor,
-                        2 * edit_step as i16,
-                        0, &mut *pat);
+                    advance_cursor(&mut self.cursor, 2 * edit_step as i16, 0, &mut *pat);
                 }
                 reset_entered_value = true;
-            },
+            }
             Key::ArrowUp => {
                 if self.modkeys.shift {
                     if self.modkeys.ctrl {
-                        pat.change_value(
-                            self.cursor.0,
-                            self.cursor.1,
-                            0x100);
+                        pat.change_value(self.cursor.0, self.cursor.1, 0x100);
                     } else {
-                        pat.change_value(
-                            self.cursor.0,
-                            self.cursor.1,
-                            0x10);
+                        pat.change_value(self.cursor.0, self.cursor.1, 0x10);
                     }
-
                 } else if let EnterMode::Rows(_) = self.enter_mode {
                     let rows = pat.rows() + 1;
                     pat.set_rows(rows);
                     self.update_info_line = true;
-
                 } else {
-                    advance_cursor(
-                        &mut self.cursor,
-                        -edit_step as i16,
-                        0, &mut *pat);
+                    advance_cursor(&mut self.cursor, -edit_step as i16, 0, &mut *pat);
                 }
                 reset_entered_value = true;
-            },
+            }
             Key::ArrowDown => {
                 if self.modkeys.shift {
                     if self.modkeys.ctrl {
-                        pat.change_value(
-                            self.cursor.0,
-                            self.cursor.1,
-                            -0x100);
+                        pat.change_value(self.cursor.0, self.cursor.1, -0x100);
                     } else {
-                        pat.change_value(
-                            self.cursor.0,
-                            self.cursor.1,
-                            -0x10);
+                        pat.change_value(self.cursor.0, self.cursor.1, -0x10);
                     }
-
                 } else if let EnterMode::Rows(_) = self.enter_mode {
                     if pat.rows() > 0 {
                         let rows = pat.rows() - 1;
@@ -274,198 +248,139 @@ impl PatternEditor {
                         self.update_info_line = true;
                     }
                 } else {
-                    advance_cursor(
-                        &mut self.cursor,
-                        edit_step as i16,
-                        0, &mut *pat);
+                    advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
                 }
                 reset_entered_value = true;
-            },
+            }
             Key::ArrowLeft => {
                 if self.modkeys.shift {
-                    pat.change_value(
-                        self.cursor.0,
-                        self.cursor.1,
-                        -0x1);
-
+                    pat.change_value(self.cursor.0, self.cursor.1, -0x1);
                 } else {
-                    advance_cursor(
-                        &mut self.cursor, 0, -1, &mut *pat);
+                    advance_cursor(&mut self.cursor, 0, -1, &mut *pat);
                 }
                 reset_entered_value = true;
-            },
+            }
             Key::ArrowRight => {
                 if self.modkeys.shift {
-                    pat.change_value(
-                        self.cursor.0,
-                        self.cursor.1,
-                        0x1);
-
+                    pat.change_value(self.cursor.0, self.cursor.1, 0x1);
                 } else {
-                    advance_cursor(
-                        &mut self.cursor, 0, 1, &mut *pat);
+                    advance_cursor(&mut self.cursor, 0, 1, &mut *pat);
                 }
                 reset_entered_value = true;
-            },
+            }
             Key::Delete => {
-                pat.clear_cell(
-                    self.cursor.0,
-                    self.cursor.1);
-                advance_cursor(
-                    &mut self.cursor,
-                    edit_step as i16, 0, &mut *pat);
+                pat.clear_cell(self.cursor.0, self.cursor.1);
+                advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
                 reset_entered_value = true;
-            },
+            }
             Key::Character(c) => {
                 match &c[..] {
                     "+" => {
                         self.octave += 1;
                         self.octave = self.octave.min(9);
                         self.update_info_line = true;
-                    },
+                    }
                     "-" => {
                         if self.octave > 0 {
                             self.octave -= 1;
                             self.update_info_line = true;
                         }
-                    },
+                    }
                     "/" => {
                         if self.edit_step > 0 {
                             self.edit_step -= 1;
                         }
                         self.update_info_line = true;
-                    },
+                    }
                     "*" => {
                         self.edit_step += 1;
                         self.update_info_line = true;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
 
                 match self.enter_mode {
-                    EnterMode::EnterValues(v) => {
-                        match &c[..] {
-                            "." => {
-                                pat.set_cell_value(
-                                    self.cursor.0,
-                                    self.cursor.1,
-                                    self.last_set_value);
-                                advance_cursor(
-                                    &mut self.cursor,
-                                    edit_step as i16, 0, &mut *pat);
-                                reset_entered_value = true;
-                            },
-                            "," => {
-                                let cell_value =
-                                    pat.get_cell_value(
-                                        self.cursor.0,
-                                        self.cursor.1);
-                                self.last_set_value = cell_value;
-                                advance_cursor(
-                                    &mut self.cursor,
-                                    edit_step as i16, 0, &mut *pat);
-                                reset_entered_value = true;
-                            },
-                            "s" => {
-                                let nv = 0x000;
-                                pat.set_cell_value(
-                                    self.cursor.0,
-                                    self.cursor.1,
-                                    nv as u16);
-                                self.last_set_value = nv as u16;
-                                advance_cursor(
-                                    &mut self.cursor,
-                                    edit_step as i16, 0, &mut *pat);
-                            },
-                            "g" => {
-                                let nv = 0xFFF;
-                                pat.set_cell_value(
-                                    self.cursor.0,
-                                    self.cursor.1,
-                                    nv as u16);
-                                self.last_set_value = nv as u16;
-                                advance_cursor(
-                                    &mut self.cursor,
-                                    edit_step as i16, 0, &mut *pat);
-                            },
-                            _ if pat.is_col_note(self.cursor.1) => {
-                                if let Some(value) =
-                                    note_from_char(&c[..], octave)
-                                {
-                                    pat.set_cell_value(
-                                        self.cursor.0,
-                                        self.cursor.1,
-                                        value as u16);
-                                    advance_cursor(
-                                        &mut self.cursor,
-                                        edit_step as i16, 0, &mut *pat);
-                                    self.last_set_value = value as u16;
-                                }
-                            },
-                            _ => {
-                                if let Some(value) = num_from_char(&c[..]) {
-                                    match v {
-                                        EnterValue::None => {
-                                            let nv = value << 0x8;
-                                            self.enter_mode =
-                                                EnterMode::EnterValues(
-                                                    EnterValue::One(nv as u16));
-                                            pat.set_cell_value(
-                                                self.cursor.0,
-                                                self.cursor.1,
-                                                nv as u16);
-                                            self.last_set_value = nv as u16;
-                                        },
-                                        EnterValue::One(v) => {
-                                            let nv = v | (value << 0x4);
-                                            self.enter_mode =
-                                                EnterMode::EnterValues(
-                                                    EnterValue::Two(nv as u16));
-                                            pat.set_cell_value(
-                                                self.cursor.0,
-                                                self.cursor.1,
-                                                nv as u16);
-                                            self.last_set_value = nv as u16;
-                                        },
-                                        EnterValue::Two(v) => {
-                                            let nv = v | value;
-                                            self.enter_mode =
-                                                EnterMode::EnterValues(
-                                                    EnterValue::None);
-                                            pat.set_cell_value(
-                                                self.cursor.0,
-                                                self.cursor.1,
-                                                nv as u16);
-                                            self.last_set_value = nv as u16;
-                                            advance_cursor(
-                                                &mut self.cursor,
-                                                edit_step as i16, 0, &mut *pat);
-                                        },
+                    EnterMode::EnterValues(v) => match &c[..] {
+                        "." => {
+                            pat.set_cell_value(self.cursor.0, self.cursor.1, self.last_set_value);
+                            advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
+                            reset_entered_value = true;
+                        }
+                        "," => {
+                            let cell_value = pat.get_cell_value(self.cursor.0, self.cursor.1);
+                            self.last_set_value = cell_value;
+                            advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
+                            reset_entered_value = true;
+                        }
+                        "s" => {
+                            let nv = 0x000;
+                            pat.set_cell_value(self.cursor.0, self.cursor.1, nv as u16);
+                            self.last_set_value = nv as u16;
+                            advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
+                        }
+                        "g" => {
+                            let nv = 0xFFF;
+                            pat.set_cell_value(self.cursor.0, self.cursor.1, nv as u16);
+                            self.last_set_value = nv as u16;
+                            advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
+                        }
+                        _ if pat.is_col_note(self.cursor.1) => {
+                            if let Some(value) = note_from_char(&c[..], octave) {
+                                pat.set_cell_value(self.cursor.0, self.cursor.1, value as u16);
+                                advance_cursor(&mut self.cursor, edit_step as i16, 0, &mut *pat);
+                                self.last_set_value = value as u16;
+                            }
+                        }
+                        _ => {
+                            if let Some(value) = num_from_char(&c[..]) {
+                                match v {
+                                    EnterValue::None => {
+                                        let nv = value << 0x8;
+                                        self.enter_mode =
+                                            EnterMode::EnterValues(EnterValue::One(nv as u16));
+                                        pat.set_cell_value(self.cursor.0, self.cursor.1, nv as u16);
+                                        self.last_set_value = nv as u16;
+                                    }
+                                    EnterValue::One(v) => {
+                                        let nv = v | (value << 0x4);
+                                        self.enter_mode =
+                                            EnterMode::EnterValues(EnterValue::Two(nv as u16));
+                                        pat.set_cell_value(self.cursor.0, self.cursor.1, nv as u16);
+                                        self.last_set_value = nv as u16;
+                                    }
+                                    EnterValue::Two(v) => {
+                                        let nv = v | value;
+                                        self.enter_mode = EnterMode::EnterValues(EnterValue::None);
+                                        pat.set_cell_value(self.cursor.0, self.cursor.1, nv as u16);
+                                        self.last_set_value = nv as u16;
+                                        advance_cursor(
+                                            &mut self.cursor,
+                                            edit_step as i16,
+                                            0,
+                                            &mut *pat,
+                                        );
                                     }
                                 }
-                            },
+                            }
                         }
                     },
-                    EnterMode::Rows(v) => {
-                        match v {
-                            EnterValue::None => {
-                                if let Some(value) = num_from_char(&c[..]) {
-                                    pat.set_rows((value << 4) as usize);
-                                    self.update_info_line = true;
-                                    self.enter_mode =
-                                        EnterMode::Rows(EnterValue::One(value));
-                                }
-                            },
-                            EnterValue::One(v) => {
-                                if let Some(value) = num_from_char(&c[..]) {
-                                    pat.set_rows((v << 4 | value) as usize);
-                                    self.update_info_line = true;
-                                    self.enter_mode = EnterMode::None;
-                                }
-                            },
-                            _ => {
+                    EnterMode::Rows(v) => match v {
+                        EnterValue::None => {
+                            if let Some(value) = num_from_char(&c[..]) {
+                                pat.set_rows((value << 4) as usize);
+                                self.update_info_line = true;
+                                self.enter_mode = EnterMode::Rows(EnterValue::One(value));
+                            }
+                        }
+                        EnterValue::One(v) => {
+                            if let Some(value) = num_from_char(&c[..]) {
+                                pat.set_rows((v << 4 | value) as usize);
+                                self.update_info_line = true;
                                 self.enter_mode = EnterMode::None;
-                            },
+                            }
+                        }
+                        _ => {
+                            self.enter_mode = EnterMode::None;
                         }
                     },
                     EnterMode::EditStep => {
@@ -479,7 +394,7 @@ impl PatternEditor {
                         }
 
                         self.enter_mode = EnterMode::None;
-                    },
+                    }
                     EnterMode::Octave => {
                         if let Some(value) = num_from_char(&c[..]) {
                             self.octave = value;
@@ -487,91 +402,80 @@ impl PatternEditor {
                         }
 
                         self.enter_mode = EnterMode::None;
-                    },
+                    }
                     EnterMode::ColType => {
                         match &c[..] {
                             "n" => {
                                 pat.set_col_note_type(self.cursor.1);
-                            },
+                            }
                             "s" => {
                                 pat.set_col_step_type(self.cursor.1);
-                            },
+                            }
                             "v" => {
                                 pat.set_col_value_type(self.cursor.1);
-                            },
+                            }
                             "g" => {
                                 pat.set_col_gate_type(self.cursor.1);
-                            },
-                            _ => {},
+                            }
+                            _ => {}
                         }
                         self.enter_mode = EnterMode::None;
-                    },
+                    }
                     EnterMode::Delete => {
                         match &c[..] {
                             "r" => {
                                 for i in 0..pat.cols() {
-                                    pat.clear_cell(
-                                        self.cursor.0,
-                                        i);
+                                    pat.clear_cell(self.cursor.0, i);
                                 }
-                            },
+                            }
                             "c" => {
                                 for i in 0..pat.rows() {
-                                    pat.clear_cell(
-                                        i,
-                                        self.cursor.1);
+                                    pat.clear_cell(i, self.cursor.1);
                                 }
-                            },
+                            }
                             "s" => {
                                 for i in 0..self.edit_step {
-                                    pat.clear_cell(
-                                        self.cursor.0 + i,
-                                        self.cursor.1);
+                                    pat.clear_cell(self.cursor.0 + i, self.cursor.1);
                                 }
-                            },
-                            _ => {},
+                            }
+                            _ => {}
                         }
                         self.enter_mode = EnterMode::None;
-                    },
-                    EnterMode::None => {
-                        match &c[..] {
-                            "e" => {
-                                self.enter_mode = EnterMode::EditStep;
-                            },
-                            "r" => {
-                                self.enter_mode =
-                                    EnterMode::Rows(EnterValue::None);
-                            },
-                            "o" => {
-                                self.enter_mode = EnterMode::Octave;
-                            },
-                            "c" => {
-                                self.enter_mode = EnterMode::ColType;
-                            },
-                            "d" => {
-                                self.enter_mode = EnterMode::Delete;
-                            },
-                            "f" => {
-                                self.follow_phase = !self.follow_phase;
-                                self.update_info_line = true;
-                            },
-                            _ => {},
+                    }
+                    EnterMode::None => match &c[..] {
+                        "e" => {
+                            self.enter_mode = EnterMode::EditStep;
                         }
+                        "r" => {
+                            self.enter_mode = EnterMode::Rows(EnterValue::None);
+                        }
+                        "o" => {
+                            self.enter_mode = EnterMode::Octave;
+                        }
+                        "c" => {
+                            self.enter_mode = EnterMode::ColType;
+                        }
+                        "d" => {
+                            self.enter_mode = EnterMode::Delete;
+                        }
+                        "f" => {
+                            self.follow_phase = !self.follow_phase;
+                            self.update_info_line = true;
+                        }
+                        _ => {}
                     },
                 }
-            },
+            }
             Key::Escape => {
                 self.enter_mode = EnterMode::None;
-            },
+            }
             Key::Enter => {
-                self.enter_mode =
-                    match self.enter_mode {
-                        EnterMode::EnterValues(_)
-                            => EnterMode::None,
-                        _   => EnterMode::EnterValues(EnterValue::None),
-                    }
-            },
-            _ => {},
+                self.enter_mode = match self.enter_mode {
+                    EnterMode::EnterValues(_) => EnterMode::None,
+                    _ => EnterMode::EnterValues(EnterValue::None),
+                }
+            }
+            _ => {}
         }
 
         if reset_entered_value {
@@ -582,18 +486,19 @@ impl PatternEditor {
     }
 
     pub fn handle(
-        &mut self, w: &Widget, event: &InputEvent,
-        _out_events: &mut Vec<(usize, Event)>)
-    {
+        &mut self,
+        w: &Widget,
+        event: &InputEvent,
+        _out_events: &mut Vec<(usize, Event)>,
+    ) {
         self.modkeys.handle(event);
 
         match event {
-//                WindowEvent::FocusOut => {
-//                    self.enter_mode = EnterMode::None;
-//                },
-              InputEvent::MouseButtonPressed(MButton::Left)
+            //                WindowEvent::FocusOut => {
+            //                    self.enter_mode = EnterMode::None;
+            //                },
+            InputEvent::MouseButtonPressed(MButton::Left)
             | InputEvent::MouseButtonPressed(MButton::Right) => {
-
                 if w.is_hovered() {
                     let x = self.mouse_pos.0 - self.real_pos.x;
                     let y = self.mouse_pos.1 - self.real_pos.y;
@@ -619,7 +524,7 @@ impl PatternEditor {
 
                     w.emit_redraw_required();
                 }
-            },
+            }
             InputEvent::MouseWheel(y) => {
                 if w.is_hovered() {
                     let pat = self.pattern.lock().unwrap();
@@ -636,7 +541,7 @@ impl PatternEditor {
 
                     w.emit_redraw_required();
                 }
-            },
+            }
             InputEvent::KeyPressed(key) => {
                 //d// println!("KEY: {:?}", key);
 
@@ -645,32 +550,26 @@ impl PatternEditor {
 
                     w.emit_redraw_required();
                 }
-            },
+            }
             InputEvent::MousePosition(x, y) => {
                 self.mouse_pos = (*x, *y);
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
-    pub fn draw(
-        &mut self, w: &Widget, style: &Style, pos: Rect,
-        real_pos: Rect, p: &mut Painter)
-    {
+    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let mut dbg = LblDebugTag::from_id(w.id());
-        let rp_offs = (
-            real_pos.x - pos.x,
-            real_pos.y - pos.y
-        );
+        let rp_offs = (real_pos.x - pos.x, real_pos.y - pos.y);
         dbg.set_offs(rp_offs);
         self.real_pos = real_pos;
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
 
         let is_hovered = w.is_hovered();
-        let is_active  = w.is_active();
+        let is_active = w.is_active();
 
-        let orig_pos  = pos;
+        let orig_pos = pos;
 
         let mut pat = self.pattern.lock().unwrap();
 
@@ -682,38 +581,23 @@ impl PatternEditor {
 
         p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
 
-        let mode_line =
-            match self.enter_mode {
-                EnterMode::EnterValues(_) => {
-                    Some("> [Values]")
-                },
-                EnterMode::EditStep => {
-                    Some("> [Step] (0-F, Ctrl + 0-F)")
-                },
-                EnterMode::Octave => {
-                    Some("> [Octave] (0-8)")
-                },
-                EnterMode::ColType => {
-                    Some("> [Column] (n)ote,(s)tep,(v)alue,(g)ate")
-                },
-                EnterMode::Delete => {
-                    Some("> [Delete] (r)ow,(c)olumn,(s)tep")
-                },
-                EnterMode::Rows(EnterValue::None) => {
-                    Some("> [Rows] (0-F 00-F0, Up/Down +1/-1)")
-                },
-                EnterMode::Rows(EnterValue::One(_)) => {
-                    Some("> [Rows] (0-F 00-0F)")
-                },
-                EnterMode::Rows(EnterValue::Two(_)) => None,
-                EnterMode::None => {
-                    if notify_click {
-                        Some("*** >>> click for keyboard focus <<< ***")
-                    } else {
-                        None
-                    }
-                },
-            };
+        let mode_line = match self.enter_mode {
+            EnterMode::EnterValues(_) => Some("> [Values]"),
+            EnterMode::EditStep => Some("> [Step] (0-F, Ctrl + 0-F)"),
+            EnterMode::Octave => Some("> [Octave] (0-8)"),
+            EnterMode::ColType => Some("> [Column] (n)ote,(s)tep,(v)alue,(g)ate"),
+            EnterMode::Delete => Some("> [Delete] (r)ow,(c)olumn,(s)tep"),
+            EnterMode::Rows(EnterValue::None) => Some("> [Rows] (0-F 00-F0, Up/Down +1/-1)"),
+            EnterMode::Rows(EnterValue::One(_)) => Some("> [Rows] (0-F 00-0F)"),
+            EnterMode::Rows(EnterValue::Two(_)) => None,
+            EnterMode::None => {
+                if notify_click {
+                    Some("*** >>> click for keyboard focus <<< ***")
+                } else {
+                    None
+                }
+            }
+        };
 
         if let Some(mode_line) = mode_line {
             p.label_mono(
@@ -725,18 +609,18 @@ impl PatternEditor {
                 pos.w,
                 UI_TRK_ROW_HEIGHT,
                 &mode_line,
-                dbg.source("mode_line"));
+                dbg.source("mode_line"),
+            );
         }
 
         if self.update_info_line {
-            self.info_line =
-                format!(
-                    "ES: {:02} | Oct: {:02} | Curs: {} | R: {:02}",
-                    self.edit_step,
-                    self.octave,
-                    if self.follow_phase { "->" }
-                    else                 { "." },
-                    pat.rows());
+            self.info_line = format!(
+                "ES: {:02} | Oct: {:02} | Curs: {} | R: {:02}",
+                self.edit_step,
+                self.octave,
+                if self.follow_phase { "->" } else { "." },
+                pat.rows()
+            );
             self.update_info_line = false;
         }
 
@@ -749,11 +633,12 @@ impl PatternEditor {
             pos.w,
             UI_TRK_ROW_HEIGHT,
             &self.info_line,
-            dbg.source("info_line"));
+            dbg.source("info_line"),
+        );
 
         for ic in 0..self.columns {
             let x = (ic + 1) as f32 * UI_TRK_COL_WIDTH;
-            let y = 2.0             * UI_TRK_ROW_HEIGHT;
+            let y = 2.0 * UI_TRK_ROW_HEIGHT;
 
             dbg.set_logic_pos(ic as i32, -1 as i32);
 
@@ -774,17 +659,21 @@ impl PatternEditor {
                 } else {
                     "Value"
                 },
-                dbg.source("header"));
+                dbg.source("header"),
+            );
         }
 
         p.path_stroke(
             1.0,
             UI_TRK_COL_DIV_CLR,
             &mut [
-                (pos.x,         pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
+                (pos.x, pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
                 (pos.x + pos.w, pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
-            ].iter().copied(),
-            false);
+            ]
+            .iter()
+            .copied(),
+            false,
+        );
 
         let pos = pos.crop_top(2.0 * UI_TRK_ROW_HEIGHT);
 
@@ -818,7 +707,8 @@ impl PatternEditor {
                     pos.x,
                     pos.y + y,
                     pos.w,
-                    UI_TRK_ROW_HEIGHT);
+                    UI_TRK_ROW_HEIGHT,
+                );
             }
 
             p.label_mono(
@@ -830,10 +720,11 @@ impl PatternEditor {
                 UI_TRK_COL_WIDTH,
                 UI_TRK_ROW_HEIGHT,
                 &format!("{:-02}", ir),
-                dbg.source("row_idx"));
+                dbg.source("row_idx"),
+            );
 
-            let pat_fb    = self.pattern_fb.lock().expect("Matrix lockable");
-            let phase     = pat_fb.get_phase();
+            let pat_fb = self.pattern_fb.lock().expect("Matrix lockable");
+            let phase = pat_fb.get_phase();
             let phase_row = (pat.rows() as f32 * phase).floor() as usize;
 
             if self.follow_phase {
@@ -846,70 +737,74 @@ impl PatternEditor {
 
                 dbg.set_logic_pos(ic as i32, ir as i32);
 
-                let txt_clr =
-                    if (ir, ic) == self.cursor || ir == phase_row {
+                let txt_clr = if (ir, ic) == self.cursor || ir == phase_row {
+                    p.rect_fill(
+                        if (ir, ic) == self.cursor {
+                            if is_active {
+                                UI_TRK_CURSOR_BG_SEL_CLR
+                            } else if is_hovered {
+                                UI_TRK_CURSOR_BG_HOV_CLR
+                            } else {
+                                UI_TRK_CURSOR_BG_CLR
+                            }
+                        } else {
+                            UI_TRK_PHASEROW_BG_CLR
+                        },
+                        pos.x + x,
+                        pos.y + y,
+                        UI_TRK_COL_WIDTH,
+                        UI_TRK_ROW_HEIGHT,
+                    );
+
+                    if (ir, ic) == self.cursor {
+                        UI_TRK_CURSOR_FG_CLR
+                    } else {
+                        UI_TRK_PHASEROW_FG_CLR
+                    }
+                } else if (is_active || is_hovered) && ir == self.cursor.0 {
+                    let hl_clr = if is_active {
+                        UI_TRK_CURSOR_BG_SEL_CLR
+                    } else {
+                        // if is_hovered {
+                        UI_TRK_CURSOR_BG_HOV_CLR
+                    };
+
+                    if (ir, ic) == self.cursor {
                         p.rect_fill(
-                            if (ir, ic) == self.cursor {
-                                if is_active {
-                                    UI_TRK_CURSOR_BG_SEL_CLR
-                                } else if is_hovered {
-                                    UI_TRK_CURSOR_BG_HOV_CLR
-                                } else {
-                                    UI_TRK_CURSOR_BG_CLR
-                                }
-                            } else { UI_TRK_PHASEROW_BG_CLR },
+                            hl_clr,
                             pos.x + x,
                             pos.y + y,
                             UI_TRK_COL_WIDTH,
-                            UI_TRK_ROW_HEIGHT);
-
-                        if (ir, ic) == self.cursor {
-                            UI_TRK_CURSOR_FG_CLR
-                        } else {
-                            UI_TRK_PHASEROW_FG_CLR
-                        }
-                    } else if
-                           (is_active || is_hovered)
-                        && ir == self.cursor.0
-                    {
-                        let hl_clr =
-                            if is_active {
-                                UI_TRK_CURSOR_BG_SEL_CLR
-                            } else { // if is_hovered {
-                                UI_TRK_CURSOR_BG_HOV_CLR
-                            };
-
-                        if (ir, ic) == self.cursor {
-                            p.rect_fill(
-                                hl_clr,
-                                pos.x + x,
-                                pos.y + y,
-                                UI_TRK_COL_WIDTH,
-                                UI_TRK_ROW_HEIGHT);
-
-                        } else {
-                            if self.enter_mode != EnterMode::None {
-                                p.path_stroke(
-                                    1.0,
-                                    hl_clr,
-                                    &mut [
-                                        (pos.x + x + 1.5,              pos.y + y + UI_TRK_ROW_HEIGHT - 0.5),
-                                        (pos.x + x + UI_TRK_COL_WIDTH - 0.5, pos.y + y + UI_TRK_ROW_HEIGHT - 0.5),
-                                        (pos.x + x + UI_TRK_COL_WIDTH - 0.5, pos.y + y + 0.5),
-                                        (pos.x + x + 1.5,              pos.y + y + 0.5),
-                                    ].iter().copied(),
-                                    true);
-                            }
-                        }
-
-                        UI_TRK_TEXT_CLR
+                            UI_TRK_ROW_HEIGHT,
+                        );
                     } else {
-                        UI_TRK_TEXT_CLR
-                    };
+                        if self.enter_mode != EnterMode::None {
+                            p.path_stroke(
+                                1.0,
+                                hl_clr,
+                                &mut [
+                                    (pos.x + x + 1.5, pos.y + y + UI_TRK_ROW_HEIGHT - 0.5),
+                                    (
+                                        pos.x + x + UI_TRK_COL_WIDTH - 0.5,
+                                        pos.y + y + UI_TRK_ROW_HEIGHT - 0.5,
+                                    ),
+                                    (pos.x + x + UI_TRK_COL_WIDTH - 0.5, pos.y + y + 0.5),
+                                    (pos.x + x + 1.5, pos.y + y + 0.5),
+                                ]
+                                .iter()
+                                .copied(),
+                                true,
+                            );
+                        }
+                    }
+
+                    UI_TRK_TEXT_CLR
+                } else {
+                    UI_TRK_TEXT_CLR
+                };
 
                 let cell_value = pat.get_cell_value(ir, ic);
                 if let Some(s) = pat.get_cell(ir, ic) {
-
                     if is_note_col {
                         p.label_mono(
                             UI_TRK_FONT_SIZE,
@@ -919,9 +814,9 @@ impl PatternEditor {
                             pos.y + y,
                             UI_TRK_COL_WIDTH,
                             UI_TRK_ROW_HEIGHT,
-                            value2note_name(cell_value)
-                                .unwrap_or(s),
-                            dbg.source("cell"));
+                            value2note_name(cell_value).unwrap_or(s),
+                            dbg.source("cell"),
+                        );
                     } else {
                         p.label_mono(
                             UI_TRK_FONT_SIZE,
@@ -932,7 +827,8 @@ impl PatternEditor {
                             UI_TRK_COL_WIDTH,
                             UI_TRK_ROW_HEIGHT,
                             s,
-                            dbg.source("cell"));
+                            dbg.source("cell"),
+                        );
                     }
                 } else {
                     p.label_mono(
@@ -944,7 +840,8 @@ impl PatternEditor {
                         UI_TRK_COL_WIDTH,
                         UI_TRK_ROW_HEIGHT,
                         "---",
-                        dbg.source("cell"));
+                        dbg.source("cell"),
+                    );
                 }
             }
         }
@@ -955,20 +852,17 @@ impl PatternEditor {
             p.path_stroke(
                 1.0,
                 UI_TRK_COL_DIV_CLR,
-                &mut [
-                    (pos.x + x + 0.5, pos.y),
-                    (pos.x + x + 0.5, pos.y + pos.h),
-                ].iter().copied(),
-                false);
+                &mut [(pos.x + x + 0.5, pos.y), (pos.x + x + 0.5, pos.y + pos.h)]
+                    .iter()
+                    .copied(),
+                false,
+            );
         }
 
         p.reset_clip_region();
     }
 
-    pub fn draw_frame(
-        &mut self, _w: &Widget, _style: &Style, _painter: &mut Painter
-    ) {
-    }
+    pub fn draw_frame(&mut self, _w: &Widget, _style: &Style, _painter: &mut Painter) {}
 }
 
 fn value2note_name(val: u16) -> Option<&'static str> {
@@ -980,24 +874,114 @@ fn value2note_name(val: u16) -> Option<&'static str> {
         21 => "A-0",
         22 => "A#0",
         23 => "B-0",
-        24 => "C-1", 25 => "C#1", 26 => "D-1", 27 => "D#1", 28 => "E-1", 29 => "F-1",
-        30 => "F#1", 31 => "G-1", 32 => "G#1", 33 => "A-1", 34 => "A#1", 35 => "B-1",
-        36 => "C-2", 37 => "C#2", 38 => "D-2", 39 => "D#2", 40 => "E-2", 41 => "F-2",
-        42 => "F#2", 43 => "G-2", 44 => "G#2", 45 => "A-2", 46 => "A#2", 47 => "B-2",
-        48 => "C-3", 49 => "C#3", 50 => "D-3", 51 => "D#3", 52 => "E-3", 53 => "F-3",
-        54 => "F#3", 55 => "G-3", 56 => "G#3", 57 => "A-3", 58 => "A#3", 59 => "B-3",
-        60 => "C-4", 61 => "C#4", 62 => "D-4", 63 => "D#4", 64 => "E-4", 65 => "F-4",
-        66 => "F#4", 67 => "G-4", 68 => "G#4", 69 => "A-4", 70 => "A#4", 71 => "B-4",
-        72 => "C-5", 73 => "C#5", 74 => "D-5", 75 => "D#5", 76 => "E-5", 77 => "F-5",
-        78 => "F#5", 79 => "G-5", 80 => "G#5", 81 => "A-5", 82 => "A#5", 83 => "B-5",
-        84 => "C-6", 85 => "C#6", 86 => "D-6", 87 => "D#6", 88 => "E-6", 89 => "F-6",
-        90 => "F#6", 91 => "G-6", 92 => "G#6", 93 => "A-6", 94 => "A#6", 95 => "B-6",
-        96 => "C-7", 97 => "C#7", 98 => "D-7", 99 => "D#7", 100 => "E-7", 101 => "F-7",
-        102 => "F#7", 103 => "G-7", 104 => "G#7", 105 => "A-7", 106 => "A#7", 107 => "B-7",
-        108 => "C-8", 109 => "C#8", 110 => "D-8", 111 => "D#8", 112 => "E-8", 113 => "F-8",
-        114 => "F#8", 115 => "G-8", 116 => "G#8", 117 => "A-8", 118 => "A#8", 119 => "B-8",
-        120 => "C-9", 121 => "C#9", 122 => "D-9", 123 => "D#9", 124 => "E-9", 125 => "F-9",
-        126 => "F#9", 127 => "G-9", 128 => "G#9", 129 => "A-9", 130 => "A#9", 131 => "B-9",
+        24 => "C-1",
+        25 => "C#1",
+        26 => "D-1",
+        27 => "D#1",
+        28 => "E-1",
+        29 => "F-1",
+        30 => "F#1",
+        31 => "G-1",
+        32 => "G#1",
+        33 => "A-1",
+        34 => "A#1",
+        35 => "B-1",
+        36 => "C-2",
+        37 => "C#2",
+        38 => "D-2",
+        39 => "D#2",
+        40 => "E-2",
+        41 => "F-2",
+        42 => "F#2",
+        43 => "G-2",
+        44 => "G#2",
+        45 => "A-2",
+        46 => "A#2",
+        47 => "B-2",
+        48 => "C-3",
+        49 => "C#3",
+        50 => "D-3",
+        51 => "D#3",
+        52 => "E-3",
+        53 => "F-3",
+        54 => "F#3",
+        55 => "G-3",
+        56 => "G#3",
+        57 => "A-3",
+        58 => "A#3",
+        59 => "B-3",
+        60 => "C-4",
+        61 => "C#4",
+        62 => "D-4",
+        63 => "D#4",
+        64 => "E-4",
+        65 => "F-4",
+        66 => "F#4",
+        67 => "G-4",
+        68 => "G#4",
+        69 => "A-4",
+        70 => "A#4",
+        71 => "B-4",
+        72 => "C-5",
+        73 => "C#5",
+        74 => "D-5",
+        75 => "D#5",
+        76 => "E-5",
+        77 => "F-5",
+        78 => "F#5",
+        79 => "G-5",
+        80 => "G#5",
+        81 => "A-5",
+        82 => "A#5",
+        83 => "B-5",
+        84 => "C-6",
+        85 => "C#6",
+        86 => "D-6",
+        87 => "D#6",
+        88 => "E-6",
+        89 => "F-6",
+        90 => "F#6",
+        91 => "G-6",
+        92 => "G#6",
+        93 => "A-6",
+        94 => "A#6",
+        95 => "B-6",
+        96 => "C-7",
+        97 => "C#7",
+        98 => "D-7",
+        99 => "D#7",
+        100 => "E-7",
+        101 => "F-7",
+        102 => "F#7",
+        103 => "G-7",
+        104 => "G#7",
+        105 => "A-7",
+        106 => "A#7",
+        107 => "B-7",
+        108 => "C-8",
+        109 => "C#8",
+        110 => "D-8",
+        111 => "D#8",
+        112 => "E-8",
+        113 => "F-8",
+        114 => "F#8",
+        115 => "G-8",
+        116 => "G#8",
+        117 => "A-8",
+        118 => "A#8",
+        119 => "B-8",
+        120 => "C-9",
+        121 => "C#9",
+        122 => "D-9",
+        123 => "D#9",
+        124 => "E-9",
+        125 => "F-9",
+        126 => "F#9",
+        127 => "G-9",
+        128 => "G#9",
+        129 => "A-9",
+        130 => "A#9",
+        131 => "B-9",
         _ => "???",
     })
 }
@@ -1021,17 +1005,16 @@ enum EnterMode {
 }
 
 pub fn advance_cursor(
-    cursor:   &mut (usize, usize),
+    cursor: &mut (usize, usize),
     row_offs: i16,
     col_offs: i16,
-    pat:      &mut dyn UIPatternModel)
-{
+    pat: &mut dyn UIPatternModel,
+) {
     if row_offs >= 0 {
         let row_offs = row_offs as usize;
         if ((*cursor).0 + row_offs) < pat.rows() {
             (*cursor).0 += row_offs;
         }
-
     } else {
         let row_offs = row_offs.abs() as usize;
         if (*cursor).0 >= row_offs {
@@ -1046,7 +1029,6 @@ pub fn advance_cursor(
         if ((*cursor).1 + col_offs) < pat.cols() {
             (*cursor).1 += col_offs;
         }
-
     } else {
         let col_offs = col_offs.abs() as usize;
         if (*cursor).1 >= col_offs {
@@ -1077,7 +1059,6 @@ fn note_from_char(c: &str, octave: u16) -> Option<u16> {
         "." => Some(octave + 14),
         ";" => Some(octave + 15),
         // "/" => Some(octave + 16), // collides with the "/" bind for edit step
-
         "q" => Some(octave + 12),
         "2" => Some(octave + 13),
         "w" => Some(octave + 14),

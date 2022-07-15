@@ -1,20 +1,18 @@
-use crate::layout::{WidgetId, LayoutCache};
-use crate::widget::{Widget, WidgetImpl, widget_walk};
-use std::rc::{Weak, Rc};
+use crate::layout::{LayoutCache, WidgetId};
+use crate::widget::{widget_walk, Widget, WidgetImpl};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::{Rc, Weak};
 
 use morphorm::Hierarchy;
 
 pub struct WidgetStore {
-    widgets:         Vec<Weak<RefCell<WidgetImpl>>>,
+    widgets: Vec<Weak<RefCell<WidgetImpl>>>,
 }
 
 impl WidgetStore {
     pub fn new() -> Self {
-        Self {
-            widgets: vec![],
-        }
+        Self { widgets: vec![] }
     }
 
     pub fn for_each_widget<F: FnMut(Widget, usize)>(&self, mut f: F) {
@@ -33,7 +31,9 @@ impl WidgetStore {
         }
     }
 
-    pub fn len(&self) -> usize { self.widgets.len() }
+    pub fn len(&self) -> usize {
+        self.widgets.len()
+    }
 
     pub fn clear(&mut self) {
         self.widgets.clear();
@@ -54,15 +54,17 @@ impl WidgetStore {
         Widget::from_weak(wid)
     }
 
-    pub fn with_layout<R, F: FnOnce(&crate::widget::Layout) -> Option<R>>(&self, id: &WidgetId, f: F)
-        -> Option<R>
-    {
+    pub fn with_layout<R, F: FnOnce(&crate::widget::Layout) -> Option<R>>(
+        &self,
+        id: &WidgetId,
+        f: F,
+    ) -> Option<R> {
         self.get(id.id()).map(|w| w.with_layout(f)).flatten()
     }
 }
 
 pub struct WidgetTree {
-    store:  Rc<RefCell<WidgetStore>>,
+    store: Rc<RefCell<WidgetStore>>,
     widgets: HashMap<usize, (Option<WidgetId>, bool, bool)>,
     widget_dfs_vec: Vec<WidgetId>,
 }
@@ -74,11 +76,14 @@ impl WidgetTree {
 
         widget_walk(root, |wid, _parent, is_first, is_last| {
             widget_dfs_vec.push(WidgetId::from(wid.id()));
-            widgets.insert(wid.id(), (
-                wid.parent().map(|w| WidgetId::from(w.id())),
-                is_first,
-                is_last,
-            ));
+            widgets.insert(
+                wid.id(),
+                (
+                    wid.parent().map(|w| WidgetId::from(w.id())),
+                    is_first,
+                    is_last,
+                ),
+            );
         });
 
         Self {
@@ -128,15 +133,16 @@ impl<'a> Hierarchy<'a> for WidgetTree {
     }
 
     fn is_first_child(&self, node: Self::Item) -> bool {
-        self.widgets.get(&node.id())
+        self.widgets
+            .get(&node.id())
             .map(|(_, is_first, _)| *is_first)
             .unwrap_or(false)
     }
 
     fn is_last_child(&self, node: Self::Item) -> bool {
-        self.widgets.get(&node.id())
+        self.widgets
+            .get(&node.id())
             .map(|(_, _, is_last)| *is_last)
             .unwrap_or(false)
     }
 }
-

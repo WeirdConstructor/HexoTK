@@ -2,21 +2,21 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Widget, InputEvent, Event, MButton, EvPayload, Style};
+use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
 
 use crate::style::*;
 
 use crate::painter::*;
 use crate::rect::*;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
-pub const UI_GRPH_BORDER_CLR      : (f32, f32, f32) = UI_ACCENT_CLR;
-pub const UI_GRPH_LINE_CLR        : (f32, f32, f32) = UI_PRIM_CLR;
-pub const UI_GRPH_PHASE_CLR       : (f32, f32, f32) = UI_SELECT_CLR;
-pub const UI_GRPH_PHASE_BG_CLR    : (f32, f32, f32) = UI_HLIGHT2_CLR;
-pub const UI_GRPH_BG              : (f32, f32, f32) = UI_LBL_BG_CLR;
+pub const UI_GRPH_BORDER_CLR: (f32, f32, f32) = UI_ACCENT_CLR;
+pub const UI_GRPH_LINE_CLR: (f32, f32, f32) = UI_PRIM_CLR;
+pub const UI_GRPH_PHASE_CLR: (f32, f32, f32) = UI_SELECT_CLR;
+pub const UI_GRPH_PHASE_BG_CLR: (f32, f32, f32) = UI_HLIGHT2_CLR;
+pub const UI_GRPH_BG: (f32, f32, f32) = UI_LBL_BG_CLR;
 
 pub trait OctaveKeysModel {
     fn key_mask(&self) -> i64;
@@ -27,14 +27,14 @@ pub trait OctaveKeysModel {
 
 #[derive(Debug, Clone)]
 pub struct DummyOctaveKeysData {
-    key_mask:   i64,
+    key_mask: i64,
     generation: u64,
 }
 
 impl DummyOctaveKeysData {
     pub fn new() -> Self {
         Self {
-            key_mask:   0x0,
+            key_mask: 0x0,
             generation: 0,
         }
     }
@@ -51,26 +51,34 @@ impl DummyOctaveKeysData {
 }
 
 impl OctaveKeysModel for DummyOctaveKeysData {
-    fn key_mask(&self) -> i64 { self.key_mask }
-    fn phase_value(&self) -> f64 { 0.0 }
-    fn get_generation(&self) -> u64 { self.generation }
-    fn change(&mut self, new: i64) { self.key_mask = new; }
+    fn key_mask(&self) -> i64 {
+        self.key_mask
+    }
+    fn phase_value(&self) -> f64 {
+        0.0
+    }
+    fn get_generation(&self) -> u64 {
+        self.generation
+    }
+    fn change(&mut self, new: i64) {
+        self.key_mask = new;
+    }
 }
 
 pub struct OctaveKeys {
-    data:           Rc<RefCell<dyn OctaveKeysModel>>,
-    key_areas:      Vec<(usize, Rect)>,
-    hover_index:    Option<usize>,
-    mouse_pos:      (f32, f32),
+    data: Rc<RefCell<dyn OctaveKeysModel>>,
+    key_areas: Vec<(usize, Rect)>,
+    hover_index: Option<usize>,
+    mouse_pos: (f32, f32),
 }
 
 impl OctaveKeys {
     pub fn new(data: Rc<RefCell<dyn OctaveKeysModel>>) -> Self {
         Self {
             data,
-            key_areas:      vec![],
-            hover_index:    None,
-            mouse_pos:      (0.0, 0.0),
+            key_areas: vec![],
+            hover_index: None,
+            mouse_pos: (0.0, 0.0),
         }
     }
 
@@ -91,11 +99,14 @@ impl OctaveKeys {
     }
 }
 
-fn draw_key(p: &mut Painter, key_mask: i64,
-            key: &Rect, hover_idx: Option<usize>,
-            index: usize,
-            phase_index: usize)
-{
+fn draw_key(
+    p: &mut Painter,
+    key_mask: i64,
+    key: &Rect,
+    hover_idx: Option<usize>,
+    index: usize,
+    phase_index: usize,
+) {
     let key_is_set = key_mask & (0x1 << index) > 0;
 
     let mut hover_this_key = false;
@@ -103,18 +114,17 @@ fn draw_key(p: &mut Painter, key_mask: i64,
         hover_this_key = hover_idx == index;
     }
 
-    let (mut bg_color, mut line_color) =
-        if key_is_set {
-            if hover_this_key {
-                (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
-            } else {
-                (UI_GRPH_LINE_CLR, UI_GRPH_BG)
-            }
-        } else if hover_this_key {
+    let (mut bg_color, mut line_color) = if key_is_set {
+        if hover_this_key {
             (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
         } else {
-            (UI_GRPH_BG, UI_GRPH_LINE_CLR)
-        };
+            (UI_GRPH_LINE_CLR, UI_GRPH_BG)
+        }
+    } else if hover_this_key {
+        (UI_GRPH_PHASE_BG_CLR, UI_GRPH_BG)
+    } else {
+        (UI_GRPH_BG, UI_GRPH_LINE_CLR)
+    };
 
     if phase_index == index {
         if key_is_set {
@@ -132,10 +142,7 @@ fn draw_key(p: &mut Painter, key_mask: i64,
 }
 
 impl OctaveKeys {
-    pub fn handle(
-        &mut self, w: &Widget, event: &InputEvent,
-        out_events: &mut Vec<(usize, Event)>)
-    {
+    pub fn handle(&mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>) {
         match event {
             InputEvent::MouseButtonPressed(MButton::Left) => {
                 if !w.is_hovered() {
@@ -144,7 +151,7 @@ impl OctaveKeys {
 
                 w.activate();
                 w.emit_redraw_required();
-            },
+            }
             InputEvent::MouseButtonReleased(MButton::Left) => {
                 if !w.is_active() {
                     return;
@@ -159,10 +166,13 @@ impl OctaveKeys {
                     }
 
                     self.data.borrow_mut().change(new_key_mask);
-                    out_events.push((w.id(), Event {
-                        name: "changed".to_string(),
-                        data: EvPayload::KeyMask(new_key_mask)
-                    }));
+                    out_events.push((
+                        w.id(),
+                        Event {
+                            name: "changed".to_string(),
+                            data: EvPayload::KeyMask(new_key_mask),
+                        },
+                    ));
                 }
 
                 w.deactivate();
@@ -183,9 +193,13 @@ impl OctaveKeys {
     }
 
     pub fn draw(
-        &mut self, w: &Widget, _style: &Style, pos: Rect,
-        real_pos: Rect, _p: &mut Painter)
-    {
+        &mut self,
+        w: &Widget,
+        _style: &Style,
+        pos: Rect,
+        real_pos: Rect,
+        _p: &mut Painter,
+    ) {
         let mut dbg = LblDebugTag::from_id(w.id());
         let rp_offset = (real_pos.x - pos.x, real_pos.y - pos.y);
         dbg.set_offs(rp_offset);
@@ -199,58 +213,55 @@ impl OctaveKeys {
         let pos = pos.shrink(xd_pad_for_center, 0.0).round();
 
         let xoffs_w = [
-            (0,  0.0 * xd),  // white C
-            (2,  1.0 * xd),  // white D
-            (4,  2.0 * xd),  // white E
-            (5,  3.0 * xd),  // white F
-            (7,  4.0 * xd),  // white G
-            (9,  5.0 * xd),  // white A
-            (11, 6.0 * xd),  // white B
+            (0, 0.0 * xd),  // white C
+            (2, 1.0 * xd),  // white D
+            (4, 2.0 * xd),  // white E
+            (5, 3.0 * xd),  // white F
+            (7, 4.0 * xd),  // white G
+            (9, 5.0 * xd),  // white A
+            (11, 6.0 * xd), // white B
         ];
 
         let xoffs_b = [
-            (1,  1.0 * xd),  // black C#
-            (3,  2.0 * xd),  // black D#
-            (6,  4.0 * xd),  // black F#
-            (8,  5.0 * xd),  // black G#
-            (10, 6.0 * xd),  // black A#
+            (1, 1.0 * xd),  // black C#
+            (3, 2.0 * xd),  // black D#
+            (6, 4.0 * xd),  // black F#
+            (8, 5.0 * xd),  // black G#
+            (10, 6.0 * xd), // black A#
         ];
 
         self.key_areas.clear();
         for xw in xoffs_w.iter() {
-            let key =
-                Rect {
-                    x: pos.x + (*xw).1,
-                    y: pos.y,
-                    w: xd,
-                    h: pos.h,
-                };
+            let key = Rect {
+                x: pos.x + (*xw).1,
+                y: pos.y,
+                w: xd,
+                h: pos.h,
+            };
 
-//            draw_key(p, key_mask, key, hover_idx, (*xw).0, phase_index);
-            self.key_areas.push(
-                ((*xw).0, key.offs(rp_offset.0, rp_offset.1)));
+            //            draw_key(p, key_mask, key, hover_idx, (*xw).0, phase_index);
+            self.key_areas
+                .push(((*xw).0, key.offs(rp_offset.0, rp_offset.1)));
         }
 
         let black_width = (xd * 0.75).round();
-        let black_width =
-            if (black_width as i64) % 2 == 1 {
-                black_width + 1.0
-            } else {
-                black_width
-            };
+        let black_width = if (black_width as i64) % 2 == 1 {
+            black_width + 1.0
+        } else {
+            black_width
+        };
 
         for xb in xoffs_b.iter() {
-            let key =
-                Rect {
-                    x: pos.x + (*xb).1 - black_width * 0.5,
-                    y: pos.y,
-                    w: black_width,
-                    h: pos.h * 0.5,
-                };
+            let key = Rect {
+                x: pos.x + (*xb).1 - black_width * 0.5,
+                y: pos.y,
+                w: black_width,
+                h: pos.h * 0.5,
+            };
 
-//            draw_key(p, key_mask, key, hover_idx, (*xb).0, phase_index);
-            self.key_areas.push(
-                ((*xb).0, key.offs(rp_offset.0, rp_offset.1)));
+            //            draw_key(p, key_mask, key, hover_idx, (*xb).0, phase_index);
+            self.key_areas
+                .push(((*xb).0, key.offs(rp_offset.0, rp_offset.1)));
         }
     }
 

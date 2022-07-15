@@ -1,37 +1,34 @@
 use crate::widget_store::WidgetStore;
 use crate::Rect;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
-use morphorm::{
-    Node, GeometryChanged, Cache,
-    LayoutType, PositionType, Units,
-};
+use morphorm::{Cache, GeometryChanged, LayoutType, Node, PositionType, Units};
 
 #[derive(Debug, Clone, Copy)]
 pub struct CachedLayout {
     geometry_changed: GeometryChanged,
 
-    width:            f32,
-    height:           f32,
-    posx:             f32,
-    posy:             f32,
+    width: f32,
+    height: f32,
+    posx: f32,
+    posy: f32,
 
-    left:             f32,
-    right:            f32,
-    top:              f32,
-    bottom:           f32,
+    left: f32,
+    right: f32,
+    top: f32,
+    bottom: f32,
 
-    new_width:        f32,
-    new_height:       f32,
+    new_width: f32,
+    new_height: f32,
 
-    child_width_max:  f32,
-    child_width_sum:  f32,
+    child_width_max: f32,
+    child_width_sum: f32,
     child_height_max: f32,
     child_height_sum: f32,
-    grid_row_max:     f32,
-    grid_col_max:     f32,
+    grid_row_max: f32,
+    grid_col_max: f32,
 
     horizontal_free_space: f32,
     vertical_free_space: f32,
@@ -39,8 +36,8 @@ pub struct CachedLayout {
     vertical_stretch_sum: f32,
     horizontal_stretch_sum: f32,
 
-    stack_first_child:  bool,
-    stack_last_child:  bool,
+    stack_first_child: bool,
+    stack_last_child: bool,
 }
 
 impl CachedLayout {
@@ -48,25 +45,25 @@ impl CachedLayout {
         Self {
             geometry_changed: GeometryChanged::empty(),
 
-            width:            0.0,
-            height:           0.0,
-            posx:             0.0,
-            posy:             0.0,
+            width: 0.0,
+            height: 0.0,
+            posx: 0.0,
+            posy: 0.0,
 
-            left:             0.0,
-            right:            0.0,
-            top:              0.0,
-            bottom:           0.0,
+            left: 0.0,
+            right: 0.0,
+            top: 0.0,
+            bottom: 0.0,
 
-            new_width:        0.0,
-            new_height:       0.0,
+            new_width: 0.0,
+            new_height: 0.0,
 
-            child_width_max:  0.0,
-            child_width_sum:  0.0,
+            child_width_max: 0.0,
+            child_width_sum: 0.0,
             child_height_max: 0.0,
             child_height_sum: 0.0,
-            grid_row_max:     0.0,
-            grid_col_max:     0.0,
+            grid_row_max: 0.0,
+            grid_col_max: 0.0,
 
             horizontal_free_space: 0.0,
             vertical_free_space: 0.0,
@@ -74,15 +71,15 @@ impl CachedLayout {
             vertical_stretch_sum: 0.0,
             horizontal_stretch_sum: 0.0,
 
-            stack_first_child:  false,
-            stack_last_child:  false,
+            stack_first_child: false,
+            stack_last_child: false,
         }
     }
 }
 
 pub struct LayoutCache {
     layouts: Vec<CachedLayout>,
-    store:   Rc<RefCell<WidgetStore>>,
+    store: Rc<RefCell<WidgetStore>>,
 }
 
 impl LayoutCache {
@@ -116,9 +113,11 @@ impl Cache for LayoutCache {
     }
 
     fn visible(&self, node: Self::Item) -> bool {
-        self.store.borrow().get(node.id).map(|w| {
-            w.with_layout(|l| l.visible)
-        }).unwrap_or(false)
+        self.store
+            .borrow()
+            .get(node.id)
+            .map(|w| w.with_layout(|l| l.visible))
+            .unwrap_or(false)
     }
 
     fn width(&self, node: Self::Item) -> f32 {
@@ -284,14 +283,18 @@ impl Cache for LayoutCache {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct WidgetId { id: usize }
+pub struct WidgetId {
+    id: usize,
+}
 
 impl WidgetId {
     pub fn from(id: usize) -> Self {
         Self { id }
     }
 
-    pub fn id(&self) -> usize { self.id }
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 impl Node<'_> for WidgetId {
@@ -459,4 +462,3 @@ impl Node<'_> for WidgetId {
         }
     }
 }
-
