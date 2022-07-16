@@ -6,6 +6,10 @@ use std::rc::{Rc, Weak};
 
 use morphorm::{LayoutType, PositionType, Units};
 
+thread_local! {
+    pub static WIDGET_ID_COUNTER: RefCell<usize> = RefCell::new(1);
+}
+
 #[derive(Debug, Clone)]
 pub struct Layout {
     pub visible: bool,
@@ -174,8 +178,12 @@ impl Widget {
         self.0.borrow_mut().is_active()
     }
 
-    pub fn set_notifier(&self, not: UINotifierRef, id: usize) {
-        self.0.borrow_mut().set_notifier(not, id)
+    pub fn set_notifier(&self, not: UINotifierRef) {
+        self.0.borrow_mut().set_notifier(not)
+    }
+
+    pub fn set_layout_idx(&self, idx: usize) {
+        self.0.borrow_mut().set_layout_idx(idx);
     }
 
     pub fn is_hovered(&self) -> bool {
@@ -186,8 +194,8 @@ impl Widget {
         self.0.borrow().does_show_hover()
     }
 
-    pub fn id(&self) -> usize {
-        self.0.borrow().id()
+    pub fn unique_id(&self) -> usize {
+        self.0.borrow().unique_id()
     }
 
     pub fn set_tag(&self, tag: String) {
@@ -310,7 +318,8 @@ impl Widget {
 }
 
 pub struct WidgetImpl {
-    id: usize,
+    unqiue_id: usize,
+    layout_id: usize,
     pub evc: Option<EventCore>,
     parent: Option<Weak<RefCell<WidgetImpl>>>,
     childs: Option<Vec<Widget>>,
@@ -331,14 +340,25 @@ pub struct WidgetImpl {
 
 impl std::fmt::Debug for WidgetImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Widget").field("id", &self.id).field("tag", &self.tag).finish()
+        f.debug_struct("Widget")
+            .field("unique_id", &self.unique_id)
+            .field("layout_id", &self.layout_id)
+            .field("tag", &self.tag)
+            .finish()
     }
 }
 
 impl WidgetImpl {
     pub fn new(style: Rc<Style>) -> Self {
+        let unique_id = WIDGET_ID_COUNTER.with(|cnt| {
+            let unique_id = *cnt.borrow();
+            *cnt.borrow_mut() += 1;
+            unique_id
+        });
+
         Self {
-            id: 0,
+            unique_id,
+            layout_id: 0,
             evc: Some(EventCore::new()),
             parent: None,
             childs: Some(vec![]),
@@ -429,36 +449,43 @@ impl WidgetImpl {
     }
 
     pub fn emit_redraw_required(&self) {
-        self.notifier.as_ref().map(|n| n.redraw(self.id));
+        self.notifier.as_ref().map(|n| n.redraw(self.unique_id));
     }
 
     pub fn activate(&self) {
-        self.notifier.as_ref().map(|n| n.activate(self.id));
+        self.notifier.as_ref().map(|n| n.activate(self.unique_id));
     }
 
     pub fn deactivate(&self) {
-        self.notifier.as_ref().map(|n| n.deactivate(self.id));
+        self.notifier.as_ref().map(|n| n.deactivate(self.unique_id));
     }
 
     pub fn is_active(&self) -> bool {
-        self.id == self.notifier.as_ref().map(|n| n.active()).flatten().unwrap_or(0)
+        self.unique_id == self.notifier.as_ref().map(|n| n.active()).flatten().unwrap_or(0)
     }
 
-    pub fn set_notifier(&mut self, not: UINotifierRef, id: usize) {
+    pub fn set_notifier(&mut self, not: UINotifierRef) {
         self.notifier = Some(not);
-        self.id = id;
     }
 
     pub fn is_hovered(&self) -> bool {
-        self.id == self.notifier.as_ref().map(|n| n.hover()).unwrap_or(0)
+        self.unique_id == self.notifier.as_ref().map(|n| n.hover()).unwrap_or(0)
     }
 
     pub fn does_show_hover(&self) -> bool {
         self.show_hover
     }
 
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn unqiue_id(&self) -> usize {
+        self.unique_id
+    }
+
+    pub fn layout_idx(&self) -> usize {
+        self.layout_idx
+    }
+
+    pub fn set_layout_idx(&mut self, idx: usize) {
+        self.layout_idx = idx;
     }
 
     pub fn set_tag(&mut self, tag: String) {
@@ -527,7 +554,7 @@ impl WidgetImpl {
     }
 
     pub fn popup_at(&self, pos: PopupPos) {
-        self.notifier.as_ref().map(|n| n.popup(self.id, pos));
+        self.notifier.as_ref().map(|n| n.popup(self.unique_id, pos));
     }
 
     pub fn remove_childs(&mut self) {
@@ -582,7 +609,8 @@ impl WidgetImpl {
         self.evc.as_mut().map(|evc| evc.clear());
         self.ctrl = None;
         self.parent = None;
-        self.id = usize::MAX;
+        self.layout_idx = usize::MAX;
+        self.uniuqe_id = usize::MAX;
 
         if let Some(childs) = &mut self.childs {
             if recursive {

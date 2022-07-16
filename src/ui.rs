@@ -295,10 +295,12 @@ impl UI {
         Self {
             win_h: 0.0,
             win_w: 0.0,
+
             layers: vec![],
             widgets: store.clone(),
             notifier: UINotifierRef::new(),
             zones: Some(vec![]),
+
             cur_redraw: HashSet::new(),
             cur_parent_lookup: vec![],
             layout_cache: LayoutCache::new(store),
@@ -306,11 +308,13 @@ impl UI {
             fb: None,
             scripts: None,
             cur_script: None,
+
             tests_run: 0,
             tests_fail: 0,
             drag: DragState::new(),
             auto_hide_queue: vec![],
             frame_cb: None,
+
             drop_query_ev: Event {
                 name: "drop_query".to_string(),
                 data: EvPayload::DropAccept(Rc::new(RefCell::new((
