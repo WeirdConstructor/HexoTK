@@ -1,4 +1,4 @@
-use crate::painter::ImgRef;
+use crate::painter::{ImgRef, LblDebugTag};
 use crate::style::Style;
 use crate::{Control, Event, EvPayload, EventCore, Painter, PopupPos, Rect, UINotifierRef};
 use std::cell::RefCell;
@@ -105,7 +105,7 @@ impl Widget {
     }
 
     pub fn debug_tag(&self) -> painter::LblDebugTag {
-        painter::LblDebugTag::from_id(self.unique_id())
+        LblDebugTag::from_id(self.unique_id())
     }
 
     pub fn event(&self, name: &str, data: EvPayload) -> (usize, Event) {
@@ -326,7 +326,7 @@ impl Widget {
 }
 
 pub struct WidgetImpl {
-    unqiue_id: usize,
+    unique_id: usize,
     layout_id: usize,
     pub evc: Option<EventCore>,
     parent: Option<Weak<RefCell<WidgetImpl>>>,
@@ -484,7 +484,7 @@ impl WidgetImpl {
         self.show_hover
     }
 
-    pub fn unqiue_id(&self) -> usize {
+    pub fn unique_id(&self) -> usize {
         self.unique_id
     }
 
@@ -618,7 +618,7 @@ impl WidgetImpl {
         self.ctrl = None;
         self.parent = None;
         self.layout_idx = usize::MAX;
-        self.uniuqe_id = usize::MAX;
+        self.unique_id = usize::MAX;
 
         if let Some(childs) = &mut self.childs {
             if recursive {

@@ -346,16 +346,13 @@ impl HexGrid {
         self.mouse_to_tile(x - pos.x - shift_x, y - pos.y - shift_y)
     }
 
-    pub fn create_center_tile_event(&self) -> Event {
+    pub fn create_center_tile_event(&self) -> EvPayload {
         let tile_pos = self.get_mouse_tile_pos(
             self.real_pos.x + self.real_pos.w * 0.5,
             self.real_pos.y + self.real_pos.h * 0.5,
         );
 
-        Event {
-            name: "center_pos".to_string(),
-            data: EvPayload::HexGridPos { x: tile_pos.0 as usize, y: tile_pos.1 as usize },
-        }
+        EvPayload::HexGridPos { x: tile_pos.0 as usize, y: tile_pos.1 as usize }
     }
 }
 
@@ -389,7 +386,7 @@ impl HexGrid {
                         self.shift_offs.0 += tmp_shift_offs.0;
                         self.shift_offs.1 += tmp_shift_offs.1;
 
-                        out_events.push((w.id(), self.create_center_tile_event()));
+                        out_events.push(w.event("center_pos", self.create_center_tile_event()));
                     }
                 } else {
                     let cur_tile_pos = self.get_mouse_tile_pos(self.mouse.0, self.mouse.1);
@@ -397,15 +394,12 @@ impl HexGrid {
                     if let Some(start_tile_pos) = self.start_tile_pos {
                         if cur_tile_pos == start_tile_pos {
                             if cur_tile_pos.0 >= 0 && cur_tile_pos.1 >= 0 {
-                                out_events.push((
-                                    w.id(),
-                                    Event {
-                                        name: "click".to_string(),
-                                        data: EvPayload::HexGridClick {
-                                            x: cur_tile_pos.0 as usize,
-                                            y: cur_tile_pos.1 as usize,
-                                            button: *btn,
-                                        },
+                                out_events.push(w.event(
+                                    "click",
+                                    EvPayload::HexGridClick {
+                                        x: cur_tile_pos.0 as usize,
+                                        y: cur_tile_pos.1 as usize,
+                                        button: *btn,
                                     },
                                 ));
                             }
@@ -415,17 +409,14 @@ impl HexGrid {
                                 && start_tile_pos.0 >= 0
                                 && start_tile_pos.1 >= 0
                             {
-                                out_events.push((
-                                    w.id(),
-                                    Event {
-                                        name: "hex_drag".to_string(),
-                                        data: EvPayload::HexGridDrag {
-                                            x_src: start_tile_pos.0 as usize,
-                                            y_src: start_tile_pos.1 as usize,
-                                            x_dst: cur_tile_pos.0 as usize,
-                                            y_dst: cur_tile_pos.1 as usize,
-                                            button: *btn,
-                                        },
+                                out_events.push(w.event(
+                                    "hex_drag",
+                                    EvPayload::HexGridDrag {
+                                        x_src: start_tile_pos.0 as usize,
+                                        y_src: start_tile_pos.1 as usize,
+                                        x_dst: cur_tile_pos.0 as usize,
+                                        y_dst: cur_tile_pos.1 as usize,
+                                        button: *btn,
                                     },
                                 ));
                             }
@@ -491,7 +482,7 @@ impl HexGrid {
 
                     self.shift_offs = (old_shift.0 * self.scale, old_shift.1 * self.scale);
 
-                    out_events.push((w.id(), self.create_center_tile_event()));
+                    out_events.push(w.event("center_pos", self.create_center_tile_event()));
                     w.emit_redraw_required();
                 }
             }

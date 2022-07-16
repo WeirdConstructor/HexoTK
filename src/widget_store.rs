@@ -41,12 +41,12 @@ impl WidgetStore {
                 wid.set_parent(parent);
             }
 
-            self.widgets.insert((wid.unique_id(), wid.as_weak()));
+            self.widgets.insert(wid.unique_id(), wid.as_weak());
         });
     }
 
     pub fn get(&self, unique_id: usize) -> Option<Widget> {
-        let wid = self.widgets.get(unique_id)?;
+        let wid = self.widgets.get(&unique_id)?;
         Widget::from_weak(wid)
     }
 
