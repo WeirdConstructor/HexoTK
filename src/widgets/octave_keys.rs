@@ -158,13 +158,7 @@ impl OctaveKeys {
                     }
 
                     self.data.borrow_mut().change(new_key_mask);
-                    out_events.push((
-                        w.id(),
-                        Event {
-                            name: "changed".to_string(),
-                            data: EvPayload::KeyMask(new_key_mask),
-                        },
-                    ));
+                    out_events.push(w.event("changed", EvPayload::KeyMask(new_key_mask)));
                 }
 
                 w.deactivate();

@@ -809,13 +809,8 @@ impl HexKnob {
             }
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Right && self.modkeys.ctrl {
-                    out_events.push((
-                        w.id(),
-                        Event {
-                            name: "context_menu_open".to_string(),
-                            data: EvPayload::Pos { x: 0.0, y: 0.0 },
-                        },
-                    ));
+                    out_events
+                        .push(w.event("context_menu_open", EvPayload::Pos { x: 0.0, y: 0.0 }));
 
                     w.emit_redraw_required();
                 }

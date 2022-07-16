@@ -96,9 +96,8 @@ impl LayoutCache {
         }
     }
 
-    pub fn clear_to_len(&mut self, len: usize) {
+    pub fn clear(&mut self, len: usize) {
         self.layouts.clear();
-        self.layouts.resize_with(len, || CachedLayout::new());
     }
 }
 

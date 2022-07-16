@@ -200,13 +200,9 @@ impl Connector {
                     self.data.borrow_mut().connection = None;
                 }
 
-                out_events.push((
-                    w.id(),
-                    Event {
-                        name: "change".to_string(),
-                        data: EvPayload::SetConnection(self.data.borrow().connection),
-                    },
-                ));
+                out_events.push(
+                    w.event("change", EvPayload::SetConnection(self.data.borrow().connection)),
+                );
 
                 self.drag = false;
                 self.drag_src_idx = None;
@@ -222,12 +218,9 @@ impl Connector {
 
                 if old_hover != self.hover_idx {
                     if let Some((inputs, idx)) = self.hover_idx {
-                        out_events.push((
-                            w.id(),
-                            Event {
-                                name: "connection_hover".to_string(),
-                                data: EvPayload::ConnectionHover { is_input: inputs, index: idx },
-                            },
+                        out_events.push(w.event(
+                            "connection_hover",
+                            EvPayload::ConnectionHover { is_input: inputs, index: idx },
                         ));
                     }
 

@@ -104,7 +104,7 @@ impl Widget {
         Self(Rc::new(RefCell::new(WidgetImpl::new(style))))
     }
 
-    pub fn debug_tag(&self) -> painter::LblDebugTag {
+    pub fn debug_tag(&self) -> LblDebugTag {
         LblDebugTag::from_id(self.unique_id())
     }
 
@@ -188,10 +188,6 @@ impl Widget {
 
     pub fn set_notifier(&self, not: UINotifierRef) {
         self.0.borrow_mut().set_notifier(not)
-    }
-
-    pub fn set_layout_idx(&self, idx: usize) {
-        self.0.borrow_mut().set_layout_idx(idx);
     }
 
     pub fn is_hovered(&self) -> bool {
@@ -488,14 +484,6 @@ impl WidgetImpl {
         self.unique_id
     }
 
-    pub fn layout_idx(&self) -> usize {
-        self.layout_idx
-    }
-
-    pub fn set_layout_idx(&mut self, idx: usize) {
-        self.layout_idx = idx;
-    }
-
     pub fn set_tag(&mut self, tag: String) {
         self.tag = Some(tag);
     }
@@ -617,7 +605,6 @@ impl WidgetImpl {
         self.evc.as_mut().map(|evc| evc.clear());
         self.ctrl = None;
         self.parent = None;
-        self.layout_idx = usize::MAX;
         self.unique_id = usize::MAX;
 
         if let Some(childs) = &mut self.childs {

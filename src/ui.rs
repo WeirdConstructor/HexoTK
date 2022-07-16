@@ -486,7 +486,7 @@ impl UI {
 
     fn find_layer_by_root_id(&mut self, root_widget_id: usize) -> Option<&mut Layer> {
         for layer in &mut self.layers {
-            if layer.root.id() == root_widget_id {
+            if layer.root.unique_id() == root_widget_id {
                 return Some(layer);
             }
         }
@@ -503,7 +503,7 @@ impl UI {
             self.widgets.borrow_mut().add_root(&layer.root);
         }
 
-        self.layout_cache.clear_to_len(self.widgets.borrow().len());
+        self.layout_cache.clear();
     }
 
     fn mark_parents_redraw(&mut self) {
@@ -518,7 +518,7 @@ impl UI {
         while let Some(wid_id) = self.cur_parent_lookup.pop() {
             if let Some(wid) = self.widgets.borrow().get(wid_id) {
                 if let Some(parent) = wid.parent() {
-                    let parent_id = parent.id();
+                    let parent_id = parent.unique_id();
                     self.cur_redraw.insert(parent_id);
                     self.cur_parent_lookup.push(parent_id);
                 }
@@ -535,7 +535,7 @@ impl UI {
                 self.drag.button_pressed = true;
                 self.drag.hover_id = drag_hover_id;
 
-                widget.set_notifier(self.notifier.clone(), 9999991999);
+                widget.set_notifier(self.notifier.clone());
                 self.drag.widget = Some(widget);
             }
         }
@@ -560,7 +560,7 @@ impl UI {
         self.drag.reset();
 
         if let Some(widget) = &self.drag.widget {
-            self.notifier.redraw(widget.id());
+            self.notifier.redraw(widget.unique_id());
         }
     }
 
@@ -613,7 +613,7 @@ impl UI {
                     pos.x = self.drag.pos.0;
                     pos.y = self.drag.pos.1;
                     drag_widget.set_pos(pos);
-                    self.notifier.redraw(drag_widget.id());
+                    self.notifier.redraw(drag_widget.unique_id());
                 }
 
                 //d// println!("DRAG START {} (=>{})!", self.drag.hover_id, *hover_id);
@@ -624,7 +624,7 @@ impl UI {
             // time the cursor leaves the widget.
             self.drag.started = false;
             if let Some(drag_widget) = &self.drag.widget {
-                self.notifier.redraw(drag_widget.id());
+                self.notifier.redraw(drag_widget.unique_id());
             }
         } else if self.drag.started {
             // This case handles if the user actually drags something.
@@ -668,7 +668,7 @@ impl UI {
                 // this by setting the hover widget to he drag widget at the
                 // mouse cursor:
                 if !self.drag.query_accept {
-                    *hover_id = drag_widget.id();
+                    *hover_id = drag_widget.unique_id();
                 }
 
                 let mut pos = drag_widget.pos();
@@ -701,7 +701,7 @@ impl UI {
                 let orig_pos = wid.pos();
                 wid.set_pos(Rect { x: 0.0, y: 0.0, w: orig_pos.w, h: orig_pos.h });
 
-                if let Some(layer) = self.find_layer_by_root_id(root_wid.id()) {
+                if let Some(layer) = self.find_layer_by_root_id(root_wid.unique_id()) {
                     layer.popups.push((wid, pos));
                 }
             }
@@ -757,7 +757,7 @@ impl WindowUI for UI {
             self.on_tree_changed();
         }
 
-        self.widgets.borrow().for_each_widget(|wid, _id| {
+        self.widgets.borrow().for_each_widget(|wid| {
             if wid.check_data_change() {
                 wid.emit_redraw_required();
             }
@@ -905,7 +905,7 @@ impl WindowUI for UI {
 
         let last_hover_id = if let Some(last_hover) = &self.last_hover {
             if let Some(last_hover_wid) = Widget::from_weak(last_hover) {
-                last_hover_wid.id()
+                last_hover_wid.unique_id()
             } else {
                 usize::MAX
             }
@@ -923,7 +923,7 @@ impl WindowUI for UI {
             }
         }
 
-        self.widgets.borrow().for_each_widget(|wid, _id| {
+        self.widgets.borrow().for_each_widget(|wid| {
             let ctrl = wid.take_ctrl();
 
             if let Some(mut ctrl) = ctrl {
