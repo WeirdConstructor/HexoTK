@@ -944,12 +944,9 @@ impl WichText {
                             if let Some(cmd) =
                                 self.get_mut(line, frag).map(|f| f.cmd.clone()).flatten()
                             {
-                                out_events.push((
-                                    w.id(),
-                                    Event {
-                                        name: "click".to_string(),
-                                        data: EvPayload::WichTextCommand { line, frag, cmd },
-                                    },
+                                out_events.push(w.event(
+                                    "click",
+                                    EvPayload::WichTextCommand { line, frag, cmd },
                                 ));
                             }
                         }
@@ -1002,7 +999,7 @@ impl WichText {
         let real_offs_x = real_pos.x - pos.x;
         let real_offs_y = real_pos.y - pos.y;
 
-        let mut dbg = LblDebugTag::from_id(w.id());
+        let mut dbg = w.debug_tag();
         dbg.set_offs((real_offs_x, real_offs_y));
 
         //d// println!("DRAW WICHT: pos={:?}, real_pos={:?}", pos, real_pos);

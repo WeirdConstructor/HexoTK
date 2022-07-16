@@ -117,7 +117,7 @@ impl Entry {
         }
         xo = xo.round();
 
-        let mut dbg = LblDebugTag::from_id(w.id());
+        let mut dbg = w.debug_tag();
 
         p.label_mono(
             style.font_size,

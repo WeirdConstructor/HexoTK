@@ -192,7 +192,7 @@ impl OctaveKeys {
         real_pos: Rect,
         _p: &mut Painter,
     ) {
-        let mut dbg = LblDebugTag::from_id(w.id());
+        let mut dbg = w.debug_tag();
         let rp_offset = (real_pos.x - pos.x, real_pos.y - pos.y);
         dbg.set_offs(rp_offset);
 

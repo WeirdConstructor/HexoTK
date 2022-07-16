@@ -507,7 +507,7 @@ impl HexGrid {
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let is_hovered = w.is_hovered();
 
-        let mut dbg = LblDebugTag::from_id(w.id());
+        let mut dbg = w.debug_tag();
         let rp_offset = (real_pos.x - pos.x, real_pos.y - pos.y);
         dbg.set_offs(rp_offset);
 

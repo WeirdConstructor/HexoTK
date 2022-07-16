@@ -423,22 +423,22 @@ impl UI {
 
         let mut auto_hide_widgets = vec![];
 
-        self.widgets.borrow().for_each_widget_impl(|wid, id| {
+        self.widgets.borrow().for_each_widget_impl(|wid| {
             if wid.wants_auto_hide() {
-                auto_hide_widgets.push(id);
+                auto_hide_widgets.push(wid.unique_id());
             }
-            wid.set_notifier(notifier.clone(), id);
-            notifier.redraw(id);
+            wid.set_notifier(notifier.clone());
+            notifier.redraw(wid.unique_id());
         });
 
         for auto_hide_id in auto_hide_widgets {
             if let Some(wid) = self.widgets.borrow().get(auto_hide_id) {
                 let mut subtree_set = HashSet::new();
-                subtree_set.insert(wid.id());
+                subtree_set.insert(wid.unique_id());
                 widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
-                    subtree_set.insert(wid.id());
+                    subtree_set.insert(wid.unique_id());
                 });
-                auto_hide_queue.push((wid.id(), subtree_set));
+                auto_hide_queue.push((wid.unique_id(), subtree_set));
             }
         }
 

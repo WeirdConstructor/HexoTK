@@ -145,7 +145,7 @@ impl GraphMinMax {
     }
 
     pub fn draw_frame(&mut self, w: &Widget, style: &Style, p: &mut Painter) {
-        let mut dbg = LblDebugTag::from_id(w.id());
+        let mut dbg = w.debug_tag();
 
         let line_color = style.color;
         let mut line_w = 0.9;

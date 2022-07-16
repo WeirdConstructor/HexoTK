@@ -548,7 +548,7 @@ impl Control {
                 let s = label.fmt(&mut buf[..]);
 
                 //d// println!("[{:3}] LABEL draw={},{} real={},{}",
-                //d//     w.id(),
+                //d//     w.unique_id(),
                 //d//     draw_widget_pos.x,
                 //d//     draw_widget_pos.y,
                 //d//     real_widget_pos.x,
@@ -567,7 +567,7 @@ impl Control {
                     draw_widget_pos.w,
                 );
 
-                let mut dbg = painter::LblDebugTag::from_id(w.id());
+                let mut dbg = w.debug_tag();
                 dbg.set_offs((
                     real_widget_pos.x - draw_widget_pos.x,
                     real_widget_pos.y - draw_widget_pos.y,
@@ -625,12 +625,12 @@ impl Control {
         painter: &mut Painter,
     ) {
         let redraw = if let Some(redraw_widgets) = redraw_widgets {
-            redraw_widgets.contains(&w.id())
+            redraw_widgets.contains(&w.unique_id())
         } else {
             false
         };
 
-        //d// println!("     [draw widget id: {}]", w.id());
+        //d// println!("     [draw widget unique_id: {}]", w.unique_id());
         let pos = w.pos(); // Returns position including border and padding!
         let style = w.style();
         let has_default_style = self.has_default_style();
@@ -664,7 +664,7 @@ impl Control {
             .crop_right(2.0 * border_pad_offs_x)
             .crop_bottom(2.0 * border_pad_offs_y);
 
-        //d// println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.id(), ctrl_pos, pos, self, style.border);
+        //d// println!("draw {} => (layout inner pos={:?}) (draw pos={:?}) ({:?}) border={}", w.unique_id(), ctrl_pos, pos, self, style.border);
         //d// println!("DRAW {:?}", pos);
 
         let is_cached = w.is_cached();
@@ -687,8 +687,8 @@ impl Control {
             }
             //                    img_ref = Some(painter.new_image(local_pos.w, local_pos.h));
 
-            //d// println!("      start img {} ({}:{})", w.id(), local_pos.w, local_pos.h);
-            //d// println!("START IMAGE wid={} {:?}", w.id(), local_pos);
+            //d// println!("      start img {} ({}:{})", w.unique_id(), local_pos.w, local_pos.h);
+            //d// println!("START IMAGE wid={} {:?}", w.unique_id(), local_pos);
             painter.start_image(img_ref.as_ref().unwrap());
             let draw_border_pos = Rect::from(0.0, 0.0, local_pos.w, local_pos.h);
             let draw_widget_pos =
@@ -709,7 +709,7 @@ impl Control {
         draw_widget_pos = style.apply_padding(draw_widget_pos);
 
         //d// println!("[{:3}] pos={:3},{:3} orig={:3},{:3} bor={:3},{:3} dwid={:3},{:3} | childorig={:4},{:4}",
-        //d//     w.id(),
+        //d//     w.unique_id(),
         //d//     w.pos().x,
         //d//     w.pos().y,
         //d//     draw_origin.x,
@@ -726,7 +726,7 @@ impl Control {
                 self.draw_border_and_bg(w, &style, draw_border_pos, painter);
             }
 
-            //d// println!("DISP DRAW CTRL wid={} cached={} {:?}", w.id(), is_cached, draw_widget_pos);
+            //d// println!("DISP DRAW CTRL wid={} cached={} {:?}", w.unique_id(), is_cached, draw_widget_pos);
             self.dispatch_draw_control(w, &style, draw_widget_pos, real_widget_pos, painter);
         }
 
@@ -743,7 +743,7 @@ impl Control {
                 painter.finish_image();
             }
 
-            //d// println!("PAINT IMAGE wid={} cached={} {:?}", w.id(), is_cached, pos);
+            //d// println!("PAINT IMAGE wid={} cached={} {:?}", w.unique_id(), is_cached, pos);
 
             //            painter.draw_image(&img_ref, pos.x - draw_origin.x, pos.y - draw_origin.y);
             painter.draw_image(&img_ref, local_pos.x, local_pos.y);
@@ -781,7 +781,7 @@ impl Control {
                     if is_hovered {
                         w.activate();
                         out_events.push((
-                            w.id(),
+                            w.unique_id(),
                             Event { name: "press".to_string(), data: EvPayload::Button(*button) },
                         ));
                     }
@@ -789,11 +789,11 @@ impl Control {
                 InputEvent::MouseButtonReleased(button) => {
                     if w.is_active() && is_hovered {
                         out_events.push((
-                            w.id(),
+                            w.unique_id(),
                             Event { name: "click".to_string(), data: EvPayload::Button(*button) },
                         ));
                         out_events.push((
-                            w.id(),
+                            w.unique_id(),
                             Event { name: "release".to_string(), data: EvPayload::Button(*button) },
                         ));
                     }
@@ -912,9 +912,9 @@ impl UINotifierRef {
         r.mouse_pos = pos;
     }
 
-    pub fn set_hover(&self, id: usize) {
+    pub fn set_hover(&self, unique_id: usize) {
         let mut r = self.0.borrow_mut();
-        r.hover_id = id;
+        r.hover_id = unique_id;
     }
 
     pub fn hover(&self) -> usize {
@@ -922,9 +922,9 @@ impl UINotifierRef {
         r.hover_id
     }
 
-    pub fn redraw(&self, id: usize) {
+    pub fn redraw(&self, unique_id: usize) {
         let mut r = self.0.borrow_mut();
-        r.redraw.insert(id);
+        r.redraw.insert(unique_id);
     }
 
     pub fn need_redraw(&self) -> bool {
@@ -937,31 +937,31 @@ impl UINotifierRef {
         r.redraw.clear()
     }
 
-    pub fn activate(&self, id: usize) {
+    pub fn activate(&self, unique_id: usize) {
         let active = {
             let mut r = self.0.borrow_mut();
             r.active.take()
         };
 
         if let Some(old_active_id) = active {
-            if old_active_id != id {
+            if old_active_id != unique_id {
                 self.redraw(old_active_id);
             }
         }
 
-        self.0.borrow_mut().active = Some(id);
+        self.0.borrow_mut().active = Some(unique_id);
 
-        self.redraw(id);
+        self.redraw(unique_id);
     }
 
-    pub fn deactivate(&self, id: usize) {
+    pub fn deactivate(&self, unique_id: usize) {
         let active = {
             let mut r = self.0.borrow_mut();
             r.active.take()
         };
 
         if let Some(old_active_id) = active {
-            if old_active_id == id {
+            if old_active_id == unique_id {
                 self.redraw(old_active_id);
             }
         }

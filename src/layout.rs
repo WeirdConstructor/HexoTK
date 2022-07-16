@@ -87,12 +87,12 @@ impl LayoutCache {
         Self { layouts: vec![], store }
     }
 
-    pub fn get_widget_rect_by_id(&self, id: &WidgetId) -> Rect {
+    pub fn get_widget_rect_by_id(&self, unique_id: &WidgetId) -> Rect {
         Rect {
-            x: self.layouts[id.id()].posx,
-            y: self.layouts[id.id()].posy,
-            w: self.layouts[id.id()].width,
-            h: self.layouts[id.id()].height,
+            x: self.layouts[id.unique_id()].posx,
+            y: self.layouts[id.unique_id()].posy,
+            w: self.layouts[id.unique_id()].width,
+            h: self.layouts[id.unique_id()].height,
         }
     }
 
@@ -277,16 +277,16 @@ impl Cache for LayoutCache {
 
 #[derive(Debug, Clone, Copy)]
 pub struct WidgetId {
-    id: usize,
+    unique_id: usize,
 }
 
 impl WidgetId {
-    pub fn from(id: usize) -> Self {
-        Self { id }
+    pub fn from(unique_id: usize) -> Self {
+        Self { unique_id }
     }
 
-    pub fn id(&self) -> usize {
-        self.id
+    pub fn unique_id(&self) -> usize {
+        self.unique_id
     }
 }
 

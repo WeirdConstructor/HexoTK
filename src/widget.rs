@@ -1,6 +1,6 @@
 use crate::painter::ImgRef;
 use crate::style::Style;
-use crate::{Control, Event, EventCore, Painter, PopupPos, Rect, UINotifierRef};
+use crate::{Control, Event, EvPayload, EventCore, Painter, PopupPos, Rect, UINotifierRef};
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
@@ -102,6 +102,14 @@ pub struct Widget(Rc<RefCell<WidgetImpl>>);
 impl Widget {
     pub fn new(style: Rc<Style>) -> Self {
         Self(Rc::new(RefCell::new(WidgetImpl::new(style))))
+    }
+
+    pub fn debug_tag(&self) -> painter::LblDebugTag {
+        painter::LblDebugTag::from_id(self.unique_id())
+    }
+
+    pub fn event(&self, name: &str, data: EvPayload) -> (usize, Event) {
+        (self.unique_id(), Event { name: name.to_string(), data })
     }
 
     pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, f: F) {
