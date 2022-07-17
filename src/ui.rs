@@ -377,7 +377,7 @@ impl UI {
 
         if let Some(mut fb) = self.fb.take() {
             let wids = self.widgets.clone();
-            wids.borrow().for_each_widget(|wid, _id| {
+            wids.borrow().for_each_widget(|wid| {
                 let tag = wid.tag();
                 let mut tag_path: Vec<String> = vec![tag.clone()];
                 let mut root = wid.clone();
@@ -388,7 +388,9 @@ impl UI {
 
                 let mut tag_path_str = format!(
                     "layer_{}",
-                    self.find_layer_by_root_id(root.id()).map(|layer| layer.layer_idx).unwrap_or(0)
+                    self.find_layer_by_root_id(root.unique_id())
+                        .map(|layer| layer.layer_idx)
+                        .unwrap_or(0)
                 );
 
                 for tag in tag_path.iter().rev() {
@@ -404,7 +406,7 @@ impl UI {
                     "".to_string()
                 };
 
-                fb.set_tag(wid.id(), tag, tag_path_str, ctrl, wid.pos());
+                fb.set_tag(wid.unique_id(), tag, tag_path_str, ctrl, wid.pos());
             });
 
             self.fb = Some(fb);
@@ -460,9 +462,9 @@ impl UI {
         if let Some(mut zones) = zones {
             zones.clear();
 
-            self.widgets.borrow().for_each_widget(|wid, id| {
+            self.widgets.borrow().for_each_widget(|wid| {
                 if wid.is_visible() {
-                    zones.push((wid.pos(), wid.can_hover(), id));
+                    zones.push((wid.pos(), wid.can_hover(), wid.unique_id()));
                 }
             });
 

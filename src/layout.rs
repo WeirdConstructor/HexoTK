@@ -2,11 +2,12 @@ use crate::widget_store::WidgetStore;
 use crate::Rect;
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use morphorm::{Cache, GeometryChanged, LayoutType, Node, PositionType, Units};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct CachedLayout {
     geometry_changed: GeometryChanged,
 
@@ -40,64 +41,53 @@ pub struct CachedLayout {
     stack_last_child: bool,
 }
 
-impl CachedLayout {
-    pub fn new() -> Self {
-        Self {
-            geometry_changed: GeometryChanged::empty(),
-
-            width: 0.0,
-            height: 0.0,
-            posx: 0.0,
-            posy: 0.0,
-
-            left: 0.0,
-            right: 0.0,
-            top: 0.0,
-            bottom: 0.0,
-
-            new_width: 0.0,
-            new_height: 0.0,
-
-            child_width_max: 0.0,
-            child_width_sum: 0.0,
-            child_height_max: 0.0,
-            child_height_sum: 0.0,
-            grid_row_max: 0.0,
-            grid_col_max: 0.0,
-
-            horizontal_free_space: 0.0,
-            vertical_free_space: 0.0,
-
-            vertical_stretch_sum: 0.0,
-            horizontal_stretch_sum: 0.0,
-
-            stack_first_child: false,
-            stack_last_child: false,
-        }
-    }
-}
-
 pub struct LayoutCache {
-    layouts: Vec<CachedLayout>,
+    layouts: HashMap<usize, CachedLayout>,
     store: Rc<RefCell<WidgetStore>>,
 }
 
 impl LayoutCache {
     pub fn new(store: Rc<RefCell<WidgetStore>>) -> Self {
-        Self { layouts: vec![], store }
+        Self { layouts: HashMap::new(), store }
     }
 
-    pub fn get_widget_rect_by_id(&self, unique_id: &WidgetId) -> Rect {
-        Rect {
-            x: self.layouts[id.unique_id()].posx,
-            y: self.layouts[id.unique_id()].posy,
-            w: self.layouts[id.unique_id()].width,
-            h: self.layouts[id.unique_id()].height,
+    pub fn get_widget_rect_by_id(&self, w_id: &WidgetId) -> Rect {
+        if let Some(layout) = self.layouts.get(&w_id.unique_id()) {
+            Rect { x: layout.posx, y: layout.posy, w: layout.width, h: layout.height }
+        } else {
+            Rect::from(0.0, 0.0, 0.0, 0.0)
         }
     }
 
-    pub fn clear(&mut self, len: usize) {
+    pub fn layout_mut<R: Default, F: FnOnce(&mut CachedLayout) -> R>(
+        &mut self,
+        w_id: &WidgetId,
+        f: F,
+    ) -> R {
+        if let Some(layout) = self.layouts.get_mut(&w_id.unique_id()) {
+            f(layout)
+        } else {
+            R::default()
+        }
+    }
+
+    pub fn layout<R: Default, F: FnOnce(&CachedLayout) -> R>(
+        &self,
+        w_id: &WidgetId,
+        f: F,
+    ) -> R {
+        if let Some(layout) = self.layouts.get(&w_id.unique_id()) {
+            f(layout)
+        } else {
+            R::default()
+        }
+    }
+
+    pub fn clear(&mut self) {
         self.layouts.clear();
+        self.store.borrow_mut().for_each_widget(|wid| {
+            self.layouts.insert(wid.unique_id(), CachedLayout::default());
+        });
     }
 }
 
@@ -105,79 +95,83 @@ impl Cache for LayoutCache {
     type Item = WidgetId;
 
     fn geometry_changed(&self, node: Self::Item) -> GeometryChanged {
-        self.layouts[node.id].geometry_changed
+        self.layout(&node, |l| l.geometry_changed)
     }
 
     fn visible(&self, node: Self::Item) -> bool {
-        self.store.borrow().get(node.id).map(|w| w.with_layout(|l| l.visible)).unwrap_or(false)
+        self.store
+            .borrow()
+            .get(node.unique_id())
+            .map(|w| w.with_layout(|l| l.visible))
+            .unwrap_or(false)
     }
 
     fn width(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].width
+        self.layout(&node, |l| l.width)
     }
 
     fn height(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].height
+        self.layout(&node, |l| l.height)
     }
 
     fn posx(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].posx
+        self.layout(&node, |l| l.posx)
     }
 
     fn posy(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].posy
+        self.layout(&node, |l| l.posy)
     }
 
     fn left(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].left
+        self.layout(&node, |l| l.left)
     }
     fn right(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].right
+        self.layout(&node, |l| l.right)
     }
     fn top(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].top
+        self.layout(&node, |l| l.top)
     }
     fn bottom(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].bottom
+        self.layout(&node, |l| l.bottom)
     }
 
     fn new_width(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].new_width
+        self.layout(&node, |l| l.new_width)
     }
     fn new_height(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].new_height
+        self.layout(&node, |l| l.new_height)
     }
 
     fn child_width_max(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].child_width_max
+        self.layout(&node, |l| l.child_width_max)
     }
 
     fn child_width_sum(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].child_width_sum
+        self.layout(&node, |l| l.child_width_sum)
     }
 
     fn child_height_max(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].child_height_max
+        self.layout(&node, |l| l.child_height_max)
     }
 
     fn child_height_sum(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].child_height_sum
+        self.layout(&node, |l| l.child_height_sum)
     }
 
     fn grid_row_max(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].grid_row_max
+        self.layout(&node, |l| l.grid_row_max)
     }
 
     fn grid_col_max(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].grid_col_max
+        self.layout(&node, |l| l.grid_col_max)
     }
 
     fn set_grid_col_max(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].grid_col_max = value;
+        self.layout_mut(&node, |l| l.grid_col_max = value)
     }
 
     fn set_grid_row_max(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].grid_row_max = value;
+        self.layout_mut(&node, |l| l.grid_row_max = value)
     }
 
     fn set_visible(&mut self, _node: Self::Item, _value: bool) {
@@ -185,92 +179,92 @@ impl Cache for LayoutCache {
     }
 
     fn set_geo_changed(&mut self, node: Self::Item, flag: GeometryChanged, value: bool) {
-        self.layouts[node.id].geometry_changed.set(flag, value);
+        self.layout_mut(&node, |l| l.geometry_changed.set(flag, value))
     }
 
     fn set_child_width_sum(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].child_width_sum = value;
+        self.layout_mut(&node, |l| l.child_width_sum = value)
     }
     fn set_child_height_sum(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].child_height_sum = value;
+        self.layout_mut(&node, |l| l.child_height_sum = value)
     }
     fn set_child_width_max(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].child_width_max = value;
+        self.layout_mut(&node, |l| l.child_width_max = value)
     }
     fn set_child_height_max(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].child_height_max = value;
+        self.layout_mut(&node, |l| l.child_height_max = value)
     }
 
     fn horizontal_free_space(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].horizontal_free_space
+        self.layout(&node, |l| l.horizontal_free_space)
     }
     fn set_horizontal_free_space(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].horizontal_free_space = value;
+        self.layout_mut(&node, |l| l.horizontal_free_space = value)
     }
     fn vertical_free_space(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].vertical_free_space
+        self.layout(&node, |l| l.vertical_free_space)
     }
     fn set_vertical_free_space(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].vertical_free_space = value;
+        self.layout_mut(&node, |l| l.vertical_free_space = value)
     }
 
     fn horizontal_stretch_sum(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].horizontal_stretch_sum
+        self.layout(&node, |l| l.horizontal_stretch_sum)
     }
     fn set_horizontal_stretch_sum(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].horizontal_stretch_sum = value;
+        self.layout_mut(&node, |l| l.horizontal_stretch_sum = value)
     }
     fn vertical_stretch_sum(&self, node: Self::Item) -> f32 {
-        self.layouts[node.id].vertical_stretch_sum
+        self.layout(&node, |l| l.vertical_stretch_sum)
     }
     fn set_vertical_stretch_sum(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].vertical_stretch_sum = value;
+        self.layout_mut(&node, |l| l.vertical_stretch_sum = value)
     }
 
     fn set_width(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].width = value;
+        self.layout_mut(&node, |l| l.width = value)
     }
     fn set_height(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].height = value;
+        self.layout_mut(&node, |l| l.height = value)
     }
     fn set_posx(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].posx = value;
+        self.layout_mut(&node, |l| l.posx = value)
     }
     fn set_posy(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].posy = value;
+        self.layout_mut(&node, |l| l.posy = value)
     }
 
     fn set_left(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].left = value;
+        self.layout_mut(&node, |l| l.left = value)
     }
     fn set_right(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].right = value;
+        self.layout_mut(&node, |l| l.right = value)
     }
     fn set_top(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].top = value;
+        self.layout_mut(&node, |l| l.top = value)
     }
     fn set_bottom(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].bottom = value;
+        self.layout_mut(&node, |l| l.bottom = value)
     }
 
     fn set_new_width(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].new_width = value;
+        self.layout_mut(&node, |l| l.new_width = value)
     }
     fn set_new_height(&mut self, node: Self::Item, value: f32) {
-        self.layouts[node.id].new_height = value;
+        self.layout_mut(&node, |l| l.new_height = value)
     }
 
     fn stack_first_child(&self, node: Self::Item) -> bool {
-        self.layouts[node.id].stack_first_child
+        self.layout(&node, |l| l.stack_first_child)
     }
     fn set_stack_first_child(&mut self, node: Self::Item, value: bool) {
-        self.layouts[node.id].stack_first_child = value;
+        self.layout_mut(&node, |l| l.stack_first_child = value)
     }
     fn stack_last_child(&self, node: Self::Item) -> bool {
-        self.layouts[node.id].stack_last_child
+        self.layout(&node, |l| l.stack_last_child)
     }
     fn set_stack_last_child(&mut self, node: Self::Item, value: bool) {
-        self.layouts[node.id].stack_last_child = value;
+        self.layout_mut(&node, |l| l.stack_last_child = value)
     }
 }
 
@@ -418,7 +412,7 @@ impl Node<'_> for WidgetId {
         store.borrow().with_layout(self, |l| l.col_span)
     }
     fn border_left(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.id)?;
+        let w = store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
             Some(Units::Pixels(style.border + style.pad_left))
@@ -427,7 +421,7 @@ impl Node<'_> for WidgetId {
         }
     }
     fn border_right(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.id)?;
+        let w = store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
             Some(Units::Pixels(style.border + style.pad_right))
@@ -436,7 +430,7 @@ impl Node<'_> for WidgetId {
         }
     }
     fn border_top(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.id)?;
+        let w = store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
             Some(Units::Pixels(style.border + style.pad_top))
@@ -445,7 +439,7 @@ impl Node<'_> for WidgetId {
         }
     }
     fn border_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.id)?;
+        let w = store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
             Some(Units::Pixels(style.border + style.pad_bottom))
