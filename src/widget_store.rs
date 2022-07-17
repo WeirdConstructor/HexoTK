@@ -36,12 +36,12 @@ impl WidgetStore {
     }
 
     pub fn add_root(&mut self, root: &Widget, layer_idx: usize) {
-        widget_walk(root, |wid, parent, _is_first, _is_last| {
+        widget_walk(root, |wid, parent, _is_first, _is_last, depth| {
             if let Some(parent) = parent {
                 wid.set_parent(parent);
             }
 
-            wid.set_layer_idx(layer_idx);
+            wid.set_tree_pos(layer_idx, depth);
             self.widgets.insert(wid.unique_id(), wid.as_weak());
         });
     }
@@ -71,7 +71,7 @@ impl WidgetTree {
         let mut widgets = HashMap::new();
         let mut widget_dfs_vec = vec![];
 
-        widget_walk(root, |wid, _parent, is_first, is_last| {
+        widget_walk(root, |wid, _parent, is_first, is_last, _depth| {
             widget_dfs_vec.push(WidgetId::from(wid.unique_id()));
             widgets.insert(
                 wid.unique_id(),

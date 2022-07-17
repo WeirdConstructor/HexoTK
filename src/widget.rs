@@ -112,12 +112,16 @@ impl Widget {
         (self.unique_id(), Event { name: name.to_string(), data })
     }
 
-    pub fn set_layer_idx(&self, idx: usize) {
-        self.0.borrow_mut().set_layer_idx(idx)
+    pub fn set_tree_pos(&self, idx: usize, depth: usize) {
+        self.0.borrow_mut().set_tree_pos(idx, depth)
     }
 
     pub fn layer_idx(&self) -> usize {
         self.0.borrow().layer_idx()
+    }
+
+    pub fn tree_depth(&self) -> usize {
+        self.0.borrow().tree_depth()
     }
 
     pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, f: F) {
@@ -332,6 +336,7 @@ impl Widget {
 pub struct WidgetImpl {
     unique_id: usize,
     layer_idx: usize,
+    tree_depth: usize,
     pub evc: Option<EventCore>,
     parent: Option<Weak<RefCell<WidgetImpl>>>,
     childs: Option<Vec<Widget>>,
@@ -376,6 +381,7 @@ impl WidgetImpl {
         Self {
             unique_id,
             layer_idx: 0,
+            tree_depth: 0,
             evc: Some(EventCore::new()),
             parent: None,
             childs: Some(vec![]),
@@ -394,12 +400,17 @@ impl WidgetImpl {
         }
     }
 
-    pub fn set_layer_idx(&mut self, idx: usize) {
+    pub fn set_tree_pos(&mut self, idx: usize, depth: usize) {
         self.layer_idx = idx;
+        self.tree_depth = depth;
     }
 
     pub fn layer_idx(&self) -> usize {
         self.layer_idx
+    }
+
+    pub fn tree_depth(&self) -> usize {
+        self.tree_depth
     }
 
     pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, mut f: F) {
@@ -710,25 +721,26 @@ pub fn widget_annotate_drop_event(widget: &Widget, mouse_pos: (f32, f32), ev: Ev
     }
 }
 
-pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(
+pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool, usize)>(
     widget: &Widget,
     parent: Option<&Widget>,
     cb: &mut F,
     is_first: bool,
     is_last: bool,
+    depth: usize,
 ) {
-    cb(widget, parent, is_first, is_last);
+    cb(widget, parent, is_first, is_last, depth);
 
     if let Some(childs) = &widget.0.borrow().childs {
         let len = childs.len();
         for (i, c) in childs.iter().enumerate() {
-            widget_walk_impl(&c, Some(&widget), cb, i == 0, (i + 1) == len)
+            widget_walk_impl(&c, Some(&widget), cb, i == 0, (i + 1) == len, depth + 1)
         }
     }
 }
 
-pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool)>(widget: &Widget, mut cb: F) {
-    widget_walk_impl(widget, None, &mut cb, true, true);
+pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool, usize)>(widget: &Widget, mut cb: F) {
+    widget_walk_impl(widget, None, &mut cb, true, true, 0);
 }
 
 pub fn widget_walk_parents<F: FnMut(&Widget)>(widget: &Widget, mut cb: F) {

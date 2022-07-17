@@ -55,10 +55,11 @@ impl Layer {
                 offs_y = 0.0 - popup_pos.y;
             }
 
-            widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
+            widget_walk(&wid, |wid, _parent, _is_first, _is_last, depth| {
                 let pos = wid.pos();
                 let pos = pos.offs(offs_x, offs_y);
                 wid.set_pos(pos);
+                wid.set_tree_pos(usize::MAX, depth);
             });
 
             let wid_pos = wid.pos();
@@ -269,7 +270,7 @@ pub struct UI {
     layers: Vec<Layer>,
     widgets: Rc<RefCell<WidgetStore>>,
     notifier: UINotifierRef,
-    zones: Option<Vec<(Rect, bool, usize, usize)>>,
+    zones: Option<Vec<(Rect, bool, usize, usize, usize)>>,
     cur_redraw: HashSet<usize>,
     cur_parent_lookup: Vec<usize>,
     layout_cache: LayoutCache,
@@ -436,7 +437,7 @@ impl UI {
             if let Some(wid) = self.widgets.borrow().get(auto_hide_id) {
                 let mut subtree_set = HashSet::new();
                 subtree_set.insert(wid.unique_id());
-                widget_walk(&wid, |wid, _parent, _is_first, _is_last| {
+                widget_walk(&wid, |wid, _parent, _is_first, _is_last, _depth| {
                     subtree_set.insert(wid.unique_id());
                 });
                 auto_hide_queue.push((wid.unique_id(), subtree_set));
@@ -463,7 +464,13 @@ impl UI {
 
             self.widgets.borrow().for_each_widget(|wid| {
                 if wid.is_visible() {
-                    zones.push((wid.pos(), wid.can_hover(), wid.layer_idx(), wid.unique_id()));
+                    zones.push((
+                        wid.pos(),
+                        wid.can_hover(),
+                        wid.layer_idx(),
+                        wid.tree_depth(),
+                        wid.unique_id(),
+                    ));
                 }
             });
 
@@ -869,15 +876,28 @@ impl WindowUI for UI {
                 let mut hover_id = 0;
                 if let Some(zones) = &self.zones {
                     let mut layer_max_idx = 0;
-                    for (pos, can_hover, layer_idx, id) in zones.iter() {
+                    let mut max_tree_depth = 0;
+                    for (pos, can_hover, layer_idx, tree_depth, id) in zones.iter() {
                         if !can_hover {
                             continue;
                         }
 
                         //d// println!("CHECK {:?} in {:?}", (*x, *y), pos);
                         if pos.is_inside(*x, *y) {
-                            if *layer_idx >= layer_max_idx {
+                            if *layer_idx > layer_max_idx {
+                                //d// eprintln!(
+                                //d//     "*** NEW HOVER layer={}, treedepth={}, id={}",
+                                //d//     *layer_idx, *tree_depth, *id
+                                //d// );
                                 layer_max_idx = *layer_idx;
+                                max_tree_depth = *tree_depth;
+                                hover_id = *id;
+                            } else if *layer_idx == layer_max_idx && *tree_depth > max_tree_depth {
+                                //d// eprintln!(
+                                //d//     "*** NEW HOVER layer={}, treedepth={}, id={}",
+                                //d//     *layer_idx, *tree_depth, *id
+                                //d// );
+                                max_tree_depth = *tree_depth;
                                 hover_id = *id;
                             }
                         }
