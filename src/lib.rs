@@ -657,10 +657,10 @@ impl Control {
 
         let real_widget_pos = pos
             .offs(border_pad_offs_x, border_pad_offs_y)
-            // FIXME: This is just a workaround, I need to think this
-            // cropping and repositioning of the "real" widget postion
-            // through. Because the rectangle should be the same size
-            // as the draw_widget_pos!
+            // XXX: Maybe this is wrong, but the real_widget_pos certainly needs
+            // the border offset and size properly applied, otherwise it would draw
+            // over the border. But maybe investigate if real_widget_pos _size_ is really
+            // the same as draw_widget_pos size, which it should in theory...
             .crop_right(2.0 * border_pad_offs_x)
             .crop_bottom(2.0 * border_pad_offs_y);
 
