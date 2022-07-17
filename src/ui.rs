@@ -1,5 +1,4 @@
 use crate::painter::LblDebugTag;
-use crate::widget::WidgetImpl;
 use crate::Widget;
 use crate::WindowUI;
 use crate::{
@@ -10,7 +9,7 @@ use crate::{
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 use crate::layout::LayoutCache;
 use crate::widget::{widget_walk, widget_walk_parents};
@@ -283,7 +282,7 @@ pub struct UI {
     drag: DragState,
     drop_query_ev: Event,
     hover_ev: Event,
-    last_hover: Option<Weak<RefCell<WidgetImpl>>>,
+    last_hover_id: usize,
     auto_hide_queue: Vec<(usize, HashSet<usize>)>,
     frame_cb: Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
     ctx: Rc<RefCell<dyn std::any::Any>>,
@@ -322,7 +321,7 @@ impl UI {
                     false,
                 )))),
             },
-            last_hover: None,
+            last_hover_id: usize::MAX,
             hover_ev: Event { name: "hover".to_string(), data: EvPayload::None },
             ctx,
         }
@@ -905,22 +904,10 @@ impl WindowUI for UI {
 
         let ctx = self.ctx.clone();
 
-        let last_hover_id = if let Some(last_hover) = &self.last_hover {
-            if let Some(last_hover_wid) = Widget::from_weak(last_hover) {
-                last_hover_wid.unique_id()
-            } else {
-                usize::MAX
-            }
-        } else {
-            usize::MAX
-        };
-
-        if last_hover_id != new_hover_id {
-            self.last_hover = None;
+        if self.last_hover_id != new_hover_id {
+            self.last_hover_id = new_hover_id;
 
             if let Some(widget) = self.widgets.borrow().get(new_hover_id) {
-                self.last_hover = Some(widget.as_weak());
-
                 widget_handle_event(&widget, &mut *(ctx.borrow_mut()), &self.hover_ev);
             }
         }
