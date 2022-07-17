@@ -269,7 +269,7 @@ pub struct UI {
     layers: Vec<Layer>,
     widgets: Rc<RefCell<WidgetStore>>,
     notifier: UINotifierRef,
-    zones: Option<Vec<(Rect, bool, usize)>>,
+    zones: Option<Vec<(Rect, bool, usize, usize)>>,
     cur_redraw: HashSet<usize>,
     cur_parent_lookup: Vec<usize>,
     layout_cache: LayoutCache,
@@ -463,7 +463,7 @@ impl UI {
 
             self.widgets.borrow().for_each_widget(|wid| {
                 if wid.is_visible() {
-                    zones.push((wid.pos(), wid.can_hover(), wid.unique_id()));
+                    zones.push((wid.pos(), wid.can_hover(), wid.layer_idx(), wid.unique_id()));
                 }
             });
 
@@ -500,8 +500,8 @@ impl UI {
     fn refresh_widget_list(&mut self) {
         self.widgets.borrow_mut().clear();
 
-        for layer in &self.layers {
-            self.widgets.borrow_mut().add_root(&layer.root);
+        for (idx, layer) in self.layers.iter().enumerate() {
+            self.widgets.borrow_mut().add_root(&layer.root, idx);
         }
 
         self.layout_cache.clear();
@@ -868,14 +868,18 @@ impl WindowUI for UI {
             InputEvent::MousePosition(x, y) => {
                 let mut hover_id = 0;
                 if let Some(zones) = &self.zones {
-                    for (pos, can_hover, id) in zones.iter() {
+                    let mut layer_max_idx = 0;
+                    for (pos, can_hover, layer_idx, id) in zones.iter() {
                         if !can_hover {
                             continue;
                         }
 
                         //d// println!("CHECK {:?} in {:?}", (*x, *y), pos);
                         if pos.is_inside(*x, *y) {
-                            hover_id = *id;
+                            if *layer_idx >= layer_max_idx {
+                                layer_max_idx = *layer_idx;
+                                hover_id = *id;
+                            }
                         }
                     }
                 }

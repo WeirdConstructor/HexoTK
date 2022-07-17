@@ -35,12 +35,13 @@ impl WidgetStore {
         self.widgets.clear();
     }
 
-    pub fn add_root(&mut self, root: &Widget) {
+    pub fn add_root(&mut self, root: &Widget, layer_idx: usize) {
         widget_walk(root, |wid, parent, _is_first, _is_last| {
             if let Some(parent) = parent {
                 wid.set_parent(parent);
             }
 
+            wid.set_layer_idx(layer_idx);
             self.widgets.insert(wid.unique_id(), wid.as_weak());
         });
     }

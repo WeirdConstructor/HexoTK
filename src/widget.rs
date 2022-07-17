@@ -1,6 +1,6 @@
 use crate::painter::{ImgRef, LblDebugTag};
 use crate::style::Style;
-use crate::{Control, Event, EvPayload, EventCore, Painter, PopupPos, Rect, UINotifierRef};
+use crate::{Control, EvPayload, Event, EventCore, Painter, PopupPos, Rect, UINotifierRef};
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
@@ -110,6 +110,14 @@ impl Widget {
 
     pub fn event(&self, name: &str, data: EvPayload) -> (usize, Event) {
         (self.unique_id(), Event { name: name.to_string(), data })
+    }
+
+    pub fn set_layer_idx(&self, idx: usize) {
+        self.0.borrow_mut().set_layer_idx(idx)
+    }
+
+    pub fn layer_idx(&self) -> usize {
+        self.0.borrow().layer_idx()
     }
 
     pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, f: F) {
@@ -323,7 +331,7 @@ impl Widget {
 
 pub struct WidgetImpl {
     unique_id: usize,
-    layout_id: usize,
+    layer_idx: usize,
     pub evc: Option<EventCore>,
     parent: Option<Weak<RefCell<WidgetImpl>>>,
     childs: Option<Vec<Widget>>,
@@ -346,9 +354,14 @@ impl std::fmt::Debug for WidgetImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Widget")
             .field("unique_id", &self.unique_id)
-            .field("layout_id", &self.layout_id)
             .field("tag", &self.tag)
             .finish()
+    }
+}
+
+impl Drop for WidgetImpl {
+    fn drop(&mut self) {
+        eprintln!("HexoTK drop widget ID={}", self.unique_id);
     }
 }
 
@@ -362,7 +375,7 @@ impl WidgetImpl {
 
         Self {
             unique_id,
-            layout_id: 0,
+            layer_idx: 0,
             evc: Some(EventCore::new()),
             parent: None,
             childs: Some(vec![]),
@@ -379,6 +392,14 @@ impl WidgetImpl {
             tag: None,
             style,
         }
+    }
+
+    pub fn set_layer_idx(&mut self, idx: usize) {
+        self.layer_idx = idx;
+    }
+
+    pub fn layer_idx(&self) -> usize {
+        self.layer_idx
     }
 
     pub fn for_each_child<F: FnMut(&WidgetImpl, usize, bool)>(&self, mut f: F) {

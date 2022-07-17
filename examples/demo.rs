@@ -535,7 +535,19 @@ fn main() {
                 ui.add_layer_root(my_root);
             }
 
-            //        let mytestroot = Widget::new(style_ref.clone());
+            let mytestroot = Widget::new(style_ref.clone());
+
+            let test_btn = Widget::new(style_ref.clone());
+            test_btn.set_ctrl(Control::Button { label: Box::new(format!("Float Btn")) });
+            test_btn.change_layout(|layout| {
+                layout.top = Some(Units::Pixels(40.0));
+                layout.left = Some(Units::Pixels(40.0));
+                layout.width = Some(Units::Pixels(40.0));
+                layout.height = Some(Units::Pixels(40.0));
+            });
+//            println!("TESTBTN ID={}", test_btn.unique_id());
+
+            mytestroot.add(test_btn);
 
             //        hexgrid.enable_cache();
             //        mytestroot.enable_cache();
@@ -550,6 +562,7 @@ fn main() {
 
             ui.add_layer_root(layer2root.clone());
             ui.add_layer_root(root3);
+            ui.add_layer_root(mytestroot);
             //        ui.add_layer_root(root);
 
             ui
