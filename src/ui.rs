@@ -885,18 +885,18 @@ impl WindowUI for UI {
                         //d// println!("CHECK {:?} in {:?}", (*x, *y), pos);
                         if pos.is_inside(*x, *y) {
                             if *layer_idx > layer_max_idx {
-                                eprintln!(
-                                    "*** NEW HOVER layer={}, treedepth={}, id={}",
-                                    *layer_idx, *tree_depth, *id
-                                );
+                                //d// eprintln!(
+                                //d//     "*** NEW HOVER layer={}, treedepth={}, id={}",
+                                //d//     *layer_idx, *tree_depth, *id
+                                //d// );
                                 layer_max_idx = *layer_idx;
                                 max_tree_depth = *tree_depth;
                                 hover_id = *id;
                             } else if *layer_idx == layer_max_idx && *tree_depth > max_tree_depth {
-                                eprintln!(
-                                    "*** NEW HOVER layer={}, treedepth={}, id={}",
-                                    *layer_idx, *tree_depth, *id
-                                );
+                                //d// eprintln!(
+                                //d//     "*** NEW HOVER layer={}, treedepth={}, id={}",
+                                //d//     *layer_idx, *tree_depth, *id
+                                //d// );
                                 max_tree_depth = *tree_depth;
                                 hover_id = *id;
                             }
