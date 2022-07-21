@@ -81,7 +81,7 @@ fn main() {
         }
     });
 
-    open_window(
+    open_window_ext(
         "HexoTK 0.5 Demo",
         WINDOW_W,
         WINDOW_H,
@@ -567,5 +567,6 @@ fn main() {
 
             ui
         }),
+        baseview::WindowScalePolicy::ScaleFactor(0.5) // .25)
     );
 }

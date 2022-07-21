@@ -26,7 +26,7 @@ pub use ui::{TestDriver, TestScript};
 pub use widget::Layout;
 pub use widget::Widget;
 use widget::{widget_annotate_drop_event, widget_draw, widget_draw_frame, widget_draw_shallow};
-pub use window::{open_window, HexoTKWindowHandle};
+pub use window::{open_window, open_window_ext, HexoTKWindowHandle};
 
 pub use widgets::EditableText;
 pub use widgets::Entry;

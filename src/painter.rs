@@ -159,6 +159,7 @@ pub struct Painter<'a, 'b> {
     pub lbl_collect: Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>>,
     pub font: FontId,
     pub font_mono: FontId,
+    pub dpi_factor: f32,
 }
 
 fn color_paint(color: (f32, f32, f32)) -> femtovg::Paint {

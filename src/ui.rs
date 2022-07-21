@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use crate::layout::LayoutCache;
+use crate::layout::{LayoutCache, LayoutTree};
 use crate::widget::{widget_walk, widget_walk_parents};
 use crate::widget_store::{WidgetStore, WidgetTree};
 
@@ -368,7 +368,11 @@ impl UI {
 
             let tree = layer.tree.as_ref().unwrap();
 
-            morphorm::layout(&mut self.layout_cache, tree, &self.widgets.clone());
+            morphorm::layout(
+                &mut self.layout_cache,
+                tree,
+                &LayoutTree { dpi_factor: self.dpi_factor, store: self.widgets.clone() },
+            );
 
             tree.apply_layout_to_widgets(&self.layout_cache);
             layer.root.set_pos(Rect::from(0.0, 0.0, win_w, win_h));

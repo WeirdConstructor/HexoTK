@@ -71,11 +71,7 @@ impl LayoutCache {
         }
     }
 
-    pub fn layout<R: Default, F: FnOnce(&CachedLayout) -> R>(
-        &self,
-        w_id: &WidgetId,
-        f: F,
-    ) -> R {
+    pub fn layout<R: Default, F: FnOnce(&CachedLayout) -> R>(&self, w_id: &WidgetId, f: F) -> R {
         if let Some(layout) = self.layouts.get(&w_id.unique_id()) {
             f(layout)
         } else {
@@ -283,168 +279,183 @@ impl WidgetId {
     }
 }
 
+#[derive(Clone)]
+pub struct LayoutTree {
+    pub dpi_factor: f32,
+    pub store: Rc<RefCell<WidgetStore>>,
+}
+
+macro_rules! get_size {
+    ($self: ident, $tree: ident, $field: ident) => {
+        match $tree.store.borrow().with_layout($self, |l| l.$field) {
+            Some(Units::Pixels(px)) => Some(Units::Pixels(px * $tree.dpi_factor)),
+            u => u,
+        }
+    };
+}
+
 impl Node<'_> for WidgetId {
-    type Data = Rc<RefCell<WidgetStore>>;
+    type Data = LayoutTree;
 
-    fn layout_type(&self, store: &'_ Self::Data) -> Option<LayoutType> {
-        store.borrow().with_layout(self, |l| l.layout_type)
-    }
-
-    fn position_type(&self, store: &'_ Self::Data) -> Option<PositionType> {
-        store.borrow().with_layout(self, |l| l.position_type)
+    fn layout_type(&self, tree: &'_ Self::Data) -> Option<LayoutType> {
+        tree.store.borrow().with_layout(self, |l| l.layout_type)
     }
 
-    fn width(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.width)
+    fn position_type(&self, tree: &'_ Self::Data) -> Option<PositionType> {
+        tree.store.borrow().with_layout(self, |l| l.position_type)
     }
 
-    fn height(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.height)
+    fn width(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, width)
     }
 
-    fn min_width(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.min_width)
+    fn height(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, height)
     }
 
-    fn min_height(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.min_height)
+    fn min_width(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, min_width)
     }
 
-    fn max_width(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.max_width)
+    fn min_height(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, min_height)
     }
 
-    fn max_height(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.max_height)
+    fn max_width(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, max_width)
     }
 
-    fn left(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.left)
+    fn max_height(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, max_height)
     }
 
-    fn right(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.right)
+    fn left(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, left)
     }
 
-    fn top(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.top)
+    fn right(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, right)
     }
 
-    fn bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.bottom)
+    fn top(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, top)
     }
 
-    fn min_left(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.min_left)
+    fn bottom(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, bottom)
     }
 
-    fn max_left(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.max_left)
+    fn min_left(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, min_left)
     }
 
-    fn min_right(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.min_right)
+    fn max_left(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, max_left)
     }
 
-    fn max_right(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.max_right)
+    fn min_right(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, min_right)
     }
 
-    fn min_top(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.min_top)
+    fn max_right(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, max_right)
     }
 
-    fn max_top(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.max_top)
+    fn min_top(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, min_top)
     }
 
-    fn min_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.min_bottom)
+    fn max_top(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, max_top)
     }
 
-    fn max_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.max_bottom)
+    fn min_bottom(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, min_bottom)
     }
 
-    fn child_left(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.child_left)
+    fn max_bottom(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, max_bottom)
     }
 
-    fn child_right(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.child_right)
+    fn child_left(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, child_left)
     }
 
-    fn child_top(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.child_top)
+    fn child_right(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, child_right)
     }
 
-    fn child_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.child_bottom)
+    fn child_top(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, child_top)
     }
 
-    fn row_between(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.row_between)
+    fn child_bottom(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, child_bottom)
     }
 
-    fn col_between(&self, store: &'_ Self::Data) -> Option<Units> {
-        store.borrow().with_layout(self, |l| l.col_between)
+    fn row_between(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, row_between)
     }
 
-    fn grid_rows(&self, store: &'_ Self::Data) -> Option<Vec<Units>> {
-        store.borrow().with_layout(self, |l| l.grid_rows.clone())
+    fn col_between(&self, tree: &'_ Self::Data) -> Option<Units> {
+        get_size!(self, tree, col_between)
     }
 
-    fn grid_cols(&self, store: &'_ Self::Data) -> Option<Vec<Units>> {
-        store.borrow().with_layout(self, |l| l.grid_cols.clone())
+    fn grid_rows(&self, tree: &'_ Self::Data) -> Option<Vec<Units>> {
+        tree.store.borrow().with_layout(self, |l| l.grid_rows.clone())
     }
 
-    fn row_index(&self, store: &'_ Self::Data) -> Option<usize> {
-        store.borrow().with_layout(self, |l| l.row_index)
+    fn grid_cols(&self, tree: &'_ Self::Data) -> Option<Vec<Units>> {
+        tree.store.borrow().with_layout(self, |l| l.grid_cols.clone())
     }
 
-    fn col_index(&self, store: &'_ Self::Data) -> Option<usize> {
-        store.borrow().with_layout(self, |l| l.col_index)
+    fn row_index(&self, tree: &'_ Self::Data) -> Option<usize> {
+        tree.store.borrow().with_layout(self, |l| l.row_index)
     }
-    fn row_span(&self, store: &'_ Self::Data) -> Option<usize> {
-        store.borrow().with_layout(self, |l| l.row_span)
+
+    fn col_index(&self, tree: &'_ Self::Data) -> Option<usize> {
+        tree.store.borrow().with_layout(self, |l| l.col_index)
     }
-    fn col_span(&self, store: &'_ Self::Data) -> Option<usize> {
-        store.borrow().with_layout(self, |l| l.col_span)
+    fn row_span(&self, tree: &'_ Self::Data) -> Option<usize> {
+        tree.store.borrow().with_layout(self, |l| l.row_span)
     }
-    fn border_left(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.unique_id)?;
+    fn col_span(&self, tree: &'_ Self::Data) -> Option<usize> {
+        tree.store.borrow().with_layout(self, |l| l.col_span)
+    }
+    fn border_left(&self, tree: &'_ Self::Data) -> Option<Units> {
+        let w = tree.store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
-            Some(Units::Pixels(style.border + style.pad_left))
+            Some(Units::Pixels(tree.dpi_factor * (style.border + style.pad_left)))
         } else {
-            Some(Units::Pixels(style.pad_left))
+            Some(Units::Pixels(tree.dpi_factor * style.pad_left))
         }
     }
-    fn border_right(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.unique_id)?;
+    fn border_right(&self, tree: &'_ Self::Data) -> Option<Units> {
+        let w = tree.store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
-            Some(Units::Pixels(style.border + style.pad_right))
+            Some(Units::Pixels(tree.dpi_factor * (style.border + style.pad_right)))
         } else {
-            Some(Units::Pixels(style.pad_right))
+            Some(Units::Pixels(tree.dpi_factor * style.pad_right))
         }
     }
-    fn border_top(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.unique_id)?;
+    fn border_top(&self, tree: &'_ Self::Data) -> Option<Units> {
+        let w = tree.store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
-            Some(Units::Pixels(style.border + style.pad_top))
+            Some(Units::Pixels(tree.dpi_factor * (style.border + style.pad_top)))
         } else {
-            Some(Units::Pixels(style.pad_top))
+            Some(Units::Pixels(tree.dpi_factor * style.pad_top))
         }
     }
-    fn border_bottom(&self, store: &'_ Self::Data) -> Option<Units> {
-        let w = store.borrow().get(self.unique_id)?;
+    fn border_bottom(&self, tree: &'_ Self::Data) -> Option<Units> {
+        let w = tree.store.borrow().get(self.unique_id)?;
         let style = w.style();
         if w.has_default_style() {
-            Some(Units::Pixels(style.border + style.pad_bottom))
+            Some(Units::Pixels(tree.dpi_factor * (style.border + style.pad_bottom)))
         } else {
-            Some(Units::Pixels(style.pad_bottom))
+            Some(Units::Pixels(tree.dpi_factor * style.pad_bottom))
         }
     }
 }

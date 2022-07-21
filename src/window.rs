@@ -214,6 +214,7 @@ impl WindowHandler for GUIWindowHandler {
                 font: self.font,
                 font_mono: self.font_mono,
                 lbl_collect: None,
+                dpi_factor: self.dpi_factor,
             };
             self.ui.draw(painter);
         }
