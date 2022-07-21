@@ -263,6 +263,7 @@ impl std::fmt::Debug for Control {
 }
 
 fn bevel_points(
+    dpi_f: f32,
     pos: Rect,
     corner_offsets: (f32, f32, f32, f32),
     inp: &mut [(f32, f32); 8],
@@ -276,10 +277,10 @@ fn bevel_points(
     let hh = (pos.h / 2.0).round();
     let hw = (pos.w / 2.0).round();
 
-    let o_tl = o_tl.min(hh).min(hw);
-    let o_tr = o_tr.min(hh).min(hw);
-    let o_bl = o_bl.min(hh).min(hw);
-    let o_br = o_br.min(hh).min(hw);
+    let o_tl = (dpi_f * o_tl).min(hh).min(hw);
+    let o_tr = (dpi_f * o_tr).min(hh).min(hw);
+    let o_bl = (dpi_f * o_bl).min(hh).min(hw);
+    let o_br = (dpi_f * o_br).min(hh).min(hw);
 
     let min_offs = 1.0;
 
@@ -462,6 +463,7 @@ impl Control {
     }
 
     fn draw_shadow(&mut self, w: &Widget, style: &Style, pos: Rect, painter: &mut Painter) {
+        let dpi_f = painter.dpi_factor;
         let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active = w.is_active();
 
@@ -472,13 +474,15 @@ impl Control {
         }
 
         let (xo, yo) = style.shadow_offs;
+        let xo = dpi_f * xo;
+        let yo = dpi_f * yo;
 
         match style.border_style {
             BorderStyle::Rect => {
                 painter.rect_fill(shadow_color, pos.x + xo, pos.y + yo, pos.w, pos.h);
             }
             BorderStyle::Hex { offset } => {
-                let points = hex_points(pos, offset);
+                let points = hex_points(pos, dpi_f * offset);
                 painter.path_fill(
                     shadow_color,
                     &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
@@ -486,9 +490,9 @@ impl Control {
                 );
             }
             BorderStyle::Bevel { corner_offsets } => {
-                let pos = pos.shrink(style.border * 0.5, style.border * 0.5);
+                let pos = pos.shrink(dpi_f * style.border * 0.5, dpi_f * style.border * 0.5);
                 let mut pt_buf = [(0.0, 0.0); 8];
-                let points = bevel_points(pos, corner_offsets, &mut pt_buf);
+                let points = bevel_points(dpi_f, pos, corner_offsets, &mut pt_buf);
                 painter.path_fill(
                     shadow_color,
                     &mut points.iter().copied().map(|p| (p.0 + xo, p.1 + yo)),
@@ -499,6 +503,7 @@ impl Control {
     }
 
     fn draw_border_and_bg(&mut self, w: &Widget, style: &Style, pos: Rect, painter: &mut Painter) {
+        let dpi_f = painter.dpi_factor;
         let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active = w.is_active();
         let border_color = style.choose_border_color(is_active, is_hovered);
@@ -509,21 +514,21 @@ impl Control {
                     painter.rect_fill(border_color, pos.x, pos.y, pos.w, pos.h);
                 }
 
-                let bg_pos = pos.shrink(style.border, style.border);
+                let bg_pos = pos.shrink(dpi_f * style.border, dpi_f * style.border);
                 painter.rect_fill(style.bg_color, bg_pos.x, bg_pos.y, bg_pos.w, bg_pos.h);
             }
             BorderStyle::Bevel { corner_offsets } => {
-                let pos = pos.shrink(style.border * 0.5, style.border * 0.5);
+                let pos = pos.shrink(dpi_f * style.border * 0.5, dpi_f * style.border * 0.5);
                 let mut pt_buf = [(0.0, 0.0); 8];
-                let points = bevel_points(pos, corner_offsets, &mut pt_buf);
+                let points = bevel_points(dpi_f, pos, corner_offsets, &mut pt_buf);
                 painter.path_fill(style.bg_color, &mut points.iter().copied(), true);
-                painter.path_stroke(style.border, border_color, &mut points.iter().copied(), true);
+                painter.path_stroke(dpi_f * style.border, border_color, &mut points.iter().copied(), true);
             }
             BorderStyle::Hex { offset } => {
-                let pos = pos.shrink(style.border * 0.5, style.border * 0.5);
-                let points = hex_points(pos, offset);
+                let pos = pos.shrink(dpi_f * style.border * 0.5, dpi_f * style.border * 0.5);
+                let points = hex_points(pos, dpi_f * offset);
                 painter.path_fill(style.bg_color, &mut points.iter().copied(), true);
-                painter.path_stroke(style.border, border_color, &mut points.iter().copied(), true);
+                painter.path_stroke(dpi_f * style.border, border_color, &mut points.iter().copied(), true);
             }
         }
     }
@@ -536,6 +541,7 @@ impl Control {
         real_widget_pos: Rect,
         painter: &mut Painter,
     ) {
+        let dpi_f = painter.dpi_factor;
         let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active = w.is_active();
         let color = style.choose_color(is_active, is_hovered);
@@ -563,7 +569,7 @@ impl Control {
                 let fs = painter::calc_font_size_from_text(
                     painter,
                     s,
-                    style.font_size,
+                    dpi_f * style.font_size,
                     draw_widget_pos.w,
                 );
 
@@ -631,6 +637,7 @@ impl Control {
         };
 
         //d// println!("     [draw widget unique_id: {}]", w.unique_id());
+        let dpi_f = painter.dpi_factor;
         let pos = w.pos(); // Returns position including border and padding!
         let style = w.style();
         let has_default_style = self.has_default_style();
@@ -646,10 +653,10 @@ impl Control {
         // This position is inside the border/padding. So to speak, the
         // drawing area of this widget.
         let ctrl_pos = Rect {
-            x: local_pos.x + (border_pos_offs + style.pad_left),
-            y: local_pos.y + (border_pos_offs + style.pad_top),
-            w: local_pos.w - (2.0 * border_pos_offs + style.pad_left + style.pad_right),
-            h: local_pos.h - (2.0 * border_pos_offs + style.pad_top + style.pad_bottom),
+            x: local_pos.x + dpi_f * (border_pos_offs + style.pad_left),
+            y: local_pos.y + dpi_f * (border_pos_offs + style.pad_top),
+            w: local_pos.w - dpi_f * (2.0 * border_pos_offs + style.pad_left + style.pad_right),
+            h: local_pos.h - dpi_f * (2.0 * border_pos_offs + style.pad_top + style.pad_bottom),
         };
 
         let (border_pad_offs_x, border_pad_offs_y) =
@@ -705,8 +712,8 @@ impl Control {
         let mut draw_widget_pos = draw_widget_pos.clip_wh();
         let mut real_widget_pos = real_widget_pos.clip_wh();
 
-        real_widget_pos = style.apply_padding(real_widget_pos);
-        draw_widget_pos = style.apply_padding(draw_widget_pos);
+        real_widget_pos = style.apply_padding(dpi_f, real_widget_pos);
+        draw_widget_pos = style.apply_padding(dpi_f, draw_widget_pos);
 
         //d// println!("[{:3}] pos={:3},{:3} orig={:3},{:3} bor={:3},{:3} dwid={:3},{:3} | childorig={:4},{:4}",
         //d//     w.unique_id(),

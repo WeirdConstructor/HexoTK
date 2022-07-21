@@ -232,6 +232,8 @@ impl Connector {
     }
 
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        let dpi_f = p.dpi_factor;
+
         let mut dbg = w.debug_tag();
         dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
 
@@ -256,18 +258,18 @@ impl Connector {
         let btn_rect = Rect::from(0.0, 0.0, xcol, yrow);
         for row in 0..row_h {
             let yo = row as f32 * yrow;
-            let txt_pad = 2.0 * UI_CON_BORDER_W;
+            let txt_pad = dpi_f * 2.0 * UI_CON_BORDER_W;
             let txt_w = xcol - 2.0 * txt_pad;
 
             if let Some((lbl, active)) = data.items_left.get(row) {
                 p.rect_stroke_r(
-                    UI_CON_BORDER_W,
+                    dpi_f * UI_CON_BORDER_W,
                     UI_CON_BORDER_CLR,
                     btn_rect.offs(pos.x, pos.y + yo),
                 );
                 self.zones.push((btn_rect.offs(real_pos.x, real_pos.y + yo), (false, row)));
 
-                let fs = calc_font_size_from_text(p, &lbl, style.font_size, txt_w);
+                let fs = calc_font_size_from_text(p, &lbl, dpi_f * style.font_size, txt_w);
                 p.label(
                     fs,
                     -1,
@@ -283,21 +285,21 @@ impl Connector {
 
             if let Some((lbl, active)) = data.items_right.get(row) {
                 p.rect_stroke_r(
-                    UI_CON_BORDER_W,
+                    dpi_f * UI_CON_BORDER_W,
                     UI_CON_BORDER_CLR,
-                    btn_rect.offs(pos.x + 2.0 * xcol - 1.0, pos.y + yo),
+                    btn_rect.offs(pos.x + 2.0 * xcol - dpi_f * 1.0, pos.y + yo),
                 );
                 self.zones.push((
-                    btn_rect.offs(real_pos.x + 2.0 * xcol - 1.0, real_pos.y + yo),
+                    btn_rect.offs(real_pos.x + 2.0 * xcol - dpi_f * 1.0, real_pos.y + yo),
                     (true, row),
                 ));
 
-                let fs = calc_font_size_from_text(p, &lbl, style.font_size, txt_w);
+                let fs = calc_font_size_from_text(p, &lbl, dpi_f * style.font_size, txt_w);
                 p.label(
                     fs,
                     1,
                     if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
-                    pos.x + txt_pad + 2.0 * xcol - UI_CON_BORDER_W,
+                    pos.x + txt_pad + 2.0 * xcol - dpi_f * UI_CON_BORDER_W,
                     pos.y + yo,
                     txt_w,
                     yrow,
@@ -312,12 +314,12 @@ impl Connector {
 
             if let Some((_lbl, active)) = items.get(row) {
                 if *active {
-                    let xo = if inputs { xcol * 2.0 - 1.0 } else { 0.0 };
+                    let xo = if inputs { xcol * 2.0 - dpi_f * 1.0 } else { 0.0 };
                     let yo = row as f32 * yrow;
 
                     if does_hover_this_widget {
                         p.rect_stroke_r(
-                            UI_CON_BORDER_W,
+                            dpi_f * UI_CON_BORDER_W,
                             UI_CON_HOV_CLR,
                             btn_rect.offs(pos.x + xo, pos.y + yo),
                         );
@@ -327,12 +329,12 @@ impl Connector {
         }
 
         if let Some((inputs, row)) = self.drag_src_idx {
-            let xo = if inputs { xcol * 2.0 - 1.0 } else { 0.0 };
+            let xo = if inputs { xcol * 2.0 - dpi_f * 1.0 } else { 0.0 };
             let yo = row as f32 * yrow;
 
             if self.drag {
                 p.rect_stroke_r(
-                    UI_CON_BORDER_W,
+                    dpi_f * UI_CON_BORDER_W,
                     UI_SELECT_CLR,
                     btn_rect.offs(pos.x + xo, pos.y + yo),
                 );
@@ -344,13 +346,13 @@ impl Connector {
             let by = b as f32 * yrow;
 
             p.path_stroke(
-                4.0,
+                dpi_f * 4.0,
                 if drag { UI_CON_HOV_CLR } else { UI_PRIM_CLR },
                 &mut [
                     (xcol, ay + yrow * 0.5),
                     (xcol + xcol * 0.25, ay + yrow * 0.5),
                     (2.0 * xcol - xcol * 0.25, by + yrow * 0.5),
-                    (2.0 * xcol - UI_CON_BORDER_W, by + yrow * 0.5),
+                    (2.0 * xcol - dpi_f * UI_CON_BORDER_W, by + yrow * 0.5),
                 ]
                 .iter()
                 .copied()

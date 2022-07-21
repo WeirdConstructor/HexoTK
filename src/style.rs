@@ -167,12 +167,12 @@ impl Style {
         }
     }
 
-    pub fn apply_padding(&self, pos: Rect) -> Rect {
+    pub fn apply_padding(&self, dpi_f: f32, pos: Rect) -> Rect {
         Rect {
-            x: pos.x + self.pad_left,
-            y: pos.y + self.pad_top,
-            w: pos.w - (self.pad_left + self.pad_right),
-            h: pos.h - (self.pad_top + self.pad_bottom),
+            x: pos.x + dpi_f * self.pad_left,
+            y: pos.y + dpi_f * self.pad_top,
+            w: pos.w - dpi_f * (self.pad_left + self.pad_right),
+            h: pos.h - dpi_f * (self.pad_top + self.pad_bottom),
         }
     }
 
