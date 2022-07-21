@@ -267,6 +267,7 @@ impl DragState {
 pub struct UI {
     win_w: f32,
     win_h: f32,
+    dpi_factor: f32,
     layers: Vec<Layer>,
     widgets: Rc<RefCell<WidgetStore>>,
     notifier: UINotifierRef,
@@ -295,6 +296,7 @@ impl UI {
         Self {
             win_h: 0.0,
             win_w: 0.0,
+            dpi_factor: 1.0,
 
             layers: vec![],
             widgets: store.clone(),
@@ -1008,9 +1010,10 @@ impl WindowUI for UI {
         }
     }
 
-    fn set_window_size(&mut self, w: f32, h: f32) {
+    fn set_window_size(&mut self, w: f32, h: f32, dpi_factor: f32) {
         self.win_w = w;
         self.win_h = h;
+        self.dpi_factor = dpi_factor;
         self.do_auto_hide(None);
         self.notifier.set_layout_changed();
         self.notifier.redraw(0);

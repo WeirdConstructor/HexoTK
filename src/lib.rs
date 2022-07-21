@@ -1063,7 +1063,7 @@ pub trait WindowUI {
     fn handle_input_event(&mut self, event: InputEvent);
     fn draw(&mut self, painter: &mut Painter);
     //    fn draw_frame(&mut self, painter: &mut Painter);
-    fn set_window_size(&mut self, w: f32, h: f32);
+    fn set_window_size(&mut self, w: f32, h: f32, dpi_factor: f32);
 }
 
 #[derive(Debug, Clone)]

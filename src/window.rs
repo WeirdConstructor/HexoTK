@@ -76,7 +76,9 @@ pub struct GUIWindowHandler {
     //    ftm:        FrameTimeMeasurement,
     //    ftm_redraw: FrameTimeMeasurement,
     ui: Box<dyn WindowUI>,
-    // size:       (f32, f32),
+    size: (f32, f32),
+    dpi_factor: f32,
+    scale_policy: WindowScalePolicy,
     // focused:    bool,
     counter: usize,
 
@@ -89,7 +91,10 @@ impl WindowHandler for GUIWindowHandler {
     fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
             Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
-                self.ui.handle_input_event(InputEvent::MousePosition(p.x as f32, p.y as f32));
+                self.ui.handle_input_event(InputEvent::MousePosition(
+                    p.x as f32 * self.dpi_factor,
+                    p.y as f32 * self.dpi_factor,
+                ));
             }
             Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
                 let ev_btn = match btn {
@@ -138,7 +143,19 @@ impl WindowHandler for GUIWindowHandler {
                 // self.focused = false;
             }
             Event::Window(WindowEvent::Resized(info)) => {
-                let size = info.logical_size();
+                let size = info.physical_size();
+                let scale = match self.scale_policy {
+                    WindowScalePolicy::SystemScaleFactor => info.scale() as f32,
+                    WindowScalePolicy::ScaleFactor(scale) => scale as f32,
+                };
+                self.dpi_factor = scale;
+
+                println!(
+                    "DPI FACTOR = {}, Phys={:?}, Logic={:?}",
+                    self.dpi_factor,
+                    info.physical_size(),
+                    info.logical_size(),
+                );
 
                 self.canvas.set_size(size.width as u32, size.height as u32, 1.0);
                 let (w, h) = (self.canvas.width(), self.canvas.height());
@@ -153,7 +170,8 @@ impl WindowHandler for GUIWindowHandler {
                     )
                     .expect("making image buffer");
 
-                self.ui.set_window_size(w, h);
+                self.size = (w, h);
+                self.ui.set_window_size(w, h, self.dpi_factor);
             }
             _ => {
                 println!("UNHANDLED EVENT: {:?}", event);
@@ -178,6 +196,9 @@ impl WindowHandler for GUIWindowHandler {
         self.ui.pre_frame();
 
         self.canvas.save();
+        self.canvas.set_render_target(femtovg::RenderTarget::Image(self.img_buf));
+        self.painter_data.init_render_targets(femtovg::RenderTarget::Image(self.img_buf));
+
         self.canvas.clear_rect(
             0,
             0,
@@ -185,8 +206,6 @@ impl WindowHandler for GUIWindowHandler {
             self.canvas.height() as u32,
             Color::rgbf(self.bg_color.0, self.bg_color.1, self.bg_color.2),
         );
-        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-        self.painter_data.init_render_targets(femtovg::RenderTarget::Screen);
 
         {
             let painter = &mut Painter {
@@ -200,6 +219,21 @@ impl WindowHandler for GUIWindowHandler {
         }
 
         self.painter_data.cleanup(&mut self.canvas);
+
+        let img_paint = femtovg::Paint::image(
+            self.img_buf,
+            0.0,
+            0.0,
+            self.canvas.width(),
+            self.canvas.height(),
+            0.0,
+            1.0,
+        );
+        let mut path = femtovg::Path::new();
+        path.rect(0.0, 0.0, self.canvas.width(), self.canvas.height());
+
+        self.canvas.set_render_target(femtovg::RenderTarget::Screen);
+        self.canvas.fill_path(&mut path, img_paint);
 
         self.canvas.flush();
         self.canvas.restore();
@@ -250,12 +284,34 @@ pub fn open_window(
     parent: Option<RawWindowHandle>,
     factory: Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>,
 ) -> Option<HexoTKWindowHandle> {
+    open_window_ext(
+        title,
+        window_width,
+        window_height,
+        parent,
+        factory,
+        WindowScalePolicy::SystemScaleFactor,
+    )
+}
+
+pub fn open_window_ext(
+    title: &str,
+    window_width: i32,
+    window_height: i32,
+    parent: Option<RawWindowHandle>,
+    factory: Box<dyn FnOnce() -> Box<dyn WindowUI> + Send>,
+    scale_policy: WindowScalePolicy,
+) -> Option<HexoTKWindowHandle> {
+    let dpi_factor = match scale_policy {
+        WindowScalePolicy::SystemScaleFactor => 1.0_f32, // How to get the real one?
+        WindowScalePolicy::ScaleFactor(scale) => scale as f32,
+    };
+
     //d// println!("*** OPEN WINDOW ***");
     let options = WindowOpenOptions {
         title: title.to_string(),
         size: Size::new(window_width as f64, window_height as f64),
-        //            scale:     WindowScalePolicy::ScaleFactor(1.25),
-        scale: WindowScalePolicy::ScaleFactor(1.0),
+        scale: scale_policy,
         gl_config: Some(baseview::gl::GlConfig::default()),
     };
 
@@ -289,11 +345,13 @@ pub fn open_window(
 
         let mut ui = factory();
 
-        ui.set_window_size(window_width as f32, window_height as f32);
+        ui.set_window_size(window_width as f32, window_height as f32, dpi_factor);
 
         GUIWindowHandler {
             ui,
-            // size: (window_width as f32, window_height as f32),
+            size: (window_width as f32, window_height as f32),
+            dpi_factor,
+            scale_policy,
             canvas,
             font,
             font_mono,
