@@ -713,6 +713,7 @@ pub struct HexKnob {
     real_pos: Rect,
     circle_mid: (f32, f32),
     modkeys: ModifierTracker,
+    dpi_factor: f32,
 }
 
 impl HexKnob {
@@ -727,6 +728,7 @@ impl HexKnob {
             circle_mid: (0.0, 0.0),
             real_pos: Rect::from(0.0, 0.0, 0.0, 0.0),
             modkeys: ModifierTracker::new(),
+            dpi_factor: 1.0,
         }
     }
 }
@@ -881,6 +883,7 @@ impl HexKnob {
     }
 
     pub fn draw(&mut self, w: &Widget, _style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        let dpi_f = p.dpi_factor;
         let mut dbg = w.debug_tag();
         dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));
 
@@ -892,8 +895,8 @@ impl HexKnob {
 
         //        let yo = yo - (UI_ELEM_TXT_H + UI_BG_KNOB_STROKE) * 0.5; // move the whole knob a bit upwards
 
-        let w_factor = pos.w / (32.0 * 2.0);
-        let v_factor = pos.h / ((36.0 + (UI_ELEM_TXT_H) * 0.4) * 2.0);
+        let w_factor = pos.w / (dpi_f * (32.0 * 2.0));
+        let v_factor = pos.h / (dpi_f * ((36.0 + (UI_ELEM_TXT_H) * 0.4) * 2.0));
 
         let (size, mut factor) =
             if w_factor < v_factor { (pos.w, w_factor) } else { (pos.h, v_factor) };
@@ -906,24 +909,25 @@ impl HexKnob {
 
         let no_value_label = factor < 0.8;
 
-        let yo = yo - (UI_ELEM_TXT_H * factor).round() * 0.5;
+        let yo = yo - ((dpi_f * UI_ELEM_TXT_H) * factor).round() * 0.5;
         let yo = yo.floor();
 
         self.circle_mid = (
             (self.real_pos.x + self.real_pos.w / 2.0).round(),
             ((self.real_pos.y + self.real_pos.h / 2.0).round()
-                - (UI_ELEM_TXT_H * factor).round() * 0.5)
+                - (dpi_f * UI_ELEM_TXT_H * factor).round() * 0.5)
                 .floor(),
         );
 
-        if size != self.size {
+        if size != self.size || dpi_f != self.dpi_factor {
+            self.dpi_factor = dpi_f;
             self.size = size;
             self.knob = Knob::new(
-                (28.0 * radius_factor).round(),
-                (UI_BG_KNOB_STROKE * factor).round(),
-                (12.0 * factor).round(),
-                (9.0 * factor).round(),
-                (UI_ELEM_TXT_H * factor).round(),
+                (dpi_f * 28.0 * radius_factor).round(),
+                (dpi_f * UI_BG_KNOB_STROKE * factor).round(),
+                (dpi_f * 12.0 * factor).round(),
+                (dpi_f * 9.0 * factor).round(),
+                (dpi_f * UI_ELEM_TXT_H * factor).round(),
             );
         }
 
