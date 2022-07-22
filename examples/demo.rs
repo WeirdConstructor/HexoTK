@@ -545,7 +545,7 @@ fn main() {
                 layout.width = Some(Units::Pixels(40.0));
                 layout.height = Some(Units::Pixels(40.0));
             });
-//            println!("TESTBTN ID={}", test_btn.unique_id());
+            //            println!("TESTBTN ID={}", test_btn.unique_id());
 
             mytestroot.add(test_btn);
 
@@ -567,7 +567,7 @@ fn main() {
 
             ui
         }),
-        baseview::WindowScalePolicy::ScaleFactor(0.5) // .25)
-//        baseview::WindowScalePolicy::ScaleFactor(1.0) // .25)
+        baseview::WindowScalePolicy::ScaleFactor(0.5), // .25)
+                                                       //        baseview::WindowScalePolicy::ScaleFactor(1.0) // .25)
     );
 }

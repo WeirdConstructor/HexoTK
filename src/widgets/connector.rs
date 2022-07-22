@@ -227,7 +227,14 @@ impl Connector {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
         // FIXME: The usage of dpi_f * 1.0 is suspicious, but I currently don't know
         //        why the offsets are there where they are and don't have the time to investigate.
         let dpi_f = p.dpi_factor;

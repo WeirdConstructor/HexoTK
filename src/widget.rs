@@ -739,7 +739,10 @@ pub fn widget_walk_impl<F: FnMut(&Widget, Option<&Widget>, bool, bool, usize)>(
     }
 }
 
-pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool, usize)>(widget: &Widget, mut cb: F) {
+pub fn widget_walk<F: FnMut(&Widget, Option<&Widget>, bool, bool, usize)>(
+    widget: &Widget,
+    mut cb: F,
+) {
     widget_walk_impl(widget, None, &mut cb, true, true, 0);
 }
 

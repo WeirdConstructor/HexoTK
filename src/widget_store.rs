@@ -75,11 +75,7 @@ impl WidgetTree {
             widget_dfs_vec.push(WidgetId::from(wid.unique_id()));
             widgets.insert(
                 wid.unique_id(),
-                (
-                    wid.parent().map(|w| WidgetId::from(w.unique_id())),
-                    is_first,
-                    is_last,
-                ),
+                (wid.parent().map(|w| WidgetId::from(w.unique_id())), is_first, is_last),
             );
         });
 

@@ -4,8 +4,8 @@
 
 use crate::painter::*;
 use crate::rect::*;
-use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 use crate::style::DPIStyle;
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -248,7 +248,8 @@ impl WTFragment {
                     self.height_px = p.dpi_factor * 40.0;
                 }
 
-                self.width_px = self.width_px.max(p.text_width(fs, true, &self.text) + p.dpi_factor * 6.0);
+                self.width_px =
+                    self.width_px.max(p.text_width(fs, true, &self.text) + p.dpi_factor * 6.0);
                 self.height_px += 2.0 * p.font_height(fs, true);
                 self.ext_size_px.1 = p.font_height(fs, true);
             }
@@ -994,8 +995,14 @@ impl WichText {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
-        let dpi_f = p.dpi_factor;
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
         let is_hovered = w.is_hovered();
 
         let real_offs_x = real_pos.x - pos.x;

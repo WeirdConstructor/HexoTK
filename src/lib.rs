@@ -386,8 +386,7 @@ impl Control {
             Control::Entry { .. } => {}
             Control::HexKnob { .. } => {}
             Control::HexGrid { grid } => {
-                let style = w.style();
-                grid.draw_frame(w, &style, painter);
+                grid.draw_frame(w, &dpi_style, painter);
             }
             Control::Connector { .. } => {}
             Control::OctaveKeys { keys } => {
@@ -497,7 +496,13 @@ impl Control {
         }
     }
 
-    fn draw_border_and_bg(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, painter: &mut Painter) {
+    fn draw_border_and_bg(
+        &mut self,
+        w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        painter: &mut Painter,
+    ) {
         let is_hovered = w.is_hovered() && w.does_show_hover();
         let is_active = w.is_active();
         let border_color = style.choose_border_color(is_active, is_hovered);

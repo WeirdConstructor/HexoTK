@@ -333,9 +333,9 @@ impl<'a> DPIStyle<'a> {
     dpi_accessor! {pad_bottom}
     dpi_accessor! {font_size}
 
-    dpi_ext_accessor! {StyleExt::Graph, graph_line, 0.0}
-    dpi_ext_accessor! {StyleExt::Graph, vline1, 0.0}
-    dpi_ext_accessor! {StyleExt::Graph, vline2, 0.0}
+    dpi_ext_accessor! {StyleExt::Graph, graph_line, 0.9}
+    dpi_ext_accessor! {StyleExt::Graph, vline1, 1.0}
+    dpi_ext_accessor! {StyleExt::Graph, vline2, 1.0}
     dpi_ext_accessor! {StyleExt::Graph, hline, 0.0}
 
     color_accessor! {bg_color}

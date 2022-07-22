@@ -836,7 +836,7 @@ impl HexGrid {
         p.reset_clip_region();
     }
 
-    pub fn draw_frame(&mut self, _w: &Widget, _style: &Style, painter: &mut Painter) {
+    pub fn draw_frame(&mut self, _w: &Widget, _style: &DPIStyle, painter: &mut Painter) {
         let shift_x = (self.shift_offs.0 + self.tmp_shift_offs.map(|o| o.0).unwrap_or(0.0)).round();
         let shift_y = (self.shift_offs.1 + self.tmp_shift_offs.map(|o| o.1).unwrap_or(0.0)).round();
 

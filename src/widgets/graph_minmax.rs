@@ -2,9 +2,8 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Style, Widget};
-
 use crate::style::*;
+use crate::Widget;
 
 use crate::painter::*;
 use crate::rect::*;
