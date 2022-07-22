@@ -115,28 +115,10 @@ impl GraphMinMax {
         self.data.borrow().get_generation()
     }
 
-    //    fn draw_graph(&mut self, style: &Style, p: &mut Painter) {
-    //        let line_color = style.color;
-    //        let mut line_w      = 1.0;
-    //        let mut line1       = 1.0;
-    //        let mut line2       = 1.0;
-    //        let mut line1_color = style.border_color;
-    //        let mut line2_color = style.border_color;
-    //        if let StyleExt::Graph {
-    //            graph_line, vline1, vline2, vline1_color, vline2_color, ..
-    //        } = style.ext {
-    //            line_w      = graph_line;
-    //            line1       = vline1;
-    //            line2       = vline2;
-    //            line1_color = vline1_color;
-    //            line2_color = vline2_color;
-    //        }
-    //    }
-
     pub fn draw(
         &mut self,
         _w: &Widget,
-        _style: &Style,
+        _style: &DPIStyle,
         _pos: Rect,
         real_pos: Rect,
         _p: &mut Painter,
@@ -144,23 +126,18 @@ impl GraphMinMax {
         self.live_area = real_pos;
     }
 
-    pub fn draw_frame(&mut self, w: &Widget, style: &Style, p: &mut Painter) {
+    pub fn draw_frame(&mut self, w: &Widget, style: &DPIStyle, p: &mut Painter) {
         let mut dbg = w.debug_tag();
 
-        let line_color = style.color;
-        let mut line_w = 0.9;
-        let mut line_c = 0.7;
-        let mut line_c_color = (style.color.0 * 0.5, style.color.1 * 0.5, style.color.2 * 0.5);
-        if let StyleExt::Graph { graph_line, vline1, vline1_color, .. } = style.ext {
-            line_w = graph_line;
-            line_c = vline1;
-            line_c_color = vline1_color;
-        }
+        let line_color = style.color();
+        let line_w = style.graph_line();
+        let line_c = style.vline1();
+        let line_c_color = style.vline1_color();
 
         let pos = self.live_area;
         let mut data = self.data.borrow_mut();
 
-        let txt_h = p.font_height(style.font_size as f32, true);
+        let txt_h = p.font_height(style.font_size() as f32, true);
         let val_pos = pos.resize(pos.w, txt_h);
         let grph_pos = pos.crop_top(txt_h);
 
@@ -222,9 +199,9 @@ impl GraphMinMax {
         let len = data.fmt_val(&mut self.lbl_buf[..]);
         let val_s = std::str::from_utf8(&self.lbl_buf[0..len]).unwrap();
         p.label(
-            style.font_size,
+            style.font_size(),
             0,
-            style.color,
+            style.color(),
             val_pos.x,
             val_pos.y,
             val_pos.w,

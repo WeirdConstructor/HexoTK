@@ -398,8 +398,7 @@ impl Control {
                 graph.draw_frame(w, &dpi_style, painter);
             }
             Control::GraphMinMax { graph } => {
-                let style = w.style();
-                graph.draw_frame(w, &style, painter);
+                graph.draw_frame(w, &dpi_style, painter);
             }
             Control::PatternEditor { edit } => {
                 let style = w.style();
@@ -618,7 +617,7 @@ impl Control {
                 graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::GraphMinMax { graph } => {
-                graph.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::PatternEditor { edit } => {
                 edit.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
