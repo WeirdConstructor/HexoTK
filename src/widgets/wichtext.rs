@@ -4,7 +4,8 @@
 
 use crate::painter::*;
 use crate::rect::*;
-use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
+use crate::style::DPIStyle;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -244,22 +245,22 @@ impl WTFragment {
         match self.typ {
             FragType::Value { .. } => {
                 if self.is_active && self.height_px < 1.0 {
-                    self.height_px = 40.0;
+                    self.height_px = p.dpi_factor * 40.0;
                 }
 
-                self.width_px = self.width_px.max(p.text_width(fs, true, &self.text) + 6.0);
+                self.width_px = self.width_px.max(p.text_width(fs, true, &self.text) + p.dpi_factor * 6.0);
                 self.height_px += 2.0 * p.font_height(fs, true);
                 self.ext_size_px.1 = p.font_height(fs, true);
             }
             FragType::Graph { .. } => {
-                self.ext_size_px.0 = p.text_width(fs, true, &self.text) + 1.0;
+                self.ext_size_px.0 = p.text_width(fs, true, &self.text) + p.dpi_factor * 1.0;
                 self.ext_size_px.1 = p.font_height(fs, true);
                 self.height_px += self.ext_size_px.1;
                 self.width_px = self.ext_size_px.0.max(self.width_px);
             }
             FragType::Text => {
                 let w = p.text_width(fs, true, &self.text);
-                self.width_px = if w > 0.01 { w + 1.0 } else { 0.0 };
+                self.width_px = if w > 0.01 { w + p.dpi_factor * 1.0 } else { 0.0 };
                 self.height_px = p.font_height(fs, true);
             }
         }
@@ -623,7 +624,7 @@ impl WichText {
         &self.data
     }
 
-    fn parse(&mut self, style_font_size: f32, p: &mut Painter, text: &str) {
+    fn parse(&mut self, dpi_style_font_size: f32, p: &mut Painter, text: &str) {
         self.lines.clear();
 
         let mut cur_y = 0.0;
@@ -634,7 +635,7 @@ impl WichText {
             let mut frag_line = WTLine::new();
             let mut ci = line.chars().peekable();
 
-            let mut cur_font_size = style_font_size;
+            let mut cur_font_size = dpi_style_font_size;
             let mut cur_fragment = WTFragment::new(cur_font_size, txt_color);
             let mut first_frag = true;
             let mut in_frag_start = false;
@@ -675,13 +676,13 @@ impl WichText {
                             }
 
                             let w = num.parse::<f32>().unwrap_or(0.0);
-                            cur_fragment.width_px = w;
-                            cur_fragment.ext_size_px.0 = w;
+                            cur_fragment.width_px = p.dpi_factor * w;
+                            cur_fragment.ext_size_px.0 = p.dpi_factor * w;
                         }
                         'h' => {
                             let h = parse_number::<f32>(&mut ci, 0.0);
-                            cur_fragment.height_px = h;
-                            cur_fragment.ext_size_px.1 = h;
+                            cur_fragment.height_px = p.dpi_factor * h;
+                            cur_fragment.ext_size_px.1 = p.dpi_factor * h;
                         }
                         't' => {
                             txt_color = parse_number::<usize>(&mut ci, 0);
@@ -694,7 +695,7 @@ impl WichText {
                             cur_fragment.color2 = parse_number::<usize>(&mut ci, 0);
                         }
                         'f' => {
-                            cur_font_size = parse_number::<f32>(&mut ci, 0.0);
+                            cur_font_size = p.dpi_factor * parse_number::<f32>(&mut ci, 0.0);
                             cur_fragment.font_size = cur_font_size;
                         }
                         'a' => {
@@ -993,7 +994,8 @@ impl WichText {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        let dpi_f = p.dpi_factor;
         let is_hovered = w.is_hovered();
 
         let real_offs_x = real_pos.x - pos.x;
@@ -1006,7 +1008,7 @@ impl WichText {
         //d// println!("DRAW WICHT xoffs={}, yoffs={}", real_offs_x, real_offs_y);
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
-        p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
+        p.rect_fill(style.bg_color(), pos.x, pos.y, pos.w, pos.h);
 
         let pos = pos.floor();
         let pos = pos.crop_right(10.0);
@@ -1014,7 +1016,7 @@ impl WichText {
         let scroll_box = Rect { x: pos.w + pos.x, y: pos.y, w: 10.0, h: pos.h };
 
         if self.text_generation != self.data.text_generation() {
-            self.parse(style.font_size, p, &self.data.text());
+            self.parse(style.font_size(), p, &self.data.text());
             self.last_width = 0;
 
             self.text_generation = self.data.text_generation();
@@ -1094,10 +1096,10 @@ impl WichText {
                     && self.active == Some((line_idx, frag_idx))
                     && is_hovered
                 {
-                    color = style.active_border_color;
+                    color = style.active_border_color();
                 } else if self.hover == Some((line_idx, frag_idx)) && is_hovered {
                     p.rect_fill(color, frag_pos.x, frag_pos.y, frag_pos.w, frag_pos.h);
-                    color = style.bg_color;
+                    color = style.bg_color();
                 }
 
                 frag.draw(
@@ -1106,7 +1108,7 @@ impl WichText {
                     &mut self.data_sources,
                     &fetch_value,
                     frag_pos,
-                    style.bg_color,
+                    style.bg_color(),
                     color,
                     color2,
                     orig_color,
@@ -1128,7 +1130,7 @@ impl WichText {
 
             p.rect_stroke(
                 1.0,
-                style.border_color,
+                style.border_color(),
                 scroll_box.x + 0.5,
                 scroll_box.y + 0.5,
                 scroll_box.w - 1.0,
@@ -1136,7 +1138,7 @@ impl WichText {
             );
 
             p.rect_fill(
-                style.border_color,
+                style.border_color(),
                 scroll_box.x + 2.0,
                 marker_y + 2.0,
                 scroll_box.w - 4.0,

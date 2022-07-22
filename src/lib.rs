@@ -599,7 +599,7 @@ impl Control {
                 entry.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::WichText { wt } => {
-                wt.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                wt.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::HexKnob { knob } => {
                 knob.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
