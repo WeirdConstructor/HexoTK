@@ -265,6 +265,7 @@ pub struct HexGrid {
     tile_size: f32,
     scale: f32,
     scale_step: i32,
+    dpi_factor: f32,
     model: Rc<RefCell<dyn HexGridModel>>,
     center_font_size: f32,
     edge_font_size: f32,
@@ -295,6 +296,7 @@ impl HexGrid {
             y_offs: false,
             scale: 1.0,
             scale_step: 0,
+            dpi_factor: 1.0,
             tile_size,
             drag_source_pos: None,
             shift_offs: (0.0, 0.0),
@@ -314,7 +316,7 @@ impl HexGrid {
 impl HexGrid {
     pub fn mouse_to_tile(&self, x: f32, y: f32) -> (i32, i32) {
         // https://web.archive.org/web/20161024224848/http://gdreflections.com/2011/02/hexagonal-grid-math.html
-        let tile_size = self.tile_size * self.scale;
+        let tile_size = self.tile_size * self.scale * self.dpi_factor;
         let side = ((tile_size * 3.0) / 2.0).floor();
         let radius = tile_size;
         let _width = tile_size * 2.0;
@@ -496,6 +498,7 @@ impl HexGrid {
 
     //    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
     pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        self.dpi_factor = p.dpi_factor;
         let is_hovered = w.is_hovered();
 
         let mut dbg = w.debug_tag();
@@ -504,9 +507,9 @@ impl HexGrid {
 
         self.real_pos = real_pos;
 
-        let size = self.tile_size * self.scale;
+        let size = self.tile_size * self.scale * p.dpi_factor;
 
-        let pad = 10.0 * self.scale;
+        let pad = 10.0 * self.scale * p.dpi_factor;
         let size_in = size - pad;
         let (w, h) = hex_size2wh(size);
 
@@ -570,10 +573,10 @@ impl HexGrid {
                     continue;
                 }
 
-                let th = p.font_height(self.center_font_size * self.scale, false);
-                let fs = self.center_font_size * self.scale;
-                let th2 = p.font_height(self.edge_font_size * self.scale, false);
-                let fs2 = self.edge_font_size * self.scale;
+                let th = p.font_height(self.center_font_size * self.scale * p.dpi_factor, false);
+                let fs = self.center_font_size * self.scale * p.dpi_factor;
+                let th2 = p.font_height(self.edge_font_size * self.scale * p.dpi_factor, false);
+                let fs2 = self.edge_font_size * self.scale * p.dpi_factor;
 
                 let (line, clr) = if is_hovered
                     && self.hover_pos.0 == (xi as i32)
@@ -594,7 +597,7 @@ impl HexGrid {
                 draw_hexagon(
                     p,
                     size_in,
-                    line * self.scale,
+                    line * self.scale * p.dpi_factor,
                     pos.x + xo,
                     pos.y + yo,
                     clr,
@@ -681,7 +684,7 @@ impl HexGrid {
                                         draw_hexagon(
                                             p,
                                             size * 0.5,
-                                            line * 0.5 * self.scale,
+                                            line * 0.5 * self.scale * p.dpi_factor,
                                             x,
                                             y,
                                             clr,
@@ -846,13 +849,13 @@ impl HexGrid {
         for (cell_pos, pos) in self.led_pos.as_ref().unwrap().iter() {
             let led = model.cell_led(cell_pos.0, cell_pos.1);
             if let Some(led) = led {
-                draw_led(painter, self.scale, pos.0, pos.1, led);
+                draw_led(painter, self.scale * painter.dpi_factor, pos.0, pos.1, led);
             }
         }
 
         for (edge_pos, pos_angl) in self.edge_led_pos.as_ref().unwrap().iter() {
             let et = model.cell_edge(edge_pos.0, edge_pos.1, edge_pos.2);
-            et.draw(painter, self.scale, pos_angl.0, pos_angl.1, pos_angl.2);
+            et.draw(painter, self.scale * painter.dpi_factor, pos_angl.0, pos_angl.1, pos_angl.2);
         }
 
         painter.restore();
