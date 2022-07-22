@@ -1,3 +1,7 @@
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
+// This file is a part of HexoTK. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
 use crate::painter::LblDebugTag;
 use crate::Widget;
 use crate::WindowUI;

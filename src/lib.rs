@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
@@ -399,8 +399,7 @@ impl Control {
                 graph.draw_frame(w, &dpi_style, painter);
             }
             Control::PatternEditor { edit } => {
-                let style = w.style();
-                edit.draw_frame(w, &style, painter);
+                edit.draw_frame(w, &dpi_style, painter);
             }
         }
     }
@@ -600,7 +599,7 @@ impl Control {
                 );
             }
             Control::Entry { entry } => {
-                entry.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                entry.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::WichText { wt } => {
                 wt.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
@@ -609,7 +608,7 @@ impl Control {
                 knob.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::HexGrid { grid } => {
-                grid.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                grid.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::Connector { con } => {
                 con.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
@@ -624,7 +623,7 @@ impl Control {
                 graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::PatternEditor { edit } => {
-                edit.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                edit.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
         }
     }

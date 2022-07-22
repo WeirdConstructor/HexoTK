@@ -1,3 +1,7 @@
+// Copyright (c) 2022 Weird Constructor <weirdconstructor@gmail.com>
+// This file is a part of HexoTK. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
 use crate::hxclr;
 use crate::Rect;
 
@@ -109,6 +113,11 @@ pub enum StyleExt {
         hline: f32,
         hline_color: (f32, f32, f32),
     },
+    PatternEditor {
+        row_height: f32,
+        col_width: f32,
+        col_div_pad: f32,
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -141,6 +150,7 @@ pub struct Style {
     pub colors: Vec<(f32, f32, f32)>,
     pub ext: StyleExt,
 }
+
 
 impl Style {
     pub fn new() -> Self {
@@ -246,7 +256,7 @@ macro_rules! dpi_ext_accessor {
             if let $enum::$opt { $field, .. } = &self.style.ext {
                 $field * self.dpi_factor
             } else {
-                $default
+                $default * self.dpi_factor
             }
         }
     };
@@ -338,6 +348,10 @@ impl<'a> DPIStyle<'a> {
     dpi_ext_accessor! {StyleExt::Graph, vline2, 1.0}
     dpi_ext_accessor! {StyleExt::Graph, hline, 0.0}
 
+    dpi_ext_accessor! {StyleExt::PatternEditor, row_height, 14.0}
+    dpi_ext_accessor! {StyleExt::PatternEditor, col_width, 38.0}
+    dpi_ext_accessor! {StyleExt::PatternEditor, col_div_pad, 3.0}
+
     color_accessor! {bg_color}
     color_accessor! {color}
     color_accessor! {color2}
@@ -355,4 +369,5 @@ impl<'a> DPIStyle<'a> {
     color_ext_accessor! {StyleExt::Graph, hline_color, UI_ACCENT_CLR}
     color_ext_accessor! {StyleExt::Graph, vline1_color, UI_PRIM2_CLR}
     color_ext_accessor! {StyleExt::Graph, vline2_color, UI_PRIM_CLR}
+
 }

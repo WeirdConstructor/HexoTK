@@ -1,3 +1,7 @@
+// Copyright (c) 2022 Weird Constructor <weirdconstructor@gmail.com>
+// This file is a part of HexoTK. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
 use hexotk::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -421,6 +425,7 @@ fn main() {
 
             let pedit = Widget::new(style_ref.with_style_clone(|style| {
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+                style.font_size = 14.0;
                 style.border = 20.0;
             }));
             pedit.enable_cache();

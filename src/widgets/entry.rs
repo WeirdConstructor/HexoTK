@@ -1,9 +1,11 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{EvPayload, Event, InputEvent, MButton, Mutable, Style, Widget};
+use crate::{EvPayload, Event, InputEvent, MButton, Mutable, Widget};
 use keyboard_types::Key;
+
+use crate::style::DPIStyle;
 
 use crate::painter::*;
 use crate::rect::*;
@@ -91,22 +93,22 @@ impl Entry {
         self.post_string = self.data.chars().skip(self.cursor).collect();
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let real_offs = (real_pos.x - pos.x, real_pos.y - pos.y);
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
         let is_hovered = w.is_hovered();
         let is_active = w.is_active();
 
-        let fh = p.font_height(style.font_size, true);
-        let cur_start_x = p.text_width(style.font_size, true, &self.pre_string[..]);
+        let fh = p.font_height(style.font_size(), true);
+        let cur_start_x = p.text_width(style.font_size(), true, &self.pre_string[..]);
 
         let color = if is_active {
-            style.active_color
+            style.active_color()
         } else if is_hovered {
-            style.hover_color
+            style.hover_color()
         } else {
-            style.color
+            style.color()
         };
 
         let y = ((pos.h - fh) * 0.5).round();
@@ -120,9 +122,9 @@ impl Entry {
         let mut dbg = w.debug_tag();
 
         p.label_mono(
-            style.font_size,
+            style.font_size(),
             -1,
-            style.color,
+            style.color(),
             pos.x + xo,
             pos.y + y,
             pos.w,

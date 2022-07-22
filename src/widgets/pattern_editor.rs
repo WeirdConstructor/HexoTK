@@ -2,7 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Event, InputEvent, MButton, Style, Widget};
+use crate::{Event, InputEvent, MButton, Widget};
 use keyboard_types::Key;
 
 use super::ModifierTracker;
@@ -17,17 +17,8 @@ pub use hexodsp::dsp::tracker::UIPatternModel;
 
 use std::sync::{Arc, Mutex};
 
-pub const UI_TRK_ROW_HEIGHT: f32 = 14.0;
-pub const UI_TRK_COL_WIDTH: f32 = 38.0;
-pub const UI_TRK_FONT_SIZE: f32 = 12.0;
-pub const UI_TRK_COL_DIV_PAD: f32 = 3.0;
-//pub const UI_TRK_BG_CLR            : (f32, f32, f32) = UI_LBL_BG_CLR;
 pub const UI_TRK_BG_ALT_CLR: (f32, f32, f32) = UI_LBL_BG_ALT_CLR;
 pub const UI_TRK_COL_DIV_CLR: (f32, f32, f32) = UI_PRIM2_CLR;
-//pub const UI_TRK_BORDER_CLR        : (f32, f32, f32) = UI_ACCENT_CLR;
-//pub const UI_TRK_BORDER_HOVER_CLR  : (f32, f32, f32) = UI_HLIGHT_CLR;
-//pub const UI_TRK_BORDER_EDIT_CLR   : (f32, f32, f32) = UI_SELECT_CLR;
-//pub const UI_TRK_BORDER_INACT_CLR  : (f32, f32, f32) = UI_INACTIVE_CLR;
 pub const UI_TRK_TEXT_CLR: (f32, f32, f32) = UI_TXT_CLR;
 pub const UI_TRK_CURSOR_BG_CLR: (f32, f32, f32) = UI_PRIM2_CLR;
 pub const UI_TRK_CURSOR_BG_HOV_CLR: (f32, f32, f32) = UI_PRIM_CLR;
@@ -83,6 +74,11 @@ pub struct PatternEditor {
     pat_generation: u64,
     generation: u64,
     last_phase_row: usize,
+
+    dpi_factor: f32,
+
+    row_height: f32,
+    col_width: f32,
 }
 
 impl PatternEditor {
@@ -113,6 +109,10 @@ impl PatternEditor {
             last_phase_row: 0,
 
             mouse_pos: (0.0, 0.0),
+            dpi_factor: 1.0,
+
+            row_height: 14.0,
+            col_width: 38.0,
         }
     }
 
@@ -505,8 +505,8 @@ impl PatternEditor {
 
                     let pat = self.pattern.lock().unwrap();
 
-                    let xi = (x - self.cell_zone.x) / UI_TRK_COL_WIDTH;
-                    let yi = (y - self.cell_zone.y) / UI_TRK_ROW_HEIGHT;
+                    let xi = (x - self.cell_zone.x) / self.col_width;
+                    let yi = (y - self.cell_zone.y) / self.row_height;
 
                     let xi = xi.max(1.0);
                     let yi = yi.max(1.0);
@@ -558,7 +558,17 @@ impl PatternEditor {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
+        let dpi_f = p.dpi_factor;
+        self.dpi_factor = dpi_f;
+
         let mut dbg = w.debug_tag();
         let rp_offs = (real_pos.x - pos.x, real_pos.y - pos.y);
         dbg.set_offs(rp_offs);
@@ -579,7 +589,12 @@ impl PatternEditor {
 
         let notify_click = false;
 
-        p.rect_fill(style.bg_color, pos.x, pos.y, pos.w, pos.h);
+        p.rect_fill(style.bg_color(), pos.x, pos.y, pos.w, pos.h);
+
+        let row_height = style.row_height();
+        let col_width = style.col_width();
+        self.row_height = row_height;
+        self.col_width = col_width;
 
         let mode_line = match self.enter_mode {
             EnterMode::EnterValues(_) => Some("> [Values]"),
@@ -601,13 +616,13 @@ impl PatternEditor {
 
         if let Some(mode_line) = mode_line {
             p.label_mono(
-                UI_TRK_FONT_SIZE * 0.9,
+                style.font_size() * 0.9,
                 -1,
                 UI_TRK_TEXT_CLR,
                 pos.x,
                 pos.y,
                 pos.w,
-                UI_TRK_ROW_HEIGHT,
+                row_height,
                 &mode_line,
                 dbg.source("mode_line"),
             );
@@ -625,31 +640,31 @@ impl PatternEditor {
         }
 
         p.label_mono(
-            UI_TRK_FONT_SIZE,
+            style.font_size(),
             -1,
             UI_TRK_TEXT_CLR,
             pos.x,
-            pos.y + UI_TRK_ROW_HEIGHT,
+            pos.y + row_height,
             pos.w,
-            UI_TRK_ROW_HEIGHT,
+            row_height,
             &self.info_line,
             dbg.source("info_line"),
         );
 
         for ic in 0..self.columns {
-            let x = (ic + 1) as f32 * UI_TRK_COL_WIDTH;
-            let y = 2.0 * UI_TRK_ROW_HEIGHT;
+            let x = (ic + 1) as f32 * col_width;
+            let y = 2.0 * row_height;
 
             dbg.set_logic_pos(ic as i32, -1 as i32);
 
             p.label_mono(
-                UI_TRK_FONT_SIZE,
+                style.font_size() * 0.9,
                 0,
                 UI_TRK_TEXT_CLR,
                 pos.x + x,
                 pos.y + y,
-                UI_TRK_COL_WIDTH,
-                UI_TRK_ROW_HEIGHT,
+                col_width,
+                row_height,
                 if pat.is_col_note(ic) {
                     "Note"
                 } else if pat.is_col_step(ic) {
@@ -667,20 +682,20 @@ impl PatternEditor {
             1.0,
             UI_TRK_COL_DIV_CLR,
             &mut [
-                (pos.x, pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
-                (pos.x + pos.w, pos.y + 3.0 * UI_TRK_ROW_HEIGHT - 0.5),
+                (pos.x, pos.y + 3.0 * row_height - 0.5),
+                (pos.x + pos.w, pos.y + 3.0 * row_height - 0.5),
             ]
             .iter()
             .copied(),
             false,
         );
 
-        let pos = pos.crop_top(2.0 * UI_TRK_ROW_HEIGHT);
+        let pos = pos.crop_top(2.0 * row_height);
 
         self.cell_zone =
             Rect { x: (pos.x - orig_pos.x), y: (pos.y - orig_pos.y), w: pos.w, h: pos.h };
 
-        self.rows = (self.cell_zone.h / UI_TRK_ROW_HEIGHT).round() as usize - 1;
+        self.rows = (self.cell_zone.h / row_height).round() as usize - 1;
 
         // center the cursor row
         // - but lock the start of the pattern to the top
@@ -688,7 +703,7 @@ impl PatternEditor {
         let row_scroll_offs = self.calc_row_offs(self.rows);
 
         for ir in 0..self.rows {
-            let y = (ir + 1) as f32 * UI_TRK_ROW_HEIGHT;
+            let y = (ir + 1) as f32 * row_height;
             let ir = row_scroll_offs as usize + ir;
 
             if ir >= pat.rows() {
@@ -698,17 +713,17 @@ impl PatternEditor {
             dbg.set_logic_pos(-1 as i32, ir as i32);
 
             if self.edit_step > 0 && ir % self.edit_step == 0 {
-                p.rect_fill(UI_TRK_BG_ALT_CLR, pos.x, pos.y + y, pos.w, UI_TRK_ROW_HEIGHT);
+                p.rect_fill(UI_TRK_BG_ALT_CLR, pos.x, pos.y + y, pos.w, row_height);
             }
 
             p.label_mono(
-                UI_TRK_FONT_SIZE,
+                style.font_size(),
                 1,
                 UI_TRK_TEXT_CLR,
-                pos.x - UI_TRK_COL_DIV_PAD,
+                pos.x - style.col_div_pad(),
                 pos.y + y,
-                UI_TRK_COL_WIDTH,
-                UI_TRK_ROW_HEIGHT,
+                col_width,
+                row_height,
                 &format!("{:-02}", ir),
                 dbg.source("row_idx"),
             );
@@ -722,7 +737,7 @@ impl PatternEditor {
             }
 
             for ic in 0..self.columns {
-                let x = (ic + 1) as f32 * UI_TRK_COL_WIDTH;
+                let x = (ic + 1) as f32 * col_width;
                 let is_note_col = pat.is_col_note(ic);
 
                 dbg.set_logic_pos(ic as i32, ir as i32);
@@ -742,8 +757,8 @@ impl PatternEditor {
                         },
                         pos.x + x,
                         pos.y + y,
-                        UI_TRK_COL_WIDTH,
-                        UI_TRK_ROW_HEIGHT,
+                        col_width,
+                        row_height,
                     );
 
                     if (ir, ic) == self.cursor {
@@ -760,25 +775,16 @@ impl PatternEditor {
                     };
 
                     if (ir, ic) == self.cursor {
-                        p.rect_fill(
-                            hl_clr,
-                            pos.x + x,
-                            pos.y + y,
-                            UI_TRK_COL_WIDTH,
-                            UI_TRK_ROW_HEIGHT,
-                        );
+                        p.rect_fill(hl_clr, pos.x + x, pos.y + y, col_width, row_height);
                     } else {
                         if self.enter_mode != EnterMode::None {
                             p.path_stroke(
                                 1.0,
                                 hl_clr,
                                 &mut [
-                                    (pos.x + x + 1.5, pos.y + y + UI_TRK_ROW_HEIGHT - 0.5),
-                                    (
-                                        pos.x + x + UI_TRK_COL_WIDTH - 0.5,
-                                        pos.y + y + UI_TRK_ROW_HEIGHT - 0.5,
-                                    ),
-                                    (pos.x + x + UI_TRK_COL_WIDTH - 0.5, pos.y + y + 0.5),
+                                    (pos.x + x + 1.5, pos.y + y + row_height - 0.5),
+                                    (pos.x + x + col_width - 0.5, pos.y + y + row_height - 0.5),
+                                    (pos.x + x + col_width - 0.5, pos.y + y + 0.5),
                                     (pos.x + x + 1.5, pos.y + y + 0.5),
                                 ]
                                 .iter()
@@ -797,38 +803,38 @@ impl PatternEditor {
                 if let Some(s) = pat.get_cell(ir, ic) {
                     if is_note_col {
                         p.label_mono(
-                            UI_TRK_FONT_SIZE,
+                            style.font_size(),
                             0,
                             txt_clr,
                             pos.x + x,
                             pos.y + y,
-                            UI_TRK_COL_WIDTH,
-                            UI_TRK_ROW_HEIGHT,
+                            col_width,
+                            row_height,
                             value2note_name(cell_value).unwrap_or(s),
                             dbg.source("cell"),
                         );
                     } else {
                         p.label_mono(
-                            UI_TRK_FONT_SIZE,
+                            style.font_size(),
                             0,
                             txt_clr,
                             pos.x + x,
                             pos.y + y,
-                            UI_TRK_COL_WIDTH,
-                            UI_TRK_ROW_HEIGHT,
+                            col_width,
+                            row_height,
                             s,
                             dbg.source("cell"),
                         );
                     }
                 } else {
                     p.label_mono(
-                        UI_TRK_FONT_SIZE,
+                        style.font_size(),
                         0,
                         txt_clr,
                         pos.x + x,
                         pos.y + y,
-                        UI_TRK_COL_WIDTH,
-                        UI_TRK_ROW_HEIGHT,
+                        col_width,
+                        row_height,
                         "---",
                         dbg.source("cell"),
                     );
@@ -837,7 +843,7 @@ impl PatternEditor {
         }
 
         for ic in 0..self.columns {
-            let x = (ic + 1) as f32 * UI_TRK_COL_WIDTH;
+            let x = (ic + 1) as f32 * col_width;
 
             p.path_stroke(
                 1.0,
@@ -850,7 +856,7 @@ impl PatternEditor {
         p.reset_clip_region();
     }
 
-    pub fn draw_frame(&mut self, _w: &Widget, _style: &Style, _painter: &mut Painter) {}
+    pub fn draw_frame(&mut self, _w: &Widget, _style: &DPIStyle, _painter: &mut Painter) {}
 }
 
 fn value2note_name(val: u16) -> Option<&'static str> {

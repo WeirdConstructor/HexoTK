@@ -1,8 +1,8 @@
-// Copyright (c) 2021 Weird Constructor <weirdconstructor@gmail.com>
+// Copyright (c) 2021-2022 Weird Constructor <weirdconstructor@gmail.com>
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 
 use crate::style::*;
 
@@ -497,7 +497,7 @@ impl HexGrid {
     }
 
     //    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
         self.dpi_factor = p.dpi_factor;
         let is_hovered = w.is_hovered();
 
