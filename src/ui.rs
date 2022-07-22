@@ -345,7 +345,7 @@ impl UI {
     }
 
     pub fn relayout(&mut self) {
-        println!("start relayout");
+        println!("start relayout w={}, h={}", self.win_w, self.win_h);
 
         let (win_w, win_h) = (self.win_w, self.win_h);
 
@@ -357,8 +357,8 @@ impl UI {
             layer.root.change_layout(|l| {
                 l.left = Some(Units::Pixels(0.0));
                 l.top = Some(Units::Pixels(0.0));
-                l.width = Some(Units::Pixels(win_w));
-                l.height = Some(Units::Pixels(win_h));
+                l.width = Some(Units::Pixels(win_w / self.dpi_factor));
+                l.height = Some(Units::Pixels(win_h / self.dpi_factor));
                 l.position_type = Some(PositionType::SelfDirected);
             });
 
