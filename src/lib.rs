@@ -375,7 +375,8 @@ impl Control {
         }
     }
     pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
-        let dpi_style = DPIStyle::new_from(painter.dpi_factor, &w.style());
+        let logic_style = w.style();
+        let dpi_style = DPIStyle::new_from(painter.dpi_factor, &logic_style);
         match self {
             Control::Rect => {}
             Control::None => {}
@@ -394,8 +395,7 @@ impl Control {
                 keys.draw_frame(w, &style, painter);
             }
             Control::Graph { graph } => {
-                let style = w.style();
-                graph.draw_frame(w, &style, painter);
+                graph.draw_frame(w, &dpi_style, painter);
             }
             Control::GraphMinMax { graph } => {
                 let style = w.style();
@@ -615,7 +615,7 @@ impl Control {
                 keys.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::Graph { graph } => {
-                graph.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::GraphMinMax { graph } => {
                 graph.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);

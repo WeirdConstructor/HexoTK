@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{Style, Widget};
+use crate::Widget;
 
 use crate::style::*;
 
@@ -137,22 +137,13 @@ impl Graph {
         }
     }
 
-    fn draw_graph(&mut self, style: &Style, p: &mut Painter) {
-        let line_color = style.color;
-        let mut line_w = 1.0;
-        let mut line1 = 1.0;
-        let mut line2 = 1.0;
-        let mut line1_color = style.border_color;
-        let mut line2_color = style.border_color;
-        if let StyleExt::Graph { graph_line, vline1, vline2, vline1_color, vline2_color, .. } =
-            style.ext
-        {
-            line_w = graph_line;
-            line1 = vline1;
-            line2 = vline2;
-            line1_color = vline1_color;
-            line2_color = vline2_color;
-        }
+    fn draw_graph(&mut self, style: &DPIStyle, p: &mut Painter) {
+        let line_color = style.color();
+        let line_w = style.graph_line();
+        let line1 = style.vline1();
+        let line2 = style.vline2();
+        let line1_color = style.vline1_color();
+        let line2_color = style.vline2_color();
 
         p.path_stroke(line_w, line_color, &mut self.draw_buf.iter().copied(), false);
 
@@ -165,27 +156,35 @@ impl Graph {
         }
     }
 
-    pub fn draw(&mut self, _w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(
+        &mut self,
+        _w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
         self.live_area = real_pos;
 
         if self.draw_buf.len() != (self.samples as usize) {
             self.draw_buf.resize(self.samples as usize, (0.0, 0.0));
         }
 
-        if let StyleExt::Graph { hline, hline_color, .. } = style.ext {
-            if hline > 0.1 {
-                p.path_stroke(
-                    hline,
-                    hline_color,
-                    &mut [
-                        (pos.x, (pos.y + pos.h * 0.5).round()),
-                        (pos.x + pos.w, (pos.y + pos.h * 0.5).round()),
-                    ]
-                    .iter()
-                    .copied(),
-                    false,
-                );
-            }
+        let hline = style.hline();
+        let hline_color = style.hline_color();
+
+        if hline > 0.1 {
+            p.path_stroke(
+                hline,
+                hline_color,
+                &mut [
+                    (pos.x, (pos.y + pos.h * 0.5).round()),
+                    (pos.x + pos.w, (pos.y + pos.h * 0.5).round()),
+                ]
+                .iter()
+                .copied(),
+                false,
+            );
         }
 
         if self.live_draw {
@@ -196,7 +195,7 @@ impl Graph {
         self.draw_graph(style, p);
     }
 
-    pub fn draw_frame(&mut self, _w: &Widget, style: &Style, p: &mut Painter) {
+    pub fn draw_frame(&mut self, _w: &Widget, style: &DPIStyle, p: &mut Painter) {
         if !self.live_draw {
             return;
         }
