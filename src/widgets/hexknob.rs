@@ -2,7 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 use keyboard_types::Key;
 
 use super::ModifierTracker;
@@ -882,7 +882,7 @@ impl HexKnob {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, _style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, _style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
         let dpi_f = p.dpi_factor;
         let mut dbg = w.debug_tag();
         dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));

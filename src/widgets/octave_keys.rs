@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 
 use crate::style::*;
 
@@ -128,8 +128,10 @@ fn draw_key(
         line_color = UI_GRPH_BG;
     }
 
+    let key_border = p.dpi_factor * 1.0;
+
     p.rect_fill(line_color, key.x, key.y, key.w, key.h);
-    let k2 = key.shrink(1.0, 1.0);
+    let k2 = key.shrink(key_border, key_border);
     p.rect_fill(bg_color, k2.x, k2.y, k2.w, k2.h);
 }
 
@@ -181,7 +183,7 @@ impl OctaveKeys {
     pub fn draw(
         &mut self,
         w: &Widget,
-        _style: &Style,
+        _style: &DPIStyle,
         pos: Rect,
         real_pos: Rect,
         _p: &mut Painter,
@@ -241,7 +243,7 @@ impl OctaveKeys {
         }
     }
 
-    pub fn draw_frame(&mut self, w: &Widget, _style: &Style, painter: &mut Painter) {
+    pub fn draw_frame(&mut self, w: &Widget, _style: &DPIStyle, painter: &mut Painter) {
         let phase = self.data.borrow().phase_value();
         let phase_index = (phase * 12.0).floor() as usize;
 

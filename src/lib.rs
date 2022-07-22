@@ -390,8 +390,7 @@ impl Control {
             }
             Control::Connector { .. } => {}
             Control::OctaveKeys { keys } => {
-                let style = w.style();
-                keys.draw_frame(w, &style, painter);
+                keys.draw_frame(w, &dpi_style, painter);
             }
             Control::Graph { graph } => {
                 graph.draw_frame(w, &dpi_style, painter);
@@ -607,7 +606,7 @@ impl Control {
                 wt.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::HexKnob { knob } => {
-                knob.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                knob.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::HexGrid { grid } => {
                 grid.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
@@ -616,7 +615,7 @@ impl Control {
                 con.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::OctaveKeys { keys } => {
-                keys.draw(w, logic_style, draw_widget_pos, real_widget_pos, painter);
+                keys.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::Graph { graph } => {
                 graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
