@@ -291,7 +291,7 @@ pub fn open_window(
         window_height,
         parent,
         factory,
-        WindowScalePolicy::ScaleFactor(0.5),
+        WindowScalePolicy::SystemScaleFactor,
     )
 }
 

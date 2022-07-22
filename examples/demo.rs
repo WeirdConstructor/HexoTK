@@ -572,7 +572,7 @@ fn main() {
 
             ui
         }),
-        baseview::WindowScalePolicy::ScaleFactor(0.75), // .25)
-                                                       //        baseview::WindowScalePolicy::ScaleFactor(1.0) // .25)
+//        baseview::WindowScalePolicy::ScaleFactor(0.75),
+        baseview::WindowScalePolicy::SystemScaleFactor,
     );
 }
