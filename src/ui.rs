@@ -997,7 +997,13 @@ impl WindowUI for UI {
 
             if let Some(drag_widget) = &self.drag.widget {
                 if self.drag.started {
+                    let mut pos = drag_widget.pos();
+                    let orig_pos = pos;
+                    pos.w = pos.w * painter.dpi_factor;
+                    pos.h = pos.h * painter.dpi_factor;
+                    drag_widget.set_pos(pos);
                     widget_draw(drag_widget, &self.cur_redraw, origin, painter);
+                    drag_widget.set_pos(orig_pos);
                 }
             }
 
@@ -1012,7 +1018,13 @@ impl WindowUI for UI {
 
             if let Some(drag_widget) = &self.drag.widget {
                 if self.drag.started {
+                    let mut pos = drag_widget.pos();
+                    let orig_pos = pos;
+                    pos.w = pos.w * painter.dpi_factor;
+                    pos.h = pos.h * painter.dpi_factor;
+                    drag_widget.set_pos(pos);
                     widget_draw(drag_widget, &self.cur_redraw, origin, painter);
+                    drag_widget.set_pos(orig_pos);
                 }
             }
         }
