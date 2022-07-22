@@ -76,21 +76,21 @@ pub fn get_standard_colors() -> Vec<(f32, f32, f32)> {
     ]
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Align {
     Center,
     Left,
     Right,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum VAlign {
     Middle,
     Top,
     Bottom,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum BorderStyle {
     Rect,
     Hex { offset: f32 },
@@ -113,11 +113,15 @@ pub enum StyleExt {
 
 #[derive(Debug, Clone)]
 pub struct Style {
+    pub border_style: BorderStyle,
     pub bg_color: (f32, f32, f32),
     pub border_color: (f32, f32, f32),
-    pub border_style: BorderStyle,
+    pub border2_color: (f32, f32, f32),
     pub color: (f32, f32, f32),
+    pub color2: (f32, f32, f32),
     pub border: f32,
+    pub border2: f32,
+    pub line: f32,
     pub pad_left: f32,
     pub pad_right: f32,
     pub pad_top: f32,
@@ -130,6 +134,7 @@ pub struct Style {
     pub active_shadow_color: (f32, f32, f32),
     pub active_border_color: (f32, f32, f32),
     pub active_color: (f32, f32, f32),
+    pub inactive_color: (f32, f32, f32),
     pub text_align: Align,
     pub text_valign: VAlign,
     pub font_size: f32,
@@ -144,8 +149,12 @@ impl Style {
         Self {
             bg_color: UI_BG_CLR,
             border_color: UI_BORDER_CLR,
+            border2_color: UI_ACCENT_CLR,
             color: UI_PRIM_CLR,
+            color2: UI_PRIM2_CLR,
             border: UI_BOX_BORD,
+            border2: UI_BOX_BORD,
+            line: 2.0 * UI_BOX_BORD,
             border_style: BorderStyle::Rect,
             pad_left: 0.0,
             pad_right: 0.0,
@@ -159,6 +168,7 @@ impl Style {
             active_shadow_color: UI_HLIGHT_CLR,
             active_border_color: UI_SELECT_CLR,
             active_color: UI_HLIGHT_CLR,
+            inactive_color: UI_INACTIVE_CLR,
             text_align: Align::Center,
             text_valign: VAlign::Middle,
             font_size: 14.0,
@@ -215,4 +225,134 @@ impl Style {
             self.color
         }
     }
+}
+
+pub struct DPIStyle<'a> {
+    style: &'a Style,
+    dpi_factor: f32,
+}
+
+macro_rules! dpi_accessor {
+    ($field: ident) => {
+        pub fn $field(&self) -> f32 {
+            self.style.$field * self.dpi_factor
+        }
+    };
+}
+
+macro_rules! dpi_ext_accessor {
+    ($enum: ident :: $opt: ident, $field: ident, $default: expr) => {
+        pub fn $field(&self) -> f32 {
+            if let $enum::$opt { $field, .. } = &self.style.ext {
+                $field * self.dpi_factor
+            } else {
+                $default
+            }
+        }
+    };
+}
+
+macro_rules! color_accessor {
+    ($field: ident) => {
+        pub fn $field(&self) -> (f32, f32, f32) {
+            self.style.$field
+        }
+    };
+}
+
+macro_rules! color_ext_accessor {
+    ($enum: ident :: $opt: ident, $field: ident, $default: expr) => {
+        pub fn $field(&self) -> (f32, f32, f32) {
+            if let $enum::$opt { $field, .. } = &self.style.ext {
+                *$field
+            } else {
+                $default
+            }
+        }
+    };
+}
+
+impl<'a> DPIStyle<'a> {
+    pub fn new_from(dpi_factor: f32, style: &'a Style) -> Self {
+        Self { style, dpi_factor }
+    }
+
+    pub fn border_style(&self) -> BorderStyle {
+        match self.style.border_style {
+            BorderStyle::Rect => BorderStyle::Rect,
+            BorderStyle::Hex { offset } => BorderStyle::Hex { offset: offset * self.dpi_factor },
+            BorderStyle::Bevel { corner_offsets } => BorderStyle::Bevel {
+                corner_offsets: (
+                    corner_offsets.0 * self.dpi_factor,
+                    corner_offsets.1 * self.dpi_factor,
+                    corner_offsets.2 * self.dpi_factor,
+                    corner_offsets.3 * self.dpi_factor,
+                ),
+            },
+        }
+    }
+
+    pub fn text_align(&self) -> Align {
+        self.style.text_align
+    }
+
+    pub fn text_valign(&self) -> VAlign {
+        self.style.text_valign
+    }
+
+    pub fn color_by_idx(&self, idx: usize) -> (f32, f32, f32) {
+        self.style.color_by_idx(idx)
+    }
+
+    pub fn choose_shadow_color(&self, is_active: bool, is_hovered: bool) -> (f32, f32, f32) {
+        self.style.choose_shadow_color(is_active, is_hovered)
+    }
+
+    pub fn choose_border_color(&self, is_active: bool, is_hovered: bool) -> (f32, f32, f32) {
+        self.style.choose_border_color(is_active, is_hovered)
+    }
+
+    pub fn choose_color(&self, is_active: bool, is_hovered: bool) -> (f32, f32, f32) {
+        self.style.choose_color(is_active, is_hovered)
+    }
+
+    pub fn shadow_offs(&self) -> (f32, f32) {
+        (self.style.shadow_offs.0 * self.dpi_factor, self.style.shadow_offs.1 * self.dpi_factor)
+    }
+
+    pub fn apply_padding(&self, pos: Rect) -> Rect {
+        self.style.apply_padding(self.dpi_factor, pos)
+    }
+
+    dpi_accessor! {border}
+    dpi_accessor! {border2}
+    dpi_accessor! {line}
+    dpi_accessor! {pad_left}
+    dpi_accessor! {pad_right}
+    dpi_accessor! {pad_top}
+    dpi_accessor! {pad_bottom}
+    dpi_accessor! {font_size}
+
+    dpi_ext_accessor! {StyleExt::Graph, graph_line, 0.0}
+    dpi_ext_accessor! {StyleExt::Graph, vline1, 0.0}
+    dpi_ext_accessor! {StyleExt::Graph, vline2, 0.0}
+    dpi_ext_accessor! {StyleExt::Graph, hline, 0.0}
+
+    color_accessor! {bg_color}
+    color_accessor! {color}
+    color_accessor! {color2}
+    color_accessor! {border_color}
+    color_accessor! {border2_color}
+    color_accessor! {shadow_color}
+    color_accessor! {hover_shadow_color}
+    color_accessor! {hover_border_color}
+    color_accessor! {hover_color}
+    color_accessor! {active_shadow_color}
+    color_accessor! {active_border_color}
+    color_accessor! {active_color}
+    color_accessor! {inactive_color}
+
+    color_ext_accessor! {StyleExt::Graph, hline_color, UI_ACCENT_CLR}
+    color_ext_accessor! {StyleExt::Graph, vline1_color, UI_PRIM2_CLR}
+    color_ext_accessor! {StyleExt::Graph, vline2_color, UI_PRIM_CLR}
 }

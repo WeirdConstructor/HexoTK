@@ -2,7 +2,7 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{EvPayload, Event, InputEvent, MButton, Style, Widget};
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 
 use crate::style::*;
 
@@ -11,10 +11,6 @@ use crate::rect::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
-
-pub const UI_CON_BORDER_CLR: (f32, f32, f32) = UI_ACCENT_CLR;
-pub const UI_CON_HOV_CLR: (f32, f32, f32) = UI_HLIGHT_CLR;
-pub const UI_CON_BORDER_W: f32 = 2.0;
 
 #[derive(Debug, Clone)]
 pub struct ConnectorData {
@@ -231,7 +227,9 @@ impl Connector {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &Style, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
+        // FIXME: The usage of dpi_f * 1.0 is suspicious, but I currently don't know
+        //        why the offsets are there where they are and don't have the time to investigate.
         let dpi_f = p.dpi_factor;
 
         let mut dbg = w.debug_tag();
@@ -258,22 +256,22 @@ impl Connector {
         let btn_rect = Rect::from(0.0, 0.0, xcol, yrow);
         for row in 0..row_h {
             let yo = row as f32 * yrow;
-            let txt_pad = dpi_f * 2.0 * UI_CON_BORDER_W;
+            let txt_pad = 2.0 * style.border2();
             let txt_w = xcol - 2.0 * txt_pad;
 
             if let Some((lbl, active)) = data.items_left.get(row) {
                 p.rect_stroke_r(
-                    dpi_f * UI_CON_BORDER_W,
-                    UI_CON_BORDER_CLR,
+                    style.border2(),
+                    style.border2_color(),
                     btn_rect.offs(pos.x, pos.y + yo),
                 );
                 self.zones.push((btn_rect.offs(real_pos.x, real_pos.y + yo), (false, row)));
 
-                let fs = calc_font_size_from_text(p, &lbl, dpi_f * style.font_size, txt_w);
+                let fs = calc_font_size_from_text(p, &lbl, style.font_size(), txt_w);
                 p.label(
                     fs,
                     -1,
-                    if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
+                    if *active { style.color() } else { style.inactive_color() },
                     pos.x + txt_pad,
                     pos.y + yo,
                     txt_w,
@@ -285,8 +283,8 @@ impl Connector {
 
             if let Some((lbl, active)) = data.items_right.get(row) {
                 p.rect_stroke_r(
-                    dpi_f * UI_CON_BORDER_W,
-                    UI_CON_BORDER_CLR,
+                    style.border2(),
+                    style.border2_color(),
                     btn_rect.offs(pos.x + 2.0 * xcol - dpi_f * 1.0, pos.y + yo),
                 );
                 self.zones.push((
@@ -294,12 +292,12 @@ impl Connector {
                     (true, row),
                 ));
 
-                let fs = calc_font_size_from_text(p, &lbl, dpi_f * style.font_size, txt_w);
+                let fs = calc_font_size_from_text(p, &lbl, style.font_size(), txt_w);
                 p.label(
                     fs,
                     1,
-                    if *active { UI_PRIM_CLR } else { UI_INACTIVE_CLR },
-                    pos.x + txt_pad + 2.0 * xcol - dpi_f * UI_CON_BORDER_W,
+                    if *active { style.color() } else { style.inactive_color() },
+                    pos.x + txt_pad + 2.0 * xcol - style.border2(),
                     pos.y + yo,
                     txt_w,
                     yrow,
@@ -319,8 +317,8 @@ impl Connector {
 
                     if does_hover_this_widget {
                         p.rect_stroke_r(
-                            dpi_f * UI_CON_BORDER_W,
-                            UI_CON_HOV_CLR,
+                            style.border2(),
+                            style.hover_color(),
                             btn_rect.offs(pos.x + xo, pos.y + yo),
                         );
                     }
@@ -334,8 +332,8 @@ impl Connector {
 
             if self.drag {
                 p.rect_stroke_r(
-                    dpi_f * UI_CON_BORDER_W,
-                    UI_SELECT_CLR,
+                    style.border2(),
+                    style.active_color(),
                     btn_rect.offs(pos.x + xo, pos.y + yo),
                 );
             }
@@ -346,13 +344,13 @@ impl Connector {
             let by = b as f32 * yrow;
 
             p.path_stroke(
-                dpi_f * 4.0,
-                if drag { UI_CON_HOV_CLR } else { UI_PRIM_CLR },
+                style.line(),
+                if drag { style.hover_color() } else { style.color() },
                 &mut [
                     (xcol, ay + yrow * 0.5),
                     (xcol + xcol * 0.25, ay + yrow * 0.5),
                     (2.0 * xcol - xcol * 0.25, by + yrow * 0.5),
-                    (2.0 * xcol - dpi_f * UI_CON_BORDER_W, by + yrow * 0.5),
+                    (2.0 * xcol - style.border2(), by + yrow * 0.5),
                 ]
                 .iter()
                 .copied()
