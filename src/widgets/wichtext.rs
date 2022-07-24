@@ -175,6 +175,7 @@ enum FragType {
     Text,
     Graph { key: String },
     Value { key: String },
+    Image { file: String },
 }
 
 impl FragType {
@@ -264,6 +265,7 @@ impl WTFragment {
                 self.width_px = if w > 0.01 { w + p.dpi_factor * 1.0 } else { 0.0 };
                 self.height_px = p.font_height(fs, true);
             }
+            FragType::Image { .. } => {}
         }
     }
 
@@ -392,6 +394,9 @@ impl WTFragment {
                     &self.text,
                     dbg.source("text"),
                 );
+            }
+            FragType::Image { file } => {
+                p.draw_image_file(file, pos.x, pos.y, pos.w, pos.h);
             }
         }
     }
@@ -664,6 +669,10 @@ impl WichText {
                         'g' => {
                             let key = parse_key(&mut ci);
                             cur_fragment.typ = FragType::Graph { key };
+                        }
+                        'I' => {
+                            let file = parse_key(&mut ci);
+                            cur_fragment.typ = FragType::Image { file };
                         }
                         'w' => {
                             let mut num = String::from("");

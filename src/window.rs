@@ -346,6 +346,12 @@ pub fn open_window_ext(
 
         let mut ui = factory();
 
+        let mut painter_data = PersistPainterData::new();
+
+        for (file, data) in ui.get_image_data().iter() {
+            painter_data.preload_image(file, data.clone());
+        }
+
         ui.set_window_size(window_width as f32, window_height as f32, dpi_factor);
 
         GUIWindowHandler {
@@ -361,7 +367,7 @@ pub fn open_window_ext(
             //            ftm_redraw: FrameTimeMeasurement::new("redraw"),
             // focused:    false,
             counter: 0,
-            painter_data: PersistPainterData::new(),
+            painter_data,
             bg_color: (0.3, 0.1, 0.3),
         }
     };

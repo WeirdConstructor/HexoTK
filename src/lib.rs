@@ -14,7 +14,7 @@ mod widgets;
 mod window;
 
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use keyboard_types::KeyboardEvent; // Key
@@ -1078,6 +1078,7 @@ pub trait WindowUI {
     fn draw(&mut self, painter: &mut Painter);
     //    fn draw_frame(&mut self, painter: &mut Painter);
     fn set_window_size(&mut self, w: f32, h: f32, dpi_factor: f32);
+    fn get_image_data(&self) -> &HashMap<String, Vec<u8>>;
 }
 
 #[derive(Debug, Clone)]

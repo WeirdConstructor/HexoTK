@@ -292,6 +292,8 @@ pub struct UI {
     auto_hide_queue: Vec<(usize, HashSet<usize>)>,
     frame_cb: Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
     ctx: Rc<RefCell<dyn std::any::Any>>,
+
+    image_data: HashMap<String, Vec<u8>>,
 }
 
 impl UI {
@@ -330,8 +332,13 @@ impl UI {
             },
             last_hover_id: usize::MAX,
             hover_ev: Event { name: "hover".to_string(), data: EvPayload::None },
+            image_data: HashMap::new(),
             ctx,
         }
+    }
+
+    pub fn store_image_data(&mut self, file: &str, data: Vec<u8>) {
+        self.image_data.insert(file.to_string(), data);
     }
 
     pub fn set_frame_callback(&mut self, cb: Box<dyn FnMut(&mut dyn std::any::Any)>) {
@@ -1037,5 +1044,9 @@ impl WindowUI for UI {
         self.do_auto_hide(None);
         self.notifier.set_layout_changed();
         self.notifier.redraw(0);
+    }
+
+    fn get_image_data(&self) -> &HashMap<String, Vec<u8>> {
+        &self.image_data
     }
 }

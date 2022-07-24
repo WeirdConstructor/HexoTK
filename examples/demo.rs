@@ -202,7 +202,7 @@ fn main() {
                 _ => {}
             });
 
-            wtd.set_text("XXX\n[a:Click Here!]".to_string());
+            wtd.set_text("XXX\n[a:Click Here!]\nAnd an image:[h30Ihex_test.png:]".to_string());
 
             let mut cnt = 0;
             sub4.reg("click", {
@@ -569,6 +569,8 @@ fn main() {
             ui.add_layer_root(root3);
             ui.add_layer_root(mytestroot);
             //        ui.add_layer_root(root);
+
+            ui.store_image_data("hex_test.png", include_bytes!("hex_test.png").to_vec());
 
             ui
         }),

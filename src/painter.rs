@@ -7,7 +7,9 @@ use super::Rect;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use femtovg::{renderer::OpenGl, Canvas, Color, FontId, ImageId};
+use std::collections::HashMap;
+
+use femtovg::{renderer::OpenGl, Canvas, Color, FontId, ImageFlags, ImageId};
 
 #[macro_export]
 macro_rules! hxclr {
@@ -80,12 +82,39 @@ impl Drop for ImgRef {
 pub struct PersistPainterData {
     render_targets: Vec<femtovg::RenderTarget>,
     store: Rc<RefCell<ImageStore>>,
+    image_files: HashMap<String, ImageId>,
+    image_data: HashMap<String, Vec<u8>>,
 }
 impl PersistPainterData {
     pub fn new() -> Self {
         Self {
             render_targets: vec![],
             store: Rc::new(RefCell::new(ImageStore { freed_images: vec![] })),
+            image_files: HashMap::new(),
+            image_data: HashMap::new(),
+        }
+    }
+
+    pub fn preload_image(&mut self, file: &str, data: Vec<u8>) {
+        self.image_data.insert(file.to_string(), data);
+    }
+
+    pub fn get_image_file(&mut self, file: &str, canvas: &mut Canvas<OpenGl>) -> Option<ImageId> {
+        if let Some(image_id) = self.image_files.get(file) {
+            Some(*image_id)
+        } else {
+            let image_data = self.image_data.get(file)?;
+
+            match canvas.load_image_mem(&image_data[..], ImageFlags::empty()) {
+                Ok(img_id) => {
+                    self.image_files.insert(file.to_string(), img_id);
+                    Some(img_id)
+                }
+                Err(e) => {
+                    eprintln!("Error loading image: {}", e);
+                    None
+                }
+            }
         }
     }
 
@@ -236,6 +265,22 @@ impl<'a, 'b> Painter<'a, 'b> {
         let mut path = femtovg::Path::new();
         path.rect(screen_x as f32, screen_y as f32, image.w as f32, image.h as f32);
         self.canvas.fill_path(&mut path, img_paint);
+    }
+
+    pub fn draw_image_file(&mut self, file: &str, x: f32, y: f32, _w: f32, h: f32) {
+        if let Some(img_id) = self.data.get_image_file(file, self.canvas) {
+            if let Ok((imgw, imgh)) = self.canvas.image_size(img_id) {
+                if imgh as f32 > 0.0 && h > 0.0 {
+                    let w = (imgw as f32 * h) / imgh as f32;
+
+                    let img_paint =
+                        femtovg::Paint::image(img_id, x, y, w as f32, h as f32, 0.0, 1.0);
+                    let mut path = femtovg::Path::new();
+                    path.rect(x, y, w, h);
+                    self.canvas.fill_path(&mut path, img_paint);
+                }
+            }
+        }
     }
 
     #[allow(unused_variables)]
