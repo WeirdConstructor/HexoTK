@@ -12,7 +12,7 @@ use crate::rect::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-const SCOPE_SAMPLES: usize = 512;
+pub const SCOPE_SAMPLES: usize = 512;
 
 pub trait ScopeModel {
     fn signal_count(&self) -> usize;
