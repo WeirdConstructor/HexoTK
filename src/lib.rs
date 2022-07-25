@@ -36,6 +36,7 @@ pub use widgets::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
 pub use widgets::{Graph, GraphModel, StaticGraphData};
+pub use widgets::{Scope, ScopeModel, StaticScopeData};
 pub use widgets::{GraphMinMax, GraphMinMaxModel, StaticGraphMinMaxData};
 pub use widgets::{HexCell, HexDir, HexEdge, HexGrid, HexGridModel, HexHLight};
 pub use widgets::{
@@ -238,6 +239,7 @@ pub enum Control {
     Connector { con: Box<Connector> },
     OctaveKeys { keys: Box<OctaveKeys> },
     Graph { graph: Box<Graph> },
+    Scope { scope: Box<Scope> },
     GraphMinMax { graph: Box<GraphMinMax> },
     PatternEditor { edit: Box<PatternEditor> },
 }
@@ -256,6 +258,7 @@ impl std::fmt::Debug for Control {
             Control::Connector { .. } => write!(f, "Ctrl::Connector"),
             Control::OctaveKeys { .. } => write!(f, "Ctrl::OctaveKeys"),
             Control::Graph { .. } => write!(f, "Ctrl::Graph"),
+            Control::Scope { .. } => write!(f, "Ctrl::Scope"),
             Control::GraphMinMax { .. } => write!(f, "Ctrl::GraphMinMax"),
             Control::PatternEditor { .. } => write!(f, "Ctrl::PatternEditor"),
         }
@@ -369,6 +372,7 @@ impl Control {
             Control::Connector { .. } => true,
             Control::OctaveKeys { .. } => true,
             Control::Graph { .. } => true,
+            Control::Scope { .. } => true,
             Control::GraphMinMax { .. } => true,
             Control::PatternEditor { .. } => true,
             Control::None => false,
@@ -395,6 +399,9 @@ impl Control {
             Control::Graph { graph } => {
                 graph.draw_frame(w, &dpi_style, painter);
             }
+            Control::Scope { scope } => {
+                scope.draw_frame(w, &dpi_style, painter);
+            }
             Control::GraphMinMax { graph } => {
                 graph.draw_frame(w, &dpi_style, painter);
             }
@@ -417,6 +424,7 @@ impl Control {
             Control::Connector { .. } => true,
             Control::OctaveKeys { .. } => true,
             Control::Graph { .. } => false,
+            Control::Scope { .. } => false,
             Control::GraphMinMax { .. } => false,
             Control::PatternEditor { .. } => true,
         }
@@ -435,6 +443,7 @@ impl Control {
             Control::Connector { .. } => true,
             Control::OctaveKeys { .. } => true,
             Control::Graph { .. } => false,
+            Control::Scope { .. } => false,
             Control::GraphMinMax { .. } => false,
             Control::PatternEditor { .. } => true,
         }
@@ -452,6 +461,7 @@ impl Control {
             | Control::Connector { .. }
             | Control::OctaveKeys { .. }
             | Control::Graph { .. }
+            | Control::Scope { .. }
             | Control::GraphMinMax { .. }
             | Control::PatternEditor { .. }
             | Control::HexKnob { .. } => ev,
@@ -619,6 +629,9 @@ impl Control {
             Control::Graph { graph } => {
                 graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
+            Control::Scope { scope } => {
+                scope.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
+            }
             Control::GraphMinMax { graph } => {
                 graph.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
@@ -778,6 +791,7 @@ impl Control {
             Control::Connector { con } => con.get_generation(),
             Control::OctaveKeys { keys } => keys.get_generation(),
             Control::Graph { graph } => graph.get_generation(),
+            Control::Scope { scope } => scope.get_generation(),
             Control::GraphMinMax { graph } => graph.get_generation(),
             Control::PatternEditor { edit } => edit.get_generation(),
         }
@@ -836,6 +850,7 @@ impl Control {
                 keys.handle(w, event, out_events);
             }
             Control::Graph { .. } => {}
+            Control::Scope { .. } => {}
             Control::GraphMinMax { .. } => {}
             Control::PatternEditor { edit } => {
                 edit.handle(w, event, out_events);

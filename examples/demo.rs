@@ -202,6 +202,35 @@ fn main() {
                 _ => {}
             });
 
+            let wtwid_cont = Widget::new(style_ref.clone());
+            wtwid_cont.change_layout(|layout| {
+                layout.layout_type = Some(LayoutType::Column);
+            });
+
+            let scope_style = style_ref.with_style_clone(|style| {
+                style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
+                style.color = hexotk::style::UI_SELECT_CLR;
+                style.ext = StyleExt::Graph {
+                    graph_line: 2.0,
+                    vline1: 1.0,
+                    vline2: 1.0,
+                    hline: 0.75,
+                    vline1_color: hexotk::style::UI_PRIM2_CLR,
+                    vline2_color: hexotk::style::UI_PRIM_CLR,
+                    hline_color: hexotk::style::UI_ACCENT_CLR,
+                };
+            });
+            let scope = Widget::new(scope_style.clone());
+            let sd = Rc::new(RefCell::new(StaticScopeData::new()));
+            for xi in 0..512 {
+                sd.borrow_mut()
+                    .set_sample(xi, ((xi as f32 / 128.0) * std::f32::consts::PI * 2.0).sin());
+            }
+            scope.set_ctrl(Control::Scope { scope: Box::new(Scope::new(sd)) });
+
+            wtwid_cont.add(wtwid);
+            wtwid_cont.add(scope);
+
             wtd.set_text("XXX\n[a:Click Here!]\nAnd an image:[h30Ihex_test.png:]".to_string());
 
             let mut cnt = 0;
@@ -438,7 +467,7 @@ fn main() {
             let wtwid_row = Widget::new(style_ref.clone());
             wtwid_row.enable_cache();
             wtwid_row.add(hexgrid.clone());
-            wtwid_row.add(wtwid.clone());
+            wtwid_row.add(wtwid_cont.clone());
             wtwid_row.add(pedit.clone());
             wtwid_row.change_layout(|layout| {
                 layout.layout_type = Some(LayoutType::Row);
@@ -574,7 +603,7 @@ fn main() {
 
             ui
         }),
-//        baseview::WindowScalePolicy::ScaleFactor(0.5),
+        //        baseview::WindowScalePolicy::ScaleFactor(0.5),
         baseview::WindowScalePolicy::SystemScaleFactor,
     );
 }

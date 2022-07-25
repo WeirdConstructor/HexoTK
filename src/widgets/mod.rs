@@ -1,6 +1,7 @@
 mod connector;
 mod entry;
 mod graph;
+mod scope;
 mod graph_minmax;
 mod hexgrid;
 mod hexknob;
@@ -11,6 +12,7 @@ mod wichtext;
 pub use connector::{Connector, ConnectorData};
 pub use entry::{EditableText, Entry, TextField};
 pub use graph::{Graph, GraphModel, StaticGraphData};
+pub use scope::{Scope, ScopeModel, StaticScopeData};
 pub use graph_minmax::{GraphMinMax, GraphMinMaxModel, StaticGraphMinMaxData};
 pub use hexgrid::{HexCell, HexDir, HexEdge, HexGrid, HexGridModel, HexHLight};
 pub use hexknob::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
