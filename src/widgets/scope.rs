@@ -139,7 +139,7 @@ impl Scope {
         let line1_color = style.vline1_color();
         let line2_color = style.vline2_color();
 
-        for (i, buf) in self.draw_buf.iter().enumerate() {
+        for (i, buf) in self.draw_buf.iter().enumerate().rev() {
             if !data.is_active(i) {
                 continue;
             }
