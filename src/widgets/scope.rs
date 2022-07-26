@@ -19,42 +19,72 @@ pub trait ScopeModel {
     fn signal_len(&self) -> usize;
     fn get(&self, sig: usize, idx: usize) -> f32;
     fn is_active(&self, sig: usize) -> bool;
+    fn fmt_val(&self, sig: usize, buf: &mut [u8]) -> usize;
 }
 
 #[derive(Debug, Clone)]
 pub struct StaticScopeData {
-    samples: Vec<f32>,
+    samples: Vec<Vec<f32>>,
 }
 
 impl StaticScopeData {
     pub fn new() -> Self {
-        Self { samples: vec![0.0; SCOPE_SAMPLES] }
+        let mut v = vec![];
+        v.push(vec![0.0; SCOPE_SAMPLES]);
+        v.push(vec![0.0; SCOPE_SAMPLES]);
+        v.push(vec![0.0; SCOPE_SAMPLES]);
+        Self { samples: v }
     }
 
     pub fn clear(&mut self) {
-        self.samples.clear();
+        self.samples[0].clear();
+        self.samples[1].clear();
+        self.samples[2].clear();
     }
 
-    pub fn set_sample(&mut self, i: usize, y: f32) {
-        if self.samples.len() <= i {
-            self.samples.resize(i + 1, 0.0);
+    pub fn set_sample(&mut self, sig: usize, i: usize, y: f32) {
+        if self.samples[sig].len() <= i {
+            self.samples[sig].resize(i + 1, 0.0);
         }
-        self.samples[i] = y;
+        self.samples[sig][i] = y;
     }
 }
 
 impl ScopeModel for StaticScopeData {
     fn signal_count(&self) -> usize {
-        1
+        3
     }
     fn signal_len(&self) -> usize {
         self.samples.len()
     }
-    fn get(&self, _sig: usize, idx: usize) -> f32 {
-        self.samples[idx]
+    fn get(&self, sig: usize, idx: usize) -> f32 {
+        self.samples[sig][idx]
     }
     fn is_active(&self, sig: usize) -> bool {
-        sig == 0
+        true
+    }
+    fn fmt_val(&self, sig: usize, buf: &mut [u8]) -> usize {
+        use std::io::Write;
+        let max_len = buf.len();
+        let mut bw = std::io::BufWriter::new(buf);
+        match write!(
+            bw,
+            "{} min: {:6.3} max: {:6.3} pp: {:6.3}",
+            //                   self.min, self.max, self.avg)
+            sig,
+            -0.1212,
+            0.992343,
+            0.3432
+        ) {
+            Ok(_) => {
+                if bw.buffer().len() > max_len {
+                    max_len
+                } else {
+                    bw.buffer().len()
+                }
+            }
+            Err(_) => 0,
+        }
     }
 }
 
@@ -62,11 +92,19 @@ pub struct Scope {
     draw_buf: Vec<[(f32, f32); SCOPE_SAMPLES]>,
     data: Rc<RefCell<dyn ScopeModel>>,
     live_area: Rect,
+    lbl_buf: [u8; 50],
+    txt_h: f32,
 }
 
 impl Scope {
     pub fn new(data: Rc<RefCell<dyn ScopeModel>>) -> Self {
-        Self { data, draw_buf: vec![], live_area: Rect::from(0.0, 0.0, 0.0, 0.0) }
+        Self {
+            data,
+            draw_buf: vec![],
+            live_area: Rect::from(0.0, 0.0, 0.0, 0.0),
+            lbl_buf: [0; 50],
+            txt_h: 0.0,
+        }
     }
 
     pub fn get_generation(&self) -> u64 {
@@ -133,6 +171,8 @@ impl Scope {
         let hline = style.hline();
         let hline_color = style.hline_color();
 
+        self.txt_h = p.font_height(style.font_size() as f32, true);
+
         if hline > 0.1 {
             p.path_stroke(
                 hline,
@@ -148,12 +188,52 @@ impl Scope {
         }
     }
 
-    pub fn draw_frame(&mut self, _w: &Widget, style: &DPIStyle, p: &mut Painter) {
+    pub fn draw_frame(&mut self, w: &Widget, style: &DPIStyle, p: &mut Painter) {
+        let mut dbg = w.debug_tag();
+
         let sig_cnt = self.data.borrow().signal_count();
         if sig_cnt > self.draw_buf.len() {
             self.draw_buf.resize_with(sig_cnt, || [(0.0, 0.0); SCOPE_SAMPLES]);
         }
-        self.draw_samples(self.live_area);
+        self.draw_samples(self.live_area.shrink(0.0, self.txt_h * 2.0));
         self.draw_graph(style, p);
+
+        let line_color = style.color();
+        let line1_color = style.vline1_color();
+        let line2_color = style.vline2_color();
+
+        let data = self.data.borrow();
+        for i in 0..sig_cnt {
+            if !data.is_active(i) {
+                continue;
+            }
+
+            let color = match i {
+                1 => line1_color,
+                2 => line2_color,
+                _ => line_color,
+            };
+
+            let len = data.fmt_val(i, &mut self.lbl_buf[..]);
+            let val_s = std::str::from_utf8(&self.lbl_buf[0..len]).unwrap();
+            dbg.set_logic_pos(i as i32, 0);
+
+            let y = if i == 2 {
+                self.live_area.y + self.live_area.h - self.txt_h
+            } else {
+                self.live_area.y + self.txt_h * (i as f32)
+            };
+            p.label(
+                style.font_size(),
+                0,
+                color,
+                self.live_area.x,
+                y,
+                self.live_area.w,
+                self.txt_h,
+                val_s,
+                dbg.source("scope_label"),
+            );
+        }
     }
 }

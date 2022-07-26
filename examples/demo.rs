@@ -210,6 +210,7 @@ fn main() {
             let scope_style = style_ref.with_style_clone(|style| {
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
                 style.color = hexotk::style::UI_SELECT_CLR;
+                style.font_size = 12.0;
                 style.ext = StyleExt::Graph {
                     graph_line: 2.0,
                     vline1: 1.0,
@@ -224,7 +225,17 @@ fn main() {
             let sd = Rc::new(RefCell::new(StaticScopeData::new()));
             for xi in 0..512 {
                 sd.borrow_mut()
-                    .set_sample(xi, ((xi as f32 / 128.0) * std::f32::consts::PI * 2.0).sin());
+                    .set_sample(0, xi, 1.0 * ((xi as f32 / 128.0) * std::f32::consts::PI * 2.0).sin());
+            }
+
+            for xi in 0..512 {
+                sd.borrow_mut()
+                    .set_sample(1, xi, 0.5 * ((xi as f32 / 256.0) * std::f32::consts::PI * 2.0).sin());
+            }
+
+            for xi in 0..512 {
+                sd.borrow_mut()
+                    .set_sample(2, xi, 0.2 * ((xi as f32 / 16.0) * std::f32::consts::PI * 2.0).sin());
             }
             scope.set_ctrl(Control::Scope { scope: Box::new(Scope::new(sd)) });
 
