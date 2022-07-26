@@ -379,6 +379,10 @@ impl Control {
         }
     }
     pub fn draw_frame(&mut self, w: &Widget, painter: &mut Painter) {
+        if !w.is_visible() {
+            return;
+        }
+
         let logic_style = w.style();
         let dpi_style = DPIStyle::new_from(painter.dpi_factor, &logic_style);
         match self {
