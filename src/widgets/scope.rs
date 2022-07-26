@@ -60,7 +60,7 @@ impl ScopeModel for StaticScopeData {
     fn get(&self, sig: usize, idx: usize) -> f32 {
         self.samples[sig][idx]
     }
-    fn is_active(&self, sig: usize) -> bool {
+    fn is_active(&self, _sig: usize) -> bool {
         true
     }
     fn fmt_val(&self, sig: usize, buf: &mut [u8]) -> usize {
@@ -69,7 +69,7 @@ impl ScopeModel for StaticScopeData {
         let mut bw = std::io::BufWriter::new(buf);
         match write!(
             bw,
-            "{} min: {:6.3} max: {:6.3} pp: {:6.3}",
+            "{} min: {:6.3} max: {:6.3} rng: {:6.3}",
             //                   self.min, self.max, self.avg)
             sig,
             -0.1212,
