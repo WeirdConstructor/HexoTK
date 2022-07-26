@@ -542,9 +542,16 @@ impl UI {
 
         while let Some(wid_id) = self.cur_parent_lookup.pop() {
             if let Some(wid) = self.widgets.borrow().get(wid_id) {
+                // Do not lookup parents and mark them for redraw, if the
+                // widget that was marked for redraw is not visible anyways.
+                if !wid.is_visible() {
+                    continue;
+                }
+
                 if let Some(parent) = wid.parent() {
                     let parent_id = parent.unique_id();
                     self.cur_redraw.insert(parent_id);
+                    println!("parent redraw: {} ({})", parent_id, parent.tag());
                     self.cur_parent_lookup.push(parent_id);
                 }
             }
@@ -982,7 +989,6 @@ impl WindowUI for UI {
 
         let origin = Rect::from(0.0, 0.0, self.win_w, self.win_h);
 
-        //d// println!("REDRAW: {:?}", self.cur_redraw);
         if need_redraw {
             self.ftm.start_measure();
             if self.fb.is_some() {
@@ -996,6 +1002,8 @@ impl WindowUI for UI {
             notifier.swap_redraw(&mut self.cur_redraw);
             notifier.clear_redraw();
             self.ftm.end_measure();
+
+            println!("redraw (lbl={}): {:?} ", self.fb.is_some(), self.cur_redraw.len());
 
             for layer in &self.layers {
                 widget_draw(&layer.root, &self.cur_redraw, origin, painter);

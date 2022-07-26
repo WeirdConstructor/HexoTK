@@ -267,12 +267,7 @@ impl Widget {
     }
 
     pub fn parent(&self) -> Option<Widget> {
-        let w = self.0.borrow();
-        if let Some(parent) = &w.parent {
-            Self::from_weak(parent)
-        } else {
-            None
-        }
+        self.0.borrow().parent()
     }
 
     pub fn add(&self, child: Widget) {
@@ -308,11 +303,7 @@ impl Widget {
     }
 
     pub fn is_visible(&self) -> bool {
-        if let Some(parent) = self.parent() {
-            parent.is_visible() && self.with_layout(|layout| layout.visible)
-        } else {
-            self.with_layout(|layout| layout.visible)
-        }
+        self.0.borrow().is_visible()
     }
 
     pub fn show(&self) {
@@ -426,6 +417,14 @@ impl WidgetImpl {
         }
     }
 
+    pub fn is_visible(&self) -> bool {
+        if let Some(parent) = self.parent() {
+            parent.is_visible() && self.with_layout(|layout| layout.visible)
+        } else {
+            self.with_layout(|layout| layout.visible)
+        }
+    }
+
     pub fn reg(
         &mut self,
         ev_name: &str,
@@ -489,7 +488,9 @@ impl WidgetImpl {
     }
 
     pub fn emit_redraw_required(&self) {
-        self.notifier.as_ref().map(|n| n.redraw(self.unique_id));
+        if self.is_visible() {
+            self.notifier.as_ref().map(|n| n.redraw(self.unique_id));
+        }
     }
 
     pub fn activate(&self) {
