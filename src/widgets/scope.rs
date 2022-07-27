@@ -19,6 +19,7 @@ pub trait ScopeModel {
     fn signal_len(&self) -> usize;
     fn get(&self, sig: usize, idx: usize) -> (f32, f32);
     fn get_offs_gain(&self, sig: usize) -> (f32, f32);
+    fn get_threshold(&self) -> Option<f32>;
     fn is_active(&self, sig: usize) -> bool;
     fn fmt_val(&self, sig: usize, buf: &mut [u8]) -> usize;
 }
@@ -63,9 +64,16 @@ impl ScopeModel for StaticScopeData {
         (v, v)
     }
     fn get_offs_gain(&self, sig: usize) -> (f32, f32) {
-        if sig == 0 { (0.0, 1.0) }
-        else if sig == 1 { (0.25, 0.25) }
-        else { (-0.25, 0.25) }
+        if sig == 0 {
+            (0.0, 1.0)
+        } else if sig == 1 {
+            (0.25, 0.25)
+        } else {
+            (-0.25, 0.25)
+        }
+    }
+    fn get_threshold(&self) -> Option<f32> {
+        Some(0.9)
     }
     fn is_active(&self, _sig: usize) -> bool {
         true
@@ -159,6 +167,7 @@ impl Scope {
         let line1_color = style.vline1_color();
         let line2_color = style.vline2_color();
         let hline = style.hline();
+        let hline_color = style.hline_color();
 
         for (i, buf) in self.draw_buf.iter().enumerate().rev() {
             if !data.is_active(i) {
@@ -187,6 +196,25 @@ impl Scope {
             }
 
             p.path_fill(color, &mut buf.iter().copied(), false);
+        }
+
+        if let Some(thres) = data.get_threshold() {
+            let thres_y = (pos.y + pos.h * (0.5 - thres * 0.5)).round();
+            p.path_stroke(
+                hline,
+                lighten_clr(3, hline_color),
+                &mut [(pos.x, thres_y), (pos.x + pos.w, thres_y)].iter().copied(),
+                false,
+            );
+            let marker_h = hline * 6.0;
+            let marker_w = hline * 10.0;
+            p.rect_fill(
+                lighten_clr(2, hline_color),
+                pos.x + pos.w - marker_w,
+                thres_y - marker_h * 0.5,
+                marker_w,
+                marker_h,
+            );
         }
     }
 

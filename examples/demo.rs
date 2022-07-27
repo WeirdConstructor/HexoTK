@@ -215,7 +215,7 @@ fn main() {
                     graph_line: 2.0,
                     vline1: 5.0,
                     vline2: 1.0,
-                    hline: 0.75,
+                    hline: 1.0,
                     vline1_color: hexotk::style::UI_PRIM2_CLR,
                     vline2_color: hexotk::style::UI_PRIM_CLR,
                     hline_color: hexotk::style::UI_ACCENT_CLR,
