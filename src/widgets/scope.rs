@@ -18,6 +18,7 @@ pub trait ScopeModel {
     fn signal_count(&self) -> usize;
     fn signal_len(&self) -> usize;
     fn get(&self, sig: usize, idx: usize) -> (f32, f32);
+    fn get_offs_gain(&self, sig: usize) -> (f32, f32);
     fn is_active(&self, sig: usize) -> bool;
     fn fmt_val(&self, sig: usize, buf: &mut [u8]) -> usize;
 }
@@ -60,6 +61,11 @@ impl ScopeModel for StaticScopeData {
     fn get(&self, sig: usize, idx: usize) -> (f32, f32) {
         let v = self.samples[sig][idx];
         (v, v)
+    }
+    fn get_offs_gain(&self, sig: usize) -> (f32, f32) {
+        if sig == 0 { (0.0, 1.0) }
+        else if sig == 1 { (0.25, 0.25) }
+        else { (-0.25, 0.25) }
     }
     fn is_active(&self, _sig: usize) -> bool {
         true
@@ -119,6 +125,8 @@ impl Scope {
         let data = self.data.borrow();
 
         for (sig_idx, buf) in self.draw_buf.iter_mut().enumerate() {
+            let (offs, gain) = data.get_offs_gain(sig_idx);
+
             if !data.is_active(sig_idx) {
                 continue;
             }
@@ -134,8 +142,8 @@ impl Scope {
 
                 let gx = (i as f32 * self.live_area.w) / (SCOPE_SAMPLES as f32);
 
-                let gy_max = (1.0 - ((max * 0.5) + 0.5).clamp(0.0, 1.0)) * pos.h - 0.5 * line_w;
-                let gy_min = (1.0 - ((min * 0.5) + 0.5).clamp(0.0, 1.0)) * pos.h + 0.5 * line_w;
+                let gy_max = (1.0 - ((max * 0.5 * gain + offs) + 0.5)) * pos.h - 0.5 * line_w;
+                let gy_min = (1.0 - ((min * 0.5 * gain + offs) + 0.5)) * pos.h + 0.5 * line_w;
 
                 buf[i] = ((pos.x + (gx as f32)), (pos.y + (gy_max as f32)));
                 buf[SCOPE_SAMPLES + (SCOPE_SAMPLES - (i + 1))] =
@@ -144,12 +152,13 @@ impl Scope {
         }
     }
 
-    fn draw_graph(&mut self, style: &DPIStyle, p: &mut Painter) {
+    fn draw_graph(&mut self, style: &DPIStyle, pos: Rect, p: &mut Painter) {
         let data = self.data.borrow();
 
         let line_color = style.color();
         let line1_color = style.vline1_color();
         let line2_color = style.vline2_color();
+        let hline = style.hline();
 
         for (i, buf) in self.draw_buf.iter().enumerate().rev() {
             if !data.is_active(i) {
@@ -162,6 +171,21 @@ impl Scope {
                 _ => line_color,
             };
             p.path_fill(color, &mut buf.iter().copied(), false);
+
+            let (offs, _) = data.get_offs_gain(i);
+            if offs.abs() > 0.001 {
+                p.path_stroke(
+                    hline,
+                    color,
+                    &mut [
+                        (pos.x, (pos.y + pos.h * (0.5 + offs)).round()),
+                        (pos.x + pos.w, (pos.y + pos.h * (0.5 + offs)).round()),
+                    ]
+                    .iter()
+                    .copied(),
+                    false,
+                );
+            }
         }
     }
 
@@ -202,8 +226,12 @@ impl Scope {
         if sig_cnt > self.draw_buf.len() {
             self.draw_buf.resize_with(sig_cnt, || [(0.0, 0.0); 2 * SCOPE_SAMPLES]);
         }
-        self.draw_samples(style, self.live_area.shrink(0.0, self.txt_h * 2.0));
-        self.draw_graph(style, p);
+
+        let draw_region = self.live_area.shrink(0.0, self.txt_h * 2.0);
+        self.draw_samples(style, draw_region);
+        p.clip_region(draw_region.x, draw_region.y, draw_region.w, draw_region.h);
+        self.draw_graph(style, draw_region, p);
+        p.reset_clip_region();
 
         let line_color = style.color();
         let line1_color = style.vline1_color();
