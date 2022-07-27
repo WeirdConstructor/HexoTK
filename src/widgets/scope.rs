@@ -142,8 +142,8 @@ impl Scope {
 
                 let gx = (i as f32 * self.live_area.w) / (SCOPE_SAMPLES as f32);
 
-                let gy_max = (1.0 - ((max * 0.5 * gain + offs) + 0.5)) * pos.h - 0.5 * line_w;
-                let gy_min = (1.0 - ((min * 0.5 * gain + offs) + 0.5)) * pos.h + 0.5 * line_w;
+                let gy_max = (1.0 - ((max * gain + offs) * 0.5 + 0.5)) * pos.h - 0.5 * line_w;
+                let gy_min = (1.0 - ((min * gain + offs) * 0.5 + 0.5)) * pos.h + 0.5 * line_w;
 
                 buf[i] = ((pos.x + (gx as f32)), (pos.y + (gy_max as f32)));
                 buf[SCOPE_SAMPLES + (SCOPE_SAMPLES - (i + 1))] =
@@ -170,22 +170,23 @@ impl Scope {
                 2 => line2_color,
                 _ => line_color,
             };
-            p.path_fill(color, &mut buf.iter().copied(), false);
 
             let (offs, _) = data.get_offs_gain(i);
             if offs.abs() > 0.001 {
                 p.path_stroke(
                     hline,
-                    color,
+                    darken_clr(2, color),
                     &mut [
-                        (pos.x, (pos.y + pos.h * (0.5 + offs)).round()),
-                        (pos.x + pos.w, (pos.y + pos.h * (0.5 + offs)).round()),
+                        (pos.x, (pos.y + pos.h * (0.5 - offs * 0.5)).round()),
+                        (pos.x + pos.w, (pos.y + pos.h * (0.5 - offs * 0.5)).round()),
                     ]
                     .iter()
                     .copied(),
                     false,
                 );
             }
+
+            p.path_fill(color, &mut buf.iter().copied(), false);
         }
     }
 
