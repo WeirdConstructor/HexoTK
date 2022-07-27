@@ -199,7 +199,10 @@ impl Scope {
         }
 
         if let Some(thres) = data.get_threshold() {
-            let thres_y = (pos.y + pos.h * (0.5 - thres * 0.5)).round();
+            let (offs, _) = data.get_offs_gain(0);
+
+            let thres_y = (pos.y + pos.h * (0.5 - (thres - offs * 0.5) * 0.5)).round();
+
             p.path_stroke(
                 hline,
                 lighten_clr(3, hline_color),
