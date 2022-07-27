@@ -17,7 +17,7 @@ pub const SCOPE_SAMPLES: usize = 512;
 pub trait ScopeModel {
     fn signal_count(&self) -> usize;
     fn signal_len(&self) -> usize;
-    fn get(&self, sig: usize, idx: usize) -> f32;
+    fn get(&self, sig: usize, idx: usize) -> (f32, f32);
     fn is_active(&self, sig: usize) -> bool;
     fn fmt_val(&self, sig: usize, buf: &mut [u8]) -> usize;
 }
@@ -57,8 +57,9 @@ impl ScopeModel for StaticScopeData {
     fn signal_len(&self) -> usize {
         self.samples.len()
     }
-    fn get(&self, sig: usize, idx: usize) -> f32 {
-        self.samples[sig][idx]
+    fn get(&self, sig: usize, idx: usize) -> (f32, f32) {
+        let v = self.samples[sig][idx];
+        (v, v)
     }
     fn is_active(&self, _sig: usize) -> bool {
         true
@@ -89,7 +90,7 @@ impl ScopeModel for StaticScopeData {
 }
 
 pub struct Scope {
-    draw_buf: Vec<[(f32, f32); SCOPE_SAMPLES]>,
+    draw_buf: Vec<[(f32, f32); 2 * SCOPE_SAMPLES]>,
     data: Rc<RefCell<dyn ScopeModel>>,
     live_area: Rect,
     lbl_buf: [u8; 50],
@@ -111,7 +112,10 @@ impl Scope {
         0
     }
 
-    fn draw_samples(&mut self, pos: Rect) {
+    fn draw_samples(&mut self, style: &DPIStyle, pos: Rect) {
+        let line_w = style.graph_line();
+        let line1 = style.vline1();
+        let line2 = style.vline2();
         let data = self.data.borrow();
 
         for (sig_idx, buf) in self.draw_buf.iter_mut().enumerate() {
@@ -119,12 +123,23 @@ impl Scope {
                 continue;
             }
 
-            for i in 0..SCOPE_SAMPLES {
-                let gx = (i as f32 * self.live_area.w) / (SCOPE_SAMPLES as f32);
-                let sample = data.get(sig_idx, i);
-                let gy = (1.0 - ((sample * 0.5) + 0.5).clamp(0.0, 1.0)) * pos.h;
+            let line_w = match sig_idx {
+                1 => line1,
+                2 => line2,
+                _ => line_w,
+            };
 
-                buf[i] = ((pos.x + (gx as f32)), (pos.y + (gy as f32)));
+            for i in 0..SCOPE_SAMPLES {
+                let (max, min) = data.get(sig_idx, i);
+
+                let gx = (i as f32 * self.live_area.w) / (SCOPE_SAMPLES as f32);
+
+                let gy_max = (1.0 - ((max * 0.5) + 0.5).clamp(0.0, 1.0)) * pos.h - 0.5 * line_w;
+                let gy_min = (1.0 - ((min * 0.5) + 0.5).clamp(0.0, 1.0)) * pos.h + 0.5 * line_w;
+
+                buf[i] = ((pos.x + (gx as f32)), (pos.y + (gy_max as f32)));
+                buf[SCOPE_SAMPLES + (SCOPE_SAMPLES - (i + 1))] =
+                    ((pos.x + (gx as f32)), (pos.y + (gy_min as f32)));
             }
         }
     }
@@ -133,9 +148,6 @@ impl Scope {
         let data = self.data.borrow();
 
         let line_color = style.color();
-        let line_w = style.graph_line();
-        let line1 = style.vline1();
-        let line2 = style.vline2();
         let line1_color = style.vline1_color();
         let line2_color = style.vline2_color();
 
@@ -149,12 +161,7 @@ impl Scope {
                 2 => line2_color,
                 _ => line_color,
             };
-            let line_w = match i {
-                1 => line1,
-                2 => line2,
-                _ => line_w,
-            };
-            p.path_stroke(line_w, color, &mut buf.iter().copied(), false);
+            p.path_fill(color, &mut buf.iter().copied(), false);
         }
     }
 
@@ -193,9 +200,9 @@ impl Scope {
 
         let sig_cnt = self.data.borrow().signal_count();
         if sig_cnt > self.draw_buf.len() {
-            self.draw_buf.resize_with(sig_cnt, || [(0.0, 0.0); SCOPE_SAMPLES]);
+            self.draw_buf.resize_with(sig_cnt, || [(0.0, 0.0); 2 * SCOPE_SAMPLES]);
         }
-        self.draw_samples(self.live_area.shrink(0.0, self.txt_h * 2.0));
+        self.draw_samples(style, self.live_area.shrink(0.0, self.txt_h * 2.0));
         self.draw_graph(style, p);
 
         let line_color = style.color();

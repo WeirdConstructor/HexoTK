@@ -213,7 +213,7 @@ fn main() {
                 style.font_size = 12.0;
                 style.ext = StyleExt::Graph {
                     graph_line: 2.0,
-                    vline1: 1.0,
+                    vline1: 5.0,
                     vline2: 1.0,
                     hline: 0.75,
                     vline1_color: hexotk::style::UI_PRIM2_CLR,
