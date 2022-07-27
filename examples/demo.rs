@@ -224,18 +224,27 @@ fn main() {
             let scope = Widget::new(scope_style.clone());
             let sd = Rc::new(RefCell::new(StaticScopeData::new()));
             for xi in 0..512 {
-                sd.borrow_mut()
-                    .set_sample(0, xi, 1.0 * ((xi as f32 / 128.0) * std::f32::consts::PI * 2.0).sin());
+                sd.borrow_mut().set_sample(
+                    0,
+                    xi,
+                    1.0 * ((xi as f32 / 128.0) * std::f32::consts::PI * 2.0).sin(),
+                );
             }
 
             for xi in 0..512 {
-                sd.borrow_mut()
-                    .set_sample(1, xi, 0.5 * ((xi as f32 / 256.0) * std::f32::consts::PI * 2.0).sin());
+                sd.borrow_mut().set_sample(
+                    1,
+                    xi,
+                    0.5 * ((xi as f32 / 256.0) * std::f32::consts::PI * 2.0).sin(),
+                );
             }
 
             for xi in 0..512 {
-                sd.borrow_mut()
-                    .set_sample(2, xi, 0.2 * ((xi as f32 / 16.0) * std::f32::consts::PI * 2.0).sin());
+                sd.borrow_mut().set_sample(
+                    2,
+                    xi,
+                    0.2 * ((xi as f32 / 16.0) * std::f32::consts::PI * 2.0).sin(),
+                );
             }
             scope.set_ctrl(Control::Scope { scope: Box::new(Scope::new(sd)) });
 

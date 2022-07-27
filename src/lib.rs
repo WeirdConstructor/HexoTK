@@ -36,12 +36,12 @@ pub use widgets::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
 pub use widgets::{Graph, GraphModel, StaticGraphData};
-pub use widgets::{Scope, ScopeModel, StaticScopeData, SCOPE_SAMPLES};
 pub use widgets::{GraphMinMax, GraphMinMaxModel, StaticGraphMinMaxData};
 pub use widgets::{HexCell, HexDir, HexEdge, HexGrid, HexGridModel, HexHLight};
 pub use widgets::{
     PatternData, PatternEditor, PatternEditorFeedback, PatternEditorFeedbackDummy, UIPatternModel,
 };
+pub use widgets::{Scope, ScopeModel, StaticScopeData, SCOPE_SAMPLES};
 pub use widgets::{WichTextData, WichTextSimpleDataStore};
 
 pub use morphorm::{LayoutType, PositionType, Units};

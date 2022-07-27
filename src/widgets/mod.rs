@@ -1,18 +1,17 @@
 mod connector;
 mod entry;
 mod graph;
-mod scope;
 mod graph_minmax;
 mod hexgrid;
 mod hexknob;
 mod octave_keys;
 mod pattern_editor;
+mod scope;
 mod wichtext;
 
 pub use connector::{Connector, ConnectorData};
 pub use entry::{EditableText, Entry, TextField};
 pub use graph::{Graph, GraphModel, StaticGraphData};
-pub use scope::{Scope, ScopeModel, StaticScopeData, SCOPE_SAMPLES};
 pub use graph_minmax::{GraphMinMax, GraphMinMaxModel, StaticGraphMinMaxData};
 pub use hexgrid::{HexCell, HexDir, HexEdge, HexGrid, HexGridModel, HexHLight};
 pub use hexknob::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
@@ -20,6 +19,7 @@ pub use octave_keys::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
 pub use pattern_editor::{
     PatternData, PatternEditor, PatternEditorFeedback, PatternEditorFeedbackDummy, UIPatternModel,
 };
+pub use scope::{Scope, ScopeModel, StaticScopeData, SCOPE_SAMPLES};
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
 
 use keyboard_types::Key;

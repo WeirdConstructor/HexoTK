@@ -882,7 +882,14 @@ impl HexKnob {
         }
     }
 
-    pub fn draw(&mut self, w: &Widget, _style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        _style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
         let dpi_f = p.dpi_factor;
         let mut dbg = w.debug_tag();
         dbg.set_offs((real_pos.x - pos.x, real_pos.y - pos.y));

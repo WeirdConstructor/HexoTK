@@ -93,7 +93,14 @@ impl Entry {
         self.post_string = self.data.chars().skip(self.cursor).collect();
     }
 
-    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
         let real_offs = (real_pos.x - pos.x, real_pos.y - pos.y);
 
         p.clip_region(pos.x, pos.y, pos.w, pos.h);

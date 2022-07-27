@@ -497,7 +497,14 @@ impl HexGrid {
     }
 
     //    fn on_draw(&mut self, state: &mut State, entity: Entity, canvas: &mut Canvas) {
-    pub fn draw(&mut self, w: &Widget, style: &DPIStyle, pos: Rect, real_pos: Rect, p: &mut Painter) {
+    pub fn draw(
+        &mut self,
+        w: &Widget,
+        style: &DPIStyle,
+        pos: Rect,
+        real_pos: Rect,
+        p: &mut Painter,
+    ) {
         self.dpi_factor = p.dpi_factor;
         let is_hovered = w.is_hovered();
 

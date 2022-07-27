@@ -117,7 +117,7 @@ pub enum StyleExt {
         row_height: f32,
         col_width: f32,
         col_div_pad: f32,
-    }
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -150,7 +150,6 @@ pub struct Style {
     pub colors: Vec<(f32, f32, f32)>,
     pub ext: StyleExt,
 }
-
 
 impl Style {
     pub fn new() -> Self {
@@ -369,5 +368,4 @@ impl<'a> DPIStyle<'a> {
     color_ext_accessor! {StyleExt::Graph, hline_color, UI_ACCENT_CLR}
     color_ext_accessor! {StyleExt::Graph, vline1_color, UI_PRIM2_CLR}
     color_ext_accessor! {StyleExt::Graph, vline2_color, UI_PRIM_CLR}
-
 }
