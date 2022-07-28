@@ -259,9 +259,18 @@ impl Scope {
             self.draw_buf.resize_with(sig_cnt, || [(0.0, 0.0); 2 * SCOPE_SAMPLES]);
         }
 
+        // Some extra padding for the clip region, so that waveforms
+        // are not cut off at the top or bottom.
+        let extra_pad = 5.0 * p.dpi_factor;
+
         let draw_region = self.live_area.shrink(0.0, self.txt_h * 2.0);
         self.draw_samples(style, draw_region);
-        p.clip_region(draw_region.x, draw_region.y, draw_region.w, draw_region.h);
+        p.clip_region(
+            draw_region.x,
+            draw_region.y - extra_pad,
+            draw_region.w,
+            draw_region.h + 2.0 * extra_pad,
+        );
         self.draw_graph(style, draw_region, p);
         p.reset_clip_region();
 
