@@ -118,6 +118,13 @@ pub enum StyleExt {
         col_width: f32,
         col_div_pad: f32,
     },
+    BlockCode {
+        with_markers: bool,
+        grid_marker_color: (f32, f32, f32),
+        block_bg_hover_color: (f32, f32, f32),
+        block_bg_color: (f32, f32, f32),
+        port_select_color: (f32, f32, f32),
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -281,6 +288,18 @@ macro_rules! color_ext_accessor {
     };
 }
 
+macro_rules! bool_ext_accessor {
+    ($enum: ident :: $opt: ident, $field: ident, $default: expr) => {
+        pub fn $field(&self) -> bool {
+            if let $enum::$opt { $field, .. } = &self.style.ext {
+                *$field
+            } else {
+                $default
+            }
+        }
+    };
+}
+
 impl<'a> DPIStyle<'a> {
     pub fn new_from(dpi_factor: f32, style: &'a Style) -> Self {
         Self { style, dpi_factor }
@@ -368,4 +387,11 @@ impl<'a> DPIStyle<'a> {
     color_ext_accessor! {StyleExt::Graph, hline_color, UI_ACCENT_CLR}
     color_ext_accessor! {StyleExt::Graph, vline1_color, UI_PRIM2_CLR}
     color_ext_accessor! {StyleExt::Graph, vline2_color, UI_PRIM_CLR}
+
+    color_ext_accessor! {StyleExt::BlockCode, grid_marker_color, UI_ACCENT_DARK_CLR}
+    color_ext_accessor! {StyleExt::BlockCode, block_bg_hover_color, UI_ACCENT_CLR}
+    color_ext_accessor! {StyleExt::BlockCode, block_bg_color, UI_ACCENT_BG2_CLR}
+    color_ext_accessor! {StyleExt::BlockCode, port_select_color, UI_SELECT_CLR}
+
+    bool_ext_accessor! {StyleExt::BlockCode, with_markers, false}
 }

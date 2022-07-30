@@ -11,10 +11,10 @@ fn make_block_lang() -> Rc<RefCell<BlockLanguage>> {
 
     lang.define(BlockType {
         category: "source".to_string(),
-        name: "phasor".to_string(),
+        name: "phse".to_string(),
         rows: 1,
-        inputs: vec![Some("freq".to_string())],
-        outputs: vec![Some("s".to_string())],
+        inputs: vec![Some("f".to_string())],
+        outputs: vec![Some("".to_string())],
         area_count: 0,
         user_input: BlockUserInput::None,
         description: "A phasor, returns a saw tooth wave to scan through things or use as modulator.".to_string(),
@@ -52,7 +52,7 @@ fn main() {
 
             let block_fun = Rc::new(RefCell::new(BlockFun::new(lang)));
 
-            block_fun.borrow_mut().instanciate_at(0, 3, 3, "phasor", None).unwrap();
+            block_fun.borrow_mut().instanciate_at(0, 3, 3, "phse", None).unwrap();
 
             let s = style_ref.with_style_clone(|style| {
                 style.bg_color = hexotk::style::UI_ACCENT_BG1_CLR;
@@ -64,6 +64,14 @@ fn main() {
                 style.border = 2.0;
                 style.shadow_offs = (0.0, 0.0);
                 style.border_color = hexotk::style::UI_SELECT_CLR;
+                style.font_size = 10.0;
+                style.ext = StyleExt::BlockCode {
+                    with_markers: true,
+                    grid_marker_color: hexotk::style::UI_ACCENT_DARK_CLR,
+                    block_bg_hover_color: hexotk::style::UI_ACCENT_CLR,
+                    block_bg_color: hexotk::style::UI_ACCENT_BG2_CLR,
+                    port_select_color: hexotk::style::UI_SELECT_CLR,
+                };
             });
 
             let root = Widget::new(style_ref.clone());
@@ -73,7 +81,7 @@ fn main() {
 
             let blockcode = Widget::new(s.clone());
             blockcode.set_ctrl(Control::BlockCode { code: Box::new(BlockCode::new(block_fun.clone())) });
-            block_fun.borrow_mut().instanciate_at(0, 5, 5, "phasor", None).unwrap();
+            block_fun.borrow_mut().instanciate_at(0, 5, 5, "phse", None).unwrap();
 
             root.add(blockcode);
 
