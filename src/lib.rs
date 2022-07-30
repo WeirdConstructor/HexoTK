@@ -34,7 +34,7 @@ pub use widgets::EditableText;
 pub use widgets::Entry;
 pub use widgets::TextField;
 pub use widgets::WichText;
-pub use widgets::{BlockCode, BlockCodeView, BlockView};
+pub use widgets::{BlockCode, BlockCodeView, BlockView, BlockPos};
 pub use widgets::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
@@ -1052,6 +1052,7 @@ pub enum EvPayload {
     UserData(Rc<RefCell<Box<dyn std::any::Any>>>),
     Button(MButton),
     Text(String),
+    BlockPos { button: MButton, at: BlockPos, to: Option<BlockPos> },
     Pos { x: f32, y: f32 },
 }
 

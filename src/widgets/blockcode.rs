@@ -85,6 +85,7 @@ pub struct BlockCode {
     hover: Option<(usize, i64, i64, usize)>,
 
     m_down: Option<BlockPos>,
+    pan_on: Option<(f32, f32)>,
 
     shift_offs: (f32, f32),
     tmp_shift_offs: Option<(f32, f32)>,
@@ -103,6 +104,7 @@ impl BlockCode {
             areas: vec![],
             hover: None,
             m_down: None,
+            pan_on: None,
 
             shift_offs: (0.0, 0.0),
             tmp_shift_offs: None,
@@ -511,20 +513,63 @@ impl BlockCode {
 impl BlockCode {
     pub fn handle(&mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>) {
         match event {
-            InputEvent::MouseButtonPressed(MButton::Left) => {
+            InputEvent::MouseButtonPressed(btn) => {
                 if !w.is_hovered() {
+                    return;
+                }
+
+                if *btn != MButton::Middle {
+                    let (x, y) = self.mouse_pos;
+                    self.m_down = self.find_pos_at_mouse(x, y);
+
+                    w.activate();
+                    w.emit_redraw_required();
+                } else {
+                    self.pan_on = Some(self.mouse_pos);
+                }
+            }
+            InputEvent::MouseButtonReleased(btn) => {
+                if !w.is_active() {
                     return;
                 }
 
                 let (x, y) = self.mouse_pos;
 
-                w.activate();
-                w.emit_redraw_required();
-            }
-            InputEvent::MouseButtonReleased(MButton::Left) => {
-                if !w.is_active() {
-                    return;
+                if *btn == MButton::Middle {
+                    if let Some(tmp_shift_offs) = self.tmp_shift_offs.take() {
+                        self.shift_offs.0 += tmp_shift_offs.0;
+                        self.shift_offs.1 += tmp_shift_offs.1;
+                    }
+
+                    w.emit_redraw_required();
+                } else {
+                    let m_up = self.find_pos_at_mouse(x, y);
+
+                    if m_up == self.m_down {
+                        if let Some(pos) = m_up {
+                            out_events.push(w.event(
+                                "click",
+                                EvPayload::BlockPos { button: *btn, at: pos, to: None },
+                            ));
+                        }
+                    } else {
+                        if let (Some(down_pos), Some(up_pos)) = (self.m_down, m_up) {
+                            out_events.push(w.event(
+                                "drag",
+                                EvPayload::BlockPos {
+                                    button: *btn,
+                                    at: down_pos,
+                                    to: Some(up_pos),
+                                },
+                            ));
+                        }
+                    }
+
+                    w.emit_redraw_required();
                 }
+
+                self.m_down = None;
+                self.pan_on = None;
 
                 w.deactivate();
                 w.emit_redraw_required();
@@ -532,7 +577,22 @@ impl BlockCode {
             InputEvent::MousePosition(x, y) => {
                 self.mouse_pos = (*x, *y);
 
-                //                    w.emit_redraw_required();
+                if let Some((pan_x, pan_y)) = self.pan_on {
+                    self.tmp_shift_offs = Some((*x - pan_x, *y - pan_y));
+
+                    w.emit_redraw_required();
+                } else {
+                    if !w.is_hovered() {
+                        return;
+                    }
+
+                    let old_hover = self.hover;
+                    self.hover = self.find_area_at_mouse(*x, *y);
+
+                    if old_hover != self.hover {
+                        w.emit_redraw_required();
+                    }
+                }
             }
             _ => {}
         }

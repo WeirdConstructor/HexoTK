@@ -83,6 +83,85 @@ fn main() {
             blockcode.set_ctrl(Control::BlockCode { code: Box::new(BlockCode::new(block_fun.clone())) });
             block_fun.borrow_mut().instanciate_at(0, 5, 5, "phse", None).unwrap();
 
+            let code = block_fun.clone();
+            blockcode.reg("click", move |_ctx, _wid, ev| {
+                if let EvPayload::BlockPos { button, at, .. } = ev.data {
+                    if let BlockPos::Block { row, col, .. } = at {
+                        let (id, x, y) = at.pos();
+
+                        if button == MButton::Right {
+                            println!("PORT CLICK {:?}", at);
+                            code.borrow_mut()
+                                .shift_port(id, x, y, row, col == 1);
+                        } else {
+                            if col == 1 {
+                                let _ = code.borrow_mut()
+                                    .split_block_chain_after(
+                                        id, x, y, Some("->"));
+                            } else {
+                                let _ = code.borrow_mut()
+                                    .split_block_chain_after(
+                                        id, x - 1, y, None);
+                            }
+                        }
+
+                        code.borrow_mut()
+                            .recalculate_area_sizes();
+                    } else {
+                        println!("CLICK POPUP {:?}", at);
+    //                    state.insert_event(
+    //                        Event::new(PopupEvent::OpenAtCursor)
+    //                        .target(pop)
+    //                        .origin(Entity::root()));
+                    }
+//                    (*on_change)(state, entity, code.clone());
+                }
+                println!("CLICK: {:?}", ev);
+            });
+
+            let code = block_fun.clone();
+            blockcode.reg("drag", move |_ctx, _wid, ev| {
+                if let EvPayload::BlockPos { at, to: Some(to), button } = ev.data {
+                    println!("CLICK: {:?}", ev);
+                    let (id, x, y)    = at.pos();
+                    let (id2, x2, y2) = to.pos();
+
+                    println!("P1={:?} P2={:?}", at, to);
+
+                    if let BlockPos::Cell { .. } = at {
+                        if let BlockPos::Block { .. } = to {
+                            let _ = code.borrow_mut()
+                                .clone_block_from_to(
+                                    id2, x2, y2, id, x, y);
+                            code.borrow_mut()
+                                .recalculate_area_sizes();
+
+                            // (*ouagen_change)(state, entity, code.clone());
+                        }
+                    } else {
+                        if button == MButton::Right {
+                            let _ = code.borrow_mut()
+                                .move_block_from_to(
+                                    id, x, y, id2, x2, y2);
+                        } else {
+                            if at.pos() == to.pos() {
+                                let _ = code.borrow_mut()
+                                    .remove_at(id, x, y);
+                            } else {
+                                let _ = code.borrow_mut()
+                                    .move_block_chain_from_to(
+                                        id, x, y, id2, x2, y2);
+                            }
+                        }
+
+                        code.borrow_mut()
+                            .recalculate_area_sizes();
+
+                        // (*on_change)(state, entity, code.clone());
+                    }
+                }
+            });
+
             root.add(blockcode);
 
             let mut ui = Box::new(UI::new(Rc::new(RefCell::new(1))));
