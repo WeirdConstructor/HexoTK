@@ -6,6 +6,56 @@ use std::sync::{Arc, Mutex};
 const WINDOW_W: i32 = 1020;
 const WINDOW_H: i32 = 720;
 
+#[derive(Debug)]
+pub struct ASTNode {
+    pub id:    usize,
+    pub typ:   String,
+    pub lbl:   String,
+    pub nodes: Vec<(String, String, ASTNodeRef)>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ASTNodeRef(Rc<RefCell<ASTNode>>);
+
+impl ASTNodeRef {
+    pub fn walk_dump(&self, input: &str, output: &str, indent: usize) -> String {
+        let indent_str = "   ".repeat(indent + 1);
+
+        let out_port =
+            if output.len() > 0 { format!("(out: {})", output) }
+            else { "".to_string() };
+        let in_port =
+            if input.len() > 0 { format!("(in: {})", input) }
+            else { "".to_string() };
+
+        let mut s = format!(
+            "{}{}#{}[{}] {}{}\n",
+            indent_str, self.0.borrow().id, self.0.borrow().typ,
+            self.0.borrow().lbl, out_port, in_port);
+
+        for (inp, out, n) in &self.0.borrow().nodes {
+            s += &n.walk_dump(&inp, &out, indent + 1);
+        }
+
+        s
+    }
+}
+
+impl BlockASTNode for ASTNodeRef {
+    fn from(id: usize, typ: &str, lbl: &str) -> ASTNodeRef {
+        ASTNodeRef(Rc::new(RefCell::new(ASTNode {
+            id,
+            typ:    typ.to_string(),
+            lbl:    lbl.to_string(),
+            nodes:  vec![],
+        })))
+    }
+
+    fn add_node(&self, in_port: String, out_port: String, node: ASTNodeRef) {
+        self.0.borrow_mut().nodes.push((in_port, out_port, node));
+    }
+}
+
 fn make_block_lang() -> Rc<RefCell<BlockLanguage>> {
     let mut lang = BlockLanguage::new();
 
@@ -20,6 +70,165 @@ fn make_block_lang() -> Rc<RefCell<BlockLanguage>> {
         description: "A phasor, returns a saw tooth wave to scan through things or use as modulator.".to_string(),
         color: 2,
     });
+
+    lang.define(BlockType {
+        category:       "literals".to_string(),
+        name:           "zero".to_string(),
+        rows:           1,
+        inputs:         vec![],
+        outputs:        vec![Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "The 0.0 value".to_string(),
+        color:          1,
+    });
+
+    lang.define(BlockType {
+        category:       "routing".to_string(),
+        name:           "->".to_string(),
+        rows:           1,
+        inputs:         vec![Some("".to_string())],
+        outputs:        vec![Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Forwards the value one block".to_string(),
+        color:          6,
+    });
+
+    lang.define(BlockType {
+        category:       "routing".to_string(),
+        name:           "->2".to_string(),
+        rows:           2,
+        inputs:         vec![Some("".to_string())],
+        outputs:        vec![Some("".to_string()), Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Forwards the value one block and sends it to multiple destinations".to_string(),
+        color:          6,
+    });
+
+    lang.define(BlockType {
+        category:       "routing".to_string(),
+        name:           "->3".to_string(),
+        rows:           3,
+        inputs:         vec![Some("".to_string())],
+        outputs:        vec![Some("".to_string()), Some("".to_string()), Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Forwards the value one block and sends it to multiple destinations".to_string(),
+        color:          6,
+    });
+
+    lang.define(BlockType {
+        category:       "variables".to_string(),
+        name:           "set".to_string(),
+        rows:           1,
+        inputs:         vec![Some("".to_string())],
+        outputs:        vec![],
+        area_count:     0,
+        user_input:     BlockUserInput::Identifier,
+        description:    "Stores into a variable".to_string(),
+        color:          2,
+    });
+
+    lang.define(BlockType {
+        category:       "variables".to_string(),
+        name:           "get".to_string(),
+        rows:           1,
+        inputs:         vec![],
+        outputs:        vec![Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::Identifier,
+        description:    "Loads a variable".to_string(),
+        color:          12,
+    });
+
+    lang.define(BlockType {
+        category:       "variables".to_string(),
+        name:           "if".to_string(),
+        rows:           1,
+        inputs:         vec![Some("".to_string())],
+        outputs:        vec![Some("".to_string())],
+        area_count:     2,
+        user_input:     BlockUserInput::None,
+        description:    "Divides the controlflow based on a true (>= 0.5) \
+                         or false (< 0.5) input value.".to_string(),
+        color:          0,
+    });
+
+    lang.define(BlockType {
+        category:       "nodes".to_string(),
+        name:           "1pole".to_string(),
+        rows:           2,
+        inputs:         vec![Some("in".to_string()), Some("f".to_string())],
+        outputs:        vec![Some("lp".to_string()), Some("hp".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Runs a simple one pole filter on the input".to_string(),
+        color:          8,
+    });
+
+    lang.define(BlockType {
+        category:       "nodes".to_string(),
+        name:           "svf".to_string(),
+        rows:           3,
+        inputs:         vec![Some("in".to_string()), Some("f".to_string()), Some("r".to_string())],
+        outputs:        vec![Some("lp".to_string()), Some("bp".to_string()), Some("hp".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Runs a state variable filter on the input".to_string(),
+        color:          8,
+    });
+
+    lang.define(BlockType {
+        category:       "functions".to_string(),
+        name:           "sin".to_string(),
+        rows:           1,
+        inputs:         vec![Some("".to_string())],
+        outputs:        vec![Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Calculates the sine of the input".to_string(),
+        color:          16,
+    });
+
+    lang.define(BlockType {
+        category:       "nodes".to_string(),
+        name:           "delay".to_string(),
+        rows:           2,
+        inputs:         vec![Some("in".to_string()), Some("t".to_string())],
+        outputs:        vec![Some("".to_string())],
+        area_count:     0,
+        user_input:     BlockUserInput::None,
+        description:    "Runs a linearly interpolated delay on the input".to_string(),
+        color:          8,
+    });
+
+    for fun_name in &["+", "-", "*", "/"] {
+        lang.define(BlockType {
+            category:       "arithmetics".to_string(),
+            name:           fun_name.to_string(),
+            rows:           2,
+            inputs:
+                if fun_name == &"-" || fun_name == &"/" {
+                    vec![Some("a".to_string()), Some("b".to_string())]
+                } else {
+                    vec![Some("".to_string()), Some("".to_string())]
+                },
+            outputs:        vec![Some("".to_string())],
+            area_count:     0,
+            user_input:     BlockUserInput::None,
+            description:    "A binary arithmetics operation".to_string(),
+            color:          4,
+        });
+    }
+
+    lang.define_identifier("alpha");
+    lang.define_identifier("beta");
+    lang.define_identifier("delta");
+    lang.define_identifier("gamma");
+    lang.define_identifier("&sig1");
+    lang.define_identifier("&sig2");
 
     Rc::new(RefCell::new(lang))
 }
@@ -104,6 +313,9 @@ fn main() {
                                         id, x - 1, y, None);
                             }
                         }
+
+                        let tree = code.borrow().generate_tree::<ASTNodeRef>("zero").unwrap();
+                        println!("{}", tree.walk_dump("", "", 0));
 
                         code.borrow_mut()
                             .recalculate_area_sizes();

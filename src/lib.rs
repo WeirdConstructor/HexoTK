@@ -29,7 +29,7 @@ pub use widget::Widget;
 use widget::{widget_annotate_drop_event, widget_draw, widget_draw_frame, widget_draw_shallow};
 pub use window::{open_window, open_window_ext, HexoTKWindowHandle};
 
-pub use blocklang::{Block, BlockFun, BlockLanguage, BlockType, BlockUserInput};
+pub use blocklang::{Block, BlockFun, BlockLanguage, BlockType, BlockUserInput, BlockASTNode};
 pub use widgets::EditableText;
 pub use widgets::Entry;
 pub use widgets::TextField;
