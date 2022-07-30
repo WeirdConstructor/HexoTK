@@ -1,4 +1,9 @@
+// Copyright (c) 2022 Weird Constructor <weirdconstructor@gmail.com>
+// This file is a part of HexoTK. Released under GPL-3.0-or-later.
+// See README.md and COPYING for details.
+
 use hexotk::*;
+use hexodsp::blocklang::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};

@@ -15,8 +15,8 @@ driver=[]
 
 [dependencies]
 winit              = { version = "0.26.1", features = ["x11"] }
-hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
-#hexodsp             = { path = "../hexodsp" }
+#hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
+hexodsp             = { path = "../hexodsp" }
 femtovg            = { git = "https://github.com/femtovg/femtovg", features = ["image-loading"] }
 #femtovg            = { path = "../other/femtovg", features = ["image-loading"] }
 image              = { version = "0.24.3", features = ["png", "jpeg"] }

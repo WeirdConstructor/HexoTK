@@ -2,7 +2,6 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-pub mod blocklang;
 mod layout;
 mod painter;
 mod rect;
@@ -29,12 +28,11 @@ pub use widget::Widget;
 use widget::{widget_annotate_drop_event, widget_draw, widget_draw_frame, widget_draw_shallow};
 pub use window::{open_window, open_window_ext, HexoTKWindowHandle};
 
-pub use blocklang::{Block, BlockFun, BlockLanguage, BlockType, BlockUserInput, BlockASTNode};
 pub use widgets::EditableText;
 pub use widgets::Entry;
 pub use widgets::TextField;
 pub use widgets::WichText;
-pub use widgets::{BlockCode, BlockCodeView, BlockView, BlockPos};
+pub use widgets::{BlockCode, BlockPos};
 pub use widgets::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};

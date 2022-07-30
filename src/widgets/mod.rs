@@ -10,7 +10,7 @@ mod scope;
 mod wichtext;
 mod blockcode;
 
-pub use blockcode::{BlockCode, BlockView, BlockCodeView, BlockPos};
+pub use blockcode::{BlockCode, BlockPos};
 pub use connector::{Connector, ConnectorData};
 pub use entry::{EditableText, Entry, TextField};
 pub use graph::{Graph, GraphModel, StaticGraphData};
