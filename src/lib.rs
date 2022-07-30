@@ -2,6 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
+pub mod blocklang;
 mod layout;
 mod painter;
 mod rect;
@@ -28,10 +29,12 @@ pub use widget::Widget;
 use widget::{widget_annotate_drop_event, widget_draw, widget_draw_frame, widget_draw_shallow};
 pub use window::{open_window, open_window_ext, HexoTKWindowHandle};
 
+pub use blocklang::{Block, BlockFun, BlockLanguage, BlockType, BlockUserInput};
 pub use widgets::EditableText;
 pub use widgets::Entry;
 pub use widgets::TextField;
 pub use widgets::WichText;
+pub use widgets::{BlockCode, BlockCodeView, BlockView};
 pub use widgets::{ChangeRes, DummyParamModel, HexKnob, ParamModel};
 pub use widgets::{Connector, ConnectorData};
 pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
@@ -237,6 +240,7 @@ pub enum Control {
     HexKnob { knob: Box<HexKnob> },
     HexGrid { grid: Box<HexGrid> },
     Connector { con: Box<Connector> },
+    BlockCode { code: Box<BlockCode> },
     OctaveKeys { keys: Box<OctaveKeys> },
     Graph { graph: Box<Graph> },
     Scope { scope: Box<Scope> },
@@ -256,6 +260,7 @@ impl std::fmt::Debug for Control {
             Control::HexKnob { .. } => write!(f, "Ctrl::HexKnob"),
             Control::HexGrid { .. } => write!(f, "Ctrl::HexGrid"),
             Control::Connector { .. } => write!(f, "Ctrl::Connector"),
+            Control::BlockCode { .. } => write!(f, "Ctrl::BlockCode"),
             Control::OctaveKeys { .. } => write!(f, "Ctrl::OctaveKeys"),
             Control::Graph { .. } => write!(f, "Ctrl::Graph"),
             Control::Scope { .. } => write!(f, "Ctrl::Scope"),
@@ -370,6 +375,7 @@ impl Control {
             Control::HexKnob { .. } => true,
             Control::HexGrid { .. } => true,
             Control::Connector { .. } => true,
+            Control::BlockCode { .. } => true,
             Control::OctaveKeys { .. } => true,
             Control::Graph { .. } => true,
             Control::Scope { .. } => true,
@@ -397,6 +403,7 @@ impl Control {
                 grid.draw_frame(w, &dpi_style, painter);
             }
             Control::Connector { .. } => {}
+            Control::BlockCode { .. } => {}
             Control::OctaveKeys { keys } => {
                 keys.draw_frame(w, &dpi_style, painter);
             }
@@ -426,6 +433,7 @@ impl Control {
             Control::HexKnob { .. } => true,
             Control::HexGrid { .. } => true,
             Control::Connector { .. } => true,
+            Control::BlockCode { .. } => true,
             Control::OctaveKeys { .. } => true,
             Control::Graph { .. } => false,
             Control::Scope { .. } => false,
@@ -445,6 +453,7 @@ impl Control {
             Control::HexKnob { .. } => true,
             Control::HexGrid { .. } => true,
             Control::Connector { .. } => true,
+            Control::BlockCode { .. } => true,
             Control::OctaveKeys { .. } => true,
             Control::Graph { .. } => false,
             Control::Scope { .. } => false,
@@ -463,6 +472,7 @@ impl Control {
             | Control::WichText { .. }
             | Control::Entry { .. }
             | Control::Connector { .. }
+            | Control::BlockCode { .. }
             | Control::OctaveKeys { .. }
             | Control::Graph { .. }
             | Control::Scope { .. }
@@ -626,6 +636,9 @@ impl Control {
             }
             Control::Connector { con } => {
                 con.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
+            }
+            Control::BlockCode { code } => {
+                code.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
             Control::OctaveKeys { keys } => {
                 keys.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
@@ -793,6 +806,7 @@ impl Control {
             Control::HexKnob { knob } => knob.get_generation(),
             Control::HexGrid { grid } => grid.get_generation(),
             Control::Connector { con } => con.get_generation(),
+            Control::BlockCode { code } => code.get_generation(),
             Control::OctaveKeys { keys } => keys.get_generation(),
             Control::Graph { graph } => graph.get_generation(),
             Control::Scope { scope } => scope.get_generation(),
@@ -849,6 +863,9 @@ impl Control {
             }
             Control::Connector { con } => {
                 con.handle(w, event, out_events);
+            }
+            Control::BlockCode { code } => {
+                code.handle(w, event, out_events);
             }
             Control::OctaveKeys { keys } => {
                 keys.handle(w, event, out_events);

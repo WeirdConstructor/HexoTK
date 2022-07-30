@@ -8,7 +8,9 @@ mod octave_keys;
 mod pattern_editor;
 mod scope;
 mod wichtext;
+mod blockcode;
 
+pub use blockcode::{BlockCode, BlockView, BlockCodeView};
 pub use connector::{Connector, ConnectorData};
 pub use entry::{EditableText, Entry, TextField};
 pub use graph::{Graph, GraphModel, StaticGraphData};
