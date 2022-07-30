@@ -488,6 +488,10 @@ impl BlockCode {
             self.draw_area(style, p, cont_id, apos, level + 1, dbg);
         }
 
+        if level == 0 {
+            p.restore();
+        }
+
         p.reset_clip_region();
     }
 }
@@ -505,13 +509,12 @@ impl BlockCode {
                     self.m_down = self.find_pos_at_mouse(x, y);
 
                     w.activate();
-                    w.emit_redraw_required();
                 } else {
                     self.pan_on = Some(self.mouse_pos);
                 }
             }
             InputEvent::MouseButtonReleased(btn) => {
-                if !w.is_active() {
+                if self.pan_on.is_none() && !w.is_active() {
                     return;
                 }
 
@@ -523,7 +526,6 @@ impl BlockCode {
                         self.shift_offs.1 += tmp_shift_offs.1;
                     }
 
-                    w.emit_redraw_required();
                 } else {
                     let m_up = self.find_pos_at_mouse(x, y);
 
