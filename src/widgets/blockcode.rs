@@ -11,6 +11,7 @@ use crate::rect::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use hexodsp::blocklang::{BlockView, BlockCodeView};
 
@@ -59,7 +60,7 @@ impl BlockPos {
 }
 
 pub struct BlockCode {
-    code: Rc<RefCell<dyn BlockCodeView>>,
+    code: Arc<Mutex<dyn BlockCodeView>>,
 
     block_size: f32,
 
@@ -77,7 +78,7 @@ pub struct BlockCode {
 }
 
 impl BlockCode {
-    pub fn new(code: Rc<RefCell<dyn BlockCodeView>>) -> Self {
+    pub fn new(code: Arc<Mutex<dyn BlockCodeView>>) -> Self {
         Self {
             code,
 
@@ -143,9 +144,11 @@ impl BlockCode {
     }
 
     fn find_pos_at_mouse(&self, x: f32, y: f32) -> Option<BlockPos> {
+        let code = self.code.lock().expect("BlockView lockable");
+
         if let Some((area, x, y, subcol)) = self.find_area_at_mouse(x, y) {
-            if let Some((ox, oy)) = self.code.borrow().origin_at(area, x, y) {
-                let rows = self.code.borrow().block_at(area, ox, oy).map(|b| b.rows()).unwrap_or(1);
+            if let Some((ox, oy)) = code.origin_at(area, x, y) {
+                let rows = code.block_at(area, ox, oy).map(|b| b.rows()).unwrap_or(1);
 
                 let row = (y - oy).max(0) as usize;
                 Some(BlockPos::Block { id: area, x, y, col: subcol, row, rows })
@@ -173,7 +176,10 @@ impl BlockCode {
         let block_h = dpi_f * self.block_size;
         let block_w = block_h * 2.0;
 
-        if let Some(s) = self.code.borrow().area_header(area_id) {
+        let code = self.code.clone();
+        let mut code = code.lock().expect("BlockView lockable");
+
+        if let Some(s) = code.area_header(area_id) {
             p.label(
                 self.block_size * 0.4,
                 -1,
@@ -248,7 +254,7 @@ impl BlockCode {
 
                 if let Some((area, x, y, subcol)) = self.hover {
                     if area == area_id {
-                        if let Some((bx, by)) = self.code.borrow().origin_at(area, x, y) {
+                        if let Some((bx, by)) = code.origin_at(area, x, y) {
                             hover_row = (y - by) as i32;
                             hover_col = subcol as i32;
                             hover_here = bx == col && by == row;
@@ -256,7 +262,7 @@ impl BlockCode {
                     }
                 }
 
-                if let Some(block) = self.code.borrow().block_at(area_id, col, row) {
+                if let Some(block) = code.block_at(area_id, col, row) {
                     let bg_color = if hover_here {
                         style.block_bg_hover_color()
                     } else {
@@ -386,7 +392,7 @@ impl BlockCode {
                     }
 
                     if let Some(cont_id) = block.contains(0) {
-                        let (area_w, area_h) = self.code.borrow().area_size(cont_id);
+                        let (area_w, area_h) = code.area_size(cont_id);
                         let bpos = Rect {
                             x: pos.x + x + area_border_px,  // + border
                             y: pos.y + y + h - dpi_f * 1.0, // -1.0 for the border offs
@@ -397,7 +403,7 @@ impl BlockCode {
                         next_areas.push((cont_id, bpos, border_color, bg_color));
 
                         if let Some(cont_id) = block.contains(1) {
-                            let (area_w, area_h) = self.code.borrow().area_size(cont_id);
+                            let (area_w, area_h) = code.area_size(cont_id);
                             let bpos = Rect {
                                 x: bpos.x,
                                 y: bpos.y + 2.0 * area_border_px + bpos.h - dpi_f * 1.0, // -1.0 for the border offs
@@ -605,7 +611,8 @@ impl BlockCode {
     }
 
     pub fn get_generation(&self) -> u64 {
-        self.code.borrow().generation()
+        let code = self.code.lock().expect("BlockView lockable");
+        code.generation()
     }
 }
 
