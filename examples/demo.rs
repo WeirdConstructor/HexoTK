@@ -463,6 +463,11 @@ fn main() {
             //        entry.change_layout(|layout| layout.max_height = Units::Pixels(40.0));
             entry.set_ctrl(Control::Entry { entry: Box::new(Entry::new(Box::new(etf))) });
             entry.change_layout(|layout| layout.max_height = Some(Units::Pixels(40.0)));
+            entry.reg("enter", {
+                move |_ctx, _wid, ev| {
+                    println!("ENTER ENTRY!: {:?}", ev);
+                }
+            });
             entry.reg("changed", {
                 move |_ctx, _wid, _ev| {
                     println!("CHANGED ENTRY!");

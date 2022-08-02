@@ -220,6 +220,10 @@ impl Entry {
                             w.emit_redraw_required();
                         }
                     }
+                    Key::Enter => {
+                        self.update_text.update(self.data.clone());
+                        out_events.push(w.event("enter", EvPayload::Text(self.data.clone())));
+                    }
                     _ => {}
                 }
             }
