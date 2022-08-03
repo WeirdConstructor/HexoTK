@@ -881,6 +881,7 @@ impl Control {
 #[derive(Debug, Clone, Copy)]
 pub enum PopupPos {
     MousePos,
+    MouseOffs(f32, f32),
 }
 
 #[derive(Debug, Clone)]

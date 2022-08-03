@@ -35,10 +35,12 @@ impl Layer {
         win_w: f32,
         win_h: f32,
         mouse_pos: (f32, f32),
+        dpi_f: f32,
     ) {
         while let Some((wid, pos)) = self.popups.pop() {
             let dest_pos = match pos {
                 PopupPos::MousePos => mouse_pos,
+                PopupPos::MouseOffs(ox, oy) => (mouse_pos.0 + dpi_f * ox, mouse_pos.1 + dpi_f * oy),
             };
 
             let popup_pos = wid.pos();
@@ -389,7 +391,7 @@ impl UI {
             layer.root.set_pos(Rect::from(0.0, 0.0, win_w, win_h));
 
             let mouse_pos = self.notifier.mouse_pos();
-            layer.handle_popup_positioning_after_layout(win_w, win_h, mouse_pos);
+            layer.handle_popup_positioning_after_layout(win_w, win_h, mouse_pos, self.dpi_factor);
         }
 
         if let Some(mut fb) = self.fb.take() {
@@ -740,17 +742,20 @@ impl UI {
         }
     }
 
-    fn do_auto_hide_if_not_inside(&mut self, pos: (f32, f32)) {
+    fn do_auto_hide_if_not_inside(&mut self, pos: (f32, f32)) -> bool {
         for (wid_id, _subtree) in self.auto_hide_queue.iter() {
             if let Some(wid) = self.widgets.borrow().get(*wid_id) {
                 if wid.is_visible() {
                     if !wid.pos().is_inside(pos.0, pos.1) {
                         wid.hide();
                         self.notifier.redraw(*wid_id);
+                        return true;
                     }
                 }
             }
         }
+
+        false
     }
 
     fn do_auto_hide(&mut self, active_wid_id: Option<usize>) {
@@ -888,13 +893,15 @@ impl WindowUI for UI {
                 if *btn == MButton::Left {
                     self.handle_drag_mouse_pressed();
                 }
+
+                if self.do_auto_hide_if_not_inside(notifier.mouse_pos()) {
+                    return;
+                }
             }
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Left {
                     self.handle_drag_mouse_released();
                 }
-
-                self.do_auto_hide_if_not_inside(notifier.mouse_pos());
             }
             InputEvent::MousePosition(x, y) => {
                 let mut hover_id = 0;
