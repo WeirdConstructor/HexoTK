@@ -14,10 +14,9 @@ default=[]
 driver=[]
 
 [dependencies]
-winit              = { version = "0.26.1", features = ["x11"] }
 #hexodsp            = { git = "https://github.com/WeirdConstructor/HexoDSP.git" }
 hexodsp             = { path = "../hexodsp" }
-femtovg            = { git = "https://github.com/femtovg/femtovg", features = ["image-loading"] }
+femtovg            = { git = "https://github.com/femtovg/femtovg", default-features = false, features = ["image-loading"] }
 #femtovg            = { path = "../other/femtovg", features = ["image-loading"] }
 image              = { version = "0.24.3", features = ["png", "jpeg"] }
 raw-gl-context     = { git = "https://github.com/glowcoil/raw-gl-context" }
@@ -27,4 +26,3 @@ baseview           = { git = "https://github.com/RustAudio/baseview.git", featur
 keyboard-types     = { version = "0.6.1", default-features = false }
 raw-window-handle  = "0.4.2"
 gl                 = "0.14.0"
-glutin             = { version = "0.28.0", features = ["x11"] }
