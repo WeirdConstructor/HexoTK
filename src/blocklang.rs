@@ -233,12 +233,15 @@ impl BlockView for Block {
 #[derive(Debug)]
 pub struct BlockChain {
     /// The area ID this BlockChain was created from.
+    #[allow(dead_code)]
     area_id: usize,
     /// Stores the positions of the blocks of the chain inside the [BlockArea].
     blocks: HashSet<(i64, i64)>,
     /// Stores the positions of blocks that only have output ports.
+    #[allow(dead_code)]
     sources: HashSet<(i64, i64)>,
     /// Stores the positions of blocks that only have input ports.
+    #[allow(dead_code)]
     sinks: HashSet<(i64, i64)>,
     /// This field stores _loaded_ blocks from the [BlockArea]
     /// into this [BlockChain] for inserting or analyzing them.
