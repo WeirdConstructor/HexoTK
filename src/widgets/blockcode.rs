@@ -63,6 +63,7 @@ pub struct BlockCode {
     code: Arc<Mutex<dyn BlockCodeView>>,
 
     block_size: f32,
+    block_w_factor: f32,
 
     areas: Vec<Vec<(usize, Rect)>>,
     hover: Option<(usize, i64, i64, usize)>,
@@ -83,6 +84,7 @@ impl BlockCode {
             code,
 
             block_size: 30.0,
+            block_w_factor: 2.5,
 
             areas: vec![],
             hover: None,
@@ -119,7 +121,7 @@ impl BlockCode {
         let y = y - shift_y;
 
         let block_h = self.block_size;
-        let block_w = block_h * 2.0;
+        let block_w = self.block_w_factor * block_h;
 
         for lvl in self.areas.iter().rev() {
             for a in lvl.iter() {
@@ -174,7 +176,7 @@ impl BlockCode {
         p.clip_region(pos.x, pos.y, pos.w, pos.h);
 
         let block_h = dpi_f * self.block_size;
-        let block_w = block_h * 2.0;
+        let block_w = self.block_w_factor * block_h;
 
         let code = self.code.clone();
         let mut code = code.lock().expect("BlockView lockable");
