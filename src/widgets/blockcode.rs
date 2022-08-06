@@ -9,11 +9,9 @@ use crate::style::*;
 use crate::painter::*;
 use crate::rect::*;
 
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use hexodsp::blocklang::{BlockView, BlockCodeView};
+use hexodsp::wblockdsp::BlockCodeView;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlockPos {
@@ -179,7 +177,7 @@ impl BlockCode {
         let block_w = self.block_w_factor * block_h;
 
         let code = self.code.clone();
-        let mut code = code.lock().expect("BlockView lockable");
+        let code = code.lock().expect("BlockView lockable");
 
         if let Some(s) = code.area_header(area_id) {
             p.label(

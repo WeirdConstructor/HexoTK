@@ -2,7 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use hexodsp::blocklang::*;
+use hexodsp::wblockdsp::*;
 use hexotk::*;
 use std::cell::RefCell;
 use std::rc::Rc;
