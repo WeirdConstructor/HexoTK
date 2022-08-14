@@ -553,7 +553,6 @@ impl UI {
                 if let Some(parent) = wid.parent() {
                     let parent_id = parent.unique_id();
                     self.cur_redraw.insert(parent_id);
-                    println!("parent redraw: {} ({})", parent_id, parent.tag());
                     self.cur_parent_lookup.push(parent_id);
                 }
             }
