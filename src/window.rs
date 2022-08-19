@@ -17,10 +17,10 @@ use baseview::{
 
 use crate::{InputEvent, MButton, WindowUI};
 
-#[repr(C)]
-pub struct Vertex {
-    pub pos: [f32; 2],
-}
+//#[repr(C)]
+//pub struct Vertex {
+//    pub pos: [f32; 2],
+//}
 
 pub struct FrameTimeMeasurement {
     buf: [u128; 240],
@@ -78,7 +78,7 @@ impl FrameTimeMeasurement {
 pub struct GlStuff {
     program: glow::NativeProgram,
     vao: glow::NativeVertexArray,
-    vbo: glow::NativeBuffer,
+//    vbo: glow::NativeBuffer,
 }
 
 pub struct GUIWindowHandler {
@@ -199,7 +199,7 @@ impl WindowHandler for GUIWindowHandler {
     fn on_frame(&mut self, win: &mut Window) {
         self.counter += 1;
         if self.counter % 500 == 0 {
-            //            println!("REDRAW.....");
+            println!("REDRAW.....");
             self.counter = 0;
         }
 
@@ -210,6 +210,7 @@ impl WindowHandler for GUIWindowHandler {
 
         self.ui.pre_frame();
 
+        if true {
         self.canvas.save();
         self.canvas.set_render_target(femtovg::RenderTarget::Image(self.img_buf));
         self.painter_data.init_render_targets(femtovg::RenderTarget::Image(self.img_buf));
@@ -253,14 +254,20 @@ impl WindowHandler for GUIWindowHandler {
 
         self.canvas.flush();
         self.canvas.restore();
+        }
 
         {
             if self.gl_stuff.is_none() {
                 let vsrc = r#"#version 330
-in vec2 iPosition;
-
+const vec2 verts[3] = vec2[3](
+    vec2(0.5f, 1.0f),
+    vec2(0.0f, 0.0f),
+    vec2(1.0f, 0.0f)
+);
+out vec2 vert;
 void main() {
-    gl_Position = vec4(iPosition, 0.0, 1.0);
+    vert = verts[gl_VertexID];
+    gl_Position = vec4(vert - 0.5, 0.0, 1.0);
 }
                 "#;
 
@@ -268,7 +275,7 @@ void main() {
                     r#"#version 330
 layout(location = 0) out vec4 diffuseColor;
 void main() {
-    diffuseColor = vec4(vec3(1.0, 0.0, 0.5), 0.0);
+    diffuseColor = vec4(vec3(1.0, 0.0, 0.5), 0.5);
 }
                 "#;
 
@@ -298,7 +305,9 @@ void main() {
                     }
                     // FIXME: Link errors!
 
+                    self.context.detach_shader(prog, fshader);
                     self.context.delete_shader(fshader);
+                    self.context.detach_shader(prog, vshader);
                     self.context.delete_shader(vshader);
 
                     prog
@@ -314,72 +323,71 @@ void main() {
 //                    Vertex { pos: [-1.0, -1.0] },
 //                ];
 
-                let verts = vec![
-                    -1.0, -1.0,
-                    1.0, -1.0,
-                    1.0, 1.0,
-                    1.0, 1.0,
-                    -1.0, 1.0,
-                    -1.0, -1.0,
-                ];
+//                let verts = vec![
+//                    -1.0, -1.0,
+//                    1.0, -1.0,
+//                    1.0, 1.0,
+//                    1.0, 1.0,
+//                    -1.0, 1.0,
+//                    -1.0, -1.0,
+//                ];
 
                 unsafe {
                     let va = self.context.create_vertex_array().expect("Can create vertex array");
-                    let vb = self.context.create_buffer().expect("Can create buffer");
+//                    let vb = self.context.create_buffer().expect("Can create buffer");
 
-                    self.context.bind_vertex_array(Some(va));
-                    self.context.bind_buffer(glow::ARRAY_BUFFER, Some(vb));
-                    let data = std::slice::from_raw_parts(
-                        verts.as_ptr() as *const u8,
-                        verts.len() * std::mem::size_of::<f32>()
-                    );
-                    self.context.buffer_data_u8_slice(
-                        glow::ARRAY_BUFFER,
-                        &data,
-                        glow::STATIC_DRAW,
-                    );
+//                    self.context.bind_vertex_array(Some(va));
+//                    self.context.bind_buffer(glow::ARRAY_BUFFER, Some(vb));
+//                    let data = std::slice::from_raw_parts(
+//                        verts.as_ptr() as *const u8,
+//                        verts.len() * std::mem::size_of::<f32>()
+//                    );
+//                    self.context.buffer_data_u8_slice(
+//                        glow::ARRAY_BUFFER,
+//                        &data,
+//                        glow::STATIC_DRAW,
+//                    );
+//
+//                    self.context.enable_vertex_attrib_array(0);
+//                    self.context.vertex_attrib_pointer_f32(
+//                        0,
+//                        2,
+//                        glow::FLOAT,
+//                        false,
+//                        (std::mem::size_of::<f32>() * 2) as i32,
+//                        0
+//                    );
 
-                    self.context.enable_vertex_attrib_array(0);
-                    self.context.vertex_attrib_pointer_f32(
-                        0,
-                        2,
-                        glow::FLOAT,
-                        false,
-                        (std::mem::size_of::<f32>() * 2) as i32,
-                        0
-                    );
+//                    self.context.bind_vertex_array(None);
 
-                    self.context.bind_vertex_array(None);
-
-                    self.gl_stuff = Some(GlStuff { program: prog, vao: va, vbo: vb });
+                    self.gl_stuff = Some(GlStuff { program: prog, vao: va });
                 }
             }
 
             unsafe {
                 self.context.enable(glow::BLEND);
                 self.context.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
-                self.context.enable(glow::DEPTH_TEST);
+//                self.context.enable(glow::DEPTH_TEST);
                 self.context.depth_func(gl::LESS);
-                self.context.clear_color(0.2, 1.0, 0.2, 1.0);
-
-                self.context.viewport(10, 10, 500, 320);
+                self.context.viewport(10, 10, 400, 820);
+                self.context.clear_color(0.2, 1.0, 0.2, 0.0);
 
                 self.context.enable(glow::SCISSOR_TEST);
-                self.context.scissor(10, 10, 500, 320);
+                self.context.scissor(10, 10, 400, 820);
             }
 
             unsafe {
-                self.context.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
                 if let Some(gls) = &self.gl_stuff {
                     self.context.use_program(Some(gls.program));
+//                    self.context.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
                     self.context.bind_vertex_array(Some(gls.vao));
-                    self.context.draw_arrays(gl::TRIANGLES, 0, 6);
+                    self.context.draw_arrays(gl::TRIANGLES, 0, 3);
                     self.context.bind_vertex_array(None);
                 }
 
                 self.context.disable(glow::BLEND);
-                self.context.disable(glow::DEPTH_TEST);
+//                self.context.disable(glow::DEPTH_TEST);
                 self.context.disable(glow::SCISSOR_TEST);
             }
         }
