@@ -3,6 +3,8 @@
 // See README.md and COPYING for details.
 
 use femtovg::{renderer::OpenGl, Canvas, Color, FontId, ImageId};
+use glow;
+use glow::HasContext;
 
 use crate::painter::{Painter, PersistPainterData};
 
@@ -14,6 +16,11 @@ use baseview::{
 };
 
 use crate::{InputEvent, MButton, WindowUI};
+
+#[repr(C)]
+pub struct Vertex {
+    pub pos: [f32; 2],
+}
 
 pub struct FrameTimeMeasurement {
     buf: [u128; 240],
@@ -68,8 +75,16 @@ impl FrameTimeMeasurement {
     }
 }
 
+pub struct GlStuff {
+    program: glow::NativeProgram,
+    vao: glow::NativeVertexArray,
+    vbo: glow::NativeBuffer,
+}
+
 pub struct GUIWindowHandler {
     canvas: Canvas<OpenGl>,
+    context: glow::Context,
+    gl_stuff: Option<GlStuff>,
     font: FontId,
     font_mono: FontId,
     img_buf: ImageId,
@@ -239,6 +254,136 @@ impl WindowHandler for GUIWindowHandler {
         self.canvas.flush();
         self.canvas.restore();
 
+        {
+            if self.gl_stuff.is_none() {
+                let vsrc = r#"#version 330
+in vec2 iPosition;
+
+void main() {
+    gl_Position = vec4(iPosition, 0.0, 1.0);
+}
+                "#;
+
+                let fsrc =
+                    r#"#version 330
+layout(location = 0) out vec4 diffuseColor;
+void main() {
+    diffuseColor = vec4(vec3(1.0, 0.0, 0.5), 0.0);
+}
+                "#;
+
+                let prog = unsafe {
+                    let vshader = self.context.create_shader(glow::VERTEX_SHADER).expect("Create Shader Ok");
+                    self.context.shader_source(vshader, vsrc);
+                    self.context.compile_shader(vshader);
+                    // FIXME: Compile errors!
+                    if !self.context.get_shader_compile_status(vshader) {
+                        println!("ERROR VERT: {}", self.context.get_shader_info_log(vshader));
+                    }
+
+                    let fshader = self.context.create_shader(glow::FRAGMENT_SHADER).expect("Create Shader Ok");
+                    self.context.shader_source(fshader, fsrc);
+                    self.context.compile_shader(fshader);
+                    if !self.context.get_shader_compile_status(fshader) {
+                        println!("ERROR FRAG: {}", self.context.get_shader_info_log(fshader));
+                    }
+                    // FIXME: Compile errors!
+
+                    let prog = self.context.create_program().expect("Can create program");
+                    self.context.attach_shader(prog, vshader);
+                    self.context.attach_shader(prog, fshader);
+                    self.context.link_program(prog);
+                    if !self.context.get_program_link_status(prog) {
+                        println!("ERROR PROG: {}", self.context.get_program_info_log(prog));
+                    }
+                    // FIXME: Link errors!
+
+                    self.context.delete_shader(fshader);
+                    self.context.delete_shader(vshader);
+
+                    prog
+                };
+
+//                // ...
+//                let verts: [Vertex; 6] = [
+//                    Vertex { pos: [-1.0, -1.0] },
+//                    Vertex { pos: [1.0, -1.0] },
+//                    Vertex { pos: [1.0, 1.0] },
+//                    Vertex { pos: [1.0, 1.0] },
+//                    Vertex { pos: [-1.0, 1.0] },
+//                    Vertex { pos: [-1.0, -1.0] },
+//                ];
+
+                let verts = vec![
+                    -1.0, -1.0,
+                    1.0, -1.0,
+                    1.0, 1.0,
+                    1.0, 1.0,
+                    -1.0, 1.0,
+                    -1.0, -1.0,
+                ];
+
+                unsafe {
+                    let va = self.context.create_vertex_array().expect("Can create vertex array");
+                    let vb = self.context.create_buffer().expect("Can create buffer");
+
+                    self.context.bind_vertex_array(Some(va));
+                    self.context.bind_buffer(glow::ARRAY_BUFFER, Some(vb));
+                    let data = std::slice::from_raw_parts(
+                        verts.as_ptr() as *const u8,
+                        verts.len() * std::mem::size_of::<f32>()
+                    );
+                    self.context.buffer_data_u8_slice(
+                        glow::ARRAY_BUFFER,
+                        &data,
+                        glow::STATIC_DRAW,
+                    );
+
+                    self.context.enable_vertex_attrib_array(0);
+                    self.context.vertex_attrib_pointer_f32(
+                        0,
+                        2,
+                        glow::FLOAT,
+                        false,
+                        (std::mem::size_of::<f32>() * 2) as i32,
+                        0
+                    );
+
+                    self.context.bind_vertex_array(None);
+
+                    self.gl_stuff = Some(GlStuff { program: prog, vao: va, vbo: vb });
+                }
+            }
+
+            unsafe {
+                self.context.enable(glow::BLEND);
+                self.context.blend_func(glow::SRC_ALPHA, glow::ONE_MINUS_SRC_ALPHA);
+                self.context.enable(glow::DEPTH_TEST);
+                self.context.depth_func(gl::LESS);
+                self.context.clear_color(0.2, 1.0, 0.2, 1.0);
+
+                self.context.viewport(10, 10, 500, 320);
+
+                self.context.enable(glow::SCISSOR_TEST);
+                self.context.scissor(10, 10, 500, 320);
+            }
+
+            unsafe {
+                self.context.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+
+                if let Some(gls) = &self.gl_stuff {
+                    self.context.use_program(Some(gls.program));
+                    self.context.bind_vertex_array(Some(gls.vao));
+                    self.context.draw_arrays(gl::TRIANGLES, 0, 6);
+                    self.context.bind_vertex_array(None);
+                }
+
+                self.context.disable(glow::BLEND);
+                self.context.disable(glow::DEPTH_TEST);
+                self.context.disable(glow::SCISSOR_TEST);
+            }
+        }
+
         win.gl_context().unwrap().swap_buffers();
 
         self.ui.post_frame();
@@ -329,6 +474,12 @@ pub fn open_window_ext(
         }
         .expect("Cannot create renderer");
 
+        let context = unsafe {
+            glow::Context::from_loader_function(|symbol| {
+                context.get_proc_address(symbol) as *const _
+            })
+        };
+
         let mut canvas = Canvas::new(renderer).expect("Cannot create canvas");
         canvas.set_size(window_width as u32, window_height as u32, 1.0);
         let font = canvas.add_font_mem(std::include_bytes!("font.ttf")).expect("can load font");
@@ -360,6 +511,8 @@ pub fn open_window_ext(
             dpi_factor,
             scale_policy,
             canvas,
+            context,
+            gl_stuff: None,
             font,
             font_mono,
             img_buf,
