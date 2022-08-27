@@ -531,7 +531,6 @@ impl BlockCode {
                         self.shift_offs.0 += tmp_shift_offs.0;
                         self.shift_offs.1 += tmp_shift_offs.1;
                     }
-
                 } else {
                     let m_up = self.find_pos_at_mouse(x, y);
 

@@ -368,8 +368,7 @@ fn main() {
                             if at.pos() == to.pos() {
                                 let _ = code.remove_at(id, x, y);
                             } else {
-                                let _ = code
-                                    .move_block_chain_from_to(id, x, y, id2, x2, y2);
+                                let _ = code.move_block_chain_from_to(id, x, y, id2, x2, y2);
                             }
                         }
 

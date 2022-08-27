@@ -730,7 +730,7 @@ impl Control {
             //                    img_ref = Some(painter.new_image(local_pos.w, local_pos.h));
 
             //d// println!("      start img {} ({}:{})", w.unique_id(), local_pos.w, local_pos.h);
-            //d// println!("START IMAGE wid={} {:?}", w.unique_id(), local_pos);
+            //d// println!("START IMAGE wid={} tag={} {:?}", w.unique_id(), w.tag(), local_pos);
             painter.start_image(img_ref.as_ref().unwrap());
             let draw_border_pos = Rect::from(0.0, 0.0, local_pos.w, local_pos.h);
             let draw_widget_pos =
@@ -770,12 +770,12 @@ impl Control {
 
             //d// println!("DISP DRAW CTRL wid={} cached={} {:?}", w.unique_id(), is_cached, draw_widget_pos);
             self.dispatch_draw_control(w, &logic_style, draw_widget_pos, real_widget_pos, painter);
-        }
 
-        if let Some(redraw_widgets) = redraw_widgets {
-            if let Some(childs) = childs {
-                for c in childs.iter() {
-                    widget_draw(c, redraw_widgets, child_draw_origin, painter);
+            if let Some(redraw_widgets) = redraw_widgets {
+                if let Some(childs) = childs {
+                    for c in childs.iter() {
+                        widget_draw(c, redraw_widgets, child_draw_origin, painter);
+                    }
                 }
             }
         }
@@ -783,9 +783,8 @@ impl Control {
         if let Some(img_ref) = img_ref {
             if is_cached && redraw {
                 painter.finish_image();
+                //d// println!("PAINT IMAGE wid={} tag={} cached={} {:?}", w.unique_id(), w.tag(), is_cached, pos);
             }
-
-            //d// println!("PAINT IMAGE wid={} cached={} {:?}", w.unique_id(), is_cached, pos);
 
             //            painter.draw_image(&img_ref, pos.x - draw_origin.x, pos.y - draw_origin.y);
             painter.draw_image(&img_ref, local_pos.x, local_pos.y);

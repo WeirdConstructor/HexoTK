@@ -1,3 +1,4 @@
+mod blockcode;
 mod connector;
 mod entry;
 mod graph;
@@ -8,7 +9,6 @@ mod octave_keys;
 mod pattern_editor;
 mod scope;
 mod wichtext;
-mod blockcode;
 
 pub use blockcode::{BlockCode, BlockPos};
 pub use connector::{Connector, ConnectorData};

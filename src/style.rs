@@ -124,7 +124,7 @@ pub enum StyleExt {
         block_bg_hover_color: (f32, f32, f32),
         block_bg_color: (f32, f32, f32),
         port_select_color: (f32, f32, f32),
-    }
+    },
 }
 
 #[derive(Debug, Clone)]

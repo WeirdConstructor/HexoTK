@@ -489,6 +489,7 @@ impl WidgetImpl {
 
     pub fn emit_redraw_required(&self) {
         if self.is_visible() {
+            //d// println!("Emit Redraw by {} / {}", self.unique_id(), self.tag());
             self.notifier.as_ref().map(|n| n.redraw(self.unique_id));
         }
     }
@@ -666,6 +667,8 @@ pub fn widget_draw(
     if !visible {
         return;
     }
+
+    //d// println!("REDRAW {} ({}) is_cached={}", widget.unique_id(), widget.tag(), widget.is_cached());
 
     let ctrl = widget.0.borrow_mut().ctrl.take();
     let childs = widget.0.borrow_mut().childs.take();
