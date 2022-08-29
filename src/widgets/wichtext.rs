@@ -732,6 +732,13 @@ impl WichText {
                     }
                 } else if in_frag {
                     match c {
+                        '[' => {
+                            let c2 = ci.peek().copied().unwrap_or('\0');
+                            if c2 == '[' {
+                                cur_fragment.push_char('[');
+                            }
+                            ci.next();
+                        },
                         ']' => {
                             let c2 = ci.peek().copied().unwrap_or('\0');
                             if c2 == ']' {
@@ -754,6 +761,13 @@ impl WichText {
                     }
                 } else {
                     match c {
+                        ']' => {
+                            let c2 = ci.peek().copied().unwrap_or('\0');
+                            if c2 == ']' {
+                                cur_fragment.push_char(']');
+                            }
+                            ci.next();
+                        }
                         '[' => {
                             let c2 = ci.peek().copied().unwrap_or('\0');
                             if c2 == '[' {

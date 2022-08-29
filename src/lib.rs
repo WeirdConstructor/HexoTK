@@ -12,6 +12,7 @@ mod widget;
 mod widget_store;
 mod widgets;
 mod window;
+mod markdown;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -771,6 +772,14 @@ impl Control {
             //d// println!("DISP DRAW CTRL wid={} cached={} {:?}", w.unique_id(), is_cached, draw_widget_pos);
             self.dispatch_draw_control(w, &logic_style, draw_widget_pos, real_widget_pos, painter);
 
+            if let Some(redraw_widgets) = redraw_widgets {
+                if let Some(childs) = childs {
+                    for c in childs.iter() {
+                        widget_draw(c, redraw_widgets, child_draw_origin, painter);
+                    }
+                }
+            }
+        } else if true || painter.needs_labels() {
             if let Some(redraw_widgets) = redraw_widgets {
                 if let Some(childs) = childs {
                     for c in childs.iter() {

@@ -200,6 +200,10 @@ impl<'a, 'b> Painter<'a, 'b> {
         self.lbl_collect = Some(vec![]);
     }
 
+    pub fn needs_labels(&self) -> bool {
+        self.lbl_collect.is_some()
+    }
+
     pub fn get_label_collection(
         &mut self,
     ) -> Option<Vec<(LblDebugTag, (f32, f32, f32, f32, String))>> {
