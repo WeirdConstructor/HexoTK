@@ -18,6 +18,12 @@ fn escape(s: &str) -> String {
     s.replace("[", "[[").replace("]", "]]")
 }
 
+const CODE_COLOR_IDX: u8 = 15;
+//            emphasis_color: 2,
+//            strong_color: 4,
+//            code_color: 15,
+//            normal_color: 9,
+
 struct Style {
     add_fmt: Option<String>,
     color: Option<u8>,
@@ -27,6 +33,10 @@ struct Style {
 impl Style {
     pub fn new() -> Self {
         Self { add_fmt: None, color: None, size: None }
+    }
+
+    pub fn with_code(&self) -> Self {
+        Self { add_fmt: self.add_fmt.clone(), color: Some(CODE_COLOR_IDX), size: self.size }
     }
 
     pub fn with_heading_level(&self, hl: HeadingLevel, heading_styles: &[(u8, u8)]) -> Self {
@@ -197,6 +207,12 @@ impl MarkdownWichtextGenerator {
                     self.text_lines.push(indent_s + &dashes);
                 }
                 Event::Start(tag) => match tag {
+                    Tag::CodeBlock(_) => {
+                        indent += 4;
+                        style_stack.push(style_stack.last().unwrap().with_code());
+                        layout.flush(&mut self.text_lines);
+                        self.text_lines.push(String::new());
+                    }
                     Tag::Heading(hl, _, _) => {
                         layout.flush(&mut self.text_lines);
                         self.text_lines.push(String::new());
@@ -211,6 +227,12 @@ impl MarkdownWichtextGenerator {
                     _ => {}
                 },
                 Event::End(tag) => match tag {
+                    Tag::CodeBlock(_) => {
+                        indent -= 4;
+                        style_stack.pop();
+                        layout.flush(&mut self.text_lines);
+                        self.text_lines.push(String::new());
+                    }
                     Tag::Heading(_, _, _) => {
                         style_stack.pop();
                         layout.flush(&mut self.text_lines);
@@ -222,10 +244,20 @@ impl MarkdownWichtextGenerator {
                     }
                     _ => {}
                 },
+                Event::Code(s) => {
+                    style_stack.push(style_stack.last().unwrap().with_code());
+                    layout.add_words_from_string(
+                        &s,
+                        indent,
+                        style_stack.last().unwrap(),
+                        &mut self.text_lines,
+                    );
+                    style_stack.pop();
+                }
                 Event::Text(s) => {
                     layout.add_words_from_string(
                         &s,
-                        0,
+                        indent,
                         style_stack.last().unwrap(),
                         &mut self.text_lines,
                     );
@@ -357,7 +389,7 @@ Test
 
 ## Test 123 *foobar* __LOL__ ´323423423´
 
-AAA
+AAA `cccc` DDDD
 
 -------
 
