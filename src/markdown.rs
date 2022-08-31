@@ -19,6 +19,8 @@ fn escape(s: &str) -> String {
 }
 
 const CODE_COLOR_IDX: u8 = 15;
+const LINK_COLOR_IDX: u8 = 8;
+const LIST_MARK_COLOR_IDX: u8 = 17;
 //            emphasis_color: 2,
 //            strong_color: 4,
 //            code_color: 15,
@@ -28,15 +30,42 @@ struct Style {
     add_fmt: Option<String>,
     color: Option<u8>,
     size: Option<u8>,
+    raw: bool,
 }
 
 impl Style {
     pub fn new() -> Self {
-        Self { add_fmt: None, color: None, size: None }
+        Self { add_fmt: None, color: None, size: None, raw: false }
+    }
+
+    pub fn with_list_mark(&self) -> Self {
+        Self {
+            add_fmt: self.add_fmt.clone(),
+            color: Some(LIST_MARK_COLOR_IDX),
+            size: self.size,
+            raw: self.raw,
+        }
     }
 
     pub fn with_code(&self) -> Self {
-        Self { add_fmt: self.add_fmt.clone(), color: Some(CODE_COLOR_IDX), size: self.size }
+        Self {
+            add_fmt: self.add_fmt.clone(),
+            color: Some(CODE_COLOR_IDX),
+            size: self.size,
+            raw: self.raw,
+        }
+    }
+
+    pub fn with_link(&self, lref: &str) -> Self {
+        let mut add_fmt =
+            if let Some(add_fmt) = &self.add_fmt { add_fmt.to_string() } else { String::new() };
+        add_fmt += "a";
+        Self {
+            add_fmt: Some(add_fmt),
+            color: Some(LINK_COLOR_IDX),
+            size: self.size,
+            raw: lref == "$",
+        }
     }
 
     pub fn with_heading_level(&self, hl: HeadingLevel, heading_styles: &[(u8, u8)]) -> Self {
@@ -52,10 +81,13 @@ impl Style {
         let size_idx = index.min(heading_styles.len() - 1);
         let (color, size) = heading_styles[size_idx];
 
-        Self { add_fmt: self.add_fmt.clone(), color: Some(color), size: Some(size) }
+        Self { add_fmt: self.add_fmt.clone(), color: Some(color), size: Some(size), raw: self.raw }
     }
 
     pub fn fmt_word(&self, word: &str) -> String {
+        if self.raw {
+            return word.to_string();
+        }
         if word.is_empty() {
             return String::new();
         }
@@ -72,15 +104,27 @@ impl Style {
             fmt += add_fmt;
         }
 
+        let word = escape(word);
         if fmt.len() > 0 {
-            format!("[{}:{}]", fmt, escape(word))
+            format!("[{}:{}]", fmt, word)
         } else {
-            escape(word)
+            word
         }
     }
 }
 
+fn indent_str(indent: u16) -> String {
+    let mut indent_s = String::new();
+    for _ in 0..indent {
+        indent_s += " ";
+    }
+    indent_s
+}
+
 struct BlockLayout {
+    indent: u16,
+    indent_stack: Vec<u16>,
+    first_without_indent: bool,
     width: usize,
     cur_line: String,
     cur_line_w: usize,
@@ -88,20 +132,36 @@ struct BlockLayout {
 
 impl BlockLayout {
     pub fn new(width: usize) -> Self {
-        Self { width, cur_line: String::new(), cur_line_w: 0 }
+        Self {
+            indent: 0,
+            indent_stack: vec![],
+            first_without_indent: false,
+            width,
+            cur_line: String::new(),
+            cur_line_w: 0,
+        }
     }
 
-    pub fn add_words_from_string(
-        &mut self,
-        s: &str,
-        indent: u16,
-        style: &Style,
-        out_lines: &mut Vec<String>,
-    ) {
-        let mut indent_s = String::new();
-        for _ in 0..indent {
-            indent_s += " ";
-        }
+    pub fn push_indent(&mut self, inc: u16) {
+        self.indent_stack.push(self.indent);
+        self.indent += inc;
+    }
+
+    pub fn pop_indent(&mut self) {
+        self.indent = self.indent_stack.pop().unwrap_or(0);
+    }
+
+    pub fn set_first_without_indent(&mut self) {
+        self.first_without_indent = true;
+    }
+
+    pub fn add_words_from_string(&mut self, s: &str, style: &Style, out_lines: &mut Vec<String>) {
+        let indent_s = if self.first_without_indent {
+            self.first_without_indent = false;
+            indent_str(self.indent_stack.last().copied().unwrap_or(0))
+        } else {
+            indent_str(self.indent)
+        };
 
         if self.cur_line.is_empty() {
             self.cur_line = indent_s.clone();
@@ -122,7 +182,7 @@ impl BlockLayout {
                 self.cur_line_w = indent_s.len();
             }
 
-            if !self.cur_line.is_empty() {
+            if self.cur_line.find(|c| !char::is_whitespace(c)).is_some() {
                 self.cur_line += " ";
                 self.cur_line_w += 1;
             }
@@ -137,35 +197,10 @@ impl BlockLayout {
             out_lines.push(self.cur_line.clone());
             self.cur_line = String::new();
             self.cur_line_w = 0;
+            self.first_without_indent = false;
         }
     }
 }
-
-//fn word_wrap(indent: u16, width: u16, s: String, out_lines: &mut Vec<String>) {
-//    let mut indent_s = String::new();
-//    for _ in 0..indent {
-//        indent_s += " ";
-//    }
-//
-//    let words : Vec<&str> = s.split(" ").collect();
-//
-//    let mut cur_line = indent_s.clone();
-//    for word in words.iter() {
-//        if cur_line.len() > width.into() {
-//            out_lines.push(cur_line);
-//            cur_line = indent_s.clone();
-//        }
-//
-//        if !cur_line.is_empty() {
-//            cur_line += " ";
-//        }
-//        cur_line += word;
-//    }
-//
-//    if cur_line.len() > 0 {
-//        out_lines.push(cur_line);
-//    }
-//}
 
 impl MarkdownWichtextGenerator {
     pub fn new(bw: u16) -> Self {
@@ -180,6 +215,18 @@ impl MarkdownWichtextGenerator {
         }
     }
 
+    pub fn ensure_empty_line(&mut self) {
+        let prev_empty =
+            if let Some(l) = self.text_lines.last() {
+                l.is_empty()
+            } else {
+                true
+            };
+        if !prev_empty {
+            self.text_lines.push(String::new());
+        }
+    }
+
     pub fn parse(&mut self, txt: &str) {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_STRIKETHROUGH);
@@ -189,17 +236,15 @@ impl MarkdownWichtextGenerator {
 
         let mut style_stack = vec![Style::new()];
 
-        let mut indent: u16 = 0;
+        let mut list_stack = vec![];
+        let mut current_list_index = None;
 
         for ev in parser {
-            println!("EVENT: {:?}", ev);
+            //d// println!("EVENT: {:?}", ev);
 
             match ev {
                 Event::Rule => {
-                    let mut indent_s = String::new();
-                    for _ in 0..indent {
-                        indent_s += " ";
-                    }
+                    let indent_s = indent_str(layout.indent);
                     let mut dashes = String::from("[t9]");
                     for _ in 0..self.block_width {
                         dashes += "-";
@@ -207,15 +252,41 @@ impl MarkdownWichtextGenerator {
                     self.text_lines.push(indent_s + &dashes);
                 }
                 Event::Start(tag) => match tag {
+                    Tag::List(start) => {
+                        list_stack.push(current_list_index);
+                        current_list_index = start;
+                        layout.flush(&mut self.text_lines);
+                    }
+                    Tag::Item => {
+                        layout.flush(&mut self.text_lines);
+                        let item = if let Some(index) = &mut current_list_index {
+                            *index += 1;
+                            format!("{} ", *index - 1)
+                        } else {
+                            "* ".to_string()
+                        };
+                        layout.add_words_from_string(
+                            &item,
+                            &style_stack.last().unwrap().with_list_mark(),
+                            &mut self.text_lines,
+                        );
+                        layout.push_indent(2);
+                    }
+                    Tag::Image(_, lref, _) => {
+                        self.text_lines.push(format!("[I{}:]", lref))
+                    }
+                    Tag::Link(_, lref, _) => {
+                        style_stack.push(style_stack.last().unwrap().with_link(&lref));
+                    }
                     Tag::CodeBlock(_) => {
-                        indent += 4;
                         style_stack.push(style_stack.last().unwrap().with_code());
                         layout.flush(&mut self.text_lines);
-                        self.text_lines.push(String::new());
+                        layout.push_indent(4);
+                        self.ensure_empty_line();
                     }
                     Tag::Heading(hl, _, _) => {
                         layout.flush(&mut self.text_lines);
-                        self.text_lines.push(String::new());
+                        self.ensure_empty_line();
 
                         style_stack.push(
                             style_stack
@@ -228,19 +299,31 @@ impl MarkdownWichtextGenerator {
                 },
                 Event::End(tag) => match tag {
                     Tag::CodeBlock(_) => {
-                        indent -= 4;
                         style_stack.pop();
                         layout.flush(&mut self.text_lines);
-                        self.text_lines.push(String::new());
+                        layout.pop_indent();
+                        self.ensure_empty_line();
+                    }
+                    Tag::List(_) => {
+                        current_list_index = list_stack.pop().flatten();
+                    }
+                    Tag::Image(_, _, _) => {
+                    }
+                    Tag::Link(_, _, _) => {
+                        style_stack.pop();
+                    }
+                    Tag::Item => {
+                        layout.flush(&mut self.text_lines);
+                        layout.pop_indent();
                     }
                     Tag::Heading(_, _, _) => {
                         style_stack.pop();
                         layout.flush(&mut self.text_lines);
-                        self.text_lines.push(String::new());
+                        self.ensure_empty_line();
                     }
                     Tag::Paragraph => {
                         layout.flush(&mut self.text_lines);
-                        self.text_lines.push(String::new());
+                        self.ensure_empty_line();
                     }
                     _ => {}
                 },
@@ -248,7 +331,6 @@ impl MarkdownWichtextGenerator {
                     style_stack.push(style_stack.last().unwrap().with_code());
                     layout.add_words_from_string(
                         &s,
-                        indent,
                         style_stack.last().unwrap(),
                         &mut self.text_lines,
                     );
@@ -257,7 +339,6 @@ impl MarkdownWichtextGenerator {
                 Event::Text(s) => {
                     layout.add_words_from_string(
                         &s,
-                        indent,
                         style_stack.last().unwrap(),
                         &mut self.text_lines,
                     );
@@ -266,97 +347,6 @@ impl MarkdownWichtextGenerator {
             }
         }
     }
-
-    //    pub fn header_span2text(&self, s: &Span, size: Option<u8>, color: Option<u8>) -> String {
-    //        match s {
-    //            Span::Break => "".to_string(),
-    //            Span::Link(s, _, _) => {
-    //                let mut fmt = String::new();
-    //                if let Some(size) = size {
-    //                    fmt += &format!("f{}", size);
-    //                }
-    //                if let Some(color) = color {
-    //                    fmt += &format!("c{}", color);
-    //                }
-    //                if fmt.len() > 0 {
-    //                    format!("[a{}:{}]", fmt, escape(s))
-    //                } else {
-    //                    format!("[a:{}]", escape(s))
-    //                }
-    //            }
-    //            Span::Text(s) => {
-    //                let mut fmt = String::new();
-    //                if let Some(size) = size {
-    //                    fmt += &format!("f{}", size);
-    //                }
-    //                if let Some(color) = color {
-    //                    fmt += &format!("c{}", color);
-    //                }
-    //                if fmt.len() > 0 {
-    //                    format!("[{}:{}]", fmt, escape(s))
-    //                } else {
-    //                    escape(s)
-    //                }
-    //            }
-    //            Span::Code(s) => {
-    //                let mut fmt = String::new();
-    //                if let Some(size) = size {
-    //                    fmt += &format!("f{}", size);
-    //                }
-    //                format!("[{}c{}:{}]", fmt, self.code_color, escape(s))
-    //            }
-    //            Span::Strong(spans) => {
-    //                let mut res = String::new();
-    //                for s in spans.iter() {
-    //                    res += &self.header_span2text(s, size, Some(self.strong_color))
-    //                }
-    //                res
-    //            }
-    //            Span::Emphasis(spans) => {
-    //                let mut res = String::new();
-    //                for s in spans.iter() {
-    //                    res += &self.header_span2text(s, size, Some(self.emphasis_color))
-    //                }
-    //                res
-    //            }
-    //            Span::Image(_, _, _) => {
-    //                String::new()
-    //            }
-    //        }
-    //    }
-    //
-    //    pub fn append_block(&mut self, b: &Block, indent: u16) {
-    //        let width = self.block_width - indent;
-    //        let mut indent_s = String::new();
-    //        for _ in 0..indent {
-    //            indent_s += " ";
-    //        }
-    //        println!("BLCOK: {:?}", b);
-    //
-    //        match b {
-    //            Block::Header(spans, size) => {
-    //                let size_idx = (*size).min(self.header_color_font_size.len() - 1);
-    //                let (color, size) = self.header_color_font_size[size_idx];
-    //                let mut header = String::new();
-    //                for s in spans.iter() {
-    //                    header += &self.header_span2text(s, Some(size), Some(color));
-    //                }
-    //                self.text_lines.push(indent_s + &header);
-    //            },
-    //            Block::Raw(s) => {
-    //                self.text_lines.push(indent_s + s);
-    //            },
-    //            Block::Hr => {
-    //                println!("HR {}\n", width);
-    //                let mut dashes = String::from("[t9]");
-    //                for _ in 0..width {
-    //                    dashes += "-";
-    //                }
-    //                self.text_lines.push(indent_s + &dashes);
-    //            }
-    //            _ => {}
-    //        }
-    //    }
 
     pub fn to_string(&self) -> String {
         self.text_lines.join("\n")
@@ -395,7 +385,7 @@ AAA `cccc` DDDD
 
 BBBBB
 
-### And here: [Foobar](Barfoo)
+### And here: [Foobar]()
 
 Test 123 fiuowe fieuwf hewuif hewiuf weiuf hweifu wehfi uwehf iweufh ewiuf hweiuf weiuf weiuf
 Test 123 fiuowe fieuwf hewuif hewiuf weiuf hweifu wehfi uwehf iweufh ewiuf hweiuf weiuf weiuf
@@ -432,11 +422,10 @@ Intdent start:
 eindent end
 
 ---------------------------------------
-
 ```
 COde blcapfcelfw
+feiow fewf
 ```
-
 - Other A
 - Other B
 - Other C
@@ -448,6 +437,10 @@ COde blcapfcelfw
 > feoiwfjew ofew
 > feoiwfjew ofew
 > feoiwfjew ofew
+
+[[c15f30:Foobar] Lol]($)
+
+Image here: ![](main/bla.png)
         "#;
         //        for block in tree.iter() {
         //            mwg.append_block(block, 0);
@@ -455,6 +448,7 @@ COde blcapfcelfw
         mwg.parse(text);
         println!("RES:\n{}", mwg.to_string());
 
-        assert_eq!(mwg.to_string(), "FFF");
+        assert_eq!(mwg.to_string(),
+            "fpoiewj fewoifj ewoifeowj\nf weiofj eiwoofj wejfwe\nfeiowjfeiowfeiowfwiofew\n\n===================\n\nfeiofj wiofjwowe f weoifewj\nioewj fweo feiwjfewoi\n\n[t9]--------------------\n\n[f22c15:Test]\n\n[f21c11:Test] [f21c11:123] [f21c11:foobar] [f21c11:LOL] [f21c11:´323423423´]\n\nAAA [c15:cccc] DDDD\n\n[t9]--------------------\nBBBBB\n\n[f20c12:And] [f20c12:here:] [f20c8a:Foobar]\n\nTest 123 fiuowe fieuwf\nhewuif hewiuf weiuf hweifu\nwehfi uwehf iweufh ewiuf\nhweiuf weiuf weiuf Test\n123 fiuowe fieuwf hewuif\nhewiuf weiuf hweifu wehfi\nuwehf iweufh ewiuf hweiuf\nweiuf weiuf Test 123 fiuowe\nfieuwf hewuif hewiuf weiuf\nhweifu wehfi uwehf iweufh\newiuf hweiuf weiuf weiuf\nTest 123 fiuowe fieuwf\nhewuif hewiuf weiuf hweifu\nwehfi uwehf iweufh ewiuf\nhweiuf weiuf weiuf Test\n123 fiuowe fieuwf hewuif\nhewiuf weiuf hweifu wehfi\nuwehf iweufh ewiuf hweiuf\nweiuf weiuf\n\n[c17:1] List Itmee 1\n[c17:2] List Item 2\n[c17:3] List Item foieuwj fewo\n  fejwiof ewjfioe wiofj\n  weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe\n\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n\n[c17:4] Foobar lololol\n[c17:*] Item A\n[c17:*] Item B\n[c17:*] Item C\n[c17:*] Item D\nIntdent start:\n\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe] [c15:fiif] [c15:ewoif]\n    [c15:ejwoifw] [c15:joiwej] [c15:foiwef]\n    [c15:jeowiefwoi] [c15:fjiowe]\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe] [c15:fiif] [c15:ewoif]\n    [c15:ejwoifw] [c15:joiwej] [c15:foiwef]\n    [c15:jeowiefwoi] [c15:fjiowe]\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe]\n\neindent end\n\n[t9]--------------------\n\n    [c15:COde] [c15:blcapfcelfw\nfeiow]\n    [c15:fewf]\n\n[c17:*] Other A\n[c17:*] Other B\n[c17:*] Other C\n[c17:*] Other D\n[c17:*] Other E\n\n[f21c11:Bla] [f21c11:bla]\n\nfeoiwfjew ofew feoiwfjew\nofew feoiwfjew ofew feoiwfjew\nofew\n\n[ c15f30:Foobar ] Lol\n\n[Imain/bla.png:]\nImage here:\n");
     }
 }
