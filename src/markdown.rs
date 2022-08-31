@@ -20,6 +20,8 @@ fn escape(s: &str) -> String {
 
 const CODE_COLOR_IDX: u8 = 15;
 const LINK_COLOR_IDX: u8 = 8;
+const STRONG_COLOR_IDX: u8 = 4;
+const EMPHASIS_COLOR_IDX: u8 = 2;
 const LIST_MARK_COLOR_IDX: u8 = 17;
 //            emphasis_color: 2,
 //            strong_color: 4,
@@ -42,6 +44,24 @@ impl Style {
         Self {
             add_fmt: self.add_fmt.clone(),
             color: Some(LIST_MARK_COLOR_IDX),
+            size: self.size,
+            raw: self.raw,
+        }
+    }
+
+    pub fn with_strong(&self) -> Self {
+        Self {
+            add_fmt: self.add_fmt.clone(),
+            color: Some(STRONG_COLOR_IDX),
+            size: self.size,
+            raw: self.raw,
+        }
+    }
+
+    pub fn with_emphasis(&self) -> Self {
+        Self {
+            add_fmt: self.add_fmt.clone(),
+            color: Some(EMPHASIS_COLOR_IDX),
             size: self.size,
             raw: self.raw,
         }
@@ -215,13 +235,8 @@ impl MarkdownWichtextGenerator {
         }
     }
 
-    pub fn ensure_empty_line(&mut self) {
-        let prev_empty =
-            if let Some(l) = self.text_lines.last() {
-                l.is_empty()
-            } else {
-                true
-            };
+    fn ensure_empty_line(&mut self) {
+        let prev_empty = if let Some(l) = self.text_lines.last() { l.is_empty() } else { true };
         if !prev_empty {
             self.text_lines.push(String::new());
         }
@@ -272,9 +287,7 @@ impl MarkdownWichtextGenerator {
                         );
                         layout.push_indent(2);
                     }
-                    Tag::Image(_, lref, _) => {
-                        self.text_lines.push(format!("[I{}:]", lref))
-                    }
+                    Tag::Image(_, lref, _) => self.text_lines.push(format!("[I{}:]", lref)),
                     Tag::Link(_, lref, _) => {
                         style_stack.push(style_stack.last().unwrap().with_link(&lref));
                     }
@@ -295,6 +308,12 @@ impl MarkdownWichtextGenerator {
                                 .with_heading_level(hl, &self.header_color_font_size),
                         );
                     }
+                    Tag::Strong => {
+                        style_stack.push(style_stack.last().unwrap().with_strong());
+                    }
+                    Tag::Emphasis => {
+                        style_stack.push(style_stack.last().unwrap().with_emphasis());
+                    }
                     _ => {}
                 },
                 Event::End(tag) => match tag {
@@ -307,8 +326,7 @@ impl MarkdownWichtextGenerator {
                     Tag::List(_) => {
                         current_list_index = list_stack.pop().flatten();
                     }
-                    Tag::Image(_, _, _) => {
-                    }
+                    Tag::Image(_, _, _) => {}
                     Tag::Link(_, _, _) => {
                         style_stack.pop();
                     }
@@ -324,6 +342,12 @@ impl MarkdownWichtextGenerator {
                     Tag::Paragraph => {
                         layout.flush(&mut self.text_lines);
                         self.ensure_empty_line();
+                    }
+                    Tag::Strong => {
+                        style_stack.pop();
+                    }
+                    Tag::Emphasis => {
+                        style_stack.pop();
                     }
                     _ => {}
                 },
@@ -441,6 +465,10 @@ feiow fewf
 [[c15f30:Foobar] Lol]($)
 
 Image here: ![](main/bla.png)
+
+**Strong text here lo lof efew jofiewj oiewfjoi we**
+
+*Emphasis text hefew ewfhweiu fhweiu hewiuf ewiufhew*
         "#;
         //        for block in tree.iter() {
         //            mwg.append_block(block, 0);
@@ -449,6 +477,6 @@ Image here: ![](main/bla.png)
         println!("RES:\n{}", mwg.to_string());
 
         assert_eq!(mwg.to_string(),
-            "fpoiewj fewoifj ewoifeowj\nf weiofj eiwoofj wejfwe\nfeiowjfeiowfeiowfwiofew\n\n===================\n\nfeiofj wiofjwowe f weoifewj\nioewj fweo feiwjfewoi\n\n[t9]--------------------\n\n[f22c15:Test]\n\n[f21c11:Test] [f21c11:123] [f21c11:foobar] [f21c11:LOL] [f21c11:´323423423´]\n\nAAA [c15:cccc] DDDD\n\n[t9]--------------------\nBBBBB\n\n[f20c12:And] [f20c12:here:] [f20c8a:Foobar]\n\nTest 123 fiuowe fieuwf\nhewuif hewiuf weiuf hweifu\nwehfi uwehf iweufh ewiuf\nhweiuf weiuf weiuf Test\n123 fiuowe fieuwf hewuif\nhewiuf weiuf hweifu wehfi\nuwehf iweufh ewiuf hweiuf\nweiuf weiuf Test 123 fiuowe\nfieuwf hewuif hewiuf weiuf\nhweifu wehfi uwehf iweufh\newiuf hweiuf weiuf weiuf\nTest 123 fiuowe fieuwf\nhewuif hewiuf weiuf hweifu\nwehfi uwehf iweufh ewiuf\nhweiuf weiuf weiuf Test\n123 fiuowe fieuwf hewuif\nhewiuf weiuf hweifu wehfi\nuwehf iweufh ewiuf hweiuf\nweiuf weiuf\n\n[c17:1] List Itmee 1\n[c17:2] List Item 2\n[c17:3] List Item foieuwj fewo\n  fejwiof ewjfioe wiofj\n  weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe\n\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n\n[c17:4] Foobar lololol\n[c17:*] Item A\n[c17:*] Item B\n[c17:*] Item C\n[c17:*] Item D\nIntdent start:\n\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe] [c15:fiif] [c15:ewoif]\n    [c15:ejwoifw] [c15:joiwej] [c15:foiwef]\n    [c15:jeowiefwoi] [c15:fjiowe]\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe] [c15:fiif] [c15:ewoif]\n    [c15:ejwoifw] [c15:joiwej] [c15:foiwef]\n    [c15:jeowiefwoi] [c15:fjiowe]\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe]\n\neindent end\n\n[t9]--------------------\n\n    [c15:COde] [c15:blcapfcelfw\nfeiow]\n    [c15:fewf]\n\n[c17:*] Other A\n[c17:*] Other B\n[c17:*] Other C\n[c17:*] Other D\n[c17:*] Other E\n\n[f21c11:Bla] [f21c11:bla]\n\nfeoiwfjew ofew feoiwfjew\nofew feoiwfjew ofew feoiwfjew\nofew\n\n[ c15f30:Foobar ] Lol\n\n[Imain/bla.png:]\nImage here:\n");
+            "fpoiewj fewoifj ewoifeowj\nf weiofj eiwoofj wejfwe\nfeiowjfeiowfeiowfwiofew\n\n===================\n\nfeiofj wiofjwowe f weoifewj\nioewj fweo feiwjfewoi\n\n[t9]--------------------\n\n[f22c15:Test]\n\n[f21c11:Test] [f21c11:123] [f21c2:foobar] [f21c4:LOL] [f21c11:´323423423´]\n\nAAA [c15:cccc] DDDD\n\n[t9]--------------------\nBBBBB\n\n[f20c12:And] [f20c12:here:] [f20c8a:Foobar]\n\nTest 123 fiuowe fieuwf\nhewuif hewiuf weiuf hweifu\nwehfi uwehf iweufh ewiuf\nhweiuf weiuf weiuf Test\n123 fiuowe fieuwf hewuif\nhewiuf weiuf hweifu wehfi\nuwehf iweufh ewiuf hweiuf\nweiuf weiuf Test 123 [c2:fiuowe]\n[c2:fieuwf] [c2:hewuif] [c2:hewiuf] weiuf\nhweifu wehfi uwehf iweufh\newiuf hweiuf weiuf weiuf\nTest 123 fiuowe fieuwf\nhewuif hewiuf weiuf hweifu\nwehfi uwehf iweufh ewiuf\nhweiuf weiuf weiuf Test\n123 fiuowe fieuwf hewuif\nhewiuf weiuf hweifu wehfi\nuwehf iweufh ewiuf hweiuf\nweiuf weiuf\n\n[c17:1] List Itmee 1\n[c17:2] List Item 2\n[c17:3] List Item foieuwj fewo\n  fejwiof ewjfioe wiofj\n  weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe foieuwj\n  fewo fejwiof ewjfioe\n  wiofj weoif iofwe\n\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n      [c15:Test] [c15:123] [c15:892u] [c15:923u]\n      [c15:2389r] [c15:2389rj] [c15:98ew]\n\n[c17:4] Foobar lololol\n[c17:*] Item A\n[c17:*] Item B\n[c17:*] Item C\n[c17:*] Item D\nIntdent start:\n\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe] [c15:fiif] [c15:ewoif]\n    [c15:ejwoifw] [c15:joiwej] [c15:foiwef]\n    [c15:jeowiefwoi] [c15:fjiowe]\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe] [c15:fiif] [c15:ewoif]\n    [c15:ejwoifw] [c15:joiwej] [c15:foiwef]\n    [c15:jeowiefwoi] [c15:fjiowe]\n    [c15:fiif] [c15:ewoif] [c15:ejwoifw]\n    [c15:joiwej] [c15:foiwef] [c15:jeowiefwoi]\n    [c15:fjiowe]\n\neindent end\n\n[t9]--------------------\n\n    [c15:COde] [c15:blcapfcelfw\nfeiow]\n    [c15:fewf]\n\n[c17:*] Other A\n[c17:*] Other B\n[c17:*] Other C\n[c17:*] Other D\n[c17:*] Other E\n\n[f21c11:Bla] [f21c11:bla]\n\nfeoiwfjew ofew feoiwfjew\nofew feoiwfjew ofew feoiwfjew\nofew\n\n[ c15f30:Foobar ] Lol\n\n[Imain/bla.png:]\nImage here:\n\n[c4:Strong] [c4:text] [c4:here] [c4:lo] [c4:lof]\n[c4:efew] [c4:jofiewj] [c4:oiewfjoi]\n[c4:we]\n\n[c2:Emphasis] [c2:text] [c2:hefew] [c2:ewfhweiu]\n[c2:fhweiu] [c2:hewiuf] [c2:ewiufhew]\n");
     }
 }

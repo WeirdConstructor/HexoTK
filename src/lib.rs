@@ -20,6 +20,7 @@ use std::rc::Rc;
 
 use keyboard_types::KeyboardEvent; // Key
 use painter::Painter;
+pub use markdown::*;
 pub use rect::Rect;
 pub use style::{Align, BorderStyle, DPIStyle, Style, StyleExt, VAlign};
 pub use ui::UI;
