@@ -210,9 +210,6 @@ impl BlockLayout {
 
         for word in words.iter() {
             let word = word.trim();
-            if word.is_empty() {
-                continue;
-            }
 
             if self.cur_line_w > self.width.into() {
                 out_lines.push(self.cur_line.clone());
@@ -539,5 +536,10 @@ Image here: ![](main/bla.png)
         mwg.parse("A<B@fo.de>C");
         println!("RES:\n{}", mwg.to_string());
         assert_eq!(mwg.to_string(), "A[c8a:B@fo.de]C\n");
+
+        let mut mwg = MarkdownWichtextGenerator::new(50);
+        mwg.parse("A <B@fo.de> C");
+        println!("RES:\n{}", mwg.to_string());
+        assert_eq!(mwg.to_string(), "A [c8a:B@fo.de] C\n");
     }
 }
