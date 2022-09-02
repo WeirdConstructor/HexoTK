@@ -191,6 +191,15 @@ impl BlockLayout {
         self.cur_line_w += 1;
     }
 
+    pub fn ensure_space(&mut self) {
+        if self.cur_line_w > 0 {
+            if self.cur_line.chars().last().unwrap_or('_') != ' ' {
+                self.cur_line += " ";
+                self.cur_line_w += 1;
+            }
+        }
+    }
+
     pub fn add_words_from_string(&mut self, s: &str, style: &Style, out_lines: &mut Vec<String>) {
         let indent_s = if self.first_without_indent {
             self.first_without_indent = false;
@@ -393,6 +402,9 @@ impl MarkdownWichtextGenerator {
                         &mut self.text_lines,
                     );
                 }
+                Event::SoftBreak => {
+                    layout.ensure_space();
+                }
                 _ => {}
             }
         }
@@ -541,5 +553,13 @@ Image here: ![](main/bla.png)
         mwg.parse("A <B@fo.de> C");
         println!("RES:\n{}", mwg.to_string());
         assert_eq!(mwg.to_string(), "A [c8a:B@fo.de] C\n");
+    }
+
+    #[test]
+    fn check_mkd2wt_softbreaks() {
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("soft breaks\nsoft\nbreaks\nsoft\nbreaks");
+        println!("RES:\n{}", mwg.to_string());
+        assert_eq!(mwg.to_string(), "soft breaks \nsoft breaks \nsoft breaks\n");
     }
 }
