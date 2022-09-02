@@ -414,7 +414,6 @@ impl MarkdownWichtextGenerator {
                         style_stack.last().unwrap(),
                         &mut self.text_lines,
                     );
-                    layout.flush(&mut self.text_lines);
                     style_stack.pop();
                 }
                 Event::Text(s) => {
