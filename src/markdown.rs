@@ -271,10 +271,11 @@ impl MarkdownWichtextGenerator {
             match ev {
                 Event::Rule => {
                     let indent_s = indent_str(layout.indent);
-                    let mut dashes = String::from("[t11:]");
+                    let mut dashes = String::from("[c11:");
                     for _ in 0..self.block_width {
                         dashes += "-";
                     }
+                    dashes += "]";
                     self.ensure_empty_line();
                     self.text_lines.push(indent_s + &dashes);
                 }
