@@ -23,7 +23,6 @@ const LINK_COLOR_IDX: u8 = 8;
 const STRONG_COLOR_IDX: u8 = 4;
 const EMPHASIS_COLOR_IDX: u8 = 2;
 const STRIKE_COLOR_IDX: u8 = 11;
-const STRIKE_SIZE: u8 = 12;
 const LIST_MARK_COLOR_IDX: u8 = 17;
 //            emphasis_color: 2,
 //            strong_color: 4,
@@ -73,7 +72,7 @@ impl Style {
         Self {
             add_fmt: self.add_fmt.clone(),
             color: Some(STRIKE_COLOR_IDX),
-            size: Some(STRIKE_SIZE),
+            size: self.size,
             raw: self.raw,
         }
     }
