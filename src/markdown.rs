@@ -34,11 +34,12 @@ struct Style {
     color: Option<u8>,
     size: Option<u8>,
     raw: bool,
+    code: bool,
 }
 
 impl Style {
     pub fn new() -> Self {
-        Self { add_fmt: None, color: None, size: None, raw: false }
+        Self { add_fmt: None, color: None, size: None, raw: false, code: false }
     }
 
     pub fn with_list_mark(&self) -> Self {
@@ -47,6 +48,7 @@ impl Style {
             color: Some(LIST_MARK_COLOR_IDX),
             size: self.size,
             raw: self.raw,
+            code: false,
         }
     }
 
@@ -56,6 +58,7 @@ impl Style {
             color: Some(STRONG_COLOR_IDX),
             size: self.size,
             raw: self.raw,
+            code: false,
         }
     }
 
@@ -65,6 +68,7 @@ impl Style {
             color: Some(EMPHASIS_COLOR_IDX),
             size: self.size,
             raw: self.raw,
+            code: false,
         }
     }
 
@@ -74,6 +78,7 @@ impl Style {
             color: Some(STRIKE_COLOR_IDX),
             size: self.size,
             raw: self.raw,
+            code: false,
         }
     }
 
@@ -83,6 +88,7 @@ impl Style {
             color: Some(CODE_COLOR_IDX),
             size: self.size,
             raw: self.raw,
+            code: true,
         }
     }
 
@@ -95,6 +101,7 @@ impl Style {
             color: Some(LINK_COLOR_IDX),
             size: self.size,
             raw: lref == "$",
+            code: false,
         }
     }
 
@@ -111,7 +118,17 @@ impl Style {
         let size_idx = index.min(heading_styles.len() - 1);
         let (color, size) = heading_styles[size_idx];
 
-        Self { add_fmt: self.add_fmt.clone(), color: Some(color), size: Some(size), raw: self.raw }
+        Self {
+            add_fmt: self.add_fmt.clone(),
+            color: Some(color),
+            size: Some(size),
+            raw: self.raw,
+            code: false,
+        }
+    }
+
+    pub fn in_code(&self) -> bool {
+        self.code
     }
 
     pub fn fmt_word(&self, word: &str) -> String {
@@ -210,6 +227,11 @@ impl BlockLayout {
         if self.cur_line.is_empty() {
             self.cur_line = indent_s.clone();
             self.cur_line_w = indent_s.len();
+        }
+
+        if style.in_code() {
+            self.cur_line += &style.fmt_word(s.trim_end());
+            return;
         }
 
         let words: Vec<&str> = s.split(" ").collect();
@@ -392,6 +414,7 @@ impl MarkdownWichtextGenerator {
                         style_stack.last().unwrap(),
                         &mut self.text_lines,
                     );
+                    layout.flush(&mut self.text_lines);
                     style_stack.pop();
                 }
                 Event::Text(s) => {
@@ -400,6 +423,9 @@ impl MarkdownWichtextGenerator {
                         style_stack.last().unwrap(),
                         &mut self.text_lines,
                     );
+                    if style_stack.last().unwrap().in_code() {
+                        layout.flush(&mut self.text_lines);
+                    }
                 }
                 Event::SoftBreak => {
                     layout.ensure_space();
@@ -560,5 +586,13 @@ Image here: ![](main/bla.png)
         mwg.parse("soft breaks\nsoft\nbreaks\nsoft\nbreaks");
         println!("RES:\n{}", mwg.to_string());
         assert_eq!(mwg.to_string(), "soft breaks \nsoft breaks \nsoft breaks\n");
+    }
+
+    #[test]
+    fn check_mkd2wt_code() {
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("a\n\n    soft\n      fo\n\nb");
+        println!("RES:\n{}", mwg.to_string());
+        assert_eq!(mwg.to_string(), "a\n\n    [c15:soft]\n    [c15:  fo]\n\nb\n");
     }
 }
