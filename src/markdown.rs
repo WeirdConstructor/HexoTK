@@ -6,10 +6,6 @@ use pulldown_cmark::{Event, HeadingLevel, CodeBlockKind, Options, Parser, Tag};
 
 pub struct MarkdownWichtextGenerator {
     header_color_font_size: Vec<(u8, u8)>,
-    emphasis_color: u8,
-    code_color: u8,
-    strong_color: u8,
-    normal_color: u8,
     block_width: u16,
     text_lines: Vec<String>,
 }
@@ -24,10 +20,6 @@ const STRONG_COLOR_IDX: u8 = 4;
 const EMPHASIS_COLOR_IDX: u8 = 2;
 const STRIKE_COLOR_IDX: u8 = 11;
 const LIST_MARK_COLOR_IDX: u8 = 17;
-//            emphasis_color: 2,
-//            strong_color: 4,
-//            code_color: 15,
-//            normal_color: 9,
 
 struct Style {
     add_fmt: Option<String>,
@@ -299,10 +291,6 @@ impl MarkdownWichtextGenerator {
     pub fn new(bw: u16) -> Self {
         Self {
             header_color_font_size: vec![(15, 22), (11, 21), (12, 20), (17, 19)],
-            emphasis_color: 2,
-            strong_color: 4,
-            code_color: 15,
-            normal_color: 9,
             block_width: bw,
             text_lines: vec![],
         }
@@ -468,6 +456,9 @@ impl MarkdownWichtextGenerator {
                         layout.flush(&mut self.text_lines);
                     }
                 }
+                Event::HardBreak => {
+                    layout.flush(&mut self.text_lines);
+                }
                 Event::SoftBreak => {
                     layout.ensure_space();
                 }
@@ -595,7 +586,7 @@ Image here: ![](main/bla.png)
         let mut mwg = MarkdownWichtextGenerator::new(50);
         mwg.parse("- A\n  - B\n- C\n");
         println!("RES:\n{}", mwg.to_string());
-        assert_eq!(mwg.to_string(), "[c17:*] A\n  [c17:*] B\n[c17:*] C");
+        assert_eq!(mwg.to_string(), "[c17:*] A\n  [c17:*] B\n[c17:*] C\n");
 
         let mut mwg = MarkdownWichtextGenerator::new(50);
         mwg.parse("- A\n  - B\n\n- C\n");
@@ -626,7 +617,7 @@ Image here: ![](main/bla.png)
         let mut mwg = MarkdownWichtextGenerator::new(10);
         mwg.parse("soft breaks\nsoft\nbreaks\nsoft\nbreaks");
         println!("RES:\n{}", mwg.to_string());
-        assert_eq!(mwg.to_string(), "soft breaks \nsoft breaks \nsoft breaks\n");
+        assert_eq!(mwg.to_string(), "soft breaks \nsoft \nbreaks \nsoft \nbreaks\n");
     }
 
     #[test]
@@ -642,7 +633,7 @@ Image here: ![](main/bla.png)
         let mut mwg = MarkdownWichtextGenerator::new(10);
         mwg.parse("[Test 123 feio fejwoif jewfo iewjfo iewjf weoi]($c19)");
         println!("RES:\n{}", mwg.to_string());
-        assert_eq!(mwg.to_string(),  "[c19:Test] [c19:123] [c19:feio]\n[c19:fejwoif] [c19:jewfo]\n[c19:iewjfo] [c19:iewjf]\n[c19:weoi]\n");
+        assert_eq!(mwg.to_string(),  "[c19:Test] [c19:123]\n[c19:feio]\n[c19:fejwoif]\n[c19:jewfo]\n[c19:iewjfo]\n[c19:iewjf] [c19:weoi]\n");
     }
 
     #[test]
@@ -651,5 +642,13 @@ Image here: ![](main/bla.png)
         mwg.parse("```wichtext\n    [c19:Test fei fjewoif jweofiew joifewwe]\n    fioewfijoiwefjewifwe\n```");
         println!("RES:\n{}", mwg.to_string());
         assert_eq!(mwg.to_string(), "    [c19:Test fei fjewoif jweofiew joifewwe]\n    fioewfijoiwefjewifwe\n");
+    }
+
+    #[test]
+    fn check_mkd2wt_force_break() {
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("bla  \nblo");
+        println!("RES:\n{}", mwg.to_string());
+        assert_eq!(mwg.to_string(), "bla\nblo\n");
     }
 }
