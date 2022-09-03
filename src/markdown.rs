@@ -2,7 +2,7 @@
 // This file is a part of HexoTK. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag};
+use pulldown_cmark::{Event, HeadingLevel, CodeBlockKind, Options, Parser, Tag};
 
 pub struct MarkdownWichtextGenerator {
     header_color_font_size: Vec<(u8, u8)>,
@@ -82,6 +82,16 @@ impl Style {
         }
     }
 
+    pub fn with_raw_code(&self) -> Self {
+        Self {
+            add_fmt: None,
+            color: None,
+            size: None,
+            raw: true,
+            code: true,
+        }
+    }
+
     pub fn with_code(&self) -> Self {
         Self {
             add_fmt: self.add_fmt.clone(),
@@ -93,15 +103,26 @@ impl Style {
     }
 
     pub fn with_link(&self, lref: &str) -> Self {
-        let mut add_fmt =
-            if let Some(add_fmt) = &self.add_fmt { add_fmt.to_string() } else { String::new() };
-        add_fmt += "a";
-        Self {
-            add_fmt: Some(add_fmt),
-            color: Some(LINK_COLOR_IDX),
-            size: self.size,
-            raw: lref == "$",
-            code: false,
+        if lref.starts_with("$") {
+            Self {
+                add_fmt: Some(lref.trim_start_matches('$').to_string()),
+                color: None,
+                size: None,
+                raw: false,
+                code: false,
+            }
+
+        } else {
+            let mut add_fmt =
+                if let Some(add_fmt) = &self.add_fmt { add_fmt.to_string() } else { String::new() };
+            add_fmt += "a";
+            Self {
+                add_fmt: Some(add_fmt),
+                color: Some(LINK_COLOR_IDX),
+                size: self.size,
+                raw: lref == "$",
+                code: false,
+            }
         }
     }
 
@@ -231,6 +252,7 @@ impl BlockLayout {
 
         if style.in_code() {
             self.cur_line += &style.fmt_word(s.trim_end());
+            self.cur_line_w = self.cur_line.len();
             return;
         }
 
@@ -341,11 +363,24 @@ impl MarkdownWichtextGenerator {
                     Tag::Link(_, lref, _) => {
                         style_stack.push(style_stack.last().unwrap().with_link(&lref));
                     }
-                    Tag::CodeBlock(_) => {
-                        style_stack.push(style_stack.last().unwrap().with_code());
+                    Tag::CodeBlock(code_type) => {
                         layout.flush(&mut self.text_lines);
-                        layout.push_indent(4);
                         self.ensure_empty_line();
+
+                        match code_type {
+                            CodeBlockKind::Fenced(lang) => {
+                                if &*lang == "wichtext" {
+                                    style_stack.push(style_stack.last().unwrap().with_raw_code());
+                                } else {
+                                    style_stack.push(style_stack.last().unwrap().with_code());
+                                }
+                                layout.push_indent(0);
+                            },
+                            CodeBlockKind::Indented => {
+                                style_stack.push(style_stack.last().unwrap().with_code());
+                                layout.push_indent(4);
+                            },
+                        }
                     }
                     Tag::Heading(hl, _, _) => {
                         layout.flush(&mut self.text_lines);
@@ -593,5 +628,21 @@ Image here: ![](main/bla.png)
         mwg.parse("a\n\n    soft\n      fo\n\nb");
         println!("RES:\n{}", mwg.to_string());
         assert_eq!(mwg.to_string(), "a\n\n    [c15:soft]\n    [c15:  fo]\n\nb\n");
+    }
+
+    #[test]
+    fn check_mkd2wt_inline_wt() {
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("[Test 123 feio fejwoif jewfo iewjfo iewjf weoi]($c19)");
+        println!("RES:\n{}", mwg.to_string());
+        assert_eq!(mwg.to_string(),  "[c19:Test] [c19:123] [c19:feio]\n[c19:fejwoif] [c19:jewfo]\n[c19:iewjfo] [c19:iewjf]\n[c19:weoi]\n");
+    }
+
+    #[test]
+    fn check_mkd2wt_inline_raw_wt() {
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("```wichtext\n    [c19:Test fei fjewoif jweofiew joifewwe]\n    fioewfijoiwefjewifwe\n```");
+        println!("RES:\n{}", mwg.to_string());
+        assert_eq!(mwg.to_string(), "    [c19:Test fei fjewoif jweofiew joifewwe]\n    fioewfijoiwefjewifwe\n");
     }
 }
