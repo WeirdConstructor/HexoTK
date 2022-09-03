@@ -316,7 +316,7 @@ impl MarkdownWichtextGenerator {
         let mut current_list_index = None;
 
         for ev in parser {
-            println!("EVENT: {:?}", ev);
+            //d// println!("EVENT: {:?}", ev);
 
             match ev {
                 Event::Rule => {
