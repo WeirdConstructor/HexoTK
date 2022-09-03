@@ -219,6 +219,8 @@ impl BlockLayout {
         self.indent = self.indent_stack.pop().unwrap_or(0);
     }
 
+    pub fn indent(&self) -> u16 { self.indent }
+
     pub fn set_first_without_indent(&mut self) {
         self.first_without_indent = true;
     }
@@ -263,7 +265,9 @@ impl BlockLayout {
         for word in words.iter() {
             let word = word.trim();
 
-            if self.cur_line_w > self.width.into() {
+            if self.cur_line_w > 0
+               && (self.cur_line_w + word.len()) > self.width.into()
+            {
                 out_lines.push(self.cur_line.clone());
                 self.cur_line = indent_s.clone();
                 self.cur_line_w = indent_s.len();
@@ -413,6 +417,9 @@ impl MarkdownWichtextGenerator {
                     }
                     Tag::List(_) => {
                         current_list_index = list_stack.pop().flatten();
+                        if layout.indent() == 0 {
+                            self.ensure_empty_line();
+                        }
                     }
                     Tag::Image(_, _, _) => {}
                     Tag::Link(_, _, _) => {
