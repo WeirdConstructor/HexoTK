@@ -184,7 +184,6 @@ fn indent_str(indent: u16) -> String {
 struct BlockLayout {
     indent: u16,
     indent_stack: Vec<u16>,
-    first_without_indent: bool,
     width: usize,
     cur_line: String,
     cur_line_w: usize,
@@ -195,7 +194,6 @@ impl BlockLayout {
         Self {
             indent: 0,
             indent_stack: vec![],
-            first_without_indent: false,
             width,
             cur_line: String::new(),
             cur_line_w: 0,
@@ -213,10 +211,6 @@ impl BlockLayout {
 
     pub fn indent(&self) -> u16 { self.indent }
 
-    pub fn set_first_without_indent(&mut self) {
-        self.first_without_indent = true;
-    }
-
     pub fn force_space(&mut self) {
         self.cur_line += " ";
         self.cur_line_w += 1;
@@ -232,12 +226,7 @@ impl BlockLayout {
     }
 
     pub fn add_words_from_string(&mut self, s: &str, style: &Style, out_lines: &mut Vec<String>) {
-        let indent_s = if self.first_without_indent {
-            self.first_without_indent = false;
-            indent_str(self.indent_stack.last().copied().unwrap_or(0))
-        } else {
-            indent_str(self.indent)
-        };
+        let indent_s = indent_str(self.indent);
 
         if self.cur_line.is_empty() {
             self.cur_line = indent_s.clone();
@@ -282,7 +271,6 @@ impl BlockLayout {
             out_lines.push(self.cur_line.clone());
             self.cur_line = String::new();
             self.cur_line_w = 0;
-            self.first_without_indent = false;
         }
     }
 }
@@ -351,7 +339,14 @@ impl MarkdownWichtextGenerator {
                         layout.force_space();
                         layout.push_indent(2);
                     }
-                    Tag::Image(_, lref, _) => self.text_lines.push(format!("[I{}:]", lref)),
+                    Tag::Image(_, lref, _) => {
+                        let v: Vec<&str> = lref.split("?").collect();
+                        self.text_lines.push(
+                            format!(
+                                "[h{}I{}:]",
+                                v.get(1).unwrap_or(&"300"),
+                                v.get(0).unwrap_or(&"broken.png")));
+                    }
                     Tag::Link(_, lref, _) => {
                         style_stack.push(style_stack.last().unwrap().with_link(&lref));
                     }
@@ -650,5 +645,16 @@ Image here: ![](main/bla.png)
         mwg.parse("bla  \nblo");
         println!("RES:\n{}", mwg.to_string());
         assert_eq!(mwg.to_string(), "bla\nblo\n");
+    }
+
+    #[test]
+    fn check_mkd2wt_image() {
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("![](node.png)");
+        assert_eq!(mwg.to_string(), "[h300Inode.png:]\n");
+
+        let mut mwg = MarkdownWichtextGenerator::new(10);
+        mwg.parse("![](node.png?400)");
+        assert_eq!(mwg.to_string(), "[h400Inode.png:]\n");
     }
 }

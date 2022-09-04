@@ -265,7 +265,8 @@ impl WTFragment {
                 self.width_px = if w > 0.01 { w + p.dpi_factor * 1.0 } else { 0.0 };
                 self.height_px = p.font_height(fs, true);
             }
-            FragType::Image { .. } => {}
+            FragType::Image { .. } => {
+            }
         }
     }
 
