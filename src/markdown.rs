@@ -278,7 +278,7 @@ impl BlockLayout {
 impl MarkdownWichtextGenerator {
     pub fn new(bw: u16) -> Self {
         Self {
-            header_color_font_size: vec![(15, 22), (11, 21), (12, 20), (17, 19)],
+            header_color_font_size: vec![(15, 22), (11, 21), (7, 20), (17, 19)],
             block_width: bw,
             text_lines: vec![],
         }
