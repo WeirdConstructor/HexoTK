@@ -349,7 +349,12 @@ impl<'a, 'b> Painter<'a, 'b> {
         let _ = self.canvas.fill_text(rx, ry, text, paint);
 
         if let Some(collector) = &mut self.lbl_collect {
-            collector.push((*dbg, (rx + dbg.offs_x, ry + dbg.offs_y, w, h, text.to_string())));
+            if let Ok(metr) = self.canvas.measure_text(rx, ry, text, paint) {
+                collector.push((
+                    *dbg,
+                    (rx + dbg.offs_x, ry + dbg.offs_y, metr.width(), metr.height(), text.to_string()),
+                ));
+            }
         }
 
         //        let mut p = femtovg::Path::new();
