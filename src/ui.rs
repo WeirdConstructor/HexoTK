@@ -295,6 +295,7 @@ pub struct UI {
     frame_cb: Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
     ctx: Rc<RefCell<dyn std::any::Any>>,
     global_event_core: EventCore,
+    driver_handle_cb: Option<Box<dyn FnMut(&mut TestDriver)>>,
 
     image_data: HashMap<String, Vec<u8>>,
 }
@@ -320,6 +321,7 @@ impl UI {
             scripts: None,
             cur_script: None,
             global_event_core: EventCore::new(),
+            driver_handle_cb: None,
 
             tests_run: 0,
             tests_fail: 0,
@@ -361,6 +363,10 @@ impl UI {
 
     pub fn reg(&mut self, event: &str, cb: Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>) {
         self.global_event_core.reg(event, cb);
+    }
+
+    pub fn reg_driver_cb(&mut self, cb: Box<dyn FnMut(&mut TestDriver)>) {
+        self.driver_handle_cb = Some(cb);
     }
 
     pub fn relayout(&mut self) {
@@ -870,6 +876,10 @@ impl WindowUI for UI {
                         self.tests_run = 0;
                     }
                 }
+            }
+
+            if let Some(cb) = &mut self.driver_handle_cb {
+                (cb)(&mut fb_ret);
             }
 
             for ev in fb_ret.injected_events.iter() {
