@@ -295,7 +295,7 @@ pub struct UI {
     frame_cb: Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
     ctx: Rc<RefCell<dyn std::any::Any>>,
     global_event_core: EventCore,
-    driver_handle_cb: Option<Box<dyn FnMut(&mut TestDriver)>>,
+    driver_handle_cb: Option<Box<dyn FnMut(TestDriver)>>,
 
     image_data: HashMap<String, Vec<u8>>,
 }
@@ -365,7 +365,7 @@ impl UI {
         self.global_event_core.reg(event, cb);
     }
 
-    pub fn reg_driver_cb(&mut self, cb: Box<dyn FnMut(&mut TestDriver)>) {
+    pub fn reg_driver_cb(&mut self, cb: Box<dyn FnMut(TestDriver) -> TestDriver>) {
         self.driver_handle_cb = Some(cb);
     }
 
@@ -878,9 +878,8 @@ impl WindowUI for UI {
                 }
             }
 
-            if let Some(cb) = &mut self.driver_handle_cb {
-                (cb)(&mut fb_ret);
-            }
+            let fb_ret =
+                if let Some(cb) = &mut self.driver_handle_cb { (cb)(fb_ret) } else { fb_ret };
 
             for ev in fb_ret.injected_events.iter() {
                 self.handle_input_event(ev.clone());
