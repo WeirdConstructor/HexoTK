@@ -7,7 +7,7 @@ use crate::Widget;
 use crate::WindowUI;
 use crate::{
     widget_annotate_drop_event, widget_draw, widget_draw_frame, widget_draw_shallow,
-    widget_handle_event, EvPayload, Event, InputEvent, MButton, Painter, PopupPos, Rect,
+    widget_handle_event, EvPayload, Event, EventCore, InputEvent, MButton, Painter, PopupPos, Rect,
     UINotifierRef,
 };
 use std::cell::RefCell;
@@ -294,6 +294,7 @@ pub struct UI {
     auto_hide_queue: Vec<(usize, HashSet<usize>)>,
     frame_cb: Option<Box<dyn FnMut(&mut dyn std::any::Any)>>,
     ctx: Rc<RefCell<dyn std::any::Any>>,
+    global_event_core: EventCore,
 
     image_data: HashMap<String, Vec<u8>>,
 }
@@ -318,6 +319,7 @@ impl UI {
             fb: None,
             scripts: None,
             cur_script: None,
+            global_event_core: EventCore::new(),
 
             tests_run: 0,
             tests_fail: 0,
@@ -355,6 +357,10 @@ impl UI {
         self.layers.push(Layer { layer_idx: index, root, tree: None, popups: vec![] });
 
         self.on_tree_changed();
+    }
+
+    pub fn reg(&mut self, event: &str, cb: Box<dyn FnMut(&mut dyn std::any::Any, Widget, &Event)>) {
+        self.global_event_core.reg(event, cb);
     }
 
     pub fn relayout(&mut self) {
@@ -900,6 +906,20 @@ impl WindowUI for UI {
             InputEvent::MouseButtonReleased(btn) => {
                 if *btn == MButton::Left {
                     self.handle_drag_mouse_released();
+                }
+
+                let (x, y) = notifier.mouse_pos();
+                let ctx = self.ctx.clone();
+
+                if let Some(layer) = self.layers.get(0) {
+                    self.global_event_core.call(
+                        &mut *(ctx.borrow_mut()),
+                        &Event {
+                            name: "click".to_string(),
+                            data: EvPayload::Click { x, y, button: *btn },
+                        },
+                        &layer.root,
+                    );
                 }
             }
             InputEvent::MousePosition(x, y) => {

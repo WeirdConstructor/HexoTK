@@ -627,6 +627,10 @@ fn main() {
 
             ui.store_image_data("hex_test.png", include_bytes!("hex_test.png").to_vec());
 
+            ui.reg("click", Box::new(|_ctx, _wid, ev| {
+                println!("CLICK: {:?}", ev);
+            }));
+
             ui
         }),
         //        baseview::WindowScalePolicy::ScaleFactor(0.5),
