@@ -3,6 +3,7 @@
 // See README.md and COPYING for details.
 
 mod layout;
+mod markdown;
 mod painter;
 mod rect;
 #[allow(unused)]
@@ -12,15 +13,14 @@ mod widget;
 mod widget_store;
 mod widgets;
 mod window;
-mod markdown;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use keyboard_types::KeyboardEvent; // Key
-use painter::Painter;
 pub use markdown::*;
+use painter::Painter;
 pub use rect::Rect;
 pub use style::{Align, BorderStyle, DPIStyle, Style, StyleExt, VAlign};
 pub use ui::UI;
@@ -41,6 +41,7 @@ pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
 pub use widgets::{Graph, GraphModel, StaticGraphData};
 pub use widgets::{GraphMinMax, GraphMinMaxModel, StaticGraphMinMaxData};
 pub use widgets::{HexCell, HexDir, HexEdge, HexGrid, HexGridModel, HexHLight};
+pub use widgets::{List, ListData, ListModel};
 pub use widgets::{
     PatternData, PatternEditor, PatternEditorFeedback, PatternEditorFeedbackDummy, UIPatternModel,
 };
@@ -246,6 +247,7 @@ pub enum Control {
     Scope { scope: Box<Scope> },
     GraphMinMax { graph: Box<GraphMinMax> },
     PatternEditor { edit: Box<PatternEditor> },
+    List { list: Box<List> },
 }
 
 impl std::fmt::Debug for Control {
@@ -266,6 +268,7 @@ impl std::fmt::Debug for Control {
             Control::Scope { .. } => write!(f, "Ctrl::Scope"),
             Control::GraphMinMax { .. } => write!(f, "Ctrl::GraphMinMax"),
             Control::PatternEditor { .. } => write!(f, "Ctrl::PatternEditor"),
+            Control::List { .. } => write!(f, "Ctrl::List"),
         }
     }
 }
@@ -381,6 +384,7 @@ impl Control {
             Control::Scope { .. } => true,
             Control::GraphMinMax { .. } => true,
             Control::PatternEditor { .. } => true,
+            Control::List { .. } => true,
             Control::None => false,
         }
     }
@@ -399,6 +403,7 @@ impl Control {
             Control::WichText { .. } => {}
             Control::Entry { .. } => {}
             Control::HexKnob { .. } => {}
+            Control::List { .. } => {}
             Control::HexGrid { grid } => {
                 grid.draw_frame(w, &dpi_style, painter);
             }
@@ -439,6 +444,7 @@ impl Control {
             Control::Scope { .. } => false,
             Control::GraphMinMax { .. } => false,
             Control::PatternEditor { .. } => true,
+            Control::List { .. } => true,
         }
     }
 
@@ -459,6 +465,7 @@ impl Control {
             Control::Scope { .. } => false,
             Control::GraphMinMax { .. } => false,
             Control::PatternEditor { .. } => true,
+            Control::List { .. } => true,
         }
     }
 
@@ -478,6 +485,7 @@ impl Control {
             | Control::Scope { .. }
             | Control::GraphMinMax { .. }
             | Control::PatternEditor { .. }
+            | Control::List { .. }
             | Control::HexKnob { .. } => ev,
         }
     }
@@ -655,6 +663,9 @@ impl Control {
             Control::PatternEditor { edit } => {
                 edit.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
             }
+            Control::List { list } => {
+                list.draw(w, &style, draw_widget_pos, real_widget_pos, painter);
+            }
         }
     }
 
@@ -819,6 +830,7 @@ impl Control {
             Control::Scope { scope } => scope.get_generation(),
             Control::GraphMinMax { graph } => graph.get_generation(),
             Control::PatternEditor { edit } => edit.get_generation(),
+            Control::List { list } => list.get_generation(),
         }
     }
 
@@ -882,6 +894,9 @@ impl Control {
             Control::GraphMinMax { .. } => {}
             Control::PatternEditor { edit } => {
                 edit.handle(w, event, out_events);
+            }
+            Control::List { list } => {
+                list.handle(w, event, out_events);
             }
         }
     }

@@ -9,6 +9,7 @@ mod octave_keys;
 mod pattern_editor;
 mod scope;
 mod wichtext;
+mod list;
 
 pub use blockcode::{BlockCode, BlockPos};
 pub use connector::{Connector, ConnectorData};
@@ -23,6 +24,7 @@ pub use pattern_editor::{
 };
 pub use scope::{Scope, ScopeModel, StaticScopeData, SCOPE_SAMPLES};
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
+pub use list::{List, ListModel, ListData};
 
 use keyboard_types::Key;
 
