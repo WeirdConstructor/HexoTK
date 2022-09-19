@@ -1069,6 +1069,7 @@ pub enum EvPayload {
     HexGridDrag { x_src: usize, y_src: usize, x_dst: usize, y_dst: usize, button: MButton },
     HexGridDropData { x: usize, y: usize, data: Rc<RefCell<Box<dyn std::any::Any>>> },
     Click { x: f32, y: f32, button: MButton },
+    ItemSelect { index: i32 },
     SetConnection(Option<(usize, usize)>),
     KeyMask(i64),
     ConnectionHover { is_input: bool, index: usize },

@@ -152,6 +152,7 @@ pub struct Style {
     pub active_border_color: (f32, f32, f32),
     pub active_color: (f32, f32, f32),
     pub inactive_color: (f32, f32, f32),
+    pub selected_color: (f32, f32, f32),
     pub text_align: Align,
     pub text_valign: VAlign,
     pub font_size: f32,
@@ -185,8 +186,9 @@ impl Style {
             hover_color: UI_HLIGHT_CLR,
             active_shadow_color: UI_HLIGHT_CLR,
             active_border_color: UI_SELECT_CLR,
-            active_color: UI_HLIGHT_CLR,
+            active_color: UI_HLIGHT2_CLR,
             inactive_color: UI_INACTIVE_CLR,
+            selected_color: UI_SELECT_CLR,
             text_align: Align::Center,
             text_valign: VAlign::Middle,
             font_size: 14.0,
@@ -386,6 +388,7 @@ impl<'a> DPIStyle<'a> {
     color_accessor! {active_border_color}
     color_accessor! {active_color}
     color_accessor! {inactive_color}
+    color_accessor! {selected_color}
 
     color_ext_accessor! {StyleExt::Graph, hline_color, UI_ACCENT_CLR}
     color_ext_accessor! {StyleExt::Graph, vline1_color, UI_PRIM2_CLR}

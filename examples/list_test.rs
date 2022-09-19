@@ -50,7 +50,7 @@ fn main() {
             list.change_layout(|l| {
                 l.left = Some(Units::Pixels(30.0));
                 l.top = Some(Units::Pixels(50.0));
-                l.width = Some(Units::Pixels(100.0));
+                l.width = Some(Units::Pixels(200.0));
             });
 
             root.add(list);

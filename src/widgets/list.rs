@@ -2,8 +2,8 @@
 // This file is a part of HexoDSP. Released under GPL-3.0-or-later.
 // See README.md and COPYING for details.
 
-use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 use super::ModifierTracker;
+use crate::{EvPayload, Event, InputEvent, MButton, Widget};
 
 use crate::style::*;
 
@@ -16,6 +16,9 @@ use std::rc::Rc;
 pub trait ListModel {
     fn len(&self) -> usize;
     fn fmt_item<'a>(&self, item: usize, buf: &'a mut [u8]) -> Option<usize>;
+    fn selected_item(&self) -> Option<usize>;
+    fn deselect(&mut self);
+    fn select(&mut self, idx: usize);
 
     /// Should return the generation counter for the internal data.
     /// The generation counter should increase for every change on the data.
@@ -25,16 +28,18 @@ pub trait ListModel {
 
 pub struct ListData {
     items: Vec<String>,
+    selected_item: Option<usize>,
     generation: u64,
 }
 
 impl ListData {
     pub fn new() -> Self {
-        Self { items: vec![], generation: 0 }
+        Self { items: vec![], generation: 0, selected_item: None }
     }
 
     pub fn clear(&mut self) {
         self.items.clear();
+        self.selected_item = None;
         self.generation += 1;
     }
 
@@ -52,6 +57,20 @@ impl ListModel for ListData {
     fn len(&self) -> usize {
         self.items.len()
     }
+    fn selected_item(&self) -> Option<usize> { self.selected_item }
+
+    fn deselect(&mut self) {
+        self.selected_item = None;
+        self.generation += 1;
+    }
+
+    fn select(&mut self, idx: usize) {
+        if idx < self.items.len() {
+            self.selected_item = Some(idx);
+            self.generation += 1;
+        }
+    }
+
     fn fmt_item<'a>(&self, index: usize, buf: &'a mut [u8]) -> Option<usize> {
         let item = self.items.get(index)?;
 
@@ -88,6 +107,20 @@ impl List {
         }
     }
 
+    fn mouse_zone(&self) -> Option<i32> {
+        self.zone(self.modkeys.mouse.x, self.modkeys.mouse.y)
+    }
+
+    fn zone(&self, x: f32, y: f32) -> Option<i32> {
+        for ia in self.item_areas.iter() {
+            if ia.1.is_inside(x, y) {
+                return Some(ia.0 as i32);
+            }
+        }
+
+        None
+    }
+
     pub fn get_generation(&mut self) -> u64 {
         self.model.borrow_mut().get_generation()
     }
@@ -98,14 +131,27 @@ impl List {
         self.modkeys.handle(event);
 
         match event {
-            InputEvent::MouseButtonPressed(MButton::Middle) => {
+            InputEvent::MouseButtonPressed(MButton::Left) => {
                 if !is_hovered {
                     return;
                 }
-                w.activate();
+                if self.mouse_zone().is_some() {
+                    w.activate();
+                    w.emit_redraw_required();
+                }
             }
-            InputEvent::MouseButtonReleased(MButton::Middle) => {
+            InputEvent::MouseButtonReleased(MButton::Left) => {
                 if w.is_active() {
+                    if let Some(zone) = self.mouse_zone() {
+                        if zone >= 0 {
+                            self.model.borrow_mut().select(zone as usize);
+                            out_events.push(w.event(
+                                "select",
+                                EvPayload::ItemSelect { index: zone },
+                            ));
+                        }
+                    }
+
                     w.emit_redraw_required();
                     w.deactivate();
                 }
@@ -117,12 +163,7 @@ impl List {
                 }
 
                 let old_hover = self.hover;
-
-                for ia in self.item_areas.iter() {
-                    if ia.1.is_inside(self.modkeys.mouse.x, self.modkeys.mouse.y) {
-                        self.hover = Some(ia.0 as i32);
-                    }
-                }
+                self.hover = self.mouse_zone();
 
                 if old_hover != self.hover {
                     println!("HOVER: {:?}", self.hover);
@@ -154,7 +195,10 @@ impl List {
 
         let pad = style.pad_item();
 
-        let list_pos = pos;
+        let button_width = 30.0;
+
+        let button_pos = pos.crop_left(pos.w - button_width);
+        let list_pos = pos.crop_right(button_width);
 
         let visible_lines = (list_pos.h / fh).floor() as usize;
         let dh = 2.0 * pad + style.border2() + list_pos.h / (visible_lines as f32);
@@ -162,6 +206,8 @@ impl List {
         let mut model = self.model.borrow_mut();
 
         self.item_areas.clear();
+
+        let mut selected_item = model.selected_item();
 
         p.clip_region(list_pos.x, list_pos.y, list_pos.w, list_pos.h);
         let mut y: f32 = 0.0;
@@ -182,12 +228,18 @@ impl List {
                 let item_pos = item_pos.shrink(pad, pad);
 
                 let mut color = style.color();
+                if Some(row_idx) == selected_item {
+                    color = style.selected_color();
+                }
                 if is_hovered {
                     if let Some(hover_idx) = self.hover {
                         if hover_idx >= 0 {
                             if hover_idx == (row_idx as i32) {
-                                println!("HOVER CLOLOR {}", row_idx);
-                                color = style.hover_color();
+                                if is_active {
+                                    color = style.active_color();
+                                } else {
+                                    color = style.hover_color();
+                                }
                             }
                         }
                     }
