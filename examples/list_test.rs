@@ -40,8 +40,10 @@ fn main() {
             list_data.borrow_mut().push("Oooofeofewofe wf ewf owef ewo".to_string());
 
             let list = Widget::new(s.with_style_clone(|s| {
-                s.bg_color = hexotk::style::UI_HLIGHT2_CLR;
+                s.bg_color = hexotk::style::UI_LBL_BG_CLR;
+                s.font_size = 18.0;
                 s.border_color = (0.0, 1.0, 0.0);
+                s.pad_item = 5.0;
             }));
             list.set_ctrl(Control::List { list: Box::new(List::new(list_data.clone())) });
             list.enable_cache();

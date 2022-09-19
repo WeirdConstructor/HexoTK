@@ -142,6 +142,7 @@ pub struct Style {
     pub pad_right: f32,
     pub pad_top: f32,
     pub pad_bottom: f32,
+    pub pad_item: f32,
     pub shadow_offs: (f32, f32),
     pub shadow_color: (f32, f32, f32),
     pub hover_shadow_color: (f32, f32, f32),
@@ -176,6 +177,7 @@ impl Style {
             pad_right: 0.0,
             pad_top: 0.0,
             pad_bottom: 0.0,
+            pad_item: 0.0,
             shadow_offs: (0.0, 0.0),
             shadow_color: UI_PRIM_CLR,
             hover_shadow_color: UI_SELECT_CLR,
@@ -359,6 +361,7 @@ impl<'a> DPIStyle<'a> {
     dpi_accessor! {pad_right}
     dpi_accessor! {pad_top}
     dpi_accessor! {pad_bottom}
+    dpi_accessor! {pad_item}
     dpi_accessor! {font_size}
 
     dpi_ext_accessor! {StyleExt::Graph, graph_line, 0.9}
