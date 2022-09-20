@@ -57,7 +57,9 @@ impl ListModel for ListData {
     fn len(&self) -> usize {
         self.items.len()
     }
-    fn selected_item(&self) -> Option<usize> { self.selected_item }
+    fn selected_item(&self) -> Option<usize> {
+        self.selected_item
+    }
 
     fn deselect(&mut self) {
         self.selected_item = None;
@@ -92,7 +94,9 @@ pub struct List {
     real_pos: Rect,
     modkeys: ModifierTracker,
     hover: Option<i32>,
-    item_areas: Vec<(usize, Rect)>,
+    item_areas: Vec<(i32, Rect)>,
+    scroll_offs: usize,
+    shown_item_count: usize,
 }
 
 impl List {
@@ -104,6 +108,8 @@ impl List {
             modkeys: ModifierTracker::new(),
             hover: None,
             item_areas: vec![],
+            scroll_offs: 0,
+            shown_item_count: 0,
         }
     }
 
@@ -145,10 +151,53 @@ impl List {
                     if let Some(zone) = self.mouse_zone() {
                         if zone >= 0 {
                             self.model.borrow_mut().select(zone as usize);
-                            out_events.push(w.event(
-                                "select",
-                                EvPayload::ItemSelect { index: zone },
-                            ));
+                            out_events
+                                .push(w.event("select", EvPayload::ItemSelect { index: zone }));
+                        } else {
+                            let item_count = self.model.borrow_mut().len();
+                            let scroll_page = (self.shown_item_count / 3) + 1;
+                            match zone {
+                                -1 => {
+                                    if self.scroll_offs > scroll_page {
+                                        self.scroll_offs -= scroll_page;
+                                    } else {
+                                        self.scroll_offs = 0;
+                                    }
+                                }
+                                -2 => {
+                                    let mut cur =
+                                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                                    if cur == 0 {
+                                        cur = item_count - 1;
+                                    } else {
+                                        cur = (cur - 1) % item_count;
+                                    }
+                                    self.model.borrow_mut().select(cur);
+                                    out_events.push(w.event(
+                                        "select",
+                                        EvPayload::ItemSelect { index: cur as i32 },
+                                    ));
+                                }
+                                -3 => {
+                                    let mut cur =
+                                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                                    cur = (cur + 1) % item_count;
+                                    self.model.borrow_mut().select(cur);
+                                    out_events.push(w.event(
+                                        "select",
+                                        EvPayload::ItemSelect { index: cur as i32 },
+                                    ));
+                                }
+                                -4 => {
+                                    self.scroll_offs += scroll_page;
+                                    // TODO: FIXME!
+                                    self.scroll_offs = self.scroll_offs.min(
+                                        item_count.max(self.shown_item_count)
+                                            - self.shown_item_count,
+                                    );
+                                }
+                                _ => {}
+                            }
                         }
                     }
 
@@ -166,7 +215,6 @@ impl List {
                 self.hover = self.mouse_zone();
 
                 if old_hover != self.hover {
-                    println!("HOVER: {:?}", self.hover);
                     w.emit_redraw_required();
                 }
             }
@@ -195,23 +243,74 @@ impl List {
 
         let pad = style.pad_item();
 
-        let button_width = 30.0;
+        let button_width = 30.0 * dpi_f;
 
-        let button_pos = pos.crop_left(pos.w - button_width);
+        let buttons_pos = pos.crop_left(pos.w - button_width);
         let list_pos = pos.crop_right(button_width);
+
+        let button_h = buttons_pos.h / 4.0;
+
+        self.item_areas.clear();
+
+        let mut draw_button = |index: usize| {
+            let zone_idx = (index + 1) as i32 * -1;
+            let mut color = style.color2();
+
+            if let Some(hover_idx) = self.hover {
+                if hover_idx == zone_idx {
+                    if is_active {
+                        color = style.active_border_color();
+                    } else {
+                        color = style.hover_border_color();
+                    }
+                }
+            }
+
+            let y = button_h.floor() * (index as f32);
+            let pos = Rect::from(buttons_pos.x, buttons_pos.y + y, buttons_pos.w, button_h.floor());
+            p.rect_border_fill_r(style.border2(), color, style.bg_color(), pos);
+
+            let lbl = match index {
+                0 => "⇑",
+                1 => "↑",
+                2 => "↓",
+                3 => "⇓",
+                _ => "↑",
+            };
+
+            p.label(
+                style.font_size() * 2.0,
+                0,
+                color,
+                pos.x,
+                pos.y,
+                pos.w,
+                pos.h,
+                lbl,
+                dbg.source("button"),
+            );
+
+            self.item_areas.push((zone_idx, pos.offs(dx, dy)));
+        };
+
+        draw_button(0);
+        draw_button(1);
+        draw_button(2);
+        draw_button(3);
 
         let visible_lines = (list_pos.h / fh).floor() as usize;
         let dh = 2.0 * pad + style.border2() + list_pos.h / (visible_lines as f32);
+        self.shown_item_count = visible_lines;
 
         let mut model = self.model.borrow_mut();
-
-        self.item_areas.clear();
 
         let mut selected_item = model.selected_item();
 
         p.clip_region(list_pos.x, list_pos.y, list_pos.w, list_pos.h);
         let mut y: f32 = 0.0;
         for row_idx in 0..visible_lines {
+            let item_idx = row_idx + self.scroll_offs;
+
             let yd = y.round();
             p.stroke(
                 style.border2(),
@@ -220,7 +319,7 @@ impl List {
                 false,
             );
 
-            if let Some(len) = model.fmt_item(row_idx, &mut self.item_buf[..]) {
+            if let Some(len) = model.fmt_item(item_idx, &mut self.item_buf[..]) {
                 let mut item_pos = list_pos;
                 item_pos.y = yd;
                 item_pos.h = dh;
@@ -228,13 +327,13 @@ impl List {
                 let item_pos = item_pos.shrink(pad, pad);
 
                 let mut color = style.color();
-                if Some(row_idx) == selected_item {
+                if Some(item_idx) == selected_item {
                     color = style.selected_color();
                 }
                 if is_hovered {
                     if let Some(hover_idx) = self.hover {
                         if hover_idx >= 0 {
-                            if hover_idx == (row_idx as i32) {
+                            if hover_idx == (item_idx as i32) {
                                 if is_active {
                                     color = style.active_color();
                                 } else {
@@ -258,7 +357,7 @@ impl List {
                     dbg.source("item"),
                 );
 
-                self.item_areas.push((row_idx, item_outer.offs(dx, dy)));
+                self.item_areas.push((item_idx as i32, item_outer.offs(dx, dy)));
             }
 
             y += dh;

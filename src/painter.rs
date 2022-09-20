@@ -352,7 +352,13 @@ impl<'a, 'b> Painter<'a, 'b> {
             if let Ok(metr) = self.canvas.measure_text(rx, ry, text, paint) {
                 collector.push((
                     *dbg,
-                    (rx + dbg.offs_x, ry + dbg.offs_y, metr.width(), metr.height(), text.to_string()),
+                    (
+                        rx + dbg.offs_x,
+                        ry + dbg.offs_y,
+                        metr.width(),
+                        metr.height(),
+                        text.to_string(),
+                    ),
                 ));
             }
         }
@@ -517,6 +523,18 @@ impl<'a, 'b> Painter<'a, 'b> {
             femtovg::Solidity::Hole,
         );
         self.canvas.stroke_path(&mut p, paint);
+    }
+
+    pub fn rect_border_fill_r(
+        &mut self,
+        border: f32,
+        color: (f32, f32, f32),
+        bg_color: (f32, f32, f32),
+        rect: Rect,
+    ) {
+        self.rect_fill(color, rect.x, rect.y, rect.w, rect.h);
+        let rect = rect.shrink(border, border);
+        self.rect_fill(bg_color, rect.x, rect.y, rect.w, rect.h);
     }
 
     pub fn rect_fill_r(&mut self, color: (f32, f32, f32), rect: Rect) {

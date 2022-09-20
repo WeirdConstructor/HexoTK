@@ -38,6 +38,9 @@ fn main() {
             list_data.borrow_mut().push("Test123".to_string());
             list_data.borrow_mut().push("fiefi oewf eowijfewo ifjweo jwefoi jweofiew".to_string());
             list_data.borrow_mut().push("Oooofeofewofe wf ewf owef ewo".to_string());
+            for i in 0..100 {
+                list_data.borrow_mut().push(format!("Item {}", i));
+            }
 
             let list = Widget::new(s.with_style_clone(|s| {
                 s.bg_color = hexotk::style::UI_LBL_BG_CLR;

@@ -245,6 +245,10 @@ impl Widget {
         self.0.borrow_mut().ctrl = Some(ctrl);
     }
 
+    pub fn with_ctrl<R, F: FnOnce(&mut Control) -> R>(&self, f: F) -> Option<R> {
+        self.0.borrow_mut().with_ctrl(f)
+    }
+
     pub fn can_hover(&self) -> bool {
         self.0.borrow_mut().can_hover()
     }
@@ -551,6 +555,14 @@ impl WidgetImpl {
 
     pub fn can_hover(&self) -> bool {
         self.ctrl.as_ref().map(|c| c.can_hover()).unwrap_or(false)
+    }
+
+    pub fn with_ctrl<R, F: FnOnce(&mut Control) -> R>(&mut self, f: F) -> Option<R> {
+        if let Some(ctrl) = self.ctrl.as_mut() {
+            Some(f(ctrl))
+        } else {
+            None
+        }
     }
 
     pub fn pos(&self) -> Rect {
