@@ -95,7 +95,6 @@ pub struct List {
     modkeys: ModifierTracker,
     hover: Option<i32>,
     item_areas: Vec<(i32, Rect)>,
-    scroll_offs: usize,
     shown_item_count: usize,
 }
 
@@ -108,7 +107,6 @@ impl List {
             modkeys: ModifierTracker::new(),
             hover: None,
             item_areas: vec![],
-            scroll_offs: 0,
             shown_item_count: 0,
         }
     }
@@ -129,6 +127,32 @@ impl List {
 
     pub fn get_generation(&mut self) -> u64 {
         self.model.borrow_mut().get_generation()
+    }
+
+    pub fn calc_row_offs(&self, rows: usize, sel_item: i64) -> usize {
+        let rows = rows as i64;
+        let mut cur = sel_item;
+
+        let margin = rows / 3;
+        let margin = (margin / 2) * 2;
+        let page_rows = rows - margin;
+
+        if page_rows <= 0 {
+            return cur as usize;
+        }
+
+        let mut scroll_page = 0;
+
+        while cur >= page_rows {
+            cur -= page_rows;
+            scroll_page += 1;
+        }
+
+        if scroll_page > 0 {
+            (scroll_page * page_rows - (margin / 2)) as usize
+        } else {
+            0
+        }
     }
 
     pub fn handle(&mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>) {
@@ -155,14 +179,22 @@ impl List {
                                 .push(w.event("select", EvPayload::ItemSelect { index: zone }));
                         } else {
                             let item_count = self.model.borrow_mut().len();
-                            let scroll_page = (self.shown_item_count / 3) + 1;
+                            let page_offs = self.shown_item_count / 2;
                             match zone {
                                 -1 => {
-                                    if self.scroll_offs > scroll_page {
-                                        self.scroll_offs -= scroll_page;
+                                    let mut cur =
+                                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                                    if cur < page_offs {
+                                        cur = 0;
                                     } else {
-                                        self.scroll_offs = 0;
+                                        cur -= page_offs;
                                     }
+
+                                    self.model.borrow_mut().select(cur);
+                                    out_events.push(w.event(
+                                        "select",
+                                        EvPayload::ItemSelect { index: cur as i32 },
+                                    ));
                                 }
                                 -2 => {
                                     let mut cur =
@@ -189,12 +221,20 @@ impl List {
                                     ));
                                 }
                                 -4 => {
-                                    self.scroll_offs += scroll_page;
-                                    // TODO: FIXME!
-                                    self.scroll_offs = self.scroll_offs.min(
-                                        item_count.max(self.shown_item_count)
-                                            - self.shown_item_count,
-                                    );
+                                    let mut cur =
+                                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                                    cur += page_offs;
+                                    if item_count > 0 {
+                                        cur = cur.min(item_count - 1);
+                                    } else {
+                                        cur = 0;
+                                    }
+
+                                    self.model.borrow_mut().select(cur);
+                                    out_events.push(w.event(
+                                        "select",
+                                        EvPayload::ItemSelect { index: cur as i32 },
+                                    ));
                                 }
                                 _ => {}
                             }
@@ -298,9 +338,13 @@ impl List {
         draw_button(2);
         draw_button(3);
 
-        let visible_lines = (list_pos.h / fh).floor() as usize;
-        let dh = 2.0 * pad + style.border2() + list_pos.h / (visible_lines as f32);
+        let line_height = 2.0 * pad + style.border2() + fh;
+        let visible_lines = (list_pos.h / line_height).ceil() as usize;
+        let dh = line_height;
         self.shown_item_count = visible_lines;
+
+        let scroll_offs = self
+            .calc_row_offs(visible_lines, self.model.borrow().selected_item().unwrap_or(0) as i64);
 
         let mut model = self.model.borrow_mut();
 
@@ -309,7 +353,7 @@ impl List {
         p.clip_region(list_pos.x, list_pos.y, list_pos.w, list_pos.h);
         let mut y: f32 = 0.0;
         for row_idx in 0..visible_lines {
-            let item_idx = row_idx + self.scroll_offs;
+            let item_idx = row_idx + scroll_offs;
 
             let yd = y.round();
             p.stroke(
