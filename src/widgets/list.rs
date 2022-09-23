@@ -359,13 +359,13 @@ impl List {
             p.stroke(
                 style.border2(),
                 style.color2(),
-                &[(list_pos.x, yd), (list_pos.x + list_pos.w, yd)],
+                &[(list_pos.x, list_pos.y + yd), (list_pos.x + list_pos.w, list_pos.y + yd)],
                 false,
             );
 
             if let Some(len) = model.fmt_item(item_idx, &mut self.item_buf[..]) {
                 let mut item_pos = list_pos;
-                item_pos.y = yd;
+                item_pos.y += yd;
                 item_pos.h = dh;
                 let item_outer = item_pos;
                 let item_pos = item_pos.shrink(pad, pad);
