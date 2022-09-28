@@ -90,14 +90,14 @@ pub struct GUIWindowHandler {
 impl WindowHandler for GUIWindowHandler {
     fn on_event(&mut self, _: &mut Window, event: Event) -> EventStatus {
         match event {
-            Event::Mouse(MouseEvent::CursorMoved { position: p }) => {
+            Event::Mouse(MouseEvent::CursorMoved { position: p, .. }) => {
                 self.ui.handle_input_event(InputEvent::MousePosition(
                     p.x as f32 * self.dpi_factor,
                     p.y as f32 * self.dpi_factor,
                 ));
             }
-            Event::Mouse(MouseEvent::ButtonPressed(btn)) => {
-                let ev_btn = match btn {
+            Event::Mouse(MouseEvent::ButtonPressed { button, .. }) => {
+                let ev_btn = match button {
                     MouseButton::Left => MButton::Left,
                     MouseButton::Right => MButton::Right,
                     MouseButton::Middle => MButton::Middle,
@@ -105,8 +105,8 @@ impl WindowHandler for GUIWindowHandler {
                 };
                 self.ui.handle_input_event(InputEvent::MouseButtonPressed(ev_btn));
             }
-            Event::Mouse(MouseEvent::ButtonReleased(btn)) => {
-                let ev_btn = match btn {
+            Event::Mouse(MouseEvent::ButtonReleased { button, .. }) => {
+                let ev_btn = match button {
                     MouseButton::Left => MButton::Left,
                     MouseButton::Right => MButton::Right,
                     MouseButton::Middle => MButton::Middle,
@@ -114,7 +114,7 @@ impl WindowHandler for GUIWindowHandler {
                 };
                 self.ui.handle_input_event(InputEvent::MouseButtonReleased(ev_btn));
             }
-            Event::Mouse(MouseEvent::WheelScrolled(scroll)) => match scroll {
+            Event::Mouse(MouseEvent::WheelScrolled { delta, .. }) => match delta {
                 ScrollDelta::Lines { y, .. } => {
                     self.ui.handle_input_event(InputEvent::MouseWheel(y));
                 }
