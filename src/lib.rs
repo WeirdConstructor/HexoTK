@@ -41,7 +41,7 @@ pub use widgets::{DummyOctaveKeysData, OctaveKeys, OctaveKeysModel};
 pub use widgets::{Graph, GraphModel, StaticGraphData};
 pub use widgets::{GraphMinMax, GraphMinMaxModel, StaticGraphMinMaxData};
 pub use widgets::{HexCell, HexDir, HexEdge, HexGrid, HexGridModel, HexHLight};
-pub use widgets::{List, ListData, ListModel};
+pub use widgets::{List, ListData, ListModel, ListScrollMode};
 pub use widgets::{
     PatternData, PatternEditor, PatternEditorFeedback, PatternEditorFeedbackDummy, UIPatternModel,
 };

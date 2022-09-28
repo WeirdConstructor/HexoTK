@@ -24,7 +24,7 @@ pub use pattern_editor::{
 };
 pub use scope::{Scope, ScopeModel, StaticScopeData, SCOPE_SAMPLES};
 pub use wichtext::{WichText, WichTextData, WichTextSimpleDataStore};
-pub use list::{List, ListModel, ListData};
+pub use list::{List, ListModel, ListData, ListScrollMode};
 
 use keyboard_types::Key;
 

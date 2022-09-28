@@ -88,6 +88,12 @@ impl ListModel for ListData {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum ListScrollMode {
+    ItemCentered,
+    Detached,
+}
+
 pub struct List {
     item_buf: [u8; 256],
     model: Rc<RefCell<dyn ListModel>>,
@@ -96,10 +102,12 @@ pub struct List {
     hover: Option<i32>,
     item_areas: Vec<(i32, Rect)>,
     shown_item_count: usize,
+    scroll_mode: ListScrollMode,
+    scroll_page: usize,
 }
 
 impl List {
-    pub fn new(model: Rc<RefCell<dyn ListModel>>) -> Self {
+    pub fn new(model: Rc<RefCell<dyn ListModel>>, scroll_mode: ListScrollMode) -> Self {
         Self {
             model,
             item_buf: [0; 256],
@@ -108,6 +116,8 @@ impl List {
             hover: None,
             item_areas: vec![],
             shown_item_count: 0,
+            scroll_mode,
+            scroll_page: 0,
         }
     }
 
@@ -155,6 +165,83 @@ impl List {
         }
     }
 
+    fn handle_scroll(&mut self, w: &Widget, zone: i32, out_events: &mut Vec<(usize, Event)>) {
+        let item_count = self.model.borrow_mut().len();
+        let page_offs = self.shown_item_count / 2;
+
+        let scroll_offs = match self.scroll_mode {
+            ListScrollMode::ItemCentered => match zone {
+                -1 => {
+                    let mut cur =
+                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                    if cur < page_offs {
+                        cur = 0;
+                    } else {
+                        cur -= page_offs;
+                    }
+
+                    self.model.borrow_mut().select(cur);
+                    out_events.push(w.event(
+                        "select",
+                        EvPayload::ItemSelect { index: cur as i32 },
+                    ));
+                }
+                -2 => {
+                    let mut cur =
+                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                    if cur == 0 {
+                        cur = item_count - 1;
+                    } else {
+                        cur = (cur - 1) % item_count;
+                    }
+                    self.model.borrow_mut().select(cur);
+                    out_events.push(w.event(
+                        "select",
+                        EvPayload::ItemSelect { index: cur as i32 },
+                    ));
+                }
+                -3 => {
+                    let mut cur =
+                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                    cur = (cur + 1) % item_count;
+                    self.model.borrow_mut().select(cur);
+                    out_events.push(w.event(
+                        "select",
+                        EvPayload::ItemSelect { index: cur as i32 },
+                    ));
+                }
+                -4 => {
+                    let mut cur =
+                        self.model.borrow_mut().selected_item().unwrap_or(0);
+                    cur += page_offs;
+                    if item_count > 0 {
+                        cur = cur.min(item_count - 1);
+                    } else {
+                        cur = 0;
+                    }
+
+                    self.model.borrow_mut().select(cur);
+                    out_events.push(w.event(
+                        "select",
+                        EvPayload::ItemSelect { index: cur as i32 },
+                    ));
+                }
+                _ => {}
+            },
+            ListScrollMode::Detached => match zone {
+                -1 => {
+                    if self.scroll_page > 0 {
+                        self.scroll_page -= 1;
+                    }
+                }
+                -4 => {
+                    self.scroll_page += 1;
+                }
+                _ => {}
+            },
+        };
+    }
+
     pub fn handle(&mut self, w: &Widget, event: &InputEvent, out_events: &mut Vec<(usize, Event)>) {
         let is_hovered = w.is_hovered();
 
@@ -178,66 +265,7 @@ impl List {
                             out_events
                                 .push(w.event("select", EvPayload::ItemSelect { index: zone }));
                         } else {
-                            let item_count = self.model.borrow_mut().len();
-                            let page_offs = self.shown_item_count / 2;
-                            match zone {
-                                -1 => {
-                                    let mut cur =
-                                        self.model.borrow_mut().selected_item().unwrap_or(0);
-                                    if cur < page_offs {
-                                        cur = 0;
-                                    } else {
-                                        cur -= page_offs;
-                                    }
-
-                                    self.model.borrow_mut().select(cur);
-                                    out_events.push(w.event(
-                                        "select",
-                                        EvPayload::ItemSelect { index: cur as i32 },
-                                    ));
-                                }
-                                -2 => {
-                                    let mut cur =
-                                        self.model.borrow_mut().selected_item().unwrap_or(0);
-                                    if cur == 0 {
-                                        cur = item_count - 1;
-                                    } else {
-                                        cur = (cur - 1) % item_count;
-                                    }
-                                    self.model.borrow_mut().select(cur);
-                                    out_events.push(w.event(
-                                        "select",
-                                        EvPayload::ItemSelect { index: cur as i32 },
-                                    ));
-                                }
-                                -3 => {
-                                    let mut cur =
-                                        self.model.borrow_mut().selected_item().unwrap_or(0);
-                                    cur = (cur + 1) % item_count;
-                                    self.model.borrow_mut().select(cur);
-                                    out_events.push(w.event(
-                                        "select",
-                                        EvPayload::ItemSelect { index: cur as i32 },
-                                    ));
-                                }
-                                -4 => {
-                                    let mut cur =
-                                        self.model.borrow_mut().selected_item().unwrap_or(0);
-                                    cur += page_offs;
-                                    if item_count > 0 {
-                                        cur = cur.min(item_count - 1);
-                                    } else {
-                                        cur = 0;
-                                    }
-
-                                    self.model.borrow_mut().select(cur);
-                                    out_events.push(w.event(
-                                        "select",
-                                        EvPayload::ItemSelect { index: cur as i32 },
-                                    ));
-                                }
-                                _ => {}
-                            }
+                            self.handle_scroll(w, zone, out_events);
                         }
                     }
 
@@ -245,6 +273,18 @@ impl List {
                     w.deactivate();
                 }
             }
+            InputEvent::MouseWheel(y) => {
+                if !is_hovered {
+                    self.hover = None;
+                    return;
+                }
+                if *y < 0.0 {
+                    self.handle_scroll(w, -4, out_events);
+                } else {
+                    self.handle_scroll(w, -1, out_events);
+                }
+                w.emit_redraw_required();
+            },
             InputEvent::MousePosition(x, y) => {
                 if !is_hovered {
                     self.hover = None;
@@ -334,8 +374,10 @@ impl List {
         };
 
         draw_button(0);
-        draw_button(1);
-        draw_button(2);
+        if self.scroll_mode != ListScrollMode::Detached {
+            draw_button(1);
+            draw_button(2);
+        }
         draw_button(3);
 
         let line_height = 2.0 * pad + style.border2() + fh;
@@ -343,10 +385,25 @@ impl List {
         let dh = line_height;
         self.shown_item_count = visible_lines;
 
-        let scroll_offs = self
-            .calc_row_offs(visible_lines, self.model.borrow().selected_item().unwrap_or(0) as i64);
-
         let mut model = self.model.borrow_mut();
+        let item_count = model.len();
+        let scroll_offs = match self.scroll_mode {
+            ListScrollMode::ItemCentered => {
+                self.calc_row_offs(visible_lines, model.selected_item().unwrap_or(0) as i64)
+            }
+            ListScrollMode::Detached => {
+                let page_len = self.shown_item_count / 2;
+                let max_page = model.len() / page_len;
+                //d// println!("PAGE_LEN={}, max_page={}, vislines={}, items={}",
+                //d//     page_len, max_page, visible_lines, item_count);
+                if self.scroll_page > max_page {
+                    self.scroll_page = max_page;
+                }
+                let offs = self.scroll_page * page_len;
+
+                offs
+            }
+        };
 
         let mut selected_item = model.selected_item();
 

@@ -48,7 +48,7 @@ fn main() {
                 s.border_color = (0.0, 1.0, 0.0);
                 s.pad_item = 5.0;
             }));
-            list.set_ctrl(Control::List { list: Box::new(List::new(list_data.clone())) });
+            list.set_ctrl(Control::List { list: Box::new(List::new(list_data.clone(), ListScrollMode::Detached)) });
             list.enable_cache();
             list.change_layout(|l| {
                 l.left = Some(Units::Pixels(30.0));
