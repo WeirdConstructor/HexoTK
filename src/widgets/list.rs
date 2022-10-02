@@ -334,7 +334,7 @@ impl List {
 
         let mut draw_button = |index: usize| {
             let zone_idx = (index + 1) as i32 * -1;
-            let mut color = style.color2();
+            let mut color = style.border_color();
 
             if let Some(hover_idx) = self.hover {
                 if hover_idx == zone_idx {
