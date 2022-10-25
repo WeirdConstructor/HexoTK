@@ -268,7 +268,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         );
         let mut path = femtovg::Path::new();
         path.rect(screen_x as f32, screen_y as f32, image.w as f32, image.h as f32);
-        self.canvas.fill_path(&mut path, img_paint);
+        self.canvas.fill_path(&mut path, &img_paint);
     }
 
     pub fn draw_image_file(&mut self, file: &str, x: f32, y: f32, _w: f32, h: f32) {
@@ -281,7 +281,7 @@ impl<'a, 'b> Painter<'a, 'b> {
                         femtovg::Paint::image(img_id, x, y, w as f32, h as f32, 0.0, 1.0);
                     let mut path = femtovg::Path::new();
                     path.rect(x, y, w, h);
-                    self.canvas.fill_path(&mut path, img_paint);
+                    self.canvas.fill_path(&mut path, &img_paint);
                 }
             }
         }
@@ -346,10 +346,10 @@ impl<'a, 'b> Painter<'a, 'b> {
             }
         };
 
-        let _ = self.canvas.fill_text(rx, ry, text, paint);
+        let _ = self.canvas.fill_text(rx, ry, text, &paint);
 
         if let Some(collector) = &mut self.lbl_collect {
-            if let Ok(metr) = self.canvas.measure_text(rx, ry, text, paint) {
+            if let Ok(metr) = self.canvas.measure_text(rx, ry, text, &paint) {
                 collector.push((
                     *dbg,
                     (
@@ -458,7 +458,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             p.close();
         }
 
-        self.canvas.fill_path(&mut p, paint);
+        self.canvas.fill_path(&mut p, &paint);
     }
 
     pub fn stroke(
@@ -498,7 +498,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             p.close();
         }
 
-        self.canvas.stroke_path(&mut p, paint);
+        self.canvas.stroke_path(&mut p, &paint);
     }
 
     pub fn arc_stroke(
@@ -522,7 +522,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             to_rad as f32,
             femtovg::Solidity::Hole,
         );
-        self.canvas.stroke_path(&mut p, paint);
+        self.canvas.stroke_path(&mut p, &paint);
     }
 
     pub fn rect_border_fill_r(
@@ -544,7 +544,7 @@ impl<'a, 'b> Painter<'a, 'b> {
     pub fn rect_fill(&mut self, color: (f32, f32, f32), x: f32, y: f32, w: f32, h: f32) {
         let mut pth = femtovg::Path::new();
         pth.rect(x as f32, y as f32, w as f32, h as f32);
-        self.canvas.fill_path(&mut pth, color_paint(color));
+        self.canvas.fill_path(&mut pth, &color_paint(color));
     }
 
     pub fn rect_stroke_r(&mut self, width: f32, color: (f32, f32, f32), r: Rect) {
@@ -564,7 +564,7 @@ impl<'a, 'b> Painter<'a, 'b> {
         pth.rect(x as f32, y as f32, w as f32, h as f32);
         let mut paint = color_paint(color);
         paint.set_line_width(width as f32);
-        self.canvas.stroke_path(&mut pth, paint);
+        self.canvas.stroke_path(&mut pth, &paint);
     }
 
     pub fn label(
@@ -637,7 +637,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             paint.set_font(&[self.font]);
         }
         paint.set_font_size(size);
-        if let Ok(metr) = self.canvas.measure_text(0.0, 0.0, text, paint) {
+        if let Ok(metr) = self.canvas.measure_text(0.0, 0.0, text, &paint) {
             metr.width()
         } else {
             20.0
@@ -652,7 +652,7 @@ impl<'a, 'b> Painter<'a, 'b> {
             paint.set_font(&[self.font]);
         }
         paint.set_font_size(size);
-        if let Ok(metr) = self.canvas.measure_font(paint) {
+        if let Ok(metr) = self.canvas.measure_font(&paint) {
             metr.height()
         } else {
             UI_ELEM_TXT_DEFAULT_H as f32

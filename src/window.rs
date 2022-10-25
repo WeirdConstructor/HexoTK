@@ -234,7 +234,7 @@ impl WindowHandler for GUIWindowHandler {
         path.rect(0.0, 0.0, self.canvas.width(), self.canvas.height());
 
         self.canvas.set_render_target(femtovg::RenderTarget::Screen);
-        self.canvas.fill_path(&mut path, img_paint);
+        self.canvas.fill_path(&mut path, &img_paint);
 
         self.canvas.flush();
         self.canvas.restore();

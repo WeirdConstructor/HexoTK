@@ -169,7 +169,7 @@ impl List {
         let item_count = self.model.borrow_mut().len();
         let page_offs = self.shown_item_count / 2;
 
-        let scroll_offs = match self.scroll_mode {
+        match self.scroll_mode {
             ListScrollMode::ItemCentered => match zone {
                 -1 => {
                     let mut cur =
@@ -285,7 +285,7 @@ impl List {
                 }
                 w.emit_redraw_required();
             },
-            InputEvent::MousePosition(x, y) => {
+            InputEvent::MousePosition(_x, _y) => {
                 if !is_hovered {
                     self.hover = None;
                     return;
@@ -385,8 +385,8 @@ impl List {
         let dh = line_height;
         self.shown_item_count = visible_lines;
 
-        let mut model = self.model.borrow_mut();
-        let item_count = model.len();
+        let model = self.model.borrow_mut();
+        //let item_count = model.len();
         let scroll_offs = match self.scroll_mode {
             ListScrollMode::ItemCentered => {
                 self.calc_row_offs(visible_lines, model.selected_item().unwrap_or(0) as i64)
@@ -405,7 +405,7 @@ impl List {
             }
         };
 
-        let mut selected_item = model.selected_item();
+        let selected_item = model.selected_item();
 
         p.clip_region(list_pos.x, list_pos.y, list_pos.w, list_pos.h);
         let mut y: f32 = 0.0;
