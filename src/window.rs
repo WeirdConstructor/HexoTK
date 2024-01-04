@@ -170,8 +170,8 @@ impl WindowHandler for GUIWindowHandler {
                     )
                     .expect("making image buffer");
 
-                self.size = (w, h);
-                self.ui.set_window_size(w, h, self.dpi_factor);
+                self.size = (w as f32, h as f32);
+                self.ui.set_window_size(w as f32, h as f32, self.dpi_factor);
             }
             _ => {
                 println!("UNHANDLED EVENT: {:?}", event);
@@ -225,13 +225,13 @@ impl WindowHandler for GUIWindowHandler {
             self.img_buf,
             0.0,
             0.0,
-            self.canvas.width(),
-            self.canvas.height(),
+            self.canvas.width() as f32,
+            self.canvas.height() as f32,
             0.0,
             1.0,
         );
         let mut path = femtovg::Path::new();
-        path.rect(0.0, 0.0, self.canvas.width(), self.canvas.height());
+        path.rect(0.0, 0.0, self.canvas.width() as f32, self.canvas.height() as f32);
 
         self.canvas.set_render_target(femtovg::RenderTarget::Screen);
         self.canvas.fill_path(&mut path, &img_paint);

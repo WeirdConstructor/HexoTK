@@ -1,6 +1,6 @@
 [package]
 name        = "hexotk"
-version     = "0.5.0"
+version     = "0.5.1"
 authors     = ["Weird Constructor <weirdconstructor@m8geil.de>"]
 edition     = "2021"
 license     = "GPL-3.0-or-later"
@@ -25,5 +25,5 @@ morphorm           = { git = "https://github.com/WeirdConstructor/morphorm.git" 
 baseview           = { git = "https://github.com/RustAudio/baseview.git", features = ["opengl"] }
 keyboard-types     = { version = "0.6.1", default-features = false }
 pulldown-cmark     = "0.9.2"
-raw-window-handle  = "0.4.2"
+raw-window-handle  = "0.5.0"
 gl                 = "0.14.0"
